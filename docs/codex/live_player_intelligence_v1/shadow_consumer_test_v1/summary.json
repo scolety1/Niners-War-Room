@@ -1,0 +1,3759 @@
+{
+  "league": {
+    "leagueId": "1312983576827920384",
+    "username": "scolety",
+    "importedProfileId": "419bd16dd7a94ac4b1851e2e31ee7928"
+  },
+  "zeroSideEffectProof": {
+    "surfaces": [
+      "Bootstrap_used_by_Home",
+      "PlayerAvailabilityStatus_authority_used_by_Lineup_Waivers_Trades_PlayerDrawer",
+      "Home_weekly_home_actions",
+      "Lineup_weekly_lineup",
+      "MyRoster_used_by_Home_ImproveTeam_AttentionCenter",
+      "FreeAgents_used_by_Waivers_AttentionCenter",
+      "OpponentRosters_used_by_Trades_AttentionCenter",
+      "Waivers_ImproveTeam_REST_OF_SEASON",
+      "TradeFinder_used_by_Trades",
+      "LeagueWorkspaceContext_used_by_AttentionCenter",
+      "DataHealth_used_by_AttentionCenter"
+    ],
+    "beforeHashesRaw": {
+      "Bootstrap_used_by_Home": "e08f3ab45f7a8be7410eb27141e713644b8dd71320528eb8a3dece2967e69b64",
+      "PlayerAvailabilityStatus_authority_used_by_Lineup_Waivers_Trades_PlayerDrawer": "9439427ff90ec703d2e1f8502e0f4585398fdc88d94b8fbb350bc5b676ceeba3",
+      "Home_weekly_home_actions": "608a13cf424f57d1726af4060ea227ffd97dc2ad0050298afbdf003211b18b7c",
+      "Lineup_weekly_lineup": "43b9bfde0caa825f5ec7c140cbea2e105288c3f84df43b2a81bbcd11ee403f61",
+      "MyRoster_used_by_Home_ImproveTeam_AttentionCenter": "90a58cb09b1fabb6584a6ee16facf0080809c1c177197cfbda620b956f520049",
+      "FreeAgents_used_by_Waivers_AttentionCenter": "babd30da0a1c3041d149107acfa9fc88b05ae22864f474d6ed52066517cf3553",
+      "OpponentRosters_used_by_Trades_AttentionCenter": "679a60dfa3acb290683ce2752d1132afefced7c291ad1ac7fb5df79dd9b213b0",
+      "Waivers_ImproveTeam_REST_OF_SEASON": "05ba322d064b7e6405e2e0f39a6b1110d05088fb1a4f87f7b209acc57035dfde",
+      "TradeFinder_used_by_Trades": "46e44a209d563e3f5c1f5cf1f1cd19d363358c035bc53cfdec708227fed01d58",
+      "LeagueWorkspaceContext_used_by_AttentionCenter": "1dc2ce2a06fd36a0b5782dfd028169c4c997b5511fb73b67ed7e9b15b84e4093",
+      "DataHealth_used_by_AttentionCenter": "118636e3c2560d88141f14b51034d3f8a21d26076acd37fad9dc3d7480076c2b"
+    },
+    "afterHashesRaw": {
+      "Bootstrap_used_by_Home": "d746d5da1d1abc99361c862d5517bf09bd4898b792885fd07b65ef496bc43c1a",
+      "PlayerAvailabilityStatus_authority_used_by_Lineup_Waivers_Trades_PlayerDrawer": "9439427ff90ec703d2e1f8502e0f4585398fdc88d94b8fbb350bc5b676ceeba3",
+      "Home_weekly_home_actions": "cca2bedc88219f4761696c0a6b2e206722a4105dc47227fbfd16d66968c13f46",
+      "Lineup_weekly_lineup": "ce659ac20ef832395238b8b31cb6118fd8163888f9c0224c79bf8e493b2a8035",
+      "MyRoster_used_by_Home_ImproveTeam_AttentionCenter": "90a58cb09b1fabb6584a6ee16facf0080809c1c177197cfbda620b956f520049",
+      "FreeAgents_used_by_Waivers_AttentionCenter": "babd30da0a1c3041d149107acfa9fc88b05ae22864f474d6ed52066517cf3553",
+      "OpponentRosters_used_by_Trades_AttentionCenter": "679a60dfa3acb290683ce2752d1132afefced7c291ad1ac7fb5df79dd9b213b0",
+      "Waivers_ImproveTeam_REST_OF_SEASON": "cb9368d98b751f63ffd182a8cb18be0244b03eaf703de36d6bb37e747ac07018",
+      "TradeFinder_used_by_Trades": "11c8cca9aba72a819562efe8bbc400238bcadac23c68f68e651f4d4afb69734f",
+      "LeagueWorkspaceContext_used_by_AttentionCenter": "1dc2ce2a06fd36a0b5782dfd028169c4c997b5511fb73b67ed7e9b15b84e4093",
+      "DataHealth_used_by_AttentionCenter": "5e3c319b1ce18d394b50d5d6ba801edb90e886f0f53b7a97486f6cb1dd8d8e8e"
+    },
+    "allIdenticalRaw": false,
+    "perSurfaceIdenticalRaw": {
+      "Bootstrap_used_by_Home": false,
+      "PlayerAvailabilityStatus_authority_used_by_Lineup_Waivers_Trades_PlayerDrawer": true,
+      "Home_weekly_home_actions": false,
+      "Lineup_weekly_lineup": false,
+      "MyRoster_used_by_Home_ImproveTeam_AttentionCenter": true,
+      "FreeAgents_used_by_Waivers_AttentionCenter": true,
+      "OpponentRosters_used_by_Trades_AttentionCenter": true,
+      "Waivers_ImproveTeam_REST_OF_SEASON": false,
+      "TradeFinder_used_by_Trades": false,
+      "LeagueWorkspaceContext_used_by_AttentionCenter": true,
+      "DataHealth_used_by_AttentionCenter": false
+    },
+    "note": "RAW hashes include real, pre-existing, ALREADY-PRESENT volatility unrelated to this pass's work: generatedAtUtc/lastUpdate wall-clock stamps naturally advance between two real calls, and servedFromCache flips true once a real cache warms -- confirmed by calling these same facade methods twice with ZERO shadow-composition code involved at all. The NORMALIZED hashes below strip only those documented volatile keys and are the real, honest zero-side-effect proof.",
+    "beforeHashesNormalized": {
+      "Bootstrap_used_by_Home": "366f3f85d4194fc39e59ab500eed907a6a3a4f4f67ff847ca01317eccc1b2eb3",
+      "PlayerAvailabilityStatus_authority_used_by_Lineup_Waivers_Trades_PlayerDrawer": "9439427ff90ec703d2e1f8502e0f4585398fdc88d94b8fbb350bc5b676ceeba3",
+      "Home_weekly_home_actions": "5ca97d9b5999bd92e426d7ec3c6d276d35dfc8a27e1b4c0264e273b6decb3d75",
+      "Lineup_weekly_lineup": "eb0ef6934085786637f4fe6b69072500d016bda048f5378dd7bffc1c82a90556",
+      "MyRoster_used_by_Home_ImproveTeam_AttentionCenter": "90a58cb09b1fabb6584a6ee16facf0080809c1c177197cfbda620b956f520049",
+      "FreeAgents_used_by_Waivers_AttentionCenter": "babd30da0a1c3041d149107acfa9fc88b05ae22864f474d6ed52066517cf3553",
+      "OpponentRosters_used_by_Trades_AttentionCenter": "679a60dfa3acb290683ce2752d1132afefced7c291ad1ac7fb5df79dd9b213b0",
+      "Waivers_ImproveTeam_REST_OF_SEASON": "7b62c2286ec6e21469accacd87e1bed9ea47dd9f0394057b175054a9351d6b54",
+      "TradeFinder_used_by_Trades": "c4b49959d0a36b4bd63ffc353f6aa4842be6e793de55c36962754dfc241866f9",
+      "LeagueWorkspaceContext_used_by_AttentionCenter": "1dc2ce2a06fd36a0b5782dfd028169c4c997b5511fb73b67ed7e9b15b84e4093",
+      "DataHealth_used_by_AttentionCenter": "b4cae126840047c0c25d6e91b7b4196c3d98c215757519914f29835af12c61f8"
+    },
+    "afterHashesNormalized": {
+      "Bootstrap_used_by_Home": "366f3f85d4194fc39e59ab500eed907a6a3a4f4f67ff847ca01317eccc1b2eb3",
+      "PlayerAvailabilityStatus_authority_used_by_Lineup_Waivers_Trades_PlayerDrawer": "9439427ff90ec703d2e1f8502e0f4585398fdc88d94b8fbb350bc5b676ceeba3",
+      "Home_weekly_home_actions": "5ca97d9b5999bd92e426d7ec3c6d276d35dfc8a27e1b4c0264e273b6decb3d75",
+      "Lineup_weekly_lineup": "eb0ef6934085786637f4fe6b69072500d016bda048f5378dd7bffc1c82a90556",
+      "MyRoster_used_by_Home_ImproveTeam_AttentionCenter": "90a58cb09b1fabb6584a6ee16facf0080809c1c177197cfbda620b956f520049",
+      "FreeAgents_used_by_Waivers_AttentionCenter": "babd30da0a1c3041d149107acfa9fc88b05ae22864f474d6ed52066517cf3553",
+      "OpponentRosters_used_by_Trades_AttentionCenter": "679a60dfa3acb290683ce2752d1132afefced7c291ad1ac7fb5df79dd9b213b0",
+      "Waivers_ImproveTeam_REST_OF_SEASON": "7b62c2286ec6e21469accacd87e1bed9ea47dd9f0394057b175054a9351d6b54",
+      "TradeFinder_used_by_Trades": "c4b49959d0a36b4bd63ffc353f6aa4842be6e793de55c36962754dfc241866f9",
+      "LeagueWorkspaceContext_used_by_AttentionCenter": "1dc2ce2a06fd36a0b5782dfd028169c4c997b5511fb73b67ed7e9b15b84e4093",
+      "DataHealth_used_by_AttentionCenter": "b4cae126840047c0c25d6e91b7b4196c3d98c215757519914f29835af12c61f8"
+    },
+    "allIdenticalNormalized": true,
+    "perSurfaceIdenticalNormalized": {
+      "Bootstrap_used_by_Home": true,
+      "PlayerAvailabilityStatus_authority_used_by_Lineup_Waivers_Trades_PlayerDrawer": true,
+      "Home_weekly_home_actions": true,
+      "Lineup_weekly_lineup": true,
+      "MyRoster_used_by_Home_ImproveTeam_AttentionCenter": true,
+      "FreeAgents_used_by_Waivers_AttentionCenter": true,
+      "OpponentRosters_used_by_Trades_AttentionCenter": true,
+      "Waivers_ImproveTeam_REST_OF_SEASON": true,
+      "TradeFinder_used_by_Trades": true,
+      "LeagueWorkspaceContext_used_by_AttentionCenter": true,
+      "DataHealth_used_by_AttentionCenter": true
+    }
+  },
+  "identityPlumbing": {
+    "distinctPlayerIdsSeenAcrossSurfaces": 565,
+    "resolvableIntoComposedShadowStatus": 507,
+    "unresolvable": 58,
+    "resolutionRatio": 0.8973,
+    "sampleResolvableIds": [
+      "00-0023459",
+      "00-0026158",
+      "00-0026498",
+      "00-0027973",
+      "00-0028118",
+      "00-0029604",
+      "00-0030035",
+      "00-0030279",
+      "00-0030506",
+      "00-0030565"
+    ],
+    "sampleUnresolvableIds": [
+      "00-0030061",
+      "00-0030564",
+      "00-0031236",
+      "00-0031345",
+      "00-0031484",
+      "00-0031763",
+      "00-0032211",
+      "00-0032434",
+      "00-0033040",
+      "00-0033282"
+    ]
+  },
+  "threeWayComparison": {
+    "note": "Rows where either the real Fantasy Gamers roster league's own real players overlap Worker 2's real 182-row Week-1 official injury-report benchmark, OR a real composed shadow injury_designation exists for them. Recorded for disclosure only -- nothing here is acted on or wired into any recommendation.",
+    "rows": [
+      {
+        "playerId": "00-0023459",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0026158",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0026498",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0027973",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0028118",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0029604",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0030035",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0030279",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0030506",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0030565",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0031237",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0031381",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0031408",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0031503",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0031588",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0031610",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0032104",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0032268",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0032392",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0032464",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0032764",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0032775",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0032950",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0032951",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033077",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033090",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033106",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033110",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0033119",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033217",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033246",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033280",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033288",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0033293",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033307",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033375",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Out",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "OUT"
+      },
+      {
+        "playerId": "00-0033376",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0033455",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033526",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033553",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033555",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033576",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033662",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033757",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033857",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033858",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033869",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033873",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0033881",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033885",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033906",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Questionable",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "QUESTIONABLE"
+      },
+      {
+        "playerId": "00-0033908",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033921",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033949",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0033955",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034159",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034270",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034348",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034351",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034365",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034383",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034418",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034577",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034753",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034771",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034775",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034796",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034798",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034827",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034829",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034837",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034844",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034855",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034857",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034869",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034960",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0034975",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0034981",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035021",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035208",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035228",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035229",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035249",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035250",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035261",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035264",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035289",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035359",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035406",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035537",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Questionable",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "QUESTIONABLE"
+      },
+      {
+        "playerId": "00-0035631",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035640",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035644",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035645",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035659",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035662",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035676",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035685",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035689",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035700",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035704",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035710",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035719",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0035993",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036040",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036139",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036158",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036187",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036212",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Out",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "OUT"
+      },
+      {
+        "playerId": "00-0036223",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036244",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036252",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036259",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036264",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036265",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036275",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036290",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036309",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036322",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036331",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036355",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036358",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036389",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036407",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036410",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0036422",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036429",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036442",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036463",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036550",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036554",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036555",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036567",
+        "currentProductionStatus": {
+          "playerId": "00-0036567",
+          "playerName": "Elijah Mitchell",
+          "statusCategory": "NOT_WITH_TEAM",
+          "injuryDesignation": null,
+          "practiceState": null,
+          "irPupNfi": null,
+          "suspension": false,
+          "administrativeExempt": false,
+          "released": true,
+          "currentTeam": null,
+          "reason": "Released by New England (April 2026); later released by Philadelphia with an injury settlement after an August training-camp injury. Not currently on any NFL roster -- unsigned, not a current-team injury designation.",
+          "source": "MANUAL_VERIFIED_OVERRIDE",
+          "sourceAsOf": "2026-08-01",
+          "overrideKind": "NOT_WITH_TEAM",
+          "gameStatus": null,
+          "onInjuredReserve": null,
+          "onPup": null,
+          "onNfi": null,
+          "activeInactive": null,
+          "depthChartPosition": null,
+          "depthChartContext": null,
+          "fetchedAt": null,
+          "freshnessSeconds": null
+        },
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036590",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036613",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036626",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036628",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036630",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036637",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036646",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036754",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036825",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036842",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Doubtful",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "DOUBTFUL"
+      },
+      {
+        "playerId": "00-0036849",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036862",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036875",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036876",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036887",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036893",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036894",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036898",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036900",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0036912",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036919",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036945",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036963",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036970",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036971",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036972",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036973",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036980",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036984",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036988",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0036997",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037004",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037005",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037012",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037013",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037031",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037085",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037086",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037093",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037112",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037157",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037197",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037228",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037238",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037239",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037240",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037247",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037248",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037252",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037256",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037261",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037263",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037276",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037291",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037292",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0037311",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037329",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037524",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037525",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037545",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037557",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037563",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Out",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "OUT"
+      },
+      {
+        "playerId": "00-0037594",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037614",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037664",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0037666",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037740",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037741",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037742",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037744",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037746",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037755",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037801",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037805",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037809",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037816",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037834",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037837",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037838",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0037840",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038041",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038046",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038090",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038102",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038104",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038115",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038117",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038120",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0038124",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038128",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038129",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038134",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038359",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038393",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038394",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038400",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038416",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Questionable",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "QUESTIONABLE"
+      },
+      {
+        "playerId": "00-0038454",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0038488",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038498",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038519",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038542",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038543",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038544",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038547",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0038551",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038555",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038558",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038559",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038563",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038564",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038573",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038579",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038589",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038590",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038597",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038606",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038608",
+        "currentProductionStatus": {
+          "playerId": "00-0038608",
+          "playerName": "Kayshon Boutte",
+          "statusCategory": "TEAM_CORRECTION",
+          "injuryDesignation": null,
+          "practiceState": null,
+          "irPupNfi": null,
+          "suspension": false,
+          "administrativeExempt": false,
+          "released": false,
+          "currentTeam": "HOU",
+          "reason": "Traded from New England to Houston (Texans traded S Jaylen Reed for WR Kayshon Boutte); active on Houston's current roster.",
+          "source": "MANUAL_VERIFIED_OVERRIDE",
+          "sourceAsOf": "2026-08-25",
+          "overrideKind": "TEAM_CORRECTION",
+          "gameStatus": null,
+          "onInjuredReserve": null,
+          "onPup": null,
+          "onNfi": null,
+          "activeInactive": null,
+          "depthChartPosition": null,
+          "depthChartContext": null,
+          "fetchedAt": null,
+          "freshnessSeconds": null
+        },
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038611",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038618",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038619",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038621",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038640",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038679",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038685",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038705",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038710",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038720",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038728",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038735",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038738",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038752",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038783",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038797",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0038824",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038840",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038896",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038933",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038935",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038951",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Doubtful",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "DOUBTFUL"
+      },
+      {
+        "playerId": "00-0038976",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0038994",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038996",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0038997",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039021",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039032",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039040",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039041",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039050",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039062",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039064",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0039065",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039066",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039067",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0039074",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039075",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039139",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039144",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039146",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039150",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039163",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039164",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0039165",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039299",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039337",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Questionable",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "QUESTIONABLE"
+      },
+      {
+        "playerId": "00-0039338",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Out",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "OUT"
+      },
+      {
+        "playerId": "00-0039342",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039355",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039356",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039359",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039361",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039363",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039364",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039373",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Out",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "OUT"
+      },
+      {
+        "playerId": "00-0039376",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039384",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039391",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039407",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039410",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039424",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039451",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039491",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039530",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039589",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039603",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039623",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039648",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039686",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039732",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039737",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039738",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039739",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039746",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039751",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039792",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Questionable",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "QUESTIONABLE"
+      },
+      {
+        "playerId": "00-0039793",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0039794",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039796",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039798",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0039824",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039847",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0039849",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039851",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039855",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Doubtful",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "DOUBTFUL"
+      },
+      {
+        "playerId": "00-0039868",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039874",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039875",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039880",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039890",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039893",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039894",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0039901",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039910",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039912",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0039915",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039916",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039917",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Out",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "OUT"
+      },
+      {
+        "playerId": "00-0039918",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039919",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Questionable",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "QUESTIONABLE"
+      },
+      {
+        "playerId": "00-0039920",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039921",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0039923",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040009",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040024",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040058",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040075",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040078",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040122",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0040124",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040126",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040128",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040129",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0040130",
+        "currentProductionStatus": {
+          "playerId": "00-0040130",
+          "playerName": "Jayden Higgins",
+          "statusCategory": "OUT_FOR_SEASON",
+          "injuryDesignation": "OUT",
+          "practiceState": null,
+          "irPupNfi": null,
+          "suspension": false,
+          "administrativeExempt": false,
+          "released": false,
+          "currentTeam": null,
+          "reason": "Torn ACL in training camp; placed on Reserve/Injured (no Designated for Return) -- season-ending for 2026.",
+          "source": "MANUAL_VERIFIED_OVERRIDE",
+          "sourceAsOf": "2026-08-19",
+          "overrideKind": "SEASON_OUT",
+          "gameStatus": null,
+          "onInjuredReserve": null,
+          "onPup": null,
+          "onNfi": null,
+          "activeInactive": null,
+          "depthChartPosition": null,
+          "depthChartContext": null,
+          "fetchedAt": null,
+          "freshnessSeconds": null
+        },
+        "composedShadowInjuryDesignation": "OUT",
+        "composedShadowSource": "MANUAL_VERIFIED_OVERRIDE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040131",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040134",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040138",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040142",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040154",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040162",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040164",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040170",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040172",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040179",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040184",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040187",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040189",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040194",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040198",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040206",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040208",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040218",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040225",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040234",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040236",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040237",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040238",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Questionable",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "QUESTIONABLE"
+      },
+      {
+        "playerId": "00-0040242",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0040244",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040277",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040363",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040398",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040432",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040466",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040488",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040506",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040509",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040534",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040556",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040563",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040581",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040582",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040583",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040584",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040590",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040644",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040646",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040648",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Questionable",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "QUESTIONABLE"
+      },
+      {
+        "playerId": "00-0040649",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040663",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040666",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040667",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040668",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040669",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040673",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040676",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040691",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040704",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040705",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040715",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040719",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040727",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040729",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040730",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040734",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Out",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "OUT"
+      },
+      {
+        "playerId": "00-0040735",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040736",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040737",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040739",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040743",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040782",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040784",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040867",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040870",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040876",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040878",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040879",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040886",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040887",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040888",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040890",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040891",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040894",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040901",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0040906",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041013",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041027",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Questionable",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "QUESTIONABLE"
+      },
+      {
+        "playerId": "00-0041029",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041032",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0041035",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041037",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041040",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041041",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Out",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "OUT"
+      },
+      {
+        "playerId": "00-0041042",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041044",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0041047",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041048",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041051",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041052",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041056",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041067",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041069",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041070",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041077",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041084",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041092",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041094",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041096",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041099",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041100",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041104",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041106",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041116",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041117",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041123",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041125",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041131",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041132",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041133",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041395",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041397",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041399",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041438",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041443",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041446",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041472",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041483",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": "Out",
+        "composedShadowSource": "NFLVERSE_OFFICIAL_INJURY_REPORT",
+        "officialBenchmarkTruth": "OUT"
+      },
+      {
+        "playerId": "00-0041489",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041496",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041503",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041510",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041511",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041512",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041523",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041524",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0041525",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041529",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041547",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041550",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      },
+      {
+        "playerId": "00-0041558",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041561",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041562",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041565",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041568",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": null
+      },
+      {
+        "playerId": "00-0041579",
+        "currentProductionStatus": null,
+        "composedShadowInjuryDesignation": null,
+        "composedShadowSource": "NONE",
+        "officialBenchmarkTruth": "CLEARED_OR_NOT_LISTED"
+      }
+    ]
+  }
+}
