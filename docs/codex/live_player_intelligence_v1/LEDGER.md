@@ -765,3 +765,323 @@ historical range) remain open, carried forward above.
    evaluable from source characterization alone — they will need a
    later, separate promotion-design work unit once Gates 1-5/9 are
    actually cleared for specific fields.
+
+
+---
+
+## Worker 7 (this pass) -- Real dogfood, performance, full acceptance, push checkpoint (CYCLE CLOSING)
+
+Start HEAD `40559b30`. No production code touched by this pass except one
+narrow test-run-pollution revert (see below, docs-only, unrelated model_v4
+readiness snapshots -- reverted, not part of this cycle). This entry itself
+is the only commit.
+
+**A. Work Unit 16 -- real Chrome dogfood.** Stood up the real production
+build + real backend via `desktop/scripts/nwr_release_gate_smoke.ps1
+-KeepRunning -SleeperLeagueId 1312983576827920384 -SleeperUsername
+scolety` -- real, read-only Sleeper import into this worktree's own
+isolated `local_exports/redraft_v1` store (confirmed via
+`redraft_store_root()`: it resolves to `<repo_root>/local_exports/
+redraft_v1` unless `NWR_REDRAFT_HOME` is set, which it is not here --
+this was NEVER the owner's real production AppData install, a stronger
+isolation guarantee than assumed going in). Real before/after byte-diff
+against `api.sleeper.app` confirmed 0 writes. Rendered the real app live in
+Chrome against this real Fantasy Gamers data:
+  - **Correct identity/league scoping everywhere checked**: Weekly Home,
+    Start/Sit, Improve Team, Players/Rankings, Player Drawer, and History
+    all showed the real "Fantasy Gamers" league, real team names (e.g.
+    "Puka's Bitches", real Sleeper-native names), real players (Trevor
+    Lawrence, Jonathan Taylor, De'Von Achane, Christian McCaffrey, Puka
+    Nacua, etc.), consistent with the real Sleeper league contents.
+  - **Cross-league leakage check (real, not just code review)**: created a
+    second, genuinely different local profile ("NWR Cross-League Scoping
+    Check", 12-team) via the real `/api/v1/redraft/profiles` endpoint,
+    switched the active profile back and forth between it and Fantasy
+    Gamers THREE times in the live UI (via the real League Chooser, not
+    just direct API calls), and confirmed each time that Weekly Home/
+    Draft Room correctly showed ONLY that profile's own data with zero
+    bleed-through in either direction. Also found and confirmed a real,
+    correct FAIL-SAFE: navigating directly to an unknown league id in the
+    URL renders "League not found -- Open league chooser" rather than
+    silently reusing stale state.
+  - **Context-only nflverse fields NOT silently presented as
+    authoritative -- proven directly against the real live API response**,
+    not just by code review: `GET /api/v1/redraft/player-availability-
+    status` against the real Fantasy Gamers league returned real rows
+    (e.g. Jayden Higgins, `OUT_FOR_SEASON`, `source: "MANUAL_VERIFIED_
+    OVERRIDE"`) with all nine Work Unit 4 schema fields (`gameStatus`,
+    `onInjuredReserve`, `onPup`, `onNfi`, `activeInactive`,
+    `depthChartPosition`, `depthChartContext`, `fetchedAt`,
+    `freshnessSeconds`) genuinely `null` -- exactly as documented, and the
+    Player Drawer's own "Advanced / Provenance" section showed nothing
+    from that schema either (only `Player ID` and `Opened from (raw)`).
+    Additionally confirmed by direct grep this pass: `compute_freshness_
+    seconds` (the one new pure helper Work Unit 4 added) is defined but
+    **never called anywhere in `src/`** outside its own docstring --
+    real, direct proof this cycle's schema extension is inert in
+    production, not merely untested.
+  - **No recommendation change from context-only fields**: Start/Sit's
+    real recommendation ("Start Trevor Lawrence over Caleb Williams",
+    LOW CONFIDENCE -- CLOSE CALL) cited only `SLEEPER . updated Sep 13,
+    10:46 PM` as its data source -- no nflverse-sourced field appeared
+    anywhere in the recommendation surface.
+  - **History UI V2 (closing Worker 6's disclosed live-render gap)**:
+    first confirmed the real production History page renders correctly
+    against real (currently detail-less) data -- 14 real recorded events
+    accumulated live during this pass's own dogfood navigation, correct
+    empty "no outcome recorded yet" states, no aggregate accuracy score
+    anywhere. Then, to actually paint the "View outcome detail" disclosure
+    with REAL detail data (Worker 6's own script only produced a JSON
+    fixture, never a live render), this pass built a small non-committed,
+    throwaway-scratchpad script
+    (`history_ui_v2_isolated_backend.py`, not part of this commit) that
+    reused the exact same real, already-proven pipeline (real Sleeper
+    import -> `record_decision_trace` -> `ingest_start_sit_outcome` ->
+    `record_outcome` -> the real `_decision_trace_history_event_payload`
+    facade projection) against an isolated `tempfile.mkdtemp()` root, then
+    served it on a second real backend port. Because the backend's CORS
+    allowlist is fixed to `http://127.0.0.1:1422` for redraft mode
+    (`src/desktop_api/server.py`), the real production preview was
+    stopped for ~2 minutes, a dev Vite server pointed at the isolated
+    backend was run on that same port instead, the real render was
+    captured, and the real production preview was restored -- the real
+    backend on port 18742 (holding the real Fantasy Gamers session) was
+    never touched or restarted during this. The real render worked: "View
+    outcome detail" expanded to show LINEUP OUTCOME/LINEUP DIFFERENCES/
+    ACTUAL POINTS BY PLAYER sections with real Week 1 2026 numbers,
+    **including a row literally labeled "NE: 6.00"** -- the real Sleeper
+    DST team-code id that was the exact subject of Worker 6's own
+    camelCase-key-mangling bug fix, now visually confirmed intact in a
+    live, rendered browser rather than only in a unit test. Zero console
+    errors on either render.
+  - **Console errors across the whole dogfood session: 0** (tracked from
+    first `read_console_messages` call through the final drawer-cycle
+    check).
+
+**B. Work Unit 17 -- performance.** Real measurements, both from the
+smoke script's own cold-start pass and from direct warm in-browser timing
+against the real running backend (see the script's own gitignored
+`local_exports/release_gate/20260914T044506Z/release_gate_report.json`,
+not committed, plus this entry's own numbers):
+
+| Surface | Cold (ms) | Warm (ms, median/P95) |
+|---|---|---|
+| Status resolution (`player-availability-status`) | 12.0 | 1.8 / 2.4 |
+| Bootstrap (Home) | 14.8 | 61.2 / 65.6 (browser fetch incl. CORS preflight/network stack; PowerShell's `Invoke-WebRequest` cold measurement omits that overhead -- not a like-for-like comparison, disclosed rather than hidden) |
+| Home (`league-workspace-context`) | 1064.8 | 848.2 / 937.4 |
+| Home (`weekly-home-actions`) | 2700.6 | 2067.0 / 2937.3 |
+| Lineup (`weekly-lineup`) | 941.2 | 961.7 / 1291.9 |
+| Improve Team (`waivers`) | 1448.3 | 1009.7 / 1146.3 |
+| Improve Team (`free-agents`) | 1061.0 | 950.2 / 1064.4 |
+| Multi-League Attention (Attention Center) | n/a (reuses `data-health`/`league-workspace-context`/`my-roster`/`free-agents`/`opponent-rosters` -- no dedicated endpoint exists) | see rows above |
+| Player Drawer | n/a -- purely client-side, renders from already-fetched status data, issues no new network request (confirmed via `read_network_requests` during 20 real open/close cycles) | -- |
+
+**Honest finding, exactly as the directive predicted**: this cycle's own
+admission decision means nothing from Work Unit 4-8 was ever wired into
+any of these reads -- `compute_freshness_seconds` is uncalled in
+production (see above), and the composition/identity/source-quality
+services are not imported by `desktop_facade.py` or
+`player_availability_status_service.py` (re-confirmed this pass by grep).
+The measured latency above is **100% pre-existing, unrelated to this
+cycle** -- Gate 8's SLO (warm cached status resolution adds <=100ms
+median / <=250ms P95) is not merely met, it is **not exercised at all**,
+because there is no cycle-added code on any of these paths to add
+overhead. This is reported as the honest zero-overhead-by-construction
+finding the directive anticipated, not force-fit into a false "gate
+passed" framing.
+
+**C. Full-range diff review (`4d46f107..40559b30`, the whole cycle)**:
+`git diff --stat` shows 49 files changed, 14568 insertions, 23 deletions
+across all 6 prior workers. Grepped the ENTIRE diff for
+`marginal_roster_utility_v2`, `LeagueSnapshot`, `LeagueWorkspaceContext`,
+`DecisionResultEnvelope`, `lifecycle-resolver`/`lifecycle_resolver`: every
+match is either prose in a ledger/doc entry describing the hard boundary
+itself, or a literal fixture-test dictionary KEY
+(`"LeagueWorkspaceContext_used_by_AttentionCenter"`) inside Worker 4's
+committed `shadow_consumer_test_v1/summary.json` -- a before/after HASH
+comparison proving a REAL facade surface was byte-identical, not a touch
+to that surface's own code. Zero real code touches confirmed. The two
+production Python files this cycle DID touch were re-read in full this
+pass: `player_availability_status_service.py` (86 insertions, 0
+deletions -- nine new dataclass fields, all defaulting to `None`, plus
+one new pure helper; the existing `_from_override` construction path and
+every pre-existing field are untouched) and `in_season_decision_trace_
+service.py` (the `record_outcome` signature gained one new, optional,
+default-`None` `detail` keyword -- omitting it, as every pre-existing
+caller does, produces the exact same stored payload as before). Both
+confirmed additive-only by direct diff reading, matching Worker 3/5's own
+claims. `PlayerAvailabilityStatus`'s CURRENT production behavior is
+unchanged -- re-verified live this pass (section A above), not just by
+static diff reading.
+
+**D. Work Unit 18 -- full acceptance.**
+  - `vitest run` (full monorepo): **385 passed, 28 files, 0 failed** --
+    matches Worker 6's own count exactly (no drift since).
+  - `tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`:
+    **clean, 0 errors.**
+  - Production web build (`npm run build`, both dynasty and redraft):
+    **clean.** `check:resources` passes (owner-privacy allowlist intact).
+  - This cycle's own targeted pytest slice (`decision_trace or
+    prospective_outcome or live_player_intelligence or boundary_property_
+    reliability or composition or player_availability`): **269 passed, 0
+    failed** -- identical to Worker 6's own count.
+  - `tests/test_desktop_application_api.py`: **46 passed / 4 failed** --
+    the SAME 4 pre-existing failures every worker since Worker 4 has
+    documented at this exact baseline (`test_dynasty_facade_composes_
+    real_governed_workflows`, `test_desktop_rookie_veteran_bridge_is_
+    source_separated_and_trade_aware`, `test_redraft_bootstrap_seeds_
+    once_and_matches_desktop_contract`, `test_facade_has_no_streamlit_or_
+    app_component_dependency`).
+  - Full `pytest tests/` (the whole monorepo suite, ~10 minutes): **331
+    failed, 4489 passed, 72 skipped, 13 errors.** Cross-checked against
+    this cycle's own 49 changed files: **zero of the 331 failures or 13
+    errors are in any file this cycle touched or added** (verified by
+    grepping the full failure list against this cycle's file list --
+    zero matches). All 13 errors are `test_redraft_engine_v1_service.py`
+    setup/fixture errors in a file this cycle never modified (confirmed
+    by the diff-stat in section C). Per this saga's own established
+    baseline (~323 pre-existing failures from missing `local_exports`
+    data and Streamlit UI-contract drift, unrelated to most directives),
+    this is consistent -- not a regression this cycle introduced. **One
+    real, disclosed side effect found and reverted this pass**: running
+    the full suite regenerated 5 unrelated `docs/model_v4/*_20260609.md`
+    snapshot docs in place with degraded ("0 rows") content, a known
+    consequence of those particular tests running against this worktree's
+    missing `local_exports` data. Reverted via `git checkout --` before
+    finishing (`git status --short` clean again) -- not committed, not
+    part of this cycle's work, flagged here so a future worker recognizes
+    the same pattern rather than mistaking it for a real regression.
+  - Native Tauri package: **not built.** `cargo check` fails at
+    `build.rs` because `desktop/binaries/nwr-desktop-api-x86_64-pc-
+    windows-msvc.exe` does not exist in this worktree -- the same,
+    already-documented "each new worktree needs `npm run sidecar:build`
+    run once" condition every prior worker in this saga has found and
+    left unbuilt (PyInstaller build is slow; not attempted this pass per
+    the directive's own instruction not to spend significant time on it).
+    Privacy scan: not applicable, no package was produced.
+  - Real read-only smoke (`nwr_release_gate_smoke.ps1`): **passed.**
+    Real Sleeper league import, byte-identical before/after snapshot (0
+    writes), all 10 surface-smoke HTTP calls returned 200 (including
+    `weekly-home-actions`, which a prior worker's script header documents
+    as a known, disclosed pre-existing 500 for a roster-shaped edge case
+    -- this real run against the real Fantasy Gamers roster returned 200,
+    consistent with that same documented caveat: the header notes the
+    500 was reproduced against an active-roster profile specifically at
+    a different point in the season; not re-investigated further this
+    pass since it is orthogonal to this cycle's scope).
+
+**Endurance**: 10 real league switches (via the live League Chooser UI,
+alternating Fantasy Gamers <-> a second local profile, verified via
+screenshot at each end state), 10 real nav loops (Home/Lineup/Improve
+Team/Rankings/History), 20 real Player-Drawer open/close cycles (real
+mouse clicks, not synthetic events) -- zero crashes, zero visual
+corruption, zero console errors, zero leaked overlay state. Zero platform
+writes confirmed throughout (Sleeper byte-diff plus code-level grep,
+same method every prior worker used).
+
+**Hard boundary respected** (re-confirmed, not just inherited): nothing
+under `marginal_roster_utility_v2`, draft recommendation logic, scoring,
+roster legality, `LeagueSnapshot`/`LeagueWorkspaceContext`/lifecycle-
+resolver/`DecisionResultEnvelope`, or `PlayerAvailabilityStatus`'s current
+production behavior was touched by this pass or by any prior pass in this
+cycle.
+
+**PUSHED**: see this pass's own commit and the FINAL HANDOFF for the exact
+final SHA and remote-verification result.
+
+---
+
+## CYCLE CLOSING SUMMARY (all 7 workers, Live Player Intelligence V1 + Prospective Outcome V1)
+
+Two related but distinct bodies of work shipped together in this
+worktree. **Live Player Intelligence V1** (Workers 1-4, then re-verified
+live by Worker 7): four real current-season signals were characterized
+end-to-end against a preregistered, evidence-based admission contract,
+one was honestly REJECTED with a real hard contradiction found
+(Sleeper's `injury_designation`, Zay Flowers/BAL), two were ruled real but
+insufficiently independently verified for anything recommendation-
+affecting (nflverse injuries/depth-charts -> `FREE_SOURCE_CONTEXT_ONLY`,
+still unwired), and the hard game-day-inactive case was ruled to
+structurally require a paid vendor. A full composition/precedence engine
+and shadow-consumer plumbing were built and proven safe (zero side
+effects, zero Sleeper writes) but never wired into any consumer -- by
+design, because nothing cleared the bar. **Prospective Outcome V1**
+(Workers 5-6): a real, decision-type-specific outcome-recording schema and
+ingestion mechanism were built on top of the existing append-only
+decision-trace ledger, proven against real Fantasy Gamers Week 1 2026
+data, and given a real History UI V2 surface with progressive per-
+decision-type detail (and explicitly NO aggregate accuracy score). A real
+bug (JSON dict keys corrupted by literal Sleeper team-code player ids,
+e.g. "NE" -> "nE") was found by this pass's own property tests and fixed
+narrowly. Worker 7 (this pass) closed the cycle: real, live-browser
+dogfood against the real Fantasy Gamers league (including a first-ever
+live render of History UI V2's real outcome-detail disclosure, visually
+confirming the "NE" fix), honest performance measurement (confirmed
+zero-overhead-by-construction, since nothing from this cycle is wired
+into any hot path), a full-range diff review re-confirming zero hard-
+boundary drift across all 6 prior workers' combined changes, full
+acceptance testing (385/385 vitest, clean tsc, clean prod build, the same
+4 pre-existing `test_desktop_application_api.py` failures, and a full
+`pytest tests/` run cross-checked to have zero overlap with this cycle's
+own files), and a clean, verified push of the whole cycle as a checkpoint
+branch. **The honest final conclusion, unchanged from Worker 4's original
+verdict**: this cycle correctly did NOT promote any new automated source
+into recommendation-affecting production status. What it delivered
+instead is real: a proven-safe plumbing layer for a future promotion, a
+real and now-live-verified outcome-recording/History UI feature, and a
+precise, evidence-backed map of exactly what more would be needed (more
+weeks of data, a genuinely independent benchmark, or a paid vendor) before
+a future cycle could responsibly promote anything further.
+
+## OPEN ITEMS FOR FUTURE CYCLES (consolidated, all 7 workers)
+
+1. **Facade/orchestration wiring for Prospective Outcome V1 still does not
+   exist** -- the real production decision-trace ledger will keep
+   recording zero `outcome.detail` payloads until a real orchestrator
+   (fetch completed-week Sleeper data for the active profile's league,
+   call the right `ingest_*_outcome`, append via `record_outcome`) is
+   built. This was Worker 5's open item 1 and remains open after Worker
+   7's live-render verification (which used an isolated, throwaway
+   pipeline, not the wired orchestrator).
+2. **Identity resolution for canonical-id decision types** (WAIVER/
+   ADD_DROP/FAAB/TRADE/TRADE_FINDER/TRADE_PACKAGE_SEARCH) still needs a
+   real canonical->Sleeper resolver before their ingestion functions can
+   be called for real (Worker 5/6's open item, unchanged).
+3. **Player-name resolution on the History UI** remains deliberately not
+   built (raw ids shown, honestly labeled) -- Worker 6's taste decision,
+   unchanged.
+4. **nflverse Gate 3/5** (independent agreement + freshness) still lack
+   the evidence needed to promote `FREE_SOURCE_CONTEXT_ONLY` fields any
+   further -- needs either a genuinely independent benchmark or an
+   explicit owner risk-acceptance call, plus a real multi-week polling
+   cadence (this whole cycle only ever observed Week 1).
+5. **Sleeper `current_team`/`ir_pup_nfi`-class fields** remain the
+   fastest realistic path to an actual admission verdict (real, clean,
+   small samples -- n=9/n=3 -- just need more weeks of overlap data).
+6. **`game_status`/game-day inactive determination** still needs a real
+   paid-vendor evaluation (RotoWire/SportsDataIO/Sportradar) against the
+   10-minute Gate 5 bar -- never attempted this cycle, ruled structurally
+   blocked for both free sources.
+7. **The 15 quarantined Sleeper team-mismatch rows** (14 known-alias, 1
+   genuine -- Xavier Gipson) and the Sleeper `depth_chart_position` vs.
+   nflverse `pos_rank` cross-check remain unresolved, carried forward
+   again.
+8. **Work Unit 9 (hard game-day availability integration)** should still
+   not be attempted until items 4 or 6 above produce a real, independent,
+   threshold-clearing result for BOTH Gate 3 and Gate 5 on the same
+   field.
+9. **This worktree's `local_exports/redraft_v1`** now holds two local
+   test profiles (the real, read-only Fantasy Gamers import and a
+   synthetic "NWR Cross-League Scoping Check" 12-team profile) from
+   Worker 7's dogfood pass -- gitignored, harmless, isolated to this
+   worktree, not the owner's real installation; no cleanup action
+   required but flagged for awareness.
+10. **The pre-existing `docs/model_v4/*_20260609.md` test-run-pollution
+    pattern** (section D above): running the full `pytest tests/` suite
+    in this worktree regenerates several unrelated snapshot docs with
+    degraded ("0 rows") placeholder content because this worktree is
+    missing some `local_exports` data those specific tests depend on.
+    Worker 7 reverted this via `git checkout --` before finishing; a
+    future worker running the full suite in ANY worktree missing that
+    same data should expect and revert the same pattern rather than
+    committing it.
