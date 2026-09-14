@@ -1,0 +1,67 @@
+{
+  "appendOnlyProof": {
+    "lineCountAfterOutcome": 2,
+    "lineCountBeforeOutcome": 1,
+    "originalRecommendationLineByteIdentical": true
+  },
+  "leagueId": "1312983576827920384",
+  "outcome": {
+    "detail": {
+      "actualOnlyIds": [],
+      "actualPointsByPlayerId": {
+        "11560": 37.26,
+        "3451": 9.0,
+        "6813": 25.1,
+        "7543": 14.8,
+        "7553": 0.0,
+        "8144": 28.2,
+        "9226": 10.6,
+        "9997": 26.0,
+        "NE": 6.0
+      },
+      "actualPointsTotal": 156.96,
+      "actualStarterIds": [
+        "11560",
+        "6813",
+        "9226",
+        "8144",
+        "9997",
+        "7553",
+        "7543",
+        "3451",
+        "NE"
+      ],
+      "eligibleAlternativeIdsAtLock": [
+        "11628",
+        "13279",
+        "6819",
+        "7523",
+        "7567",
+        "8126"
+      ],
+      "kind": "START_SIT_LINEUP_V1",
+      "lineupOpportunityCost": 0.0,
+      "recommendedOnlyIds": [],
+      "recommendedProjectedTotal": null,
+      "recommendedStarterIds": [
+        "11560",
+        "6813",
+        "9226",
+        "8144",
+        "9997",
+        "7553",
+        "7543",
+        "3451",
+        "NE"
+      ],
+      "week": 1
+    },
+    "notes": "",
+    "outcome": "STARTER_MATCHED_RECOMMENDATION"
+  },
+  "ownerRosterId": 9,
+  "realOwnerActualPointsTotal": 156.96,
+  "reloadedRecordCount": 1,
+  "traceId": "7191923d-ce52-445a-8521-b55cdb0dfff2",
+  "week": 1
+}

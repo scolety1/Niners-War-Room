@@ -1,0 +1,20 @@
+{
+  "_source_note": "Real, unmodified Sleeper API response captured 2026-09-13 via GET https://api.sleeper.app/v1/league/1312983576827920384/matchups/1, filtered to roster_id=9 (owner scolety, real Fantasy Gamers league). Used as a committed real-data fixture for test_prospective_outcome_ingestion_v1_service.py's real-data test -- no value in this file was fabricated, estimated, or hand-edited.",
+  "points": 156.96,
+  "players": [
+    "11560", "11628", "13279", "3451", "6813", "6819", "7523", "7543",
+    "7553", "7567", "8126", "8144", "9226", "9997", "NE"
+  ],
+  "roster_id": 9,
+  "custom_points": null,
+  "matchup_id": 4,
+  "starters": [
+    "11560", "6813", "9226", "8144", "9997", "7553", "7543", "3451", "NE"
+  ],
+  "starters_points": [37.26, 25.1, 10.6, 28.2, 26.0, 0.0, 14.8, 9.0, 6.0],
+  "players_points": {
+    "11560": 37.26, "11628": 4.3, "13279": 7.8, "3451": 9.0, "6813": 25.1,
+    "6819": 8.8, "7523": 26.1, "7543": 14.8, "7553": 0.0, "7567": 2.8,
+    "8126": 8.8, "8144": 28.2, "9226": 10.6, "9997": 26.0, "NE": 6.0
+  }
+}
