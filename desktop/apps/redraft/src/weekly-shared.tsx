@@ -14,6 +14,37 @@ import { useEffect, useState, type DependencyList } from "react";
  * own module so neither of those two files needs to import the other.
  */
 
+/**
+ * Active-profile / stale-response adversary guard (History UI V2 pass,
+ * Work Unit 15 -- targets the exact "real league-switch race condition"
+ * bug class the governing directive names: a delayed/out-of-order async
+ * response applied to the wrong, no-longer-active profile/league).
+ *
+ * `useAsync` below already protects against this using React's own effect
+ * cleanup: every render's effect closes over its OWN guard, and the
+ * cleanup (`return () => guard.supersede()`) fires BEFORE the next
+ * render's effect runs whenever `deps` changes (e.g. `profileId`
+ * switches) -- so a promise that resolves after that point is a known,
+ * detectable, discarded straggler, never applied. Pulled out into this
+ * small, pure, directly-testable primitive (rather than only living
+ * inline inside the `useEffect` closure) specifically so the invariant
+ * can be proven by a real, adversarial-ordering test
+ * (`weekly-shared.test.ts`) without needing a DOM/React render harness --
+ * this repo has no jsdom/@testing-library/react installed, and this pass
+ * deliberately did not add either as a new dependency for one test. This
+ * is a pure refactor -- the guarded behavior is byte-identical to before
+ * (a closure boolean renamed/wrapped, nothing else).
+ */
+export function createStaleResponseGuard(): { isStale: () => boolean; supersede: () => void } {
+  let active = true;
+  return {
+    isStale: () => !active,
+    supersede: () => {
+      active = false;
+    },
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Generic "fetch on dependency change" hook -- the same shape every existing
 // page in this app already hand-rolls (see the old useFreeAgents below, or
@@ -28,7 +59,7 @@ export function useAsync<T>(
   const [working, setWorking] = useState(false);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
-    let active = true;
+    const guard = createStaleResponseGuard();
     const promise = loader();
     if (!promise) {
       setResult(null);
@@ -40,19 +71,19 @@ export function useAsync<T>(
     setError(null);
     promise
       .then((value) => {
-        if (active) {
+        if (!guard.isStale()) {
           setResult(value);
           setWorking(false);
         }
       })
       .catch((reason: unknown) => {
-        if (active) {
+        if (!guard.isStale()) {
           setError(reason instanceof NwrApiError ? reason : new NwrApiError("Request could not be read."));
           setWorking(false);
         }
       });
     return () => {
-      active = false;
+      guard.supersede();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, attempt]);
