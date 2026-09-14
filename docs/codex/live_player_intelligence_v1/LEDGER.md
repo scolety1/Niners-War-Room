@@ -124,7 +124,160 @@ test files, plus the 16 new identity-mapping tests, plus
 `waiver_engine_service`/`fantasypros_kdst_consensus_service` tests — 79
 total, all green).
 
-## OPEN ISSUES FOR WORKER 3/4-5 (normalized factual status schema + source quality evaluation against gates 3/4/5)
+## Worker 3 — Normalized factual status schema (Work Unit 4) + source quality evaluation (Work Unit 5)
+
+**Commits:** (see `git log`) — schema extension + gate-computation service
++ two new test files + one new standalone script + new committed docs/
+data artifact. No existing production file's BEHAVIOR changed (`git diff
+--stat` against Start HEAD `81b3d36f` shows only additive changes to
+`player_availability_status_service.py` — 86 insertions, 0 deletions —
+plus new files).
+
+**A. Work Unit 4 — schema extension.** Extended the EXISTING
+`PlayerAvailabilityStatus` dataclass (`player_availability_status_service.py`)
+in place — did NOT fork a parallel schema. Nine new fields, all
+defaulting to `None` (Gate 1's "unknown stays unknown"): `game_status`
+(the game-day inactive determination, kept separate from
+`injury_designation`'s weekly designation per Gate 5's two distinct
+freshness bars), `on_injured_reserve`/`on_pup`/`on_nfi` (broken out from
+the existing, unchanged, still-populated-the-same-way `ir_pup_nfi`
+free-text field), `active_inactive`, `depth_chart_position`/
+`depth_chart_context`, `fetched_at`, `freshness_seconds` (via a new pure
+`compute_freshness_seconds` helper). Confirmed explicitly OUT of scope
+(no fields added for): news prose, analyst commentary, projected return
+date, role speculation. Today's only real source (the manual-override
+wrapper) leaves every new field `None` — proven by a real test
+(`test_real_manual_override_wrapper_leaves_all_new_fields_none`) — so
+CURRENT production behavior is unchanged, only extended. 14 tests in
+`tests/test_player_availability_status_service.py` (6 original + 8 new),
+all passing.
+
+**B. Work Unit 5 — real gate computation.** New pure module
+`src/services/live_player_intelligence_source_quality_v1_service.py`
+(coverage/agreement/freshness computation, no I/O) + standalone script
+`scripts/build_live_player_intelligence_source_quality_v1.py` (reads
+already-fetched local files, reuses the EXISTING
+`build_sleeper_shadow_records`/`match_shadow_records_to_canonical`/
+`load_canonical_pool`/`classify_rows` production-adjacent functions — no
+second identity matcher) + 24 tests on known constructed examples
+(`tests/test_live_player_intelligence_source_quality_v1_service.py`).
+Real results (full detail + real per-player disagreement table in
+`SOURCE_QUALITY_EVALUATION_V1.md`, machine-readable in
+`source_quality_evaluation_v1/summary.json`, both committed):
+
+- **Gate 4 (coverage)**: population = 52 real official-report
+  fantasy-relevant players resolvable to NWR's canonical pool (Jonathon
+  Brooks, the 53rd in-scope-position row, is real but outside NWR's
+  governed pool entirely — a different, already-documented exclusion —
+  reported separately, not folded into the population). **Sleeper
+  covers only 17/52 (32.69%) — FAILS the ≥95% gate badly** (35/52, 67.3%,
+  have no Sleeper signal at all this week). nflverse depth charts
+  (role/context only, not an injury field) covers 52/52 (100%) of the
+  same population — real, strong, but a different concept.
+- **Gate 3 (agreement)**: nflverse-injuries-vs-itself is explicitly
+  disclosed as circular (100% by construction, not real evidence) — the
+  admission contract's own scope note anticipated this; a genuinely
+  independent Gate 3 measurement for nflverse still does not exist this
+  cycle (best available real evidence remains Worker 2's 8/8 NFL.com
+  spot-check). **The real, meaningful computation — Sleeper
+  `injury_status` vs. the benchmark, 14 comparable pairs — found 28.57%
+  exact agreement (FAILS the ≥99% gate badly) AND one real zero-tolerance
+  hard contradiction** (Zay Flowers, BAL: benchmark says
+  `CLEARED_OR_NOT_LISTED`/healthy, Sleeper's own `injury_status="Out"`
+  with a `news_updated` only ~52 minutes old — not a stale-data artifact).
+  Real, disclosed pattern (not explained, not claimed as causal): every
+  Sleeper disagreement was the same-or-more-severe than the benchmark,
+  never the reverse.
+- **Gate 5 (freshness)**: nflverse injuries — **not computable this
+  session**, honestly reported as such. This pass added a THIRD real poll
+  (beyond Worker 1's and Worker 2's) — zero changes across all three,
+  ~27 minutes total — real stability evidence but zero observed update
+  events means no latency can be timed; Worker 1's own 2-day-apart diff
+  proves the file does revise earlier in a week but is too coarse for a
+  P95. Sleeper — a real per-player `news_updated` epoch-ms field exists
+  (P50 ~14.2 days, P95 ~398 days over 722 flagged players) but this pass
+  found real evidence it is CONTAMINATED (only 12.7% of values are
+  <24h old; a real 15.1% tail is 180+ days old, with multi-year-old
+  values directly observed) — proving it is a whole-record "last touched
+  for any reason" field, not specifically bumped on `injury_status`
+  changes. **No P95 is claimed for Sleeper either** — the honest finding
+  is the bucketed age distribution itself (mixed: real evidence some
+  updates ARE near-real-time, real evidence the field overall cannot be
+  trusted as a freshness clock).
+- **Preliminary source×field verdicts** (full table in the doc): nflverse
+  injuries `injury_designation`/`practice_state` → SHADOW (Gate 3/5 not
+  yet independently measurable, not a failure); Sleeper
+  `injury_designation` → **REJECT** (fails Gate 3 AND Gate 4 with real
+  current-week evidence, including the zero-contradiction floor); Sleeper
+  `ir_pup_nfi`-class fields → SHADOW (too little evidence, n=3, directionally
+  clean); Sleeper `current_team`/`active_inactive` → NOT EVALUATED (no
+  benchmark exists for these concepts); nflverse depth charts
+  `depth_chart_position`/`depth_chart_context` → SHADOW (Gate 3 N/A,
+  strong Gate 4 coverage, Gate 5 not re-measured this pass). No
+  `RIGHTS_BLOCKED` verdict applies to anything evaluated here.
+
+**Hard boundary respected**: nothing under `marginal_roster_utility_v2`,
+draft recommendation logic, scoring, roster legality, `LeagueSnapshot`/
+`LeagueWorkspaceContext`/lifecycle-resolver/`DecisionResultEnvelope`, or
+`PlayerAvailabilityStatus`'s CURRENT production behavior was touched —
+only additive schema fields (all default `None`, all left `None` by
+today's only real source) and new, unwired evaluation code/docs.
+73 tests green across
+`test_player_availability_status_service.py`/
+`test_player_availability_status_consumer_consistency.py`/
+`test_live_player_intelligence_shadow_v1_service.py`/
+`test_live_player_intelligence_identity_mapping_v1_service.py`/
+`test_live_player_intelligence_source_quality_v1_service.py`.
+
+**Real, reproducible run command** (reads only already-fetched local
+files, no network I/O of its own):
+`python scripts/build_live_player_intelligence_source_quality_v1.py`
+
+## OPEN ISSUES FOR WORKER 4 (Work Unit 6-7: source composition/precedence + shadow-mode consumer testing)
+
+1. **Sleeper's `injury_designation` field has a preliminary REJECT
+   verdict** (Gate 3 and Gate 4 both fail badly, with a real hard
+   contradiction) — a future composition/precedence design (Work Unit 6)
+   should NOT treat Sleeper as a viable primary or even corroborating
+   injury-designation source without new evidence; it may still be
+   viable for OTHER fields (`ir_pup_nfi`-class, `current_team`) that
+   weren't rejected here, but those also were not affirmatively measured
+   — treat as genuinely unknown, not pre-cleared.
+2. **nflverse injuries' Gate 3/5 still lack an independent, non-circular
+   measurement.** A real fix requires either (a) a genuinely independent
+   second official source (blocked by Worker 1/2's NFL.com/PFR rights
+   findings for automated use), or (b) accepting the 8/8 NFL.com manual
+   spot-check as the practical ceiling of available evidence and making
+   an explicit, disclosed risk call about that at promotion time — not
+   this pass's decision to make.
+3. **Gate 5 for nflverse injuries needs either a multi-week polling
+   cadence** (this cycle only has Week 1 to observe — a real update event
+   has never actually been captured mid-transition) **or a different
+   source with a real per-update timestamp.** Worth revisiting once Week
+   2's file exists.
+4. **Sleeper `current_team`/`active_inactive`/roster-status fields were
+   not evaluated against any benchmark this pass** — the injury-report
+   benchmark has no comparable ground truth for these concepts; a future
+   worker wanting to evaluate them needs a different real ground-truth
+   source (e.g. a manually-verified roster snapshot) before any
+   admission claim.
+5. **The `on_injured_reserve`/`on_pup`/`on_nfi` split fields (Work Unit
+   4's schema) are defined and tested for structure/defaults only** —
+   no automated source has been wired to populate them yet (that is a
+   promotion-time decision, deliberately not made this pass).
+6. All of Worker 1/2's still-open items not superseded above remain open
+   (see the historical section below): items 4/5/6 in the original
+   "OPEN ISSUES FOR WORKER 3/4-5" list (now folded into this section) —
+   specifically, the 15 quarantined Sleeper team-mismatch rows are still
+   unresolved, Sleeper `depth_chart_position`/`depth_chart_order` vs.
+   nflverse depth-chart `pos_rank` still uncross-checked, and depth
+   charts' historical range beyond 2026-03-22 still unconfirmed.
+7. Gates 6 (precedence), 7 (cross-league correctness), 8 (performance),
+   and 10 (recommendation regression) remain promotion-time gates, not
+   evaluable from benchmark/gate-computation work alone — Work Unit
+   6-7's job.
+
+## OPEN ISSUES FOR WORKER 3/4-5 (normalized factual status schema + source quality evaluation against gates 3/4/5) — HISTORICAL, ADDRESSED ABOVE
 
 1. **Gate 3's ≥99% exact-agreement figure still not computed as a
    percentage.** The benchmark and the 8-player spot-check now exist; a

@@ -1,0 +1,199 @@
+{
+  "benchmark": {
+    "totalRows": 182,
+    "inScopePositionRows": 53,
+    "canonicalMatchedRows": 52,
+    "unmatchedInScopeRows": 1,
+    "unmatchedInScopePlayerNames": [
+      "Jonathon Brooks"
+    ]
+  },
+  "gate4Coverage": {
+    "SLEEPER_PUBLIC_PLAYERS_CATALOG": {
+      "populationSize": 52,
+      "coveredSize": 17,
+      "coverageRatio": 0.3269,
+      "meetsGate": false,
+      "gateThreshold": 0.95,
+      "uncoveredIds": [
+        "00-0041027",
+        "00-0039917",
+        "00-0041044",
+        "00-0039919",
+        "00-0036410",
+        "00-0036900",
+        "00-0038547",
+        "00-0038976",
+        "00-0037292",
+        "00-0039164",
+        "00-0034960",
+        "00-0040238",
+        "00-0033873",
+        "00-0039067",
+        "00-0039894",
+        "00-0033110",
+        "00-0038454",
+        "00-0041550",
+        "00-0040122",
+        "00-0041524",
+        "00-0041579",
+        "00-0039373",
+        "00-0033376",
+        "00-0039337",
+        "00-0039847",
+        "00-0038120",
+        "00-0039798",
+        "00-0041032",
+        "00-0038797",
+        "00-0039793",
+        "00-0033288",
+        "00-0040129",
+        "00-0032268",
+        "00-0039912",
+        "00-0040242"
+      ]
+    },
+    "NFLVERSE_DEPTH_CHARTS_ROLE_CONTEXT_ONLY_NOT_AN_INJURY_FIELD": {
+      "populationSize": 52,
+      "coveredSize": 52,
+      "coverageRatio": 1.0,
+      "meetsGate": true,
+      "gateThreshold": 0.95,
+      "uncoveredIds": []
+    }
+  },
+  "gate3Agreement": {
+    "NFLVERSE_OFFICIAL_INJURY_REPORT_SELF_COMPARISON_CIRCULAR": {
+      "comparablePairs": 52,
+      "exactAgreements": 52,
+      "agreementRatio": 1.0,
+      "meetsGate": true,
+      "gateThreshold": 0.99,
+      "disagreements": [],
+      "hardContradictions": [],
+      "zeroHardContradictions": true
+    },
+    "SLEEPER_PUBLIC_PLAYERS_CATALOG": {
+      "comparablePairs": 14,
+      "exactAgreements": 4,
+      "agreementRatio": 0.2857,
+      "meetsGate": false,
+      "gateThreshold": 0.99,
+      "disagreements": [
+        {
+          "playerId": "00-0039064",
+          "benchmark": "CLEARED_OR_NOT_LISTED",
+          "candidate": "OUT"
+        },
+        {
+          "playerId": "00-0039792",
+          "benchmark": "QUESTIONABLE",
+          "candidate": "OUT"
+        },
+        {
+          "playerId": "00-0035537",
+          "benchmark": "QUESTIONABLE",
+          "candidate": "OUT"
+        },
+        {
+          "playerId": "00-0038416",
+          "benchmark": "QUESTIONABLE",
+          "candidate": "OUT"
+        },
+        {
+          "playerId": "00-0037664",
+          "benchmark": "CLEARED_OR_NOT_LISTED",
+          "candidate": "QUESTIONABLE"
+        },
+        {
+          "playerId": "00-0033906",
+          "benchmark": "QUESTIONABLE",
+          "candidate": "OUT"
+        },
+        {
+          "playerId": "00-0036842",
+          "benchmark": "DOUBTFUL",
+          "candidate": "OUT"
+        },
+        {
+          "playerId": "00-0040648",
+          "benchmark": "QUESTIONABLE",
+          "candidate": "OUT"
+        },
+        {
+          "playerId": "00-0038951",
+          "benchmark": "DOUBTFUL",
+          "candidate": "OUT"
+        },
+        {
+          "playerId": "00-0039855",
+          "benchmark": "DOUBTFUL",
+          "candidate": "OUT"
+        }
+      ],
+      "hardContradictions": [
+        {
+          "playerId": "00-0039064",
+          "benchmark": "CLEARED_OR_NOT_LISTED",
+          "candidate": "OUT"
+        }
+      ],
+      "zeroHardContradictions": false
+    }
+  },
+  "gate5Freshness": {
+    "NFLVERSE_OFFICIAL_INJURY_REPORT": {
+      "method": "repeated-poll-and-diff (no per-row update timestamp exists in the source)",
+      "polls": {
+        "wu1_20260913_0252": {
+          "fetchedAtLabel": "wu1_20260913_0252"
+        },
+        "wu2_20260914_0303": {
+          "fetchedAtLabel": "wu2_20260914_0303"
+        },
+        "wu3_20260914_0319": {
+          "fetchedAtLabel": "wu3_20260914_0319"
+        }
+      },
+      "diffs": {
+        "wu1_20260913_0252->wu2_20260914_0303": {
+          "sharedIds": 182,
+          "added": [],
+          "removed": [],
+          "changedIds": [],
+          "changedCount": 0
+        },
+        "wu2_20260914_0303->wu3_20260914_0319": {
+          "sharedIds": 182,
+          "added": [],
+          "removed": [],
+          "changedIds": [],
+          "changedCount": 0
+        }
+      },
+      "p95ComputableThisSession": false,
+      "reason": "Zero changes observed across all three real polls spanning ~27 minutes at this point in Week 1 -- real evidence of stability at THIS point in the week, but no actual update EVENT was observed during the polling window, so no latency value can be measured (there is nothing to time). Worker 1/2's own separately-disclosed two-day-apart diff (Out 27->31 between 2026-09-11 and 2026-09-13) proves the file DOES revise earlier in a week, but that observation window is too coarse (~2 days) to derive a P95 latency figure either."
+    },
+    "SLEEPER_PUBLIC_PLAYERS_CATALOG": {
+      "method": "real per-player news_updated epoch-ms timestamp vs. this pull's own fetched_at_utc, for the flagged (real injury_status) subset -- a genuine freshness PROXY, not proven to be the injury-status field's own last-change time specifically (Sleeper documents no finer-grained per-field timestamp)",
+      "flaggedPlayerCount": 722,
+      "summary": {
+        "sampleSize": 722,
+        "p50Seconds": 1223657.2,
+        "p95Seconds": 34387172.5,
+        "maxSeconds": 252384463.9,
+        "minSeconds": 1608.7
+      },
+      "ageBuckets": {
+        "under_1h": 3,
+        "under_24h": 89,
+        "under_7d": 103,
+        "under_30d": 270,
+        "under_180d": 148,
+        "180d_or_more": 109
+      },
+      "p95ComputableThisSession": false,
+      "reason": "The raw P50/P95 above are NOT a reliable Gate 5 latency figure: only 12.7% of the flagged population's news_updated timestamps fall within 24h of this pull (age_buckets.under_1h + under_24h = 92 of 722), while a real, non-trivial tail (109) is 180+ DAYS old -- multi-year-old values were directly observed in this pull (e.g. real 2019/2022/2023 timestamps on other, unrelated players' records), proving `news_updated` is a whole-record 'last touched for ANY reason' field, not a field specifically bumped every time injury_status changes. A P95 computed over this contaminated population would overstate real latency for the (unknown) subset of players whose injury_status truly was set at that same recorded time, understate it for the (unknown) subset where it wasn't. The under-24h bucket is real, directional, positive evidence SOME status changes are reflected quickly; the tail is real evidence the field cannot be trusted as a general-purpose freshness clock."
+    }
+  }
+}
