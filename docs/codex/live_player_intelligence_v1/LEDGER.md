@@ -372,6 +372,36 @@ any live recommendation's actual output was touched this pass.
 
 ---
 
+## Worker 5 (separate pass, same worktree) -- Prospective Outcome V1: outcome-evaluation schema + ingestion mechanism
+
+**This is a SEPARATE body of work from the Live Player Intelligence V1
+cycle above** (that cycle closed at Worker 4, is DONE, and was not
+reopened). Full detail lives in its own doc directory, not folded into this
+one:
+`docs/codex/prospective_outcome_v1/PROSPECTIVE_OUTCOME_V1.md`.
+
+One-paragraph summary: `in_season_decision_trace_service.py`'s
+`record_outcome` append-path existed but had no real ingestion mechanism
+deciding what to put in it. This pass built (1) eight genuinely distinct
+decision-type-specific outcome schemas (`prospective_outcome_schema_v1_
+service.py` -- START_SIT/WAIVER/ADD_DROP/FAAB/TRADE/TRADE_FINDER/STREAMER/
+DRAFT, deliberately not one generic score), (2) a pure ingestion mechanism
+over real, already-fetched Sleeper data (`prospective_outcome_ingestion_v1_
+service.py`), and (3) a small, additive, backward-compatible `detail`
+parameter on `record_outcome` itself. Real Week 1 2026 Sleeper data for the
+real Fantasy Gamers league was used for a real, committed fixture-based
+test AND a real live end-to-end demo script (isolated throwaway root, zero
+Sleeper writes) proving the whole pipeline plus the append-only guarantee
+against real data. No facade/UI wiring was added this pass (explicitly left
+to the next worker, alongside History UI V2 and boundary property tests --
+see the doc's own "Open issues" section for the full list). Hard boundary
+respected: nothing under `marginal_roster_utility_v2`, draft recommendation
+logic, scoring, roster legality, `LeagueSnapshot`/`LeagueWorkspaceContext`/
+lifecycle-resolver/`DecisionResultEnvelope`/`PlayerAvailabilityStatus`
+semantics, or this cycle's admission/composition code was touched.
+
+---
+
 ## CYCLE CLOSING SUMMARY (Workers 1-4, whole Live Player Intelligence V1 cycle)
 
 Four real, current-season candidate signals were characterized end-to-end
