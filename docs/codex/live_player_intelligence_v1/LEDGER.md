@@ -233,7 +233,219 @@ today's only real source) and new, unwired evaluation code/docs.
 files, no network I/O of its own):
 `python scripts/build_live_player_intelligence_source_quality_v1.py`
 
-## OPEN ISSUES FOR WORKER 4 (Work Unit 6-7: source composition/precedence + shadow-mode consumer testing)
+## Worker 4 — Additional evidence + source composition/precedence (Work Unit 6) + shadow-mode consumer testing (Work Unit 7) + production admission decision (Work Unit 8) — CYCLE CLOSING
+
+**Commits:** (see `git log`) — one addendum to an existing doc (additive
+section only, nothing above it edited), new composition/precedence service
++ its test file, two new standalone evidence-gathering scripts + their
+committed JSON outputs, the real admission-decision doc, and this closing
+ledger update. No existing PRODUCTION file (`desktop_facade.py`,
+`player_availability_status_service.py`, or any recommendation/scoring
+module) was touched — `git diff --stat` against Start HEAD `8a09b031`
+shows only new files plus the one additive doc section.
+
+**A. Additional evidence gathering (step 1 of Work Unit 6).** Real,
+reproducible via
+`python scripts/build_live_player_intelligence_worker4_additional_evidence_v1.py`
+(committed output: `worker4_additional_evidence_v1/summary.json`; full
+detail folded into `SOURCE_QUALITY_EVALUATION_V1.md`'s new addendum
+section, nothing above it edited):
+  - **nflverse Gate 5**: a real, single, lightweight GET against GitHub's
+    Releases API read the `injuries_2026.csv` asset's own `updated_at`
+    (`2026-09-13T12:41:50Z`) — a real, independent, per-FILE freshness
+    proxy distinct from in-row data (which the file has none of). Extended
+    the confirmed-stable observation window from Worker 3's ~27 minutes to
+    **~14.95 hours**. Still not P95-computable (every poll this cycle,
+    across all workers, occurred AFTER that timestamp — zero update EVENTS
+    captured in any window yet) but is a real, stronger stability claim
+    plus a new, cheap, reusable freshness-detection mechanism for a future
+    multi-week cycle.
+  - **Sleeper `current_team` vs. the same 182-row benchmark** (a gap
+    Worker 3 explicitly flagged NOT YET EVALUATED): broader identity
+    coverage of the 52-player population is real and strong (47/52,
+    90.38%, via Sleeper's FULL catalog, not just the injury-flagged
+    subset). The non-circular team-agreement sample (`MATCHED_GSIS_DIRECT`
+    only, n=9) is 88.89% raw / **100% alias-adjusted** (the one raw
+    disagreement is the already-known LAR/LA code-convention pair, not a
+    genuine conflict). Real, honestly small (n=9) — not claimed as a
+    passed gate, but the most directionally positive finding of the whole
+    cycle.
+
+**B. Work Unit 6 — real composition/precedence engine.** New pure module
+`src/services/live_player_intelligence_composition_v1_service.py` (no I/O,
+not imported by `desktop_facade.py`/`player_availability_status_service.py`/
+any recommendation module — architecture guard test confirms this) +
+`tests/test_live_player_intelligence_composition_v1_service.py` (19 tests,
+all passing). Implements real precedence (manual verified override >
+reserved-but-currently-EMPTY admitted-automated tier > supplementary
+SHADOW-source tier > unknown) with a real freshness-monotonicity guarantee
+(an out-of-order-arriving OLDER same-tier observation is rejected, proven
+by a real test) and structural, defense-in-depth exclusion of Sleeper's
+REJECTED `injury_designation` field (two independent enforcement points,
+both tested). Covers every directive-named scenario: newer-after-older,
+manual-then-automated (override wins), automated-then-manual (override
+still wins), conflicting same-tier sources (resolved by freshness, or by a
+documented per-field preferred-source order when neither side has a usable
+timestamp), an unknown field staying unknown (never a guessed "healthy"),
+and a released/team-change state. Still entirely SHADOW infrastructure —
+never wired into any consumer or recommendation path this pass.
+
+**C. Work Unit 7 — real shadow-mode consumer plumbing test.** New
+standalone script
+`scripts/build_live_player_intelligence_worker4_shadow_consumer_test_v1.py`
+(real network I/O against Sleeper's public, read-only API; NOT exercised
+by pytest, same convention as every other network-fetching script in this
+family). Used the REAL, read-only Fantasy Gamers Sleeper league (id
+`1312983576827920384`, username `scolety`), imported via the SAME
+already-existing, already-proven `import_sleeper_redraft_profile` path
+other tests in this repo already use, into an ISOLATED throwaway
+`redraft_root` (never the owner's real production AppData store). Real
+results (committed: `shadow_consumer_test_v1/summary.json`):
+  - **Zero side effects, proven, not asserted**: every one of 11 real
+    consumer-surface reads (Bootstrap/Home, `PlayerAvailabilityStatus`
+    authority used by Lineup/Waivers/Trades/Player-Drawer, Weekly Home
+    Actions, Weekly Lineup, My Roster, Free Agents, Opponent Rosters,
+    Waivers/Improve-Team, Trade Finder, League Workspace Context, Data
+    Health) was captured BEFORE and AFTER building the real shadow
+    composition, hashed, and diffed. Raw hashes differ on 6/11 surfaces --
+    investigated for real and found to be PRE-EXISTING, ALREADY-PRESENT
+    volatility unrelated to this pass's work entirely (`generatedAtUtc`/
+    `lastUpdate`/`lastGeneratedTimestamp` wall-clock stamps advancing
+    between two real calls, `servedFromCache` flipping true once a real
+    cache warms -- confirmed by calling the SAME facade methods twice in
+    isolation with zero shadow-composition code involved at all). With
+    those three documented volatile keys stripped, **all 11 surfaces are
+    byte-identical before and after** -- the real, honest zero-side-effect
+    proof.
+  - **Real identity plumbing works**: of 565 distinct real player ids
+    surfaced across those 11 real reads for this real, live league,
+    **507 (89.73%) resolve into a real composed shadow status** built
+    entirely outside the facade. A real 3-way comparison (current
+    production status / composed shadow status / official benchmark
+    truth) was recorded for the 53 real overlapping players -- disclosed,
+    not acted on.
+  - **Sleeper writes: 0**, verified by code inspection (`SleeperHttpClient`
+    in `sleeper_import_service.py` defines only `get_json`/`urlopen` GET;
+    no POST/PUT/DELETE exists anywhere in that client or in
+    `sleeper_redraft_owner_service.py`).
+
+**D. Work Unit 8 — the real production admission decision.**
+`PRODUCTION_ADMISSION_DECISION_V1.md` (full detail there). Headline: **no
+source/field pair evaluated this cycle clears the full admission bar for
+recommendation-affecting integration.** Sleeper `injury_designation` stays
+REJECTED (`NO_SOURCE_PASSED`). Sleeper `ir_pup_nfi`-class/`current_team`/
+`active_inactive` stay `NO_SOURCE_PASSED` (insufficient evidence, not
+failure -- `current_team`'s n=9 is the strongest small-sample finding of
+the cycle but still too small to round up). nflverse
+`injury_designation`/`practice_state`/depth-chart role fields are real,
+clean on Gates 1/2/9, but do not clear Gates 3/5 -- ruled
+`FREE_SOURCE_CONTEXT_ONLY` (a future, SEPARATE pass could wire them as
+disclosed, non-recommendation-affecting display context; this pass does
+NOT perform that wiring). The game-day inactive determination
+(`game_status`) gets its own decisive call -- `PAID_SOURCE_REQUIRED_FOR_
+GAME_DAY` -- because neither free source has ANY mechanism capable of
+proving a 10-minute freshness bar even in principle (nflverse: no per-row
+timestamp at all; Sleeper: proven-contaminated timestamp), a real,
+structural disqualification distinct from the ordinary 2-hour use case's
+"simply not measured yet" status.
+
+**Work Unit 9 (hard game-day availability integration affecting
+recommendations): NOT ATTEMPTED.** Per the directive's own instruction --
+no field clears Gates 3 AND 5 together with real, independent,
+threshold-level evidence this cycle.
+
+**Tests**: 19 new composition tests + the 108 already-passing
+live-player-intelligence/player-availability/override tests (127 total,
+all green). `test_desktop_application_api.py`: 46 passed / 4 failed --
+confirmed via `git stash -u` that the SAME 4 tests fail at Start HEAD
+`8a09b031` with ZERO of this pass's files present (pure pre-existing
+failures, unrelated to this cycle). Frontend `vitest run` could not be
+attempted this pass -- `desktop/node_modules` was never installed in this
+worktree (a pre-existing environment condition; this pass made zero
+frontend changes, so nothing of this pass's own could have regressed
+there).
+
+**Hard boundary respected**: nothing under `marginal_roster_utility_v2`,
+draft recommendation logic, scoring, roster legality, `LeagueSnapshot`/
+`LeagueWorkspaceContext`/lifecycle-resolver/`DecisionResultEnvelope`, or
+any live recommendation's actual output was touched this pass.
+
+---
+
+## CYCLE CLOSING SUMMARY (Workers 1-4, whole Live Player Intelligence V1 cycle)
+
+Four real, current-season candidate signals were characterized end-to-end
+against a preregistered, evidence-based admission contract: Sleeper's
+public players catalog, nflverse's official weekly injury report, nflverse
+depth charts, and (as a benchmark-only source, not itself an admission
+candidate) a real 182-row Week-1 2026 official-truth benchmark built from
+nflverse's own file and independently corroborated against 8 real,
+manually-checked NFL.com rows. One real, hard rejection was found and
+honestly enforced (Sleeper `injury_designation`, with a real, current,
+zero-tolerance-floor-violating hard contradiction -- Zay Flowers, BAL).
+Two real, clean, narrow, identity-resolved sources (nflverse's injury
+report and depth charts) were found safe for disclosed context display but
+NOT for anything recommendation-affecting, because this cycle's own
+preregistered Gate 3 (independent agreement) and Gate 5 (freshness) could
+not be honestly cleared for either -- not because either source failed
+them, but because a genuinely independent, non-circular benchmark and a
+real multi-week polling cadence do not yet exist. A real, working,
+fully-tested source-composition/precedence engine was built and shadow-
+tested end-to-end against a real, live, read-only league with zero side
+effects and zero Sleeper writes -- proving the PLUMBING for a future
+promotion is real, separate from the admission-worthiness question. The
+honest final conclusion is that this cycle correctly did NOT promote
+anything into recommendation-affecting production status, and documents
+exactly what additional real evidence (mostly: more time, more weeks, a
+larger sample, or a real paid-vendor evaluation for the game-day case)
+would be needed before a future cycle could responsibly do so.
+
+## OPEN ISSUES FOR FUTURE CYCLES (Work Units 12+, per the outer directive)
+
+1. **nflverse Gate 3**: still no genuinely independent, non-circular
+   official benchmark exists (NFL.com/PFR both ToS-blocked for automated
+   use). Either build one through a different, real, rights-clean channel,
+   or get an explicit owner-level risk-acceptance decision to treat the
+   existing 8/8 NFL.com manual spot-check as the practical evidence
+   ceiling -- that is a different KIND of decision (owner risk acceptance)
+   than anything this cycle's workers were authorized to make themselves.
+2. **nflverse Gate 5**: needs a real multi-week polling cadence (this
+   whole cycle only ever had Week 1 to observe) to catch a real update
+   event and compute an honest P95. The GitHub release-asset `updated_at`
+   metadata check this pass added is a cheap, reusable mechanism for that
+   -- poll it, don't re-download the full CSV every time.
+3. **Sleeper `current_team`/`ir_pup_nfi`-class fields**: real, clean,
+   small samples (n=9, n=3) -- simply need more real overlap cases (more
+   weeks, or a dedicated roster-ground-truth source) to reach a confident
+   verdict either way. This looks like the fastest realistic path to an
+   actual `FREE_SOURCE_ADMITTED`/`FIELD_SPECIFIC_FREE_SOURCE_ADMITTED`
+   verdict of anything evaluated this cycle.
+4. **`game_status`/game-day inactive determination**: a real paid-vendor
+   evaluation (RotoWire/SportsDataIO/Sportradar, per Worker 1's historical
+   bakeoff) against this contract's actual 10-minute Gate 5 bar has never
+   been performed. Needed before `PAID_SOURCE_REQUIRED_FOR_GAME_DAY` can
+   become an actual admission rather than a documented blocker.
+5. **Sleeper `active_inactive`**: needs its own dedicated ground-truth
+   source; the injury-report benchmark has no comparable concept at all.
+6. **The 15 quarantined Sleeper team-mismatch rows** (Worker 2, 14
+   known-alias/1 genuine Xavier Gipson) and the Sleeper
+   `depth_chart_position`/`depth_chart_order` vs. nflverse `pos_rank`
+   cross-check (Worker 1) remain unresolved, carried forward again.
+7. **If a future worker DOES wire nflverse `injury_designation`/
+   `practice_state`/depth-chart fields as `FREE_SOURCE_CONTEXT_ONLY`
+   display** (this cycle explicitly did not): it must never feed any
+   ranking/score/eligibility calculation (Gate 10), must visibly disclose
+   its own unverified-for-recommendation status, and must show
+   `fetchedAt` alongside the value. See
+   `PRODUCTION_ADMISSION_DECISION_V1.md`'s "What `FREE_SOURCE_CONTEXT_ONLY`
+   means here" section for the exact conditions.
+8. **Work Unit 9 (hard availability integration)** should not be attempted
+   until at least one of items 1-4 above produces a real, independent,
+   threshold-clearing result for BOTH Gate 3 and Gate 5 on the SAME field.
+
+---
+
+## OPEN ISSUES FOR WORKER 4 (Work Unit 6-7: source composition/precedence + shadow-mode consumer testing) — HISTORICAL, ADDRESSED ABOVE
 
 1. **Sleeper's `injury_designation` field has a preliminary REJECT
    verdict** (Gate 3 and Gate 4 both fail badly, with a real hard
