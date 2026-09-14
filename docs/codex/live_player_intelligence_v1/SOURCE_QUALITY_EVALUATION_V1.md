@@ -259,7 +259,8 @@ terms found for nflverse, and free-for-non-commercial-use for Sleeper).
 - Did not compute Gate 4/3 for `current_team`/`active_inactive`/roster
   fields (no benchmark exists for those concepts — a future worker's
   job, needs its own ground-truth source, not the injury-report
-  benchmark).
+  benchmark). **UPDATE (Worker 4, Work Unit 6 step 1): `current_team`
+  now has real, though small-n, evidence — see the addendum below.**
 - Did not re-measure nflverse depth charts' Gate 5 cadence precisely
   (Worker 1 already characterized it as near-daily/177 snapshots; this
   pass did not repeat that measurement).
@@ -268,3 +269,95 @@ terms found for nflverse, and free-for-non-commercial-use for Sleeper).
   not explained).
 - Did not wire anything into `PlayerAvailabilityStatus`, any consumer, or
   any recommendation path — this remains a preliminary evaluation only.
+
+---
+
+## ADDENDUM (Worker 4, Work Unit 6 step 1, 2026-09-14) — additional real evidence
+
+Preserves everything above UNCHANGED (per this cycle's own discipline of
+never silently editing a prior worker's real findings) and adds two new,
+real, independently-gathered pieces of evidence the directive asked for.
+Reproducible via
+`python scripts/build_live_player_intelligence_worker4_additional_evidence_v1.py`
+(committed machine-readable output:
+`docs/codex/live_player_intelligence_v1/worker4_additional_evidence_v1/summary.json`).
+
+### (1) nflverse injuries — a real, independent, asset-level freshness proxy
+
+Beyond Worker 3's three in-row-content polls (~27 minutes total, zero
+changes observed), this pass made one real, lightweight GET against
+GitHub's own Releases API (`api.github.com/repos/nflverse/nflverse-data/
+releases/tags/injuries`, JSON metadata only — NOT the ~20KB CSV asset
+itself) to read the `injuries_2026.csv` release **asset's own
+`updated_at` timestamp** — a real, independent, per-file "last content
+change" marker GitHub itself maintains, entirely separate from anything
+inside the file's own rows (which, as already established, has none).
+
+Real result: `assetUpdatedAt = 2026-09-13T12:41:50Z`. At this pass's poll
+time (`2026-09-14T03:31:34Z`), that is **~14.95 hours** of confirmed
+stability — a materially longer, independent observation window than the
+prior ~27-minute one. **This still does not produce a P95 latency
+figure** (honest, not softened): every real content poll this cycle has
+made (Worker 3's three, plus this pass's own asset check) occurred AFTER
+this asset's last real update, so zero update EVENTS have been captured
+inside any observation window yet — there is still nothing to time. What
+this DOES add, for real: (a) a stronger, longer-duration stability claim
+at this specific point in Week 1, and (b) a real, cheap, reusable
+freshness-DETECTION mechanism (poll this ~1KB metadata endpoint instead of
+re-downloading the ~20KB CSV) any future worker can use across a wider,
+multi-day/multi-week polling cadence to eventually catch a real update
+event and compute an honest P95.
+
+### (2) Sleeper `current_team` vs. the same 182-row official truth benchmark
+
+Real gap Worker 3 flagged as NOT YET EVALUATED. Reuses the EXISTING
+`common_rows_from_sleeper_catalog`/`classify_rows` production-adjacent
+functions (no new identity matcher) against the already-fetched local
+Sleeper snapshot (no re-fetch — Sleeper's 24h refetch policy respected).
+
+**Identity coverage** (a broader, different question than Gate 4's
+injury-FLAG coverage): of the same 52-player official-report population,
+Sleeper's FULL catalog (not just the injury-flagged subset) resolves
+**47/52 (90.38%)** to a canonical id at all — 9 via `MATCHED_GSIS_DIRECT`,
+38 via `MATCHED_NAME_POSITION_TEAM`. This is a real, useful, DIFFERENT
+finding from Gate 4's 32.69% injury-flag coverage: Sleeper broadly HAS
+most of these players correctly identified in its catalog, it simply does
+not FLAG most of them as injured this week (consistent with, though not
+proof of, the already-documented "Sleeper skews toward stale/over-broad
+flagging" pattern).
+
+**Team-field exact agreement** — restricted to the 9 `MATCHED_GSIS_DIRECT`
+pairs only (a genuinely NON-circular comparison: team was not used to
+establish these 9 matches, unlike the 38 `NAME_POSITION_TEAM` matches,
+which used team agreement to match in the first place and would make a
+"team agreement" claim on them circular, the same honest caveat already
+applied to Gate 3's nflverse-vs-itself comparison):
+
+| | |
+|---|---|
+| Comparable pairs | 9 |
+| Exact agreements | 8 |
+| Raw agreement ratio | 88.89% |
+| Alias-adjusted agreements (LAR/LA, JAC/JAX known code-convention pairs) | 9 |
+| Alias-adjusted agreement ratio | **100.00%** |
+
+The one raw disagreement (Tyler Higbee: benchmark `LA`, Sleeper `LAR`) is
+the SAME already-known team-code-alias convention noise this codebase
+already handles elsewhere (`_KNOWN_TEAM_CODE_ALIAS_PAIRS`), not a genuine
+roster-fact conflict — zero genuine disagreements found in this sample.
+
+**Honest sample-size caveat, not softened**: n=9 is too small for a
+confident gate verdict either way — the identical caveat already applied
+to Sleeper's `ir_pup_nfi`-class fields (n=3). Directionally very positive,
+but NOT claimed as a passed gate. `current_team`'s preliminary verdict
+updates from "NOT EVALUATED" to **SHADOW (small-n, directionally strong)**
+— still not admission-worthy on this evidence alone.
+
+### Preliminary verdict table — UPDATE
+
+| Source | Field | Update |
+|---|---|---|
+| Sleeper | `current_team` | NOT EVALUATED → **SHADOW** (n=9 non-circular team pairs, 88.89% raw / 100% alias-adjusted agreement; 90.38% broader identity coverage of the same 52-player population) |
+| nflverse injuries | Gate 5 (freshness) | Observation window extended from ~27 minutes to ~14.95 hours via a real GitHub release-asset `updated_at` check; still not P95-computable (zero update events captured) |
+
+All other verdicts in the table above this addendum are UNCHANGED.

@@ -1,0 +1,112 @@
+{
+  "freshness": {
+    "pollTimeUtc": "2026-09-14T03:38:58.407815+00:00",
+    "githubAssetMetadata": {
+      "releasePublishedAt": "2022-01-28T02:13:49Z",
+      "releaseUpdatedAt": "2026-09-13T12:41:51Z",
+      "assetName": "injuries_2026.csv",
+      "assetCreatedAt": "2026-09-13T12:41:50Z",
+      "assetUpdatedAt": "2026-09-13T12:41:50Z",
+      "assetSize": 20631,
+      "totalAssetsInRelease": 77
+    },
+    "secondsSinceAssetLastUpdated": 53828.4,
+    "hoursSinceAssetLastUpdated": 14.95,
+    "interpretation": "This is a real, independent, per-FILE 'last content change' marker GitHub itself maintains (distinct from any in-row timestamp, which this file does not have). It extends the observation window well beyond the ~27 minutes of Worker 3's three in-session polls -- but it is STILL not a P95 latency figure: this pass's own three content polls (this session's local_exports/.../nflverse_injuries/{wu1,wu2,latest}) all occurred AFTER this asset's own last real update, so zero update EVENTS have been captured inside any observation window yet. What this DOES add: real, disclosed evidence of exactly how long the file has been stable at this specific point in Week 1 (a stronger stability claim than the prior ~27-minute window), and a real, cheap, reusable freshness-DETECTION mechanism (poll this lightweight metadata endpoint instead of re-downloading the full CSV) for any future worker who wants to catch a real update event without repeated full-file fetches."
+  },
+  "sleeperTeamField": {
+    "populationSize": 52,
+    "identityCoverage": {
+      "note": "How many of the 52 real official-report players Sleeper's FULL catalog (not just the injury-flagged subset Gate 4 measured) resolves to ANY canonical id at all, by method -- a broader, different question than injury-flag coverage.",
+      "distinctCanonicalPlayersMatched": 47,
+      "coverageRatio": 0.9038,
+      "matchMethodCounts": {
+        "MATCHED_NAME_POSITION_TEAM": 38,
+        "MATCHED_GSIS_DIRECT": 9
+      }
+    },
+    "teamFieldExactAgreement": {
+      "note": "Restricted to MATCHED_GSIS_DIRECT rows only (team was NOT used to establish these matches -- a genuinely non-circular comparison). NAME_POSITION_TEAM-matched rows are excluded from this ratio for the same circularity reason Gate 3's nflverse-self-comparison was excluded from being real evidence.",
+      "comparablePairs": 9,
+      "exactAgreements": 8,
+      "exactAgreementRatio": 0.8889,
+      "aliasAdjustedAgreements": 9,
+      "aliasAdjustedAgreementRatio": 1.0,
+      "pairs": [
+        {
+          "canonicalPlayerId": "00-0033873",
+          "playerName": "Patrick Mahomes",
+          "benchmarkTeam": "KC",
+          "sleeperTeam": "KC",
+          "exactAgree": true,
+          "isKnownCodeAlias": false
+        },
+        {
+          "canonicalPlayerId": "00-0034960",
+          "playerName": "Jakobi Meyers",
+          "benchmarkTeam": "JAX",
+          "sleeperTeam": "JAX",
+          "exactAgree": true,
+          "isKnownCodeAlias": false
+        },
+        {
+          "canonicalPlayerId": "00-0033110",
+          "playerName": "Tyler Higbee",
+          "benchmarkTeam": "LA",
+          "sleeperTeam": "LAR",
+          "exactAgree": false,
+          "isKnownCodeAlias": true
+        },
+        {
+          "canonicalPlayerId": "00-0033375",
+          "playerName": "Tim Patrick",
+          "benchmarkTeam": "NYJ",
+          "sleeperTeam": "NYJ",
+          "exactAgree": true,
+          "isKnownCodeAlias": false
+        },
+        {
+          "canonicalPlayerId": "00-0033288",
+          "playerName": "George Kittle",
+          "benchmarkTeam": "SF",
+          "sleeperTeam": "SF",
+          "exactAgree": true,
+          "isKnownCodeAlias": false
+        },
+        {
+          "canonicalPlayerId": "00-0033376",
+          "playerName": "Patrick Ricard",
+          "benchmarkTeam": "NYG",
+          "sleeperTeam": "NYG",
+          "exactAgree": true,
+          "isKnownCodeAlias": false
+        },
+        {
+          "canonicalPlayerId": "00-0035537",
+          "playerName": "Ty Johnson",
+          "benchmarkTeam": "BUF",
+          "sleeperTeam": "BUF",
+          "exactAgree": true,
+          "isKnownCodeAlias": false
+        },
+        {
+          "canonicalPlayerId": "00-0033906",
+          "playerName": "Alvin Kamara",
+          "benchmarkTeam": "NO",
+          "sleeperTeam": "NO",
+          "exactAgree": true,
+          "isKnownCodeAlias": false
+        },
+        {
+          "canonicalPlayerId": "00-0032268",
+          "playerName": "Marcus Mariota",
+          "benchmarkTeam": "WAS",
+          "sleeperTeam": "WAS",
+          "exactAgree": true,
+          "isKnownCodeAlias": false
+        }
+      ],
+      "sampleSizeCaveat": "n=9 -- too small for a confident gate verdict either way, the same honest caveat already applied to Sleeper's ir_pup_nfi-class fields (n=3) in SOURCE_QUALITY_EVALUATION_V1.md. Directionally positive (real, disclosed, not over-claimed): the one raw disagreement found (Tyler Higbee, benchmark 'LA' vs Sleeper 'LAR') is exactly the already-known LAR/LA team-code-alias convention noise this codebase already handles elsewhere, not a genuine roster-fact disagreement -- alias-adjusted agreement is 100%."
+    }
+  }
+}
