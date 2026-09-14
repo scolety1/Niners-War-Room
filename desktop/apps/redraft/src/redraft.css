@@ -1031,3 +1031,19 @@
 .decision-history__owner-action { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .decision-history__owner-action-change { min-height: 24px; padding: 0 8px; }
 .decision-history__owner-action--options .button { min-height: 26px; padding: 0 9px; font-size: 10px; }
+
+/* History UI V2 (Live Player Intelligence V1, Worker 6): the per-row,
+   per-decision-type progressive outcome detail. Native <details> -- no new
+   shared UI-kit component, expands independently per row. */
+.decision-history__detail { margin-top: 4px; width: 100%; font-size: 11px; }
+.decision-history__detail > summary { cursor: pointer; color: var(--violet-bright); font-weight: 600; list-style: none; }
+.decision-history__detail > summary::-webkit-details-marker { display: none; }
+.decision-history__detail > summary::before { content: "▸ "; }
+.decision-history__detail[open] > summary::before { content: "▾ "; }
+.decision-history__detail-section { margin-top: 6px; padding-left: 10px; border-left: 2px solid var(--line-strong); }
+.decision-history__detail-section h4 { margin: 0 0 2px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.75; }
+.decision-history__detail-section dl { margin: 0; display: flex; flex-direction: column; gap: 1px; }
+.decision-history__detail-row { display: flex; gap: 6px; }
+.decision-history__detail-row dt { opacity: 0.7; white-space: nowrap; }
+.decision-history__detail-row dt::after { content: ":"; }
+.decision-history__detail-row dd { margin: 0; word-break: break-word; }

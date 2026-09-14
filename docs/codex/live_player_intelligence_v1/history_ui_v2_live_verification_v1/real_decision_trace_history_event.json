@@ -1,0 +1,114 @@
+{
+  "alternatives": [],
+  "dataVersions": {
+    "source": "sleeper_real_week1_2026"
+  },
+  "decisionType": "START_SIT",
+  "engineVersion": "history_ui_v2_live_verification_v1",
+  "generatedAt": "2026-09-14T04:28:40.751066+00:00",
+  "league": "1312983576827920384",
+  "leagueSnapshotId": null,
+  "outcome": {
+    "detail": {
+      "actualOnlyIds": [],
+      "actualPointsByPlayer": [
+        {
+          "playerId": "11560",
+          "points": 37.26
+        },
+        {
+          "playerId": "3451",
+          "points": 9.0
+        },
+        {
+          "playerId": "6813",
+          "points": 25.1
+        },
+        {
+          "playerId": "7543",
+          "points": 14.8
+        },
+        {
+          "playerId": "7553",
+          "points": 0.0
+        },
+        {
+          "playerId": "8144",
+          "points": 28.2
+        },
+        {
+          "playerId": "9226",
+          "points": 10.6
+        },
+        {
+          "playerId": "9997",
+          "points": 26.0
+        },
+        {
+          "playerId": "NE",
+          "points": 6.0
+        }
+      ],
+      "actualPointsTotal": 156.96,
+      "actualStarterIds": [
+        "11560",
+        "6813",
+        "9226",
+        "8144",
+        "9997",
+        "7553",
+        "7543",
+        "3451",
+        "NE"
+      ],
+      "eligibleAlternativeIdsAtLock": [
+        "11628",
+        "13279",
+        "6819",
+        "7523",
+        "7567",
+        "8126"
+      ],
+      "kind": "START_SIT_LINEUP_V1",
+      "lineupOpportunityCost": 0.0,
+      "recommendedOnlyIds": [],
+      "recommendedProjectedTotal": null,
+      "recommendedStarterIds": [
+        "11560",
+        "6813",
+        "9226",
+        "8144",
+        "9997",
+        "7553",
+        "7543",
+        "3451",
+        "NE"
+      ],
+      "week": 1
+    },
+    "notes": "",
+    "outcome": "STARTER_MATCHED_RECOMMENDATION"
+  },
+  "outcomeRecordedAt": "2026-09-14T04:28:40.751891+00:00",
+  "ownerAction": null,
+  "ownerActionRecordedAt": null,
+  "recommendation": {
+    "projectedTotal": null,
+    "starters": [
+      "11560",
+      "6813",
+      "9226",
+      "8144",
+      "9997",
+      "7553",
+      "7543",
+      "3451",
+      "NE"
+    ]
+  },
+  "season": 2026,
+  "status": "OUTCOME_RECORDED",
+  "statusVersions": {},
+  "traceId": "9d5f9e74-e3da-4e78-b8f2-95cd712e97a0",
+  "week": 1
+}

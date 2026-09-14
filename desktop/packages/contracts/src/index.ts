@@ -1903,9 +1903,157 @@ export interface DecisionTraceOwnerAction {
   notes: string;
 }
 
+// History UI V2 (Live Player Intelligence V1, Worker 6): the real,
+// decision-type-specific outcome detail schemas built by
+// `prospective_outcome_schema_v1_service.py`'s `to_detail_dict()` methods.
+// Field names and the `kind` discriminant literals here are a literal,
+// intentionally-1:1 mirror of that Python module's own camelCase output --
+// see `docs/codex/prospective_outcome_v1/PROSPECTIVE_OUTCOME_V1.md`. This
+// is exactly the "backend enum -> API -> TS contract" boundary Work Unit
+// 15's round-trip test checks (every real `KIND` string used on the Python
+// side must appear, correctly spelled, as a TS union member here).
+export interface OutcomePlayerPoints {
+  playerId: string;
+  points: number | null;
+}
+
+export interface StartSitOutcomeDetail {
+  kind: "START_SIT_LINEUP_V1";
+  week: number | null;
+  recommendedStarterIds: string[];
+  actualStarterIds: string[];
+  eligibleAlternativeIdsAtLock: string[];
+  recommendedOnlyIds: string[];
+  actualOnlyIds: string[];
+  recommendedProjectedTotal: number | null;
+  actualPointsTotal: number | null;
+  // A LIST, never a dict keyed by player id -- a real player id (e.g. a
+  // Sleeper DST team code like "NE") passed as a JSON dict KEY gets
+  // mangled by the backend's generic camelCase key transform ("NE" ->
+  // "nE"), a real bug class this contract shape was fixed to avoid (see
+  // `_points_by_player_list` in prospective_outcome_schema_v1_service.py).
+  actualPointsByPlayer: OutcomePlayerPoints[];
+  lineupOpportunityCost: number | null;
+}
+
+export interface WaiverOutcomeDetail {
+  kind: "WAIVER_V1";
+  recommendedPlayerId: string | null;
+  claimSubmitted: boolean | null;
+  claimWon: boolean | null;
+  faabPaid: number | null;
+  horizonWeeks: number;
+  subsequentRosterUsageWeeks: number | null;
+  subsequentTotalPoints: number | null;
+}
+
+export interface AddDropOutcomeDetail {
+  kind: "ADD_DROP_V1";
+  addedPlayerId: string | null;
+  droppedPlayerId: string | null;
+  horizonWeeks: number;
+  addedPlayerSubsequentPoints: number | null;
+  addedPlayerSubsequentRosterUsageWeeks: number | null;
+  droppedPlayerSubsequentPoints: number | null;
+  droppedPlayerReversed: boolean | null;
+}
+
+// FAAB deliberately keeps these two axes structurally separate -- "was the
+// pickup good" is never conflated with "was the suggested $ range accurate".
+export interface FaabPlayerDecisionQuality {
+  subsequentPoints: number | null;
+  subsequentRosterUsageWeeks: number | null;
+  horizonWeeks: number;
+}
+
+export interface FaabBidRangeCalibration {
+  suggestedBidLow: number | null;
+  suggestedBidHigh: number | null;
+  amountBid: number | null;
+  won: boolean | null;
+  actualWinningBid: number | null;
+  bidWithinSuggestedRange: boolean | null;
+  marginVsActualWinningBid: number | null;
+}
+
+export interface FaabOutcomeDetail {
+  kind: "FAAB_V1";
+  recommendedPlayerId: string | null;
+  playerDecisionQuality: FaabPlayerDecisionQuality;
+  bidRangeCalibration: FaabBidRangeCalibration;
+}
+
+export type TradeAcceptanceStatus = "ACCEPTED" | "REJECTED" | "UNKNOWN";
+
+export interface TradeRealizedRosterOutcome {
+  horizonWeeks: number;
+  // LISTS, never dicts keyed by player id -- see `OutcomePlayerPoints`'s
+  // own comment above for the real bug class this shape avoids.
+  givesSubsequentPointsByPlayer: OutcomePlayerPoints[];
+  receivesSubsequentPointsByPlayer: OutcomePlayerPoints[];
+  netSubsequentPointsDelta: number | null;
+}
+
+export interface TradeOutcomeDetail {
+  kind: "TRADE_V1";
+  acceptanceStatus: TradeAcceptanceStatus;
+  tradeAccepted: boolean | null;
+  // Only ever populated when tradeAccepted === true -- a rejected/unknown
+  // trade is never scored against an unobserved counterfactual (enforced
+  // structurally on the Python side by TradeOutcomeDetail.__post_init__).
+  realizedRosterOutcome: TradeRealizedRosterOutcome | null;
+}
+
+export type TradePackageDisposition = "IGNORED" | "CONSIDERED" | "SENT" | "ACCEPTED" | "UNKNOWN";
+
+export interface TradeFinderOutcomeDetail {
+  kind: "TRADE_FINDER_V1";
+  packageDisposition: TradePackageDisposition;
+  // Only ever populated when packageDisposition === "ACCEPTED".
+  linkedTradeOutcome: TradeOutcomeDetail | null;
+}
+
+export interface StreamerOutcomeDetail {
+  kind: "STREAMER_V1";
+  position: string; // "K" | "DST"
+  week: number | null;
+  recommendedPlayerId: string | null;
+  recommendedPlayerActualPoints: number | null;
+  actualStarterPlayerId: string | null;
+  actualStarterActualPoints: number | null;
+  priorRosterOptionPlayerId: string | null;
+  priorRosterOptionActualPoints: number | null;
+  availableAlternativeIdsAtRecommendation: string[];
+  bestAvailableAlternativeId: string | null;
+  bestAvailableAlternativeActualPoints: number | null;
+}
+
+export interface DraftOutcomeDetail {
+  kind: "DRAFT_V1";
+  evaluationMethod: string;
+  seasonLongRosterUtility: number | null;
+  injuryLuckAdjustment: number | null;
+  notes: string;
+}
+
+export type DecisionTraceOutcomeDetail =
+  | StartSitOutcomeDetail
+  | WaiverOutcomeDetail
+  | AddDropOutcomeDetail
+  | FaabOutcomeDetail
+  | TradeOutcomeDetail
+  | TradeFinderOutcomeDetail
+  | StreamerOutcomeDetail
+  | DraftOutcomeDetail;
+
 export interface DecisionTraceOutcome {
   outcome: string;
   notes: string;
+  // Additive (NWR Prospective Outcome V1 -> History UI V2): absent/`null`
+  // for every outcome recorded before this pass, and for any decision type
+  // this pass's ingestion mechanism has no real data to populate yet --
+  // never fabricated when missing.
+  detail?: DecisionTraceOutcomeDetail | null;
 }
 
 export interface DecisionTraceHistoryEvent {

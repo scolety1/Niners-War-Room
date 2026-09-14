@@ -15,10 +15,12 @@ import {
 
 import { useAsync } from "./weekly-shared";
 import {
+  buildOutcomeDetailSections,
   formatDecisionType,
   formatGeneratedAt,
   formatOutcome,
   formatOwnerAction,
+  hasOutcomeDetail,
   ownerActionOptionsForDecisionType,
   statusLabel,
   statusTone,
@@ -108,6 +110,40 @@ function OwnerActionCell({
 }
 
 /**
+ * History UI V2 (NWR Live Player Intelligence V1, Worker 6): the
+ * expandable, per-decision-type "progressive detail" for one row's REAL
+ * recorded outcome -- only rendered at all when `hasOutcomeDetail` is true
+ * (the common case, this early in the season, is no detail at all, so
+ * nothing extra renders). Uses a plain native `<details>` per row rather
+ * than a new shared UI-kit disclosure component or a DataTable behavior
+ * change -- keeps this additive to ONE page, and every row expands
+ * independently (no shared "selected row" state to get stale on refetch).
+ */
+function OutcomeDetail({ event }: { event: DecisionTraceHistoryEvent }) {
+  if (!hasOutcomeDetail(event)) return null;
+  const sections = buildOutcomeDetailSections(event);
+  if (!sections.length) return null;
+  return (
+    <details className="decision-history__detail">
+      <summary>View outcome detail</summary>
+      {sections.map((section) => (
+        <div className="decision-history__detail-section" key={section.heading}>
+          <h4>{section.heading}</h4>
+          <dl>
+            {section.rows.map((row) => (
+              <div className="decision-history__detail-row" key={row.label}>
+                <dt>{row.label}</dt>
+                <dd>{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ))}
+    </details>
+  );
+}
+
+/**
  * P1-4 (2026-09-12, Prospective Recommendation Ledger): the owner-facing
  * "What did NWR tell me?" History/Review surface -- built on TOP of the
  * existing append-only in-season decision-trace ledger
@@ -139,6 +175,22 @@ function OwnerActionCell({
  * it from a real need. The existing plain "No outcome recorded yet" text
  * already says this honestly -- left as-is rather than adding a
  * "Coming soon" badge on top of an already-honest message.
+ *
+ * History UI V2 (Worker 6): a real "League" column is deliberately NOT
+ * added here -- this page is already single-league-scoped (see the
+ * cross-league note above), so `Panel`'s `eyebrow` prop (below) already
+ * shows the active league's name exactly once, at the top, rather than
+ * repeating the same value on every row. The "Detail" affordance
+ * (`OutcomeDetail`, above) is the progressive/secondary layer for each
+ * decision type's REAL schema (`lineupOpportunityCost` and eligible
+ * alternatives for START_SIT, the separate player-decision-quality/
+ * bid-range-calibration axes for FAAB, an accepted-only realized-roster-
+ * outcome for TRADE, etc.) -- it renders nothing at all until a real
+ * `outcome.detail` payload exists for that row. Still, per the governing
+ * directive, **no aggregate "NWR ACCURACY: X%" score is computed or shown
+ * anywhere on this page** -- see `hasSufficientSampleForRollup` in
+ * decision-history-format.ts for the conservative, disclosed, unused bar a
+ * future pass would need to clear before adding one.
  */
 
 function buildColumns(client: NwrApiClient, onRecorded: () => void): TableColumn[] {
@@ -168,12 +220,16 @@ function buildColumns(client: NwrApiClient, onRecorded: () => void): TableColumn
     },
     {
       key: "status", label: "Outcome status",
-      render: (row) => (
-        <div className="decision-history__status-cell">
-          <StatusBadge tone={statusTone(String(row.status))} label={statusLabel(String(row.status))} />
-          <span className="copy-muted">{formatOutcome(row as unknown as DecisionTraceHistoryEvent)}</span>
-        </div>
-      ),
+      render: (row) => {
+        const event = row as unknown as DecisionTraceHistoryEvent;
+        return (
+          <div className="decision-history__status-cell">
+            <StatusBadge tone={statusTone(String(row.status))} label={statusLabel(String(row.status))} />
+            <span className="copy-muted">{formatOutcome(event)}</span>
+            <OutcomeDetail event={event} />
+          </div>
+        );
+      },
     },
   ];
 }
