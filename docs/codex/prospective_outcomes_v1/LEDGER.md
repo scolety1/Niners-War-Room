@@ -476,3 +476,252 @@ own modules -- every refinement lives at this new evaluator layer, reading
    extraction already exist (Worker 1) and are the natural starting point
    for those four evaluators, following the exact same
    `evaluate_*`/`summarize_*` pattern this pass established.
+
+## Worker 3 (this pass) -- Work Units 7-10: Trade, Trade Finder/Package
+## Search, K Streamer, DST Streamer evaluators
+
+Start HEAD `5ea0bc51` (Worker 2's closing commit). Not merged, not pushed,
+not deployed. Verified live before writing any code: branch, clean
+worktree, the 363-test targeted slice, `test_desktop_application_api.py`'s
+same 4 pre-existing failures (`test_dynasty_facade_composes_real_governed_
+workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_
+trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_
+contract`, `test_facade_has_no_streamlit_or_app_component_dependency`).
+
+Read in full before writing any code: `PROSPECTIVE_OUTCOME_EVALUATION_
+CONTRACT.md`, Worker 1/2's ledger entries above, both of Worker 1's
+modules, Worker 2's shared module and all four of its evaluators (used as
+the direct structural pattern), plus a real grep of
+`src/application/desktop_facade.py`'s actual live TRADE/TRADE_FINDER/
+TRADE_PACKAGE_SEARCH/K_STREAMER/DST_STREAMER trace call sites -- done
+BEFORE writing any evaluator, to read the REAL recommendation-payload key
+names each one actually records (not assumed from the schema alone; see
+below, a real, useful finding). Nothing below re-derives a preregistered
+window/threshold, bypasses `compute_outcome_evaluation`, or invents a new
+identity-resolution/network path.
+
+### Real findings from reading the live call sites first (before coding)
+
+- **TRADE**'s real `recommendation` payload key names are `gives`/
+  `receives` (already-resolved canonical player ids).
+- **TRADE_FINDER**'s real payload uses SINGULAR `myGivePlayerId`/
+  `opponentGivePlayerId` (one-for-one only).
+- **TRADE_PACKAGE_SEARCH**'s real payload uses PLURAL `youSend`/
+  `youReceive` (real multi-player packages) -- a genuinely different shape
+  from TRADE_FINDER despite sharing the same `TradeFinderOutcomeDetail`
+  schema kind. Both evaluators read the trace's own frozen keys verbatim,
+  per-tool, never assuming one convention for both.
+- **K_STREAMER/DST_STREAMER's real live call site does NOT resolve a
+  Sleeper player id at all** -- `recommendation` only ever carries
+  `playerName`/`team`/`ecr`/`tier` (confirmed by reading
+  `desktop_facade.py` directly, matching the ingestion module's own prior
+  disclosure). A real K_STREAMER/DST_STREAMER trace recorded by the live
+  app today will therefore evaluate to `INSUFFICIENT_DECISION_CONTEXT`
+  until identity resolution is wired for these two tool types (Worker 1's
+  own Open Issue 3, still unresolved) -- this pass's evaluators are built
+  and fully tested against the real schema/ingestion contract, but this is
+  a real, disclosed gap for real K/DST trace evaluation specifically, not
+  previously stated this precisely.
+- **A real, disclosed owner-action vocabulary mismatch for the whole
+  TRADE family**: the app's OWN live owner-action UI
+  (`decision-history-format.ts`, `ownerActionOptionsForDecisionType`)
+  currently offers TRADE/TRADE_FINDER/TRADE_PACKAGE_SEARCH the SAME
+  generic 3-option vocabulary as WAIVER ("Followed it" / "Did something
+  else" / "Didn't act"), not a trade-specific sent/accepted/rejected/
+  cancelled vocabulary. `ingest_trade_finder_outcome` (unchanged, prior
+  cycle) only maps `owner_action.action` onto a real disposition when it
+  is EXACTLY `"SENT"`/`"CONSIDERED"`/`"IGNORED"` -- so a real owner-action
+  append using the app's own real UI copy currently falls through to
+  `"UNKNOWN"` rather than a matched disposition. This pass's evaluators do
+  not attempt to bridge this gap by guessing a translation (that would be
+  inventing a mapping); they report the real, verbatim `owner_action_raw`
+  string alongside the schema-derived `acceptanceStatus`/
+  `packageDisposition` so both real facts are visible side by side. A real
+  fix (either widening `ownerActionOptionsForDecisionType` for the trade
+  family, or widening `ingest_trade_finder_outcome`'s accepted action
+  strings) is a `desktop_facade.py`/frontend change, out of this pass's
+  scope.
+
+### Work Unit 7 -- TRADE (`prospective_outcome_trade_evaluator_v1_service.py`)
+
+Adds `owner_action_raw` (verbatim, never relabeled) and
+`recommended_gives_ids`/`recommended_receives_ids` (read from the trace's
+own frozen `recommendation.gives`/`recommendation.receives`) on top of
+`compute_outcome_evaluation`. Ships the one new public helper
+`trade_realized_metrics_from_detail` -- reads `realizedRosterOutcome`
+verbatim, no new arithmetic -- reused (not duplicated) by the Trade Finder
+evaluator (Work Unit 8). **The rejected-trade guarantee is proven at THREE
+independent layers** in this pass's own tests: (1) `TradeOutcomeDetail.
+__post_init__`'s own guard (a direct construction test expecting
+`ValueError`), (2) the base `OutcomeEvaluation` layer (`NOT_APPLICABLE`,
+zero metrics), (3) this evaluator's own extraction never fabricating a
+number even reading the raw dict directly. A real test also proves a real
+owner-action label ("Followed it") on a trade with no matching Sleeper
+transaction still resolves to `REJECTED`, never inferring acceptance from
+the free-text label alone.
+
+12 new tests, all passing.
+
+### Work Unit 8 -- TRADE FINDER / TRADE PACKAGE SEARCH
+### (`prospective_outcome_trade_finder_evaluator_v1_service.py`)
+
+One evaluator module handling BOTH real `TOOL_TYPES` (`TRADE_FINDER` and
+`TRADE_PACKAGE_SEARCH`), gated only for the real per-tool recommendation
+key-name lookup (see findings above) -- never inventing a third decision
+class. Reuses Work Unit 7's `trade_realized_metrics_from_detail` directly
+(imported, not duplicated) for an ACCEPTED package's realized outcome.
+`summarize_trade_finder_evaluations` reports raw `packageDispositionCounts`
+ONLY -- a real test asserts no key anywhere in the summary spells out
+"rate"/"probability"/"likelihood"/"chance", a structural (not just
+promised) proof that this pass never converts adoption into an
+acceptance-probability prediction, per this whole project's standing
+prohibition.
+
+12 new tests, all passing.
+
+### Work Unit 9 -- K STREAMER
+### (`prospective_outcome_k_streamer_evaluator_v1_service.py`)
+
+Adds `current_option_*` (a clearer name for the schema's own
+`priorRosterOptionPlayerId`/`priorRosterOptionActualPoints`, read verbatim)
+and ONE new, disclosed, simple number: `replacement_level_delta_points =
+recommendedPlayerActualPoints - priorRosterOptionActualPoints` -- this
+pass's own honest interpretation of the directive's "replacement-level
+comparison" (the real replacement baseline this schema already tracks:
+who would have stayed rostered/started absent the streaming pickup).
+`regret_vs_actual_starter_points` is read verbatim from the base
+evaluation's own `streamerOpportunityCostPoints` -- never recomputed, and
+`replacement_level_delta_points` is never substituted into it (a real test
+constructs a case where the two numbers genuinely differ and proves both
+survive independently). `best_available_alternative_*` stays sourced only
+from the trace's own frozen alternatives (reused, unchanged, from the base
+ingestion layer's own no-hindsight guarantee).
+
+13 new tests, all passing.
+
+### Work Unit 10 -- DST STREAMER
+### (`prospective_outcome_dst_streamer_evaluator_v1_service.py`)
+
+The DST-side twin of Work Unit 9, in a genuinely SEPARATE module -- not a
+shared `_evaluate_streamer(position=...)` helper. `evaluate_k_streamer`/
+`evaluate_dst_streamer` are two independently-written functions in two
+different modules, each with two hard gates (tool name, then the stored
+detail's own `position` field). Proven genuinely separate, not merely
+declared so, by real cross-contamination tests in BOTH test files (a
+K-tagged trace passed to `evaluate_dst_streamer` is rejected and vice
+versa; a defensive second test proves a trace whose `tool` string is
+correct but whose stored detail's `position` disagrees is also rejected)
+plus one structural test (`inspect.getsource` on each module, asserting
+neither module's source text even mentions the other's function name).
+
+13 new tests, all passing.
+
+### Real data exercised this pass
+
+- **DST_STREAMER**: the SAME real, committed Week 1 2026 Fantasy Gamers
+  matchup fixture Worker 1/2 already used, reused (not re-pulled). `"NE"`
+  is a real, unambiguous Sleeper DST team-code id (per the schema module's
+  own documented precedent for DST identity) and a real, confirmed real
+  starter that week -- `test_real_fixture_produces_a_real_zero_regret_dst_
+  result` verifies a real zero-regret result computed from real points.
+- **K_STREAMER**: honestly NOT exercised against real data this pass. The
+  real fixture's `players` list carries no position label for any of its
+  numeric ids, and no real Sleeper players-catalog/position crosswalk was
+  fetched within this pass's scope to confirm which real id is a real K --
+  guessing one would have been a fabricated real-data claim. The K
+  evaluator's full pipeline is instead exercised against a clearly-labeled
+  REALISTIC FIXTURE (synthetic ids), disclosed as such in the test file's
+  own comment, not claimed as real. A future worker with a real Sleeper
+  players-catalog fetch in scope can close this honestly.
+- Trade/Trade Finder/Trade Package Search: per the directive's own
+  instruction, evaluated against fixtures only this pass (the prior
+  cycle's own finding stands unchanged: real transaction data exists
+  league-wide but not yet touching the owner's own roster or any real
+  trade) -- no new real-data attempt was made for these three this pass.
+
+### Tests (full)
+
+- 4 new test files, 50 new tests total (12 + 12 + 13 + 13), all passing.
+- Targeted regression slice (`pytest -k "decision_trace or
+  prospective_outcome or live_player_intelligence or
+  boundary_property_reliability or composition or player_availability"`):
+  **413 passed, 0 failed** (363 pre-existing + 50 new this pass).
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures documented in Worker 1/2's own baseline.
+  Re-confirmed live after this pass's changes.
+- `git diff`/new-file grep for every hard-boundary term
+  (`marginal_roster_utility_v2`, `LeagueSnapshot`, `LeagueWorkspaceContext`,
+  `lifecycle_resolver`, `DecisionResultEnvelope`,
+  `PlayerAvailabilityStatus`) across every file this pass actually created:
+  **zero matches**.
+
+### Backend/model files changed this pass
+
+**All new, zero modifications to any existing file** (not even Worker 1/2's
+own modules -- Work Unit 8 imports Work Unit 7's `trade_realized_metrics_
+from_detail` rather than editing it, and the K/DST evaluators import
+nothing from each other):
+
+- `src/services/prospective_outcome_trade_evaluator_v1_service.py`
+- `src/services/prospective_outcome_trade_finder_evaluator_v1_service.py`
+- `src/services/prospective_outcome_k_streamer_evaluator_v1_service.py`
+- `src/services/prospective_outcome_dst_streamer_evaluator_v1_service.py`
+- `tests/test_prospective_outcome_trade_evaluator_v1_service.py`
+- `tests/test_prospective_outcome_trade_finder_evaluator_v1_service.py`
+- `tests/test_prospective_outcome_k_streamer_evaluator_v1_service.py`
+- `tests/test_prospective_outcome_dst_streamer_evaluator_v1_service.py`
+- This ledger.
+
+## OPEN ISSUES FOR THE NEXT WORKER (Work Units 11-12: Draft outcome
+## foundation + automatic outcome ingestion orchestration)
+
+1. **Orchestration wiring still does not exist** -- unchanged from Worker
+   1/2's own Open Issue. Nothing in `desktop_facade.py` calls any
+   `evaluate_*`/`summarize_*` function from either pass, or Worker 1's
+   `compute_outcome_evaluation`/adapters. Work Unit 12 (per this pass's own
+   directive framing) is the natural place to finally build this: a real,
+   scheduled (or on-demand) job that loads completed-period traces, builds
+   a `RecommendationTimeContext`, fetches the matching
+   `RealizedOutcomeFetch`, calls the matching `ingest_*_outcome` function,
+   and appends via `record_outcome(..., detail=..., outcome_source=
+   "SLEEPER", ...)` -- now with EIGHT real, reusable, tested per-class
+   evaluator functions (this pass's four plus Worker 2's four) to build
+   summaries from afterward.
+2. **K_STREAMER/DST_STREAMER identity resolution is the real, concrete
+   blocker for real streamer evaluation** (sharpened from Worker 1/2's
+   general Open Issue 3, see "Real findings" above): the live call site
+   records `playerName`/`team` only, never a Sleeper id, so
+   `evaluate_k_streamer`/`evaluate_dst_streamer` will read
+   `INSUFFICIENT_DECISION_CONTEXT` for every real trace until an identity
+   resolver is wired at that specific call site (or at ingestion time).
+3. **The TRADE-family owner-action vocabulary mismatch** (see "Real
+   findings" above) is a real, disclosed, NOT-fixed gap: the real app UI
+   offers "Followed it"/"Did something else"/"Didn't act" for TRADE/
+   TRADE_FINDER/TRADE_PACKAGE_SEARCH, but `ingest_trade_finder_outcome`
+   only recognizes `"SENT"`/`"CONSIDERED"`/`"IGNORED"` as real owner-action
+   strings. Fixing it touches `desktop_facade.py`/the frontend, out of this
+   pass's scope -- flagged so it is not silently lost.
+4. **Work Unit 11 (DRAFT outcome foundation)** was not started this pass,
+   per this pass's own explicit assignment (Work Units 7-10 only).
+   `DraftOutcomeDetail`/`build_deferred_draft_outcome_detail` already exist
+   (prior cycle) as an intentionally-thin, deferred placeholder -- real
+   season-long roster-utility computation still belongs to
+   `marginal_roster_utility_v2`, outside this cycle's hard boundary. A
+   future worker building real Draft outcome evaluation needs the hard
+   boundary explicitly cleared/re-scoped first; this pass does not attempt
+   that judgment call.
+5. **History UI V3** (rendering any of these eight evaluators' output) was
+   not attempted this pass either, unchanged from Worker 1/2's own
+   disclosure -- backend evaluator logic only, per this pass's own explicit
+   assignment.
+6. **A real ROS window, the duplicated `MIN_SAMPLE_SIZE_FOR_PER_CLASS_*`
+   constant, ADD_DROP's still-uncomputed `netRosterValuePoints`, and
+   real owner (roster 9) WAIVER/ADD_DROP/FAAB outcome data** are all
+   unchanged, inherited open items from Worker 1/2 -- see their own entries
+   above for the full detail; none were touched this pass.
+7. **This pass's own K_STREAMER real-data gap** (see "Real data exercised"
+   above): a real Sleeper players-catalog/position crosswalk was not
+   fetched to confirm a real K identity from the committed Week 1 2026
+   fixture. Worth closing for real once that crosswalk is in scope --
+   DST_STREAMER's own real exercise (`"NE"`) did not need one, since
+   Sleeper's own DST ids are unambiguous team codes.
