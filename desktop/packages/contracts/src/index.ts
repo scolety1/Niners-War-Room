@@ -1127,21 +1127,50 @@ export interface WaiverAddDropPairing {
 }
 
 /**
- * NWR Waiver Night V1 (Worker 3, Work Unit 6): the real, live Sleeper FAAB/
- * waiver-priority context for the active league -- read-only ground truth
+ * NWR Waiver Night V1 (Worker 3, Work Unit 6; extended by Worker 4,
+ * LIVE/SCENARIO budget separation): the FAAB/waiver-priority context this
+ * response's bid ranges were actually priced from -- read-only ground truth
  * (`league.settings.waiver_type`/`waiver_budget` + the owner's own
- * `roster.settings.waiver_budget_used`/`waiver_position`), never a
- * fabricated/static value. `null` only when this could not be read (e.g. a
- * non-Sleeper profile). When `isFaabLeague` is `false`, this is a real
- * rolling-waiver-priority league -- never show a dollar bid range; show
- * `waiverPosition` instead.
+ * `roster.settings.waiver_budget_used`/`waiver_position`, and, for weeks
+ * remaining, `settings.playoff_week_start` vs the real current NFL week),
+ * never a fabricated/static value.
+ *
+ * `isFaabLeague: null` means Sleeper's own league settings could not be
+ * read this request -- an honest UNAVAILABLE state (`source ===
+ * "UNAVAILABLE"`), never silently treated as a $100 default. `isFaabLeague
+ * === false` is a real rolling-waiver-priority league -- never show a
+ * dollar bid range; show `waiverPosition` instead.
+ *
+ * `budgetMode` says which budget this specific response actually used:
+ * `"LIVE"` (derived entirely from this same request's own real Sleeper
+ * reads, no caller input) or `"SCENARIO"` (the owner's own explicit,
+ * complete hypothetical, echoed back verbatim in `scenario` so a scenario
+ * result can never be mistaken for a live one anywhere downstream).
  */
 export interface WaiverFaabContext {
-  isFaabLeague: boolean;
+  isFaabLeague: boolean | null;
+  budgetMode: "LIVE" | "SCENARIO";
   totalBudgetDollars: number | null;
   remainingBudgetDollars: number | null;
+  weeksRemaining: number | null;
+  weeksRemainingSource: "LIVE" | "DEFAULTED" | "SCENARIO_INPUT" | null;
   waiverPosition: number | null;
-  source: "SLEEPER_LIVE";
+  source: "SLEEPER_LIVE" | "UNAVAILABLE";
+  scenario: {
+    remainingBudgetDollars: number;
+    totalBudgetDollars: number;
+    weeksRemaining: number;
+  } | null;
+}
+
+/** The owner's explicit, complete "what if my budget were different"
+ * hypothetical for `redraftWaivers` -- all three fields required together
+ * (no partial override of the real live budget). Sending this at all is the
+ * explicit opt-in the owner must take; omitting it means LIVE. */
+export interface WaiverBudgetScenarioInput {
+  remainingBudgetDollars: number;
+  totalBudgetDollars: number;
+  weeksRemaining: number;
 }
 
 export interface WaiversResult {
@@ -1154,7 +1183,7 @@ export interface WaiversResult {
   traceId?: string | null;
   leagueSnapshotId?: string;
   decisionEnvelope?: DecisionResultEnvelope;
-  faabContext: WaiverFaabContext | null;
+  faabContext: WaiverFaabContext;
   unmatchedRosterSleeperPlayerIds: string[];
   addCandidates: WaiverAddCandidate[];
   dropCandidates: WaiverDropCandidate[];

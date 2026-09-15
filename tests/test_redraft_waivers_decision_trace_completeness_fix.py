@@ -90,6 +90,10 @@ def _fake_get_json(self: Any, path: str) -> Any:
         return _PLAYERS
     if path == "league/9999":
         return {"settings": {"waiver_type": 1, "waiver_budget": 100}}
+    if path == "state/nfl":
+        # NWR Waiver Night V1 (Worker 4, LIVE/SCENARIO budget separation):
+        # `redraft_waivers` also now reads the real current NFL week.
+        return {"week": 2}
     raise AssertionError(f"unexpected Sleeper GET path in test: {path}")
 
 

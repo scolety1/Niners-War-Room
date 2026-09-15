@@ -1822,3 +1822,376 @@ specifically only ever recommends a genuinely positive bid.
    (Harrison's zero is intentional-correct, not a defect -- explicitly no
    fix scope; projection-freshness cadence question, unverified either
    way) remain open, unrelated to the FAAB math fixed this pass.
+
+## Waiver FAAB Fix Cycle V1, Worker 3 (this pass): LIVE/SCENARIO FAAB
+## budget separation (Section 3, the prior pass's own named next step)
+
+Start HEAD `0c28a8aa` (Worker 2's nonpositive-bid gate/floor fix, above).
+Real, live, read-only verification against the real Fantasy Gamers Sleeper
+league (`1312983576827920384`, owner `scolety`, 2026-09-15, in-season
+week 2). `waiver_engine_service.py`'s `suggest_faab_bids()` (the bid
+FORMULA) is **completely untouched** this pass -- confirmed by `git diff
+--stat 0c28a8aa HEAD -- src/services/waiver_engine_service.py` (empty).
+This pass only changes where the BUDGET NUMBERS fed into that formula come
+from.
+
+### The bug (INSPECTED CODE, then LIVE OBSERVATION confirming it)
+
+`redraft_waivers` (`desktop_facade.py`) always computed FAAB bids from
+caller-supplied `remaining_budget_dollars`/`weeks_remaining`/
+`total_budget_dollars` parameters (defaults 100/14/100) -- Worker 3's
+`faabContext` read the real live Sleeper budget but only surfaced it as
+*informational*; it never fed the pricing formula. The ONLY real caller
+(`improve-team.tsx`) seeded `useState(100)`/`useState(14)`/`useState(100)`
+on mount, sent that as the FIRST request (wrong whenever it didn't
+coincidentally match the real league), then a `useEffect` copied
+`faabContext`'s real values into the same state once the response arrived,
+which changed the `waiversLoader`'s dependency array and fired a SECOND,
+corrective request. **Reproduced exactly as the directive described**: a
+real two-request race where the first render's bid ranges were priced off
+a caller default, not a live number. Additionally, editing those "seeded"
+fields for scenario planning had **no UI, response, or trace distinction**
+from the real live values -- a scenario result was structurally
+indistinguishable from a live one everywhere downstream. Also confirmed:
+a genuinely non-FAAB league still had the dollar-bid *formula* run against
+its addCandidates (fabricated numbers only hidden by the frontend's own
+`isFaabLeague === false` UI branch, never suppressed in the API response
+itself) -- a consumer that read the raw response (or a future UI bug that
+bypassed that one `if`) would have seen fake dollars for a league with no
+real FAAB budget concept.
+
+### Fix
+
+`redraft_waivers`'s parameter contract is now `budget_scenario: Mapping |
+None = None` (was 3 separate `int` params with defaults). `None` (the
+default) means LIVE: the endpoint derives the effective budget/weeks-
+remaining **entirely from this same request's own live Sleeper reads** --
+`league/{id}` settings + the owner's `roster.settings` (Worker 3's read,
+unchanged) plus a **new** real read, `GET /state/nfl` (current week) +
+`settings.playoff_week_start`, reused via the same pure helpers
+`sleeper_league_context_service.py` already exposes for
+`LeagueWorkspaceContext`'s own playoff panel (that class/method itself is
+untouched -- only its already-shared, already-tested pure functions
+`parse_current_nfl_week`/the playoff-week-start parsing pattern are
+reused). A caller can pass an explicit, COMPLETE `budget_scenario`
+(`remaining_budget_dollars`/`total_budget_dollars`/`weeks_remaining`, all
+three int, all three required together -- a partial scenario is rejected
+with `WAIVERS_BUDGET_SCENARIO_INVALID` rather than silently merged with
+live values) to opt into SCENARIO mode instead.
+
+The response's `faabContext` now always includes `budgetMode: "LIVE" |
+"SCENARIO"`, the effective `totalBudgetDollars`/`remainingBudgetDollars`/
+`weeksRemaining` actually used, `weeksRemainingSource: "LIVE" |
+"DEFAULTED" | "SCENARIO_INPUT"`, and, for SCENARIO, a `scenario` object
+echoing the exact owner-entered inputs verbatim -- so a scenario result can
+never be mistaken for a live one in the API response. The same
+`budgetMode`/effective-numbers/`weeksRemainingSource` are also written into
+both the WAIVER and FAAB decision traces' `data_versions` (purely additive,
+`_content_fingerprint` never hashes `data_versions`, confirmed by direct
+read -- cannot affect dedup).
+
+`suggest_faab_bids` is now **only ever called** when `is_faab_league is
+True` (a CONFIRMED FAAB league, not `None`/unavailable, not `False`) AND a
+genuine effective budget exists for whichever mode actually ran; otherwise
+`faab_by_id` is an empty dict and every real add candidate's `faabBid*`
+fields honestly come back `null` -- fixed the response-level fabrication
+gap above (previously only UI-suppressed).
+
+`faabContext` is now **never `null`** (a real, previously-reproduced honest-
+ness bug, see below) -- a league-settings read failure now returns a real
+object with `source: "UNAVAILABLE"`/`isFaabLeague: null`, instead of the
+prior bare `None` the frontend fell through past into rendering hardcoded
+$100/$100 defaults indistinguishable from a genuine live read.
+
+### LIVE weeks-remaining (the directive's documentation ask)
+
+**Finding, live/current vs stale/defaulted, exactly as asked:** before this
+pass, "weeks remaining" (the existing `season_taper` formula's other input)
+was **always** a frontend-owned `useState(14)` value with **zero**
+connection to the real NFL calendar -- not stale so much as never live in
+the first place. Fixed as part of this same LIVE-budget derivation (same
+category of input, same silent-default risk the directive was concerned
+about): `playoff_week_start` (from the already-fetched `league/{id}`
+settings) minus the real current week (`GET /state/nfl`, parsed via the
+existing, already-tested `parse_current_nfl_week`) = live weeks remaining,
+clamped at 0. When either real fact is unavailable (no real
+`playoff_week_start` set, or the `state/nfl` read fails), a non-live
+default (14, the pre-existing constant) is still used so the unchanged
+formula always gets a real int, but `weeksRemainingSource: "DEFAULTED"`
+labels it honestly rather than implying it is live. **LIVE OBSERVATION**
+(real Fantasy Gamers league, this pass): `weeksRemaining: 13`,
+`weeksRemainingSource: "LIVE"` -- real current week 2, real
+`playoff_week_start` 15.
+
+### LIVE_OBSERVATION: real end-to-end verification (backend running, real Sleeper league, real Chrome render)
+
+Ran `desktop/scripts/nwr_release_gate_smoke.ps1 -KeepRunning
+-SleeperLeagueId 1312983576827920384 -SleeperUsername scolety` (same real
+harness prior workers used; its own independent before/after
+`league/rosters/users` byte-diff came back IDENTICAL -- 0 writes). One
+real surface in its own smoke report, `waivers`, showed a `-1`/30000ms
+timeout on this run -- investigated directly with a longer-timeout `curl`
+immediately after: the SAME real endpoint returned in 1.1s, consistent
+with Worker 6's own already-documented high real-world variance for this
+call (`players/nfl` is an uncached ~14.66MB fetch, 1.1s-12.6s historically)
+-- a one-off slow sample, not a regression this pass introduced (re-run
+clean afterward, repeatedly).
+
+Direct `curl` calls against the real running backend (dev bearer token)
+confirmed, against the real live league:
+- LIVE (no `budgetScenario` sent): ONE request,
+  `faabContext: {"isFaabLeague":true,"budgetMode":"LIVE",
+  "totalBudgetDollars":100,"remainingBudgetDollars":100,"weeksRemaining":13,
+  "weeksRemainingSource":"LIVE","waiverPosition":10,
+  "source":"SLEEPER_LIVE","scenario":null}` -- exact match to the real raw
+  Sleeper budget every prior worker this session independently confirmed.
+  Top real bid: Tyrone Tracy $28-46 MEDIUM.
+- SCENARIO (`budgetScenario: {remainingBudgetDollars:5, totalBudgetDollars:
+  500, weeksRemaining:1}`): `budgetMode: "SCENARIO"`, `scenario` echoes the
+  exact inputs, Tyrone Tracy's bid collapsed to $1-1 (the same unchanged
+  formula, genuinely different budget).
+- A partial scenario (`{"remainingBudgetDollars":5}` only) -> real HTTP 400
+  `WAIVERS_BUDGET_SCENARIO_INVALID`, rejected before touching any pricing
+  logic.
+
+Then opened the real rendered app in real Chrome
+(`http://127.0.0.1:1422/#/league/941b99ade350410391b1b67c0890af79/improve?tab=faab`):
+- **First mount**: LIVE panel, real `$100 of $100`, `13` weeks remaining
+  ("...from your real Sleeper schedule" -- truncated on-screen but present
+  in the DOM), real `$28-46 MEDIUM` bid for Tyrone Tracy -- matches the
+  `curl` LIVE response exactly, confirming the two-request race is gone
+  (one request, right answer, first render).
+- **Scenario opt-in**: clicked "Plan a what-if scenario" -> amber
+  "SCENARIO -- not your real live budget" banner, metric-card tone flips to
+  crimson, panel eyebrow flips to "SCENARIO -- YOUR OWN HYPOTHETICAL
+  INPUTS, NOT READ FROM SLEEPER", editable fields pre-filled from the
+  current live numbers as a starting point (a real UX convenience, not an
+  implicit scenario -- the click was the explicit opt-in).
+- **Scenario edit**: set Remaining budget to `$5` -> a real new POST fired
+  (confirmed via `read_network_requests`), per-week budget recalculated to
+  `$0.4` client-side, bid card updated live to `$2-3` for Tyrone Tracy.
+- **Return to live**: clicked "Return to live budget" -> panel instantly
+  reverted to the LIVE eyebrow/copy/button, per-week budget back to `$7.7`,
+  Tyrone Tracy's bid back to the real `$28-46` -- the real live value, not
+  a leftover scenario value.
+- **Console**: zero console messages of any kind (`read_console_messages`,
+  pattern `.`, no filter) across the whole session.
+
+### PROFILE-SWITCH LEAK CHECK -- the directive's named highest-risk item
+
+**INSPECTED CODE, not LIVE_OBSERVATION** -- this environment has exactly
+ONE real Sleeper profile (Fantasy Gamers; the owner's other 2 real leagues
+are ESPN, which `_active_sleeper_context()` already structurally refuses
+for every in-season surface, unchanged, pre-existing), so a real "switch
+from real Sleeper League A to real Sleeper League B" could not be
+live-verified this pass either (the same disclosed environment limit
+several prior workers in this ledger hit for other checks). Two structural
+guarantees, read directly, stand in for that live test:
+1. **LIVE budget is no longer frontend state at all.** Since `budgetMode:
+   "LIVE"` derives the budget entirely server-side from THIS request, a
+   profile switch that triggers a normal `redraftWaivers` re-fetch (already
+   wired -- `data.activeProfileId` is already in `waiversLoader`'s/
+   `useAsync`'s dependency arrays, unchanged) automatically gets the NEW
+   profile's real live budget with no frontend budget state to leak from
+   the old one.
+2. **`budgetScenario` (the one piece of real local budget state) is reset
+   to `null` on every `data.activeProfileId` change** (new
+   `lastScenarioProfileRef`/`useEffect` in `improve-team.tsx`) -- a
+   scenario entered for League A can never silently carry into League B's
+   request.
+3. **Stale-response races** (the recurring bug class the directive
+   explicitly warned about): `useAsync`'s existing `createStaleResponseGuard`
+   mechanism (unchanged, `weekly-shared.tsx`) already supersedes any
+   in-flight request when its dependency array changes -- `budgetScenario`
+   and `data.activeProfileId` are both now in that array, so a slow LIVE
+   response for League A arriving after the owner has already switched to
+   League B (or toggled to a scenario) is discarded, never rendered.
+
+**Not literally reproduced live** (disclosed, not silently assumed) --
+flagged below for a future worker if/when a second real Sleeper profile
+becomes available.
+
+### Non-FAAB suppression -- still holds, re-confirmed, and hardened
+
+Worker 3's frontend-level suppression (`isFaabLeague === false` hides the
+dollar UI) is unchanged and still holds (re-read directly). **Hardened**
+this pass at the response level too (see "Fix" above): `suggest_faab_bids`
+is now never even called for a confirmed non-FAAB league, so the raw API
+response itself never carries a fabricated dollar figure either --
+verified via a new test,
+`test_faab_context_never_fabricates_a_budget_for_a_non_faab_league`
+(`tests/test_redraft_waivers_faab_context_fix.py`). Still verified only via
+a constructed fixture, not a real non-FAAB Sleeper league (none exists in
+this environment -- carried forward, unchanged, from every prior worker).
+
+### Unavailable-budget state -- a real bug found + fixed
+
+**Real, reproduced bug**: before this pass, a `league/{id}` settings read
+failure left `faabContext` literally `None`, and the frontend fell straight
+through to rendering the metric cards from its local `useState(100)`
+defaults -- a failed live read LOOKED exactly like a genuine `$100 of $100`
+live read, with zero visual distinction. **Fixed**: `faabContext` is now
+always a real object; `source: "UNAVAILABLE"`/`isFaabLeague: null` is
+explicit, and `FaabTab` renders a dedicated "Live FAAB budget unavailable"
+`EmptyState` for this case (never the metric cards, never a default).
+Verified via
+`test_faab_context_is_honestly_unavailable_when_league_settings_cannot_be_read`
+(ACTUAL TEST RESULT, simulated `OSError` on the settings read) -- not
+reproduced live (would require a real Sleeper outage) but the fixture
+faithfully reproduces the exact failure path.
+
+### Tests
+
+- **Rewrote** `tests/test_redraft_waivers_faab_context_fix.py` (3 tests ->
+  12): real LIVE budget read (now asserts `budgetMode`/live weeks-remaining
+  too), live weeks-remaining derivation (2 new tests: real derivation, and
+  the honest DEFAULTED fallback when `playoff_week_start` is absent), non-
+  FAAB suppression now ALSO asserts every `addCandidates` row's `faabBid*`
+  fields are `null` (not just `faabContext`), the honest UNAVAILABLE state
+  (renamed from the old "is none" test -- `faabContext` is no longer ever
+  `None`), a SCENARIO test that spies on the real, unchanged
+  `suggest_faab_bids` call to prove the scenario numbers are genuinely
+  plumbed through (decoupled from this fixture's tiny synthetic ranking
+  data, which can legitimately floor a real bid to $0 regardless of budget
+  via Worker 2's own nonpositive-utility gate), a non-FAAB + scenario
+  combination test, 4 parametrized partial/malformed-scenario rejection
+  cases, and a decision-trace test confirming `faabBudgetMode`/the
+  effective numbers/`weeksRemainingSource` land in the real WAIVER trace's
+  `data_versions`.
+- **Modified** (fixture-only, to model the new real `state/nfl` GET call
+  `redraft_waivers` now also makes): `tests/
+  test_redraft_waivers_ir_reserve_drop_exclusion_fix.py`,
+  `tests/test_redraft_waivers_unmatched_identity_rationale_fix.py`,
+  `tests/test_redraft_waivers_decision_trace_completeness_fix.py`,
+  `tests/test_weekly_home_sleeper_fetch_caching.py` (also documents that
+  `state/nfl` goes through the same per-request cache the weekly-home
+  dedup test already covers rosters/players/league-settings through).
+- `python -m pytest tests/test_redraft_waivers_faab_context_fix.py
+  tests/test_redraft_waivers_ir_reserve_drop_exclusion_fix.py
+  tests/test_redraft_waivers_unmatched_identity_rationale_fix.py
+  tests/test_redraft_waivers_decision_trace_completeness_fix.py
+  tests/test_waiver_engine_service.py
+  tests/test_weekly_home_sleeper_fetch_caching.py -q`: **51 passed**.
+- Targeted regression slice (same `-k` filter every prior worker this
+  cycle used): **655 passed, 0 failed** (up from the prior 646 baseline by
+  exactly the 9 net new/rewritten faab_context tests).
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures this worktree's documented baseline expects,
+  re-confirmed unaffected.
+- Frontend: `npm run typecheck` (`tsc -b`, both apps): clean, 0 errors.
+  `npx vitest run` (desktop workspace): **425 passed**, exact match to the
+  prior baseline -- no new frontend unit test added (this repo has no
+  jsdom/`@testing-library/react` installed, by deliberate prior-session
+  choice -- confirmed by a comment in `weekly-shared.tsx` -- so
+  component-level state-machine behavior like the LIVE/SCENARIO toggle
+  cannot be unit-tested; covered instead by the real backend tests above
+  plus the real Chrome LIVE_OBSERVATION pass documented above).
+- `git diff -U0 0c28a8aa HEAD -- . ':!docs/codex/waiver_night_v1/
+  LEDGER.md'` grepped for every hard-boundary term
+  (`marginal_roster_utility_v2`, `LeagueSnapshot`, `LeagueWorkspaceContext`,
+  `lifecycle_resolver`, `DecisionResultEnvelope`,
+  `PlayerAvailabilityStatus`): **1 match**, inside this pass's own code
+  comment explaining that `LeagueWorkspaceContext`'s own already-shared
+  pure helper functions are reused (not that class/method itself touched)
+  -- zero matches in any actual behavioral line.
+  `git diff --stat 0c28a8aa HEAD -- src/services/waiver_engine_service.py`:
+  **empty** -- the bid formula itself is completely unchanged.
+
+### Zero Sleeper writes, verified 3 ways
+
+1. The release-gate script's own independent before/after byte-diff of
+   `league/rosters/users` (fetched directly from `api.sleeper.app`, not
+   through the app): **IDENTICAL**.
+2. Structural: the one new real Sleeper call this pass adds
+   (`GET /state/nfl`) goes through the same GET-only `_sleeper_get_json` ->
+   `SleeperHttpClient.get_json` path every other real call in this file
+   already uses -- `SleeperHttpClient` still exposes only `get_json`,
+   structurally incapable of writing. Grepped the diff for
+   `POST`/`PUT`/`PATCH`/`DELETE`: zero matches.
+3. `read_network_requests` in the real Chrome session: every request this
+   pass's own UI interactions triggered went to the local NWR backend only
+   (`127.0.0.1:18742`), never directly to Sleeper.
+
+### Backend/model files changed this pass
+
+- **Modified**: `src/application/desktop_facade.py` -- `redraft_waivers`
+  only: signature change (`remaining_budget_dollars`/`weeks_remaining`/
+  `total_budget_dollars: int` params -> one `budget_scenario: Mapping |
+  None` param), new live weeks-remaining derivation (`GET /state/nfl` +
+  `settings.playoff_week_start`, reusing already-imported pure helpers from
+  `sleeper_league_context_service.py`), LIVE/SCENARIO budget-mode decision
+  logic, `faab_context` restructured (always a real object, `budgetMode`/
+  `weeksRemaining`/`weeksRemainingSource`/`scenario` added), `suggest_
+  faab_bids` call now gated on `can_compute_faab`, WAIVER/FAAB decision
+  trace `data_versions` gain `faabBudgetMode`/effective-numbers-used/
+  `faabWeeksRemainingSource`. No other facade method touched.
+- **Modified**: `src/desktop_api/server.py` -- the `/api/v1/redraft/
+  waivers` handler: accepts `budgetScenario` (object, all 3 sub-fields
+  required together) instead of 3 separate top-level optional budget
+  fields; rejects a partial/malformed scenario with `INVALID_REQUEST_BODY`
+  before it ever reaches the facade.
+- **Modified**: `desktop/packages/contracts/src/index.ts` --
+  `WaiverFaabContext` gains `budgetMode`/`weeksRemaining`/
+  `weeksRemainingSource`/`scenario`, `isFaabLeague`/`source` widen to allow
+  the honest UNAVAILABLE state, `faabContext` is no longer nullable on
+  `WaiversResult`; new `WaiverBudgetScenarioInput`.
+- **Modified**: `desktop/packages/api-client/src/index.ts` --
+  `redraftWaivers`'s options replace the 3 budget fields with one optional
+  `budgetScenario`.
+- **Modified**: `desktop/apps/redraft/src/improve-team.tsx` -- `FaabTab`
+  fully rebuilt around explicit `budgetScenario` state (was: 3 always-live
+  `useState` fields silently double-purposed as both "seeded live default"
+  and "scenario draft"); new profile-switch reset effect; LIVE and
+  SCENARIO now render visually distinct panels/banners/metric-card tones;
+  new honest UNAVAILABLE `EmptyState`. `ImproveTeamPage`'s `waiversLoader`
+  no longer sends any budget field for LIVE mode.
+- **Modified**: `desktop/apps/redraft/src/in-season.tsx` -- the unrouted
+  legacy `WaiversPage` fallback updated to compile against the new
+  contract (simplified to LIVE-only -- no scenario UI on this
+  already-superseded page; its old always-editable "seeded" budget panel,
+  the exact anti-pattern this whole pass fixes, is removed rather than
+  carried forward).
+- `src/services/waiver_engine_service.py` (`suggest_faab_bids` itself):
+  **UNCHANGED**, confirmed by empty `git diff --stat`.
+- Hard-boundary items (`marginal_roster_utility_v2`,
+  `LeagueSnapshot`/`LeagueWorkspaceContext`/lifecycle-resolver/
+  `DecisionResultEnvelope`/`PlayerAvailabilityStatus`, draft
+  recommendation/roster-legality code): **untouched**, confirmed above.
+
+### OPEN ISSUES FOR THE NEXT WORKER
+
+1. **Profile-switch leak prevention is INSPECTED CODE, not a live-tested
+   result** (see "PROFILE-SWITCH LEAK CHECK" above) -- this environment
+   still has only one real Sleeper profile. Re-verify live if/when a second
+   one becomes available; the mechanism (server-derived LIVE budget +
+   scenario-reset-on-profile-change + the existing `useAsync` stale guard)
+   is real and reasoned through, but not literally watched happen across
+   two real leagues.
+2. **No real non-FAAB Sleeper league still exists in this environment**
+   (carried forward again, unchanged) -- `isFaabLeague === false` suppression
+   (now hardened at the response level too) remains verified only via a
+   constructed fixture.
+3. **The legacy, unrouted `WaiversPage` (`in-season.tsx`) was simplified to
+   LIVE-only rather than given its own full scenario UI** -- a deliberate,
+   disclosed scope decision (it is superseded by Improve Team's FAAB tab,
+   per the existing code comments in this file), not an oversight.
+4. **No jsdom/`@testing-library/react` in this repo** (pre-existing,
+   confirmed via a comment in `weekly-shared.tsx`) means the new
+   LIVE/SCENARIO state-machine logic in `improve-team.tsx` (the
+   profile-switch reset effect, the scenario-opt-in/return-to-live
+   transitions) has no frontend unit-test coverage -- covered instead by
+   real backend tests + one real Chrome LIVE_OBSERVATION pass this pass
+   documents above. A future worker adding real component-level frontend
+   tests to this repo (a bigger, separately-scoped infra change) could
+   close this gap properly.
+5. All items already carried forward from the prior consolidated 6-worker
+   night and the FAAB gate/floor pass (K/DST streamer diagnostic
+   cross-contamination, `pair_add_drop`'s alternatives not built,
+   `matchupContext` still `null`, FantasyPros top-10-per-query cap /
+   duplicate `TEAM_ALIASES` files, the pre-existing
+   `test_desktop_application_api.py` 4-failure baseline, Work Unit
+   9/FAAB-transaction-context not attempted, Worker 1's Harrison/Tracy
+   investigation open items) remain open and unrelated to this pass's fix,
+   no change here.
+6. **Section 4 (Add/Drop context repair)** -- per this pass's directive,
+   handed off to the next worker; not investigated or touched this pass.

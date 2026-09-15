@@ -89,44 +89,51 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
   const [mode, setMode] = useState<"THIS_WEEK" | "REST_OF_SEASON">("REST_OF_SEASON");
   const [week, setWeek] = useState(1);
   const [position, setPosition] = useState("ALL");
-  const [remainingBudget, setRemainingBudget] = useState(100);
-  const [weeksRemaining, setWeeksRemaining] = useState(14);
-  const [totalBudget, setTotalBudget] = useState(100);
   const [selectedAddId, setSelectedAddId] = useState<string | null>(null);
+
+  // NWR Waiver Night V1 (Worker 4, LIVE/SCENARIO budget separation): a real
+  // bug found + fixed this pass -- `budgetScenario` here is `null` by
+  // default (LIVE). The backend now derives the real FAAB budget/weeks-
+  // remaining itself, from THIS SAME request's own live Sleeper reads, so
+  // the frontend no longer sends (or needs) any budget numbers at all for
+  // LIVE. This closes two real bugs the prior seeding-effect design had:
+  // (1) the FIRST render used to send hardcoded $100/$100/14-week defaults
+  // -- wrong whenever they didn't coincidentally match the real league --
+  // and only got corrected by a SECOND request once `faabContext` arrived;
+  // (2) editing a "seeded" field in place had no UI/state distinction from
+  // the real live value, so a hypothetical could be silently mistaken for
+  // live data. `budgetScenario` is only ever non-null when the owner
+  // explicitly opts into scenario planning below (`FaabTab`'s "Plan a
+  // what-if scenario" action) -- never implicitly from a keystroke, and
+  // always reset back to LIVE (`null`) on profile switch (below) so a
+  // scenario from League A can never leak into League B.
+  const [budgetScenario, setBudgetScenario] = useState<{
+    remainingBudgetDollars: number;
+    totalBudgetDollars: number;
+    weeksRemaining: number;
+  } | null>(null);
+  const lastScenarioProfileRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (lastScenarioProfileRef.current !== data.activeProfileId) {
+      lastScenarioProfileRef.current = data.activeProfileId ?? null;
+      setBudgetScenario(null);
+    }
+  }, [data.activeProfileId]);
 
   const waiversLoader = useCallback(
     () => (isSleeper
       ? client.redraftWaivers({
         mode,
-        remainingBudgetDollars: remainingBudget,
-        weeksRemaining,
-        totalBudgetDollars: totalBudget,
         ...(mode === "THIS_WEEK" ? { week } : {}),
+        ...(budgetScenario ? { budgetScenario } : {}),
       })
       : null),
-    [client, isSleeper, mode, week, remainingBudget, weeksRemaining, totalBudget],
+    [client, isSleeper, mode, week, budgetScenario],
   );
   const { result: waivers, error: waiversError, working: waiversWorking, reload: reloadWaivers } = useAsync(
     waiversLoader,
-    [isSleeper, mode, week, remainingBudget, weeksRemaining, totalBudget, data.activeProfileId],
+    [isSleeper, mode, week, budgetScenario, data.activeProfileId],
   );
-
-  // NWR Waiver Night V1 (Worker 3, Work Unit 6): seed the FAAB budget
-  // fields from the real, live Sleeper `faabContext` the backend now
-  // reads (league.settings.waiver_budget/waiver_type + the owner's own
-  // roster.settings.waiver_budget_used) the FIRST time it arrives for this
-  // profile, instead of leaving them on the previous hardcoded $100/$100
-  // guess. Only seeds once per profile so it never fights a manual edit
-  // the owner makes afterward (e.g. to scenario-plan a different budget).
-  const budgetSeededForProfileRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!waivers?.faabContext?.isFaabLeague) return;
-    if (budgetSeededForProfileRef.current === data.activeProfileId) return;
-    budgetSeededForProfileRef.current = data.activeProfileId ?? null;
-    const { totalBudgetDollars, remainingBudgetDollars } = waivers.faabContext;
-    if (typeof totalBudgetDollars === "number") setTotalBudget(totalBudgetDollars);
-    if (typeof remainingBudgetDollars === "number") setRemainingBudget(remainingBudgetDollars);
-  }, [waivers?.faabContext, data.activeProfileId]);
 
   const positions = useMemo(() => ["ALL", ...new Set((waivers?.addCandidates ?? []).map((row) => row.position))], [waivers]);
   const addRows = useMemo(
@@ -256,15 +263,11 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
 
     {tab === "faab" ? (
       <FaabTab
+        budgetScenario={budgetScenario}
         error={waiversError}
         onOpenPlayer={openPlayerDetail}
-        remainingBudget={remainingBudget}
-        setRemainingBudget={setRemainingBudget}
-        setTotalBudget={setTotalBudget}
-        setWeeksRemaining={setWeeksRemaining}
-        totalBudget={totalBudget}
+        setBudgetScenario={setBudgetScenario}
         waivers={waivers}
-        weeksRemaining={weeksRemaining}
       />
     ) : null}
 
@@ -497,25 +500,19 @@ function AddDropTab({
 
 const FAAB_URGENCY_RANK: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
+type FaabBudgetScenario = { remainingBudgetDollars: number; totalBudgetDollars: number; weeksRemaining: number };
+
 function FaabTab({
   waivers,
   error,
-  remainingBudget,
-  setRemainingBudget,
-  totalBudget,
-  setTotalBudget,
-  weeksRemaining,
-  setWeeksRemaining,
+  budgetScenario,
+  setBudgetScenario,
   onOpenPlayer,
 }: {
   waivers: WaiversResult | null;
   error: NwrApiError | null;
-  remainingBudget: number;
-  setRemainingBudget: (value: number) => void;
-  totalBudget: number;
-  setTotalBudget: (value: number) => void;
-  weeksRemaining: number;
-  setWeeksRemaining: (value: number) => void;
+  budgetScenario: FaabBudgetScenario | null;
+  setBudgetScenario: (value: FaabBudgetScenario | null) => void;
   onOpenPlayer: PlayerViewer;
 }) {
   // NWR Waiver Night V1 (FAAB nonpositive-bid fix): a candidate can now
@@ -534,23 +531,31 @@ function FaabTab({
       .sort((a, b) => (FAAB_URGENCY_RANK[a.faabUrgency ?? ""] ?? 3) - (FAAB_URGENCY_RANK[b.faabUrgency ?? ""] ?? 3) || (b.marginalUtility ?? 0) - (a.marginalUtility ?? 0)),
     [waivers],
   );
-  const perWeekBudget = weeksRemaining > 0 ? remainingBudget / weeksRemaining : remainingBudget;
 
-  // NWR Waiver Night V1 (Worker 3, Work Unit 6): `waivers.faabContext` is
-  // the real, live Sleeper read (league.settings.waiver_type). A league
-  // this reads as genuinely NOT FAAB (Sleeper's rolling waiver-priority
-  // mode) must never show a fabricated dollar bid range -- show the
-  // owner's real waiver-priority position instead. `faabContext` itself
-  // can be `null` (e.g. still loading, or a non-Sleeper profile) -- that is
-  // NOT the same as a confirmed non-FAAB league, so the dollar UI is only
-  // suppressed on an explicit `isFaabLeague === false`, never on `null`.
-  if (waivers?.faabContext && waivers.faabContext.isFaabLeague === false) {
+  const faabContext = waivers?.faabContext ?? null;
+  const inScenario = budgetScenario !== null;
+
+  if (!waivers) {
+    return <>
+      {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+      <p className="draft-feedback">Reading your real FAAB context…</p>
+    </>;
+  }
+
+  // NWR Waiver Night V1 (Worker 3, Work Unit 6; extended Worker 4): a
+  // league Sleeper reports as genuinely NOT FAAB (rolling waiver-priority
+  // mode) must never show a dollar bid range or a scenario option --
+  // "what if my budget were $X" makes no sense where there is no real FAAB
+  // budget concept at all. `faabContext.isFaabLeague === false` is a
+  // CONFIRMED non-FAAB read (distinct from `null`, an unavailable read --
+  // handled below); only an explicit `false` suppresses the dollar UI.
+  if (faabContext && faabContext.isFaabLeague === false) {
     return <>
       <div className="metric-grid">
         <MetricCard
           icon="target"
           label="Waiver priority"
-          value={waivers.faabContext.waiverPosition != null ? `#${waivers.faabContext.waiverPosition}` : "—"}
+          value={faabContext.waiverPosition != null ? `#${faabContext.waiverPosition}` : "—"}
           detail="this league uses waiver priority order, not FAAB"
           tone="violet"
         />
@@ -563,18 +568,105 @@ function FaabTab({
     </>;
   }
 
+  // Real, honest "unavailable" state (NWR Waiver Night V1, Worker 4): a
+  // real bug reproduced live this pass -- before this fix, a failed
+  // `league/{id}` settings read left `faabContext` entirely `null`, and
+  // this tab fell straight through to rendering the metric cards from
+  // frontend `useState(100)` defaults, indistinguishable from a genuine
+  // live $100/$100 read. Now `faabContext.source === "UNAVAILABLE"` is
+  // surfaced explicitly and NEVER silently defaulted.
+  if (!faabContext || faabContext.source === "UNAVAILABLE" || faabContext.isFaabLeague === null) {
+    return <>
+      {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+      <EmptyState
+        title="Live FAAB budget unavailable"
+        message="Your real Sleeper league settings could not be read this request, so NWR does not know whether this is a FAAB league or what your real budget is. No dollar bid range is shown -- this is never silently replaced with a default. Try refreshing; if it keeps failing, check your connection to Sleeper."
+      />
+    </>;
+  }
+
+  const perWeekBudget = (faabContext.weeksRemaining ?? 0) > 0 && faabContext.remainingBudgetDollars != null
+    ? faabContext.remainingBudgetDollars / (faabContext.weeksRemaining as number)
+    : faabContext.remainingBudgetDollars;
+
+  const beginScenario = () => {
+    setBudgetScenario({
+      remainingBudgetDollars: faabContext.remainingBudgetDollars ?? 100,
+      totalBudgetDollars: faabContext.totalBudgetDollars ?? 100,
+      weeksRemaining: faabContext.weeksRemaining ?? 14,
+    });
+  };
+  const updateScenario = (patch: Partial<FaabBudgetScenario>) => {
+    if (!budgetScenario) return;
+    setBudgetScenario({ ...budgetScenario, ...patch });
+  };
+
   return <>
-    <div className="metric-grid">
-      <MetricCard icon="activity" label="Remaining budget" value={`$${remainingBudget}`} detail={`of $${totalBudget} total`} tone="gold" />
-      <MetricCard icon="target" label="Weeks remaining" value={weeksRemaining} detail="regular season weeks left" tone="violet" />
-      <MetricCard icon="board" label="Per-week budget" value={`$${perWeekBudget.toFixed(1)}`} detail="remaining ÷ weeks remaining" tone="cyan" />
-    </div>
-    <Panel title="FAAB settings" eyebrow="Seeded from your real live Sleeper budget -- edit to plan a different scenario">
-      <div className="profile-edit-actions">
-        <label className="form-field"><span>Remaining budget ($)</span><input type="number" min={0} value={remainingBudget} onChange={(event) => setRemainingBudget(Math.max(0, Number(event.target.value) || 0))} /></label>
-        <label className="form-field"><span>Total season budget ($)</span><input type="number" min={1} value={totalBudget} onChange={(event) => setTotalBudget(Math.max(1, Number(event.target.value) || 1))} /></label>
-        <label className="form-field"><span>Weeks remaining</span><input type="number" min={1} max={18} value={weeksRemaining} onChange={(event) => setWeeksRemaining(Math.min(18, Math.max(1, Number(event.target.value) || 1)))} /></label>
+    {inScenario ? (
+      <div className="alert-strip">
+        <strong>SCENARIO -- not your real live budget</strong>
+        <span>
+          You're viewing a hypothetical: what if your budget were ${budgetScenario!.remainingBudgetDollars} of
+          ${budgetScenario!.totalBudgetDollars}, {budgetScenario!.weeksRemaining} weeks remaining? Bid ranges below
+          are computed from these numbers, not your real Sleeper budget.
+        </span>
       </div>
+    ) : null}
+    <div className="metric-grid">
+      <MetricCard
+        icon="activity"
+        label="Remaining budget"
+        value={faabContext.remainingBudgetDollars != null ? `$${faabContext.remainingBudgetDollars}` : "—"}
+        detail={faabContext.totalBudgetDollars != null ? `of $${faabContext.totalBudgetDollars} total` : "unavailable"}
+        tone={inScenario ? "crimson" : "gold"}
+      />
+      <MetricCard
+        icon="target"
+        label="Weeks remaining"
+        value={faabContext.weeksRemaining ?? "—"}
+        detail={
+          faabContext.weeksRemainingSource === "LIVE"
+            ? "regular season weeks left -- from your real Sleeper schedule"
+            : faabContext.weeksRemainingSource === "SCENARIO_INPUT"
+              ? "scenario input"
+              : "no live schedule signal -- a non-live default"
+        }
+        tone={inScenario ? "crimson" : "violet"}
+      />
+      <MetricCard
+        icon="board"
+        label="Per-week budget"
+        value={perWeekBudget != null ? `$${perWeekBudget.toFixed(1)}` : "—"}
+        detail="remaining ÷ weeks remaining"
+        tone="cyan"
+      />
+    </div>
+    <Panel
+      title="FAAB settings"
+      eyebrow={
+        inScenario
+          ? "SCENARIO -- your own hypothetical inputs, not read from Sleeper"
+          : "LIVE -- read this request from your real Sleeper league"
+      }
+    >
+      {inScenario ? (
+        <>
+          <div className="profile-edit-actions">
+            <label className="form-field"><span>Remaining budget ($)</span><input type="number" min={0} value={budgetScenario!.remainingBudgetDollars} onChange={(event) => updateScenario({ remainingBudgetDollars: Math.max(0, Number(event.target.value) || 0) })} /></label>
+            <label className="form-field"><span>Total season budget ($)</span><input type="number" min={1} value={budgetScenario!.totalBudgetDollars} onChange={(event) => updateScenario({ totalBudgetDollars: Math.max(1, Number(event.target.value) || 1) })} /></label>
+            <label className="form-field"><span>Weeks remaining</span><input type="number" min={1} max={18} value={budgetScenario!.weeksRemaining} onChange={(event) => updateScenario({ weeksRemaining: Math.min(18, Math.max(1, Number(event.target.value) || 1)) })} /></label>
+          </div>
+          <Button variant="secondary" onClick={() => setBudgetScenario(null)}>Return to live budget</Button>
+        </>
+      ) : (
+        <>
+          <p className="copy-muted">
+            This is your real, live Sleeper FAAB budget ({faabContext.waiverPosition != null ? `waiver priority #${faabContext.waiverPosition}, ` : ""}
+            read fresh this request -- never a stored or hardcoded number).
+          </p>
+          <Button variant="secondary" onClick={beginScenario}>Plan a what-if scenario</Button>
+        </>
+      )}
       <p className="form-hint" title="Bid ranges are a relative, percentile-of-pool heuristic (who is worth more than whom, and roughly how much more) -- they are not calibrated against real FAAB auction outcomes in this or any league. A $0 result never appears here: it means either an unmatched identity or a real modeled value of zero/negative, never a positive recommendation.">
         Bid ranges are a real, contextual heuristic estimate -- not calibrated against actual auction results. Treat them as relative guidance, not a guaranteed price.
       </p>

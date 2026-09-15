@@ -624,9 +624,7 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             return self.server.facade.redraft_weekly_lineup(week=week)
         if method == "POST" and path == _WAIVERS:
             body = self._json_body()
-            self._reject_unknown_fields(
-                body, {"mode", "week", "remainingBudgetDollars", "weeksRemaining", "totalBudgetDollars"}
-            )
+            self._reject_unknown_fields(body, {"mode", "week", "budgetScenario"})
             mode = body.get("mode")
             if mode not in {"THIS_WEEK", "REST_OF_SEASON"}:
                 raise self._invalid_body("mode must be THIS_WEEK or REST_OF_SEASON.")
@@ -634,16 +632,36 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             if week is not None and type(week) is not int:
                 raise self._invalid_body("week must be an integer when provided.")
             kwargs: dict[str, Any] = {"mode": mode, "week": week}
-            for json_key, py_key in (
-                ("remainingBudgetDollars", "remaining_budget_dollars"),
-                ("weeksRemaining", "weeks_remaining"),
-                ("totalBudgetDollars", "total_budget_dollars"),
-            ):
-                if json_key in body:
-                    value = body.get(json_key)
+            # NWR Waiver Night V1 (Worker 4, LIVE/SCENARIO budget
+            # separation): `budgetScenario` is the owner's explicit,
+            # complete hypothetical -- absent entirely means LIVE (the
+            # facade derives the real budget/weeks-remaining itself from
+            # this same request's own Sleeper reads). A partial scenario
+            # object is rejected outright rather than silently merged with
+            # live numbers.
+            if "budgetScenario" in body:
+                budget_scenario_raw = body.get("budgetScenario")
+                if not isinstance(budget_scenario_raw, dict):
+                    raise self._invalid_body("budgetScenario must be an object when provided.")
+                allowed_scenario_fields = {"remainingBudgetDollars", "totalBudgetDollars", "weeksRemaining"}
+                if set(budget_scenario_raw) - allowed_scenario_fields:
+                    raise self._invalid_body("budgetScenario contains unsupported fields.")
+                scenario_kwargs: dict[str, int] = {}
+                for json_key, py_key in (
+                    ("remainingBudgetDollars", "remaining_budget_dollars"),
+                    ("totalBudgetDollars", "total_budget_dollars"),
+                    ("weeksRemaining", "weeks_remaining"),
+                ):
+                    if json_key not in budget_scenario_raw:
+                        raise self._invalid_body(
+                            f"budgetScenario.{json_key} is required -- a scenario must supply a complete "
+                            "hypothetical, not a partial override of the live budget."
+                        )
+                    value = budget_scenario_raw.get(json_key)
                     if type(value) is not int:
-                        raise self._invalid_body(f"{json_key} must be an integer when provided.")
-                    kwargs[py_key] = value
+                        raise self._invalid_body(f"budgetScenario.{json_key} must be an integer.")
+                    scenario_kwargs[py_key] = value
+                kwargs["budget_scenario"] = scenario_kwargs
             return self.server.facade.redraft_waivers(**kwargs)
         if method == "POST" and path == _TRADE_ANALYSIS:
             body = self._json_body()

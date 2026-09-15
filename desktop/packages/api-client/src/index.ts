@@ -46,6 +46,7 @@ import {
   type TradeSaveResult,
   type TradeScenarioInput,
   type TradeWorkspace,
+  type WaiverBudgetScenarioInput,
   type WaiversResult,
   type WeeklyHomeActionsResult,
   type WeeklyLineupResult,
@@ -741,18 +742,21 @@ export class NwrApiClient {
     });
   }
 
+  /** NWR Waiver Night V1 (Worker 4, LIVE/SCENARIO budget separation):
+   * omitting `budgetScenario` means LIVE -- the backend derives the real
+   * FAAB budget/weeks-remaining itself from this same request's own live
+   * Sleeper reads, never a caller-supplied or hardcoded default. Passing
+   * `budgetScenario` (all three fields required together) is the owner's
+   * explicit opt-in to a hypothetical "what if my budget were different"
+   * result -- never sent implicitly just because a form field changed. */
   redraftWaivers(options: {
     mode: "THIS_WEEK" | "REST_OF_SEASON";
     week?: number;
-    remainingBudgetDollars?: number;
-    weeksRemaining?: number;
-    totalBudgetDollars?: number;
+    budgetScenario?: WaiverBudgetScenarioInput;
   }): Promise<WaiversResult> {
     const body: Record<string, unknown> = { mode: options.mode };
     if (options.week !== undefined) body.week = options.week;
-    if (options.remainingBudgetDollars !== undefined) body.remainingBudgetDollars = options.remainingBudgetDollars;
-    if (options.weeksRemaining !== undefined) body.weeksRemaining = options.weeksRemaining;
-    if (options.totalBudgetDollars !== undefined) body.totalBudgetDollars = options.totalBudgetDollars;
+    if (options.budgetScenario !== undefined) body.budgetScenario = options.budgetScenario;
     return this.request("/api/v1/redraft/waivers", { method: "POST", body: JSON.stringify(body) });
   }
 

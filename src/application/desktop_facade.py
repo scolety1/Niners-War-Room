@@ -3293,15 +3293,27 @@ class DesktopBackendFacade:
         *,
         mode: str,
         week: int | None = None,
-        remaining_budget_dollars: int = 100,
-        weeks_remaining: int = 14,
-        total_budget_dollars: int = 100,
+        budget_scenario: Mapping[str, Any] | None = None,
     ) -> FacadePayload:
         """Waivers + Add/Drop pairing + FAAB bid ranges (NWR Overnight V3,
         Lanes 4/5/6). REST_OF_SEASON is buildable regardless of the weekly
         source (ROS value already exists via NWR's governed ranking).
         THIS_WEEK requires a real week and is honestly unavailable
         otherwise -- never fabricated. Read-only: never writes to Sleeper.
+
+        NWR Waiver Night V1 (Worker 4, LIVE/SCENARIO budget separation):
+        `budget_scenario`, when `None` (the default), means LIVE -- the FAAB
+        budget/weeks-remaining fed into `suggest_faab_bids` is derived
+        entirely from THIS request's own real, live Sleeper reads (never a
+        caller-supplied or hardcoded default, and never a second, corrective
+        call). When provided, it is an explicit, owner-entered hypothetical
+        (`{"remaining_budget_dollars": int, "total_budget_dollars": int,
+        "weeks_remaining": int}`, all three required together -- no partial
+        override) -- see `faab_context["budgetMode"]`/`"scenario"` in the
+        response, which always echoes back which mode actually ran and, for
+        SCENARIO, the exact inputs used, so a scenario result can never be
+        mistaken for a live one downstream (UI, API response, or decision
+        trace).
         """
 
         self._require_mode("redraft")
@@ -3311,6 +3323,20 @@ class DesktopBackendFacade:
             raise FacadeError(
                 "WAIVERS_WEEK_REQUIRED", "THIS_WEEK mode requires a real week from 1 through 18."
             )
+        if budget_scenario is not None:
+            _scenario_keys = ("remaining_budget_dollars", "total_budget_dollars", "weeks_remaining")
+            if not isinstance(budget_scenario, Mapping) or not all(
+                isinstance(budget_scenario.get(key), int) and not isinstance(budget_scenario.get(key), bool)
+                for key in _scenario_keys
+            ):
+                raise FacadeError(
+                    "WAIVERS_BUDGET_SCENARIO_INVALID",
+                    "budget_scenario, when provided, must be an explicit, complete owner-entered "
+                    "hypothetical -- integer remaining_budget_dollars, total_budget_dollars, and "
+                    "weeks_remaining, all three together. A partial override is rejected rather than "
+                    "silently merged with live values, so a scenario is never a confusing mix of real "
+                    "and hypothetical numbers.",
+                )
         selected, league_id, owner_user_id = self._active_sleeper_context()
         ranking_warning = ""
         try:
@@ -3347,30 +3373,33 @@ class DesktopBackendFacade:
             raise FacadeError(
                 "WAIVERS_ROSTER_NOT_FOUND", "The owner's Sleeper roster could not be found.", status=409
             )
-        # NWR Waiver Night V1 (Worker 3, Work Unit 6): a real, previously
-        # undocumented gap -- nothing anywhere in this codebase (backend or
-        # frontend) ever read Sleeper's own real `league.settings.
-        # waiver_type` / `waiver_budget` or `roster.settings.
-        # waiver_budget_used` / `waiver_position`. The FAAB math below
-        # (`suggest_faab_bids`) was always genuinely contextual (never a
-        # static table) but was fed the frontend's hardcoded $100/$100/14-
-        # week defaults, never the real live league budget -- only
-        # coincidentally correct for this real Fantasy Gamers league today
-        # (week 2, $0 spent). Read the real settings here, read-only, and
-        # surface them as `faabContext` so the frontend can seed its real
-        # remaining/total budget instead of a hardcoded guess, and honestly
-        # suppress the FAAB $ bid UI for a genuinely non-FAAB league
-        # (`waiver_type != 1` is Sleeper's own real rolling-waiver-priority
-        # mode) rather than ever show a fabricated bid. Never changes what
-        # `suggest_faab_bids` itself computes below -- purely additive.
+        # NWR Waiver Night V1 (Worker 3, Work Unit 6; extended by Worker 4,
+        # LIVE/SCENARIO budget separation): a real, previously undocumented
+        # gap -- nothing anywhere in this codebase (backend or frontend) ever
+        # read Sleeper's own real `league.settings.waiver_type` /
+        # `waiver_budget` or `roster.settings.waiver_budget_used` /
+        # `waiver_position`. Worker 3 added the real read and surfaced it as
+        # an informational `faabContext`, but the FAAB math below
+        # (`suggest_faab_bids`) still only ever consumed whatever budget the
+        # CALLER passed in -- the frontend's own hardcoded $100/$100/14-week
+        # defaults on first render, corrected only by a second request once
+        # `faabContext` arrived. Fixed here: this endpoint now decides, for
+        # itself, in ONE pass, whether the budget it prices bids from is
+        # LIVE (derived entirely from this request's own real Sleeper reads)
+        # or SCENARIO (an explicit, complete owner-entered hypothetical via
+        # `budget_scenario`) -- a caller can no longer silently feed a
+        # default/stale number into real-looking LIVE pricing.
         try:
             league_settings_raw = self._sleeper_get_json(sleeper, f"league/{league_id}")
         except (OSError, ValueError):
             league_settings_raw = None
-        faab_context: dict[str, Any] | None = None
         league_settings = (
             league_settings_raw.get("settings") if isinstance(league_settings_raw, Mapping) else None
         )
+        is_faab_league: bool | None = None
+        live_total_budget: int | None = None
+        live_remaining_budget: int | None = None
+        raw_waiver_position: int | None = None
         if isinstance(league_settings, Mapping):
             raw_waiver_type = league_settings.get("waiver_type")
             raw_total_budget = league_settings.get("waiver_budget")
@@ -3382,20 +3411,93 @@ class DesktopBackendFacade:
                 roster_settings.get("waiver_position") if isinstance(roster_settings, Mapping) else None
             )
             is_faab_league = raw_waiver_type == 1
-            real_remaining_budget = (
-                raw_total_budget - raw_budget_used
-                if is_faab_league
-                and isinstance(raw_total_budget, int)
-                and isinstance(raw_budget_used, int)
+            if is_faab_league and isinstance(raw_total_budget, int) and isinstance(raw_budget_used, int):
+                live_total_budget = raw_total_budget
+                live_remaining_budget = raw_total_budget - raw_budget_used
+
+        # Live "weeks remaining" (the existing season-taper formula's other
+        # input): before this pass this was ALWAYS a frontend-owned value
+        # (hardcoded default 14, freely owner-editable) with zero connection
+        # to the real NFL calendar -- not "stale" so much as never live in
+        # the first place. Derived here, read-only, from the same two real
+        # provider-sourced facts `sleeper_league_context_service.
+        # build_playoff_context` already uses for `LeagueWorkspaceContext`'s
+        # own playoff panel (that class/method is untouched -- only its
+        # already-shared, pure helpers are reused): Sleeper's own real
+        # current week (`GET /state/nfl`) and this league's own real
+        # `settings.playoff_week_start` (already fetched above). `None`
+        # (never a silent guess) when either real fact is unavailable.
+        live_current_week: int | None = None
+        try:
+            nfl_state = self._sleeper_get_json(sleeper, "state/nfl")
+            live_current_week = parse_current_nfl_week(nfl_state)
+        except (OSError, ValueError):
+            live_current_week = None
+        raw_playoff_week_start = (
+            league_settings.get("playoff_week_start") if isinstance(league_settings, Mapping) else None
+        )
+        playoff_week_start = (
+            raw_playoff_week_start
+            if isinstance(raw_playoff_week_start, int) and not isinstance(raw_playoff_week_start, bool)
+            else None
+        )
+        live_weeks_remaining: int | None = None
+        if live_current_week is not None and playoff_week_start is not None:
+            live_weeks_remaining = max(0, playoff_week_start - live_current_week)
+
+        _DEFAULT_WEEKS_REMAINING = 14  # documented non-live fallback, see weeksRemainingSource below
+
+        if budget_scenario is not None:
+            faab_budget_mode = "SCENARIO"
+            effective_remaining_budget = int(budget_scenario["remaining_budget_dollars"])
+            effective_total_budget = int(budget_scenario["total_budget_dollars"])
+            effective_weeks_remaining = int(budget_scenario["weeks_remaining"])
+            weeks_remaining_source = "SCENARIO_INPUT"
+        else:
+            faab_budget_mode = "LIVE"
+            effective_remaining_budget = live_remaining_budget
+            effective_total_budget = live_total_budget
+            if live_weeks_remaining is not None:
+                effective_weeks_remaining = live_weeks_remaining
+                weeks_remaining_source = "LIVE"
+            else:
+                effective_weeks_remaining = _DEFAULT_WEEKS_REMAINING
+                weeks_remaining_source = "DEFAULTED"
+
+        # A dollar bid is only ever computed for a CONFIRMED FAAB league
+        # (`is_faab_league is True`) with a genuine effective budget for the
+        # mode that actually ran -- real live numbers, or the owner's own
+        # explicit scenario numbers. `is_faab_league is None` (league
+        # settings could not be read -- honestly UNAVAILABLE, never
+        # defaulted) and `is_faab_league is False` (a real Sleeper rolling
+        # waiver-priority league) both suppress consistently, matching the
+        # FAAB tab's own UI suppression for a confirmed non-FAAB league --
+        # never a fabricated dollar figure in the API response either, even
+        # if the frontend UI that would normally hide it is bypassed.
+        can_compute_faab = (
+            is_faab_league is True
+            and effective_remaining_budget is not None
+            and effective_total_budget is not None
+        )
+        faab_context: dict[str, Any] = {
+            "isFaabLeague": is_faab_league,
+            "budgetMode": faab_budget_mode,
+            "totalBudgetDollars": effective_total_budget if can_compute_faab else None,
+            "remainingBudgetDollars": effective_remaining_budget if can_compute_faab else None,
+            "weeksRemaining": effective_weeks_remaining if can_compute_faab else None,
+            "weeksRemainingSource": weeks_remaining_source if can_compute_faab else None,
+            "waiverPosition": raw_waiver_position,
+            "source": "SLEEPER_LIVE" if is_faab_league is not None else "UNAVAILABLE",
+            "scenario": (
+                {
+                    "remainingBudgetDollars": int(budget_scenario["remaining_budget_dollars"]),
+                    "totalBudgetDollars": int(budget_scenario["total_budget_dollars"]),
+                    "weeksRemaining": int(budget_scenario["weeks_remaining"]),
+                }
+                if budget_scenario is not None
                 else None
-            )
-            faab_context = {
-                "isFaabLeague": is_faab_league,
-                "totalBudgetDollars": raw_total_budget if is_faab_league else None,
-                "remainingBudgetDollars": real_remaining_budget,
-                "waiverPosition": raw_waiver_position,
-                "source": "SLEEPER_LIVE",
-            }
+            ),
+        }
         resolved = resolve_roster_canonical_ids(
             roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
             players_catalog=players, ranking_rows=ranking_rows,
@@ -3470,9 +3572,20 @@ class DesktopBackendFacade:
             if candidate.canonical_player_id not in reserve_canonical_ids
         )
         pairings = pair_add_drop(add_candidates=add_candidates, drop_candidates=drop_candidates, top_n=10)
-        faab_bids = suggest_faab_bids(
-            candidates=add_candidates, remaining_budget_dollars=remaining_budget_dollars,
-            weeks_remaining=weeks_remaining, total_budget_dollars=total_budget_dollars,
+        # `suggest_faab_bids` itself (the pricing formula) is completely
+        # unchanged -- this call is only ever made with a genuine effective
+        # budget (`can_compute_faab`, computed above); a non-FAAB or
+        # budget-unavailable league gets an empty `faab_by_id` instead of a
+        # call seeded with a fabricated default, so every candidate's
+        # faabBid* fields honestly come back `None` rather than a fake
+        # dollar figure a UI bug could accidentally surface.
+        faab_bids = (
+            suggest_faab_bids(
+                candidates=add_candidates, remaining_budget_dollars=effective_remaining_budget,
+                weeks_remaining=effective_weeks_remaining, total_budget_dollars=effective_total_budget,
+            )
+            if can_compute_faab
+            else ()
         )
         faab_by_id = {bid.canonical_player_id: bid for bid in faab_bids}
         # NWR Post-UI Product V1 (P1-4): computed BEFORE both trace calls
@@ -3514,6 +3627,18 @@ class DesktopBackendFacade:
         #     completeness).
         waivers_top_pairing = next(iter(pairings), None)
         waivers_data_versions = {"mode": mode, "rosProjectionSha256": ranking.projection_sha256}
+        # LIVE/SCENARIO budget separation (Worker 4): the FAAB trace already
+        # records the resulting bid range below -- this also records WHICH
+        # budget produced it, and the exact effective inputs, so a scenario
+        # bid can never be mistaken for a live one when this decision trace
+        # is read back later (the directive's explicit "UI, API response,
+        # AND decision trace" requirement). Additive to `data_versions`,
+        # which `_content_fingerprint` never hashes -- cannot affect dedup.
+        waivers_data_versions["faabBudgetMode"] = faab_budget_mode
+        waivers_data_versions["faabRemainingBudgetDollarsUsed"] = str(effective_remaining_budget)
+        waivers_data_versions["faabTotalBudgetDollarsUsed"] = str(effective_total_budget)
+        waivers_data_versions["faabWeeksRemainingUsed"] = str(effective_weeks_remaining)
+        waivers_data_versions["faabWeeksRemainingSource"] = weeks_remaining_source
         if mode == "THIS_WEEK" and weekly_provider_health:
             waivers_data_versions["weeklyProjectionSource"] = str(
                 weekly_provider_health.get("provider") or ""

@@ -103,6 +103,13 @@ def _fake_get_json(self: Any, path: str) -> Any:
         # NWR Waiver Night V1 (Worker 3, Work Unit 6): `redraft_waivers` now
         # also reads real league settings for the new `faabContext` field.
         return {"settings": {"waiver_type": 1, "waiver_budget": 100}}
+    if path == "state/nfl":
+        # NWR Waiver Night V1 (Worker 4, LIVE/SCENARIO budget separation):
+        # `redraft_waivers` now also reads the real current NFL week (for
+        # live weeks-remaining) through this same request -- modeled here so
+        # this pre-existing IR/reserve fixture keeps exercising real code,
+        # not tripping the strict unmodeled-path assertion below.
+        return {"week": 2}
     raise AssertionError(f"unexpected Sleeper GET path in test: {path}")
 
 
@@ -167,6 +174,8 @@ def test_redraft_waivers_with_no_reserve_players_is_unaffected(
             return _PLAYERS
         if path == "league/9999":
             return {"settings": {"waiver_type": 1, "waiver_budget": 100}}
+        if path == "state/nfl":
+            return {"week": 2}
         raise AssertionError(f"unexpected Sleeper GET path in test: {path}")
 
     monkeypatch.setattr(desktop_facade_module.SleeperHttpClient, "get_json", _fake_get_json_no_reserve)

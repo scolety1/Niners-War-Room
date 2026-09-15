@@ -515,24 +515,26 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
   const [week, setWeek] = useState(1);
   const [position, setPosition] = useState("ALL");
   const [view, setView] = useState("Available to add");
-  const [remainingBudget, setRemainingBudget] = useState(100);
-  const [weeksRemaining, setWeeksRemaining] = useState(14);
-  const [totalBudget, setTotalBudget] = useState(100);
   const [selectedAddId, setSelectedAddId] = useState<string | null>(null);
 
+  // NWR Waiver Night V1 (Worker 4, LIVE/SCENARIO budget separation): this
+  // page is an unrouted legacy fallback (superseded by Improve Team's FAAB
+  // tab, which now owns the real LIVE/SCENARIO budget UI). Simplified to
+  // LIVE-only here -- no `budgetScenario` sent, so the backend derives the
+  // real FAAB budget itself from this same request's own live Sleeper
+  // reads. The old manually-editable "FAAB settings" panel (hardcoded
+  // $100/$100/14-week defaults, indistinguishable from a real live number)
+  // is removed rather than carried forward into the new contract.
   const loader = useCallback(
     () => (isSleeper
       ? client.redraftWaivers({
           mode,
-          remainingBudgetDollars: remainingBudget,
-          weeksRemaining,
-          totalBudgetDollars: totalBudget,
           ...(mode === "THIS_WEEK" ? { week } : {}),
         })
       : null),
-    [client, isSleeper, mode, week, remainingBudget, weeksRemaining, totalBudget],
+    [client, isSleeper, mode, week],
   );
-  const { result, error, working, reload } = useAsync(loader, [isSleeper, mode, week, remainingBudget, weeksRemaining, totalBudget, data.activeProfileId]);
+  const { result, error, working, reload } = useAsync(loader, [isSleeper, mode, week, data.activeProfileId]);
 
   const positions = ["ALL", ...new Set((result?.addCandidates ?? []).map((row) => row.position))];
   const addRows = useMemo(() => (result?.addCandidates ?? []).filter((row) => position === "ALL" || row.position === position), [result, position]);
@@ -598,13 +600,17 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
       <SegmentedControl label="View" options={["Available to add", "Add/Drop pairings", "Consider dropping"]} value={view} onChange={setView} />
       <Button icon="activity" variant="secondary" onClick={reload} disabled={working}>{working ? "Reading…" : "Refresh"}</Button>
     </div>
-    <Panel title="FAAB settings" eyebrow="Used to compute the suggested bid range below">
-      <div className="profile-edit-actions">
-        <label className="form-field"><span>Remaining budget ($)</span><input type="number" min={0} value={remainingBudget} onChange={(event) => setRemainingBudget(Math.max(0, Number(event.target.value) || 0))} /></label>
-        <label className="form-field"><span>Total season budget ($)</span><input type="number" min={1} value={totalBudget} onChange={(event) => setTotalBudget(Math.max(1, Number(event.target.value) || 1))} /></label>
-        <label className="form-field"><span>Weeks remaining</span><input type="number" min={1} max={18} value={weeksRemaining} onChange={(event) => setWeeksRemaining(Math.min(18, Math.max(1, Number(event.target.value) || 1)))} /></label>
-      </div>
-    </Panel>
+    {result?.faabContext ? (
+      <Panel title="FAAB (live)" eyebrow="Real, live Sleeper budget -- plan scenarios on the Improve Team FAAB tab instead">
+        <p className="copy-muted">
+          {result.faabContext.isFaabLeague === false
+            ? `Waiver priority order, not FAAB -- your real position is #${result.faabContext.waiverPosition ?? "?"}.`
+            : result.faabContext.remainingBudgetDollars != null
+              ? `$${result.faabContext.remainingBudgetDollars} of $${result.faabContext.totalBudgetDollars} remaining, read live this request.`
+              : "Live FAAB budget unavailable this request."}
+        </p>
+      </Panel>
+    ) : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {result?.rankingWarning ? <div className="alert-strip"><strong>Ranking unavailable</strong><span>{result.rankingWarning}</span></div> : null}
     {mode === "THIS_WEEK" ? <ProviderStatusLine health={result?.weeklyProviderHealth ?? null} /> : null}

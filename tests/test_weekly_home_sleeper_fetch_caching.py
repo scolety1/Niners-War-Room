@@ -228,6 +228,12 @@ def _fake_get_json_counting(call_log: list[str]):
             # expected to be dedup'd inside a composed weekly-home call just
             # like they are.
             return {"settings": {"waiver_type": 1, "waiver_budget": 100}}
+        if path == "state/nfl":
+            # NWR Waiver Night V1 (Worker 4, LIVE/SCENARIO budget
+            # separation): `redraft_waivers` also now reads the real
+            # current NFL week (live weeks-remaining) through this same
+            # cached `_sleeper_get_json` wrapper.
+            return {"week": 2}
         # Weekly projections (a DIFFERENT endpoint, already covered by its
         # own disk TTL cache in weekly_projection_provider_service.py, and
         # deliberately untouched by this pass) -- let it fail honestly so
