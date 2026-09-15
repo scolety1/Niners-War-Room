@@ -67,6 +67,10 @@ _REDRAFT_DATA_HEALTH = "/api/v1/redraft/data-health"
 _REDRAFT_DECISION_TRACE_HISTORY = "/api/v1/redraft/decision-trace-history"
 _REDRAFT_DECISION_TRACE_OWNER_ACTION = "/api/v1/redraft/decision-trace/owner-action"
 _REDRAFT_DECISION_TRACE_OUTCOME = "/api/v1/redraft/decision-trace/outcome"
+# NWR Prospective Outcomes V1 (Work Unit 14, History UI V3 / class-specific
+# summary): real per-class outcome summaries, additive alongside the route
+# above -- see `redraft_decision_trace_outcome_summary`'s own docstring.
+_REDRAFT_DECISION_TRACE_OUTCOME_SUMMARY = "/api/v1/redraft/decision-trace-outcome-summary"
 _REDRAFT_DRAFT_PICK = re.compile(r"^/api/v1/redraft/draft/([^/]+)/pick$")
 _REDRAFT_DRAFT_UNDO = re.compile(r"^/api/v1/redraft/draft/([^/]+)/undo$")
 _REDRAFT_DRAFT_START = re.compile(r"^/api/v1/redraft/draft/([^/]+)/start$")
@@ -283,6 +287,9 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
 
         if method == "GET" and path == _REDRAFT_DECISION_TRACE_HISTORY:
             return self.server.facade.redraft_decision_trace_history()
+
+        if method == "GET" and path == _REDRAFT_DECISION_TRACE_OUTCOME_SUMMARY:
+            return self.server.facade.redraft_decision_trace_outcome_summary()
 
         if method == "POST" and path == _REDRAFT_DECISION_TRACE_OWNER_ACTION:
             body = self._json_body()

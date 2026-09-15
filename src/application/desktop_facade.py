@@ -241,6 +241,17 @@ from src.services.in_season_decision_trace_service import (
     record_outcome as record_decision_trace_outcome,
     record_owner_action as record_decision_trace_owner_action,
 )
+# NWR Prospective Outcomes V1 (Work Units 13-14, History UI V3 / class-
+# specific summary): pure presentation composition over the 8 real
+# evaluators -- see that module's own docstring. Imported by these two
+# function names only (never the individual `evaluate_*`/`summarize_*`
+# names) to avoid colliding with this file's own pre-existing
+# `evaluate_trade` import (line above, `redraft_trade_analysis_service` --
+# a completely different, unrelated function of the same name).
+from src.services.prospective_outcome_history_presentation_v1_service import (
+    class_specific_summaries as prospective_outcome_class_specific_summaries,
+    evaluation_payload_for_record as prospective_outcome_evaluation_payload_for_record,
+)
 from src.services.decision_envelope_service import build_decision_envelope
 from src.services.league_workspace_context_service import (
     build_league_workspace_context,
@@ -4473,6 +4484,39 @@ class DesktopBackendFacade:
             }
         )
 
+    def redraft_decision_trace_outcome_summary(self) -> FacadePayload:
+        """NWR Prospective Outcomes V1 (Work Unit 14): real, per-class
+        outcome summaries for the CURRENTLY active Redraft profile's own
+        ledger -- never a cross-league or cross-class read, matching
+        `redraft_decision_trace_history` above exactly.
+
+        Every class independently applies the preregistered
+        `MIN_SAMPLE_SIZE_FOR_PER_CLASS_SUMMARY` (20) gate inside its own
+        `summarize_*` function (contract Section 7) -- this method computes
+        nothing itself, it only loads this profile's real records and hands
+        them to `prospective_outcome_history_presentation_v1_service.
+        class_specific_summaries`. Given Worker 4's own confirmed finding
+        that the real production trace store currently has zero decision
+        traces recorded in it, every class will honestly report
+        `NOT_ENOUGH_DATA_YET` against real production data right now -- that
+        is the correct, expected result, not a bug in this method."""
+
+        self._require_mode("redraft")
+        selected = active_profile(self.redraft_root)
+        if selected is None:
+            raise FacadeError(
+                "REDRAFT_PROFILE_REQUIRED", "No active Redraft profile is selected.", status=409,
+            )
+        records = load_decision_traces(self.redraft_root, selected.profile_id)
+        return FacadePayload(
+            data={
+                "profileId": selected.profile_id,
+                "leagueName": selected.league_name,
+                "totalTraceCount": len(records),
+                "summaries": prospective_outcome_class_specific_summaries(records),
+            }
+        )
+
     def redraft_record_decision_trace_owner_action(
         self, *, trace_id: str, action: str, notes: str = "",
     ) -> FacadePayload:
@@ -7326,6 +7370,14 @@ def _decision_trace_history_event_payload(record: Any) -> dict[str, Any]:
         "ownerActionRecordedAt": record.owner_action_recorded_at_utc,
         "outcome": record.outcome,
         "outcomeRecordedAt": record.outcome_recorded_at_utc,
+        # History UI V3 (Work Unit 13): the real, class-specific
+        # `OutcomeEvaluation` presentation for this row -- see
+        # `prospective_outcome_history_presentation_v1_service.py`. Additive:
+        # every pre-existing field above is unchanged, and this key was
+        # absent entirely before this pass. Never a synthesized accuracy
+        # score -- exactly the evaluator's own real `evaluationStatus`/
+        # `evaluationMetrics`/class-specific fields, verbatim.
+        "evaluationDetail": prospective_outcome_evaluation_payload_for_record(record),
     }
 
 
