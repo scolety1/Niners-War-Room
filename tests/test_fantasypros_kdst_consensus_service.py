@@ -47,6 +47,73 @@ def test_sleeper_roster_filter_requires_exact_public_identity_and_preserves_star
     assert unmatched == ()
 
 
+def test_sleeper_dst_roster_entries_with_no_full_name_still_resolve_as_rostered() -> None:
+    # Real Sleeper DST catalog shape (confirmed against a live Sleeper
+    # players/nfl pull): DST entries never carry full_name/search_full_name,
+    # only first_name/last_name holding the city and team name separately
+    # (e.g. "Jacksonville" / "Jaguars"). FantasyPros' own consensus rows
+    # report DST player_name as that same full team name -- confirmed live
+    # in the running app UI ("Jacksonville Jaguars"), not a placeholder like
+    # "JAX D/ST".
+    payload = {"players": [
+        {"player_id": 1, "player_name": "Jacksonville Jaguars", "player_position_id": "DST", "player_team_id": "JAX", "rank_ecr": 1, "tier": 1},
+        {"player_id": 2, "player_name": "Los Angeles Chargers", "player_position_id": "DST", "player_team_id": "LAC", "rank_ecr": 2, "tier": 1},
+        {"player_id": 3, "player_name": "Houston Texans", "player_position_id": "DST", "player_team_id": "HOU", "rank_ecr": 3, "tier": 1},
+    ]}
+    rows = _parse_consensus(payload, season=2026, week=1, position="DST")
+    actions, unmatched = sleeper_streamer_actions(
+        rows,
+        rosters=[
+            {"owner_id": "owner", "players": ["s1"], "starters": ["s1"]},
+            {"owner_id": "rival", "players": ["s2"], "starters": ["s2"]},
+        ],
+        # Deliberately omitting full_name/search_full_name here is the whole
+        # point of this test -- that is the real Sleeper DST shape.
+        players={
+            "s1": {"first_name": "Jacksonville", "last_name": "Jaguars", "position": "DST", "team": "JAX"},
+            "s2": {"first_name": "Los Angeles", "last_name": "Chargers", "position": "DST", "team": "LAC"},
+        },
+        owner_user_id="owner",
+    )
+    assert not unmatched, "A real DST roster entry with no full_name must still resolve to a known provider id."
+    by_ecr = {value["ecr"]: value["recommendation"] for value in actions}
+    assert by_ecr[1] == "START"               # Jacksonville: owner's own real starter
+    assert by_ecr[2] == "ROSTERED_ELSEWHERE"  # LA Chargers: a rival's real starter -- must NOT show AVAILABLE once fixed
+    assert by_ecr[3] == "ADD"                 # Houston: genuinely unrostered by anyone
+
+
+def test_sleeper_dst_roster_entry_rostered_by_an_opponent_is_not_reported_available() -> None:
+    payload = {"players": [
+        {"player_id": 1, "player_name": "Houston Texans", "player_position_id": "DST", "player_team_id": "HOU", "rank_ecr": 1, "tier": 1},
+    ]}
+    rows = _parse_consensus(payload, season=2026, week=1, position="DST")
+    actions, unmatched = sleeper_streamer_actions(
+        rows,
+        rosters=[{"owner_id": "someone_else", "players": ["s1"], "starters": ["s1"]}],
+        players={"s1": {"first_name": "Houston", "last_name": "Texans", "position": "DST", "team": "HOU"}},
+        owner_user_id="owner",
+    )
+    assert not unmatched
+    assert actions[0]["recommendation"] == "ROSTERED_ELSEWHERE"
+    assert actions[0]["rosterStatus"] == "ROSTERED"
+
+
+def test_sleeper_k_roster_matching_is_unaffected_by_the_dst_full_name_fallback() -> None:
+    # Regression guard: the new DST-only fallback branch must not change K's
+    # existing, already-correct matching path (Sleeper K catalog entries
+    # always carry a real full_name).
+    rows = _parse_consensus(_payload(), season=2026, week=1, position="K")
+    actions, unmatched = sleeper_streamer_actions(
+        rows,
+        rosters=[{"owner_id": "owner", "players": ["s1"], "starters": ["s1"]}],
+        players={"s1": {"full_name": "K Two", "position": "K", "team": "BBB"}},
+        owner_user_id="owner",
+    )
+    assert unmatched == ()
+    assert actions[0]["recommendation"] == "START"
+    assert actions[1]["recommendation"] == "ADD"
+
+
 def test_provider_rejects_other_positions_and_malformed_rows() -> None:
     with pytest.raises(FantasyProsProviderError):
         FantasyProsConsensusClient(api_key="test").consensus_rankings(season=2026, position="RB")

@@ -161,7 +161,20 @@ def sleeper_streamer_actions(
             position = _sleeper_position(player.get("position"))
             if position not in SUPPORTED_POSITIONS:
                 continue
-            key = _identity(player.get("full_name") or player.get("search_full_name"), position, player.get("team"))
+            team = str(player.get("team") or "").upper().strip()
+            name = str(player.get("full_name") or player.get("search_full_name") or "").strip()
+            if position == "DST" and not name:
+                # Sleeper's real DST catalog entries never carry full_name/
+                # search_full_name -- only first_name/last_name holding the
+                # city and team name separately (e.g. "Jacksonville" /
+                # "Jaguars"). FantasyPros' own consensus rows report DST
+                # player_name as that same full team name (e.g. "Jacksonville
+                # Jaguars"), confirmed live -- so reconstructing from
+                # first_name/last_name (not a synthesized "TEAM D/ST" code,
+                # which does not match FantasyPros' naming) is what actually
+                # lets a real DST identity-match here.
+                name = f"{player.get('first_name') or ''} {player.get('last_name') or ''}".strip()
+            key = _identity(name, position, team)
             provider_id = provider_ids.get(key)
             if provider_id is None:
                 unmatched.add(str(sleeper_id))
