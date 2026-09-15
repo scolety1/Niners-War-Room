@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import type {
   DataHealthReport,
   LeagueProfile,
@@ -204,13 +205,19 @@ function buildFakeClient(profileIds: string[], delays: typeof REALISTIC_DELAY_MS
 function percentile(sortedMs: number[], p: number): number {
   if (!sortedMs.length) return 0;
   const idx = Math.min(sortedMs.length - 1, Math.ceil((p / 100) * sortedMs.length) - 1);
-  return sortedMs[Math.max(0, idx)];
+  // Non-null fallback only: idx is always in-bounds given the length guard
+  // above (noUncheckedIndexedAccess types the access as possibly-undefined
+  // regardless), so the `?? 0` branch is never actually reached.
+  return sortedMs[Math.max(0, idx)] ?? 0;
 }
 
 function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  // Same non-null-fallback discipline as percentile() above -- sorted is
+  // non-empty at every real call site in this file, so `?? 0` is a type-
+  // level safety net, not real behavior.
+  return sorted.length % 2 ? (sorted[mid] ?? 0) : ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2;
 }
 
 interface CellResult {
@@ -246,7 +253,7 @@ describe("Attention Center aggregation -- real multi-league scale benchmark", ()
       results.aggregation.push({
         leagues: n, mode: "isolated_overhead",
         medianMs: median(samples), p95Ms: percentile(samples, 95),
-        minMs: samples[0], maxMs: samples[samples.length - 1], reps: ISOLATED_REPS,
+        minMs: samples[0] ?? 0, maxMs: samples[samples.length - 1] ?? 0, reps: ISOLATED_REPS,
       });
       // Loose regression ceiling: pure JS orchestration for 50 leagues
       // should never approach human-perceptible latency (100ms) on its own.
@@ -266,7 +273,7 @@ describe("Attention Center aggregation -- real multi-league scale benchmark", ()
       results.aggregation.push({
         leagues: n, mode: "realistic",
         medianMs: median(samples), p95Ms: percentile(samples, 95),
-        minMs: samples[0], maxMs: samples[samples.length - 1], reps: REALISTIC_REPS,
+        minMs: samples[0] ?? 0, maxMs: samples[samples.length - 1] ?? 0, reps: REALISTIC_REPS,
       });
       // Loose regression ceiling: sequential fan-out at 50 leagues should
       // stay well under 5s (the directive's own "clearly unacceptable"

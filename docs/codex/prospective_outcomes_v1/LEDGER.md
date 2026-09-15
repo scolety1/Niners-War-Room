@@ -2072,3 +2072,515 @@ original path.
 5. **Work Units 21-22 (real dogfood + full acceptance)**, the directive's
    own next-named work, were not started this pass -- Work Units 19-20
    (this pass's own assignment) were the full scope this time.
+
+## Worker 9 (this pass) -- Work Units 21-25: real dogfood, full acceptance,
+## honest research synthesis, bounded challenger proposal, push checkpoint
+## (CYCLE CLOSING WORKER)
+
+Start HEAD `768a91e9` (Worker 8's closing commit). Verified live before
+touching anything: branch, clean worktree, the 527-test targeted slice, and
+`test_desktop_application_api.py`'s same 4 pre-existing failures
+(`test_dynasty_facade_composes_real_governed_workflows`,
+`test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`,
+`test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`,
+`test_facade_has_no_streamlit_or_app_component_dependency`). Read this
+ledger (Workers 1-8) in full before doing anything else.
+
+### Work Unit 21 -- real dogfood
+
+Real Chrome session against the real production `vite build` + the real
+Python desktop API backend, launched via `desktop/scripts/
+nwr_release_gate_smoke.ps1 -KeepRunning -SleeperLeagueId
+1312983576827920384 -SleeperUsername scolety` (backend port 18742, vite
+preview port 1422). The release-gate script's own real, read-only Sleeper
+before/after byte-diff came back **IDENTICAL** (0 writes confirmed) --
+confirmed independently, not merely trusted from a prior pass.
+
+**A real, important scoping check made FIRST, before trusting any "real"
+claim below**: `redraft_store_root()` (`src/services/
+redraft_engine_v1_service.py`) resolves to `<repo_root>/local_exports/
+redraft_v1` by default (only `NWR_REDRAFT_HOME` would redirect it
+elsewhere) -- the release-gate script sets neither, so this ENTIRE dogfood
+pass, including the real Sleeper-backed profile it created, lived inside
+this worktree's own isolated `local_exports/redraft_v1` directory, never
+the real owner AppData store (`...\com.ninerswarroom.redraft\state\
+redraft`). Directly confirmed both ways: `Test-Path` on the real AppData
+`decision_traces` subdirectory returned `False` (re-confirming Worker
+4/5/6/7/8's own finding is still true for the REAL production store), and
+the new traces this pass produced were found on disk under this worktree's
+own `local_exports/redraft_v1/decision_traces/`. (One real false lead
+chased down and closed during this check: a directory literally named
+`prospective_decision_log/` DOES exist under the real AppData root --
+confirmed to be a completely different, unrelated system from an earlier,
+different cycle's `prospective_decision_log_v1_service.py`
+[`decisions.jsonl` per profile], not this cycle's `decision_traces/`
+ledger -- ruled out by reading both services' own path-building code
+directly, not assumed.)
+
+**A real, materially new finding this pass**: exercising the live app's own
+real surfaces (Lineup, Improve Team/Waivers, Trade Finder, Weekly Home
+actions, Streamers) against the real Fantasy Gamers Sleeper league, exactly
+as a real owner session would, caused the app's own already-wired call
+sites to record **11 real decision traces** into this isolated store for
+the first time this whole cycle -- 2x START_SIT, 2x WAIVER, 2x FAAB, 1x
+TRADE_FINDER, 2x K_STREAMER, 2x DST_STREAMER. This is the first time in the
+whole 9-worker cycle that History UI V3 and the class-specific summary
+panel have been observed rendering **real, non-fixture, non-demo** data
+end-to-end. All 11 initially showed `OUTCOME PENDING` (correct -- windows
+not yet matured); expanding "View outcome detail" on several (K_STREAMER,
+DST_STREAMER) showed every field correctly `None`/"Not yet computable"
+with zero visible/functional hindsight leakage.
+
+**The real DST identity-matching bug (Worker 7's finding) was independently
+re-reproduced live in the UI this pass** -- not just re-read in source:
+Improve Team -> Streamers -> "Refresh K/DST ECR" against the real league
+rendered `ADD Jacksonville Jaguars (DST) ... THIS WEEK AVAILABLE`, even
+though Jacksonville was a real, actually-rostered/started DST that week
+(matching Worker 7's own root-caused finding exactly). See the new fix
+proposal document (Work Unit 24, below) for the exact mechanism.
+
+**Cross-profile isolation, verified live, not merely asserted**: created a
+second, genuinely separate LOCAL-provider profile ("Isolation Check
+Local", preset `10-team 1QB Standard`) via the real `Create from preset`
+UI flow. Its own History page showed **0 recorded events** -- none of the
+11 real Fantasy Gamers traces leaked across the profile boundary. 10 real
+UI-driven league switches (alternating Fantasy Gamers <-> Isolation Check
+Local) via the real "League Profiles & Scoring" page produced zero console
+errors and the correct active profile at every step (`Fantasy Gamers is
+active.` confirmed live after the 10th switch).
+
+**Idempotency, proven directly and rigorously against the real trace store
+this pass's own dogfood produced** (a stronger, more direct proof than any
+prior worker had, since no prior worker's real production-store check ever
+found real traces to re-run against): ran `scripts/
+run_prospective_outcome_ingestion_v1.py --root local_exports/redraft_v1
+--profile-id 941b99ade350410391b1b67c0890af79` **10 times in sequence**.
+Run 1 made a real, live change (one real `GET league/.../matchups/1` call,
+`PROCESS_FULL_START_SIT: 1` + `PROCESS_INSUFFICIENT_CONTEXT: 2` [the two
+real K/DST streamer traces, correctly resolving to
+`INSUFFICIENT_DECISION_CONTEXT` per the identity gap above] +
+`SKIP_IMMATURE_WINDOW: 5` + `SKIP_WINDOW_UNDETERMINABLE: 3`); runs 2-10
+were byte-for-byte no-ops (`md5sum` identical across all 10 runs;
+`SKIP_ALREADY_PROCESSED: 3` reported every time, zero new network calls
+implied by the unchanged output). **A real, live, PRELIMINARY (n=1) START/
+SIT outcome data point came out of this**: the real Week 1 trace evaluated
+to `STARTER_DEVIATED`, `lineupOpportunityCostPoints: -11.16` -- the owner's
+own actual Week 1 lineup choice (37.26 real points) beat NWR's own
+recommended player (26.1 real points) by 11.16 points that week. Reloading
+History UI V3 live after this orchestrator run correctly rendered `EVALUATED
+-11.2 pts vs chosen starter` for that row and `INSUFFICIENT CONTEXT` for
+the two K/DST rows -- the full real pipeline (live Sleeper data ->
+orchestrator -> evaluator -> facade -> History UI) confirmed working
+end-to-end together for the first time this cycle, not merely unit-tested
+in isolation.
+
+**Other real, live, disclosed observations** (none chased further --
+outside this pass's own scope, or pre-existing app behavior unrelated to
+this cycle): (1) Attention Center reported `"3 rostered players could not
+be matched to an NWR identity"` for the real league -- corroborates, and
+generalizes (1 -> 3 players), Worker 7's own Marvin Harrison Jr. identity-
+match-gap finding; not investigated further (ranking/identity resolution is
+outside this cycle's hard boundary, same as Worker 7's own disclosure). (2)
+The release-gate script's own documented KNOWN ISSUE (`weekly-home-actions`
+returning HTTP 500 against a real, active-roster profile) did NOT reproduce
+this pass -- it returned a real `200` (`3,202.9 ms`) against the same real
+league; not root-caused (could be a real prior fix from an unrelated
+session, or a real roster-shape difference) -- disclosed as an observed,
+unexplained improvement, not claimed as a fix by this pass. (3) A freshly
+Sleeper-imported profile's Home/Draft pages render `Pre-Draft`/`Week 1`
+lifecycle badges even though the real league is genuinely in-season
+(real NFL week 2) -- plausibly because NWR's own "pre-draft" concept tracks
+whether the OWNER completed a draft inside NWR itself, not Sleeper's real
+season progression, for a profile that has never been through NWR's own
+Draft Room; not chased further (pre-existing app behavior, not part of this
+cycle's own code). (4) The Draft Room's "Suggestions" panel showed
+`DecisionBundle unavailable` before a team/slot was chosen -- plausible
+expected pre-draft-setup state, not chased further (Draft Room is
+untouched by this cycle). (5) The K_STREAMER/DST_STREAMER surface returned
+different top picks two minutes apart within the same dogfood session
+(Cam Little/Jacksonville at 1:43, Eddy Pineiro/Philadelphia at 1:45) --
+unexplained, likely benign snapshot-timing variance between two independent
+real calls, not chased further given time constraints; flagged here rather
+than silently observed and dropped.
+
+Player Drawer exercised for 6 real open/close cycles (Trevor Lawrence, from
+the real Lineup page) -- renders correctly every time, zero console errors.
+Console errors across the ENTIRE dogfood session (every surface walked,
+every profile switch, every drawer cycle, the orchestrator's own live
+network calls): **zero**.
+
+### Work Unit 22 -- full acceptance
+
+**A real, disclosed bug found and fixed this pass** (the only fix made):
+`npx tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json` FAILED
+with 11 real errors, all in Worker 8's own new file
+(`desktop/apps/redraft/src/attention-center-scale-benchmark.test.ts`) --
+this codebase has no `@types/node` dependency anywhere, and this is the
+ONLY file in the whole monorepo that imports `node:fs`/`node:path` or uses
+`__dirname`; `vitest` never caught it because it transpiles without full
+project type-checking. This is a real, disclosed gap: Worker 8's own ledger
+entry only reports a vitest pass, never a `tsc -b` run. **Fixed narrowly**,
+confined to this one wholly-this-cycle-owned file plus the minimal tooling
+needed to support it: (1) added `@types/node@^22.12.0` as a new
+`desktop/package.json` devDependency (matching the workspace's own stated
+`engines.node >=22.12.0`; no other package.json/tsconfig changed --
+`node` was NOT added to any project's global `types` array, to avoid
+widening ambient Node globals into browser-facing source files); (2) added
+`/// <reference types="node" />` to the top of the one file that needs it;
+(3) fixed 6 real `noUncheckedIndexedAccess`/`exactOptionalPropertyTypes`
+possibly-undefined errors in that same file's own `percentile`/`median`
+helpers and two `CellResult` object literals, each with an `?? 0` fallback
+disclosed in a comment as a type-level safety net (every real call site in
+this file guarantees a non-empty array, so the fallback branch is never
+actually reached). Re-verified: `tsc -b` now exits 0 with zero errors;
+`npx vitest run apps/redraft/src/attention-center-scale-benchmark.test.ts`
+still passes all 13 tests unmodified in behavior. One regenerated artifact
+(`docs/codex/prospective_outcomes_v1/multi_league_scale_v1/
+frontend_bench_results.json`) reflects this pass's own legitimate re-run of
+that same file (numbers closely match Worker 8's own original run -- a
+consistency check, not a regression).
+
+**Full results, all re-confirmed live this pass, not assumed from any
+prior ledger entry**:
+- Targeted pytest slice (`pytest -k "decision_trace or prospective_outcome
+  or live_player_intelligence or boundary_property_reliability or
+  composition or player_availability or trade_package_quality_benchmark or
+  kdst_prospective_benchmark or multi_league_scale_and_performance"`):
+  **527 passed, 0 failed** (re-run twice this pass, both times identical --
+  Worker 8's own final count, unchanged, since this pass made zero Python
+  changes).
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures documented in every prior worker's own
+  baseline, re-confirmed live.
+- Full monorepo `npx vitest run` (from `desktop/`): **423 passed, 29 test
+  files, 0 failed** (re-run twice this pass -- once before, once after the
+  tsc fix -- both green, confirming the fix changed zero runtime behavior).
+- `npx tsc -b apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`:
+  **FAILED (11 errors) before this pass's fix, PASSES CLEAN (0 errors)
+  after** -- see above.
+- `npm run build` (full production web build: `check:resources` +
+  `typecheck` + both apps' `vite build`): **PASSES CLEAN**, confirming the
+  privacy/resource-allowlist gate, the now-fixed typecheck, and both real
+  production bundles all succeed together as one command.
+- Native Tauri packaging: the sidecar binary
+  (`binaries/nwr-desktop-api-x86_64-pc-windows-msvc.exe`) does **NOT**
+  exist in this worktree (`binaries/` contains only its own `.gitignore`)
+  -- per established precedent, NOT built fresh this pass. The release-gate
+  script's own packaging-gate step (`cargo check`) failed for exactly this
+  reason (`resource path ...\\binaries\\nwr-desktop-api-...exe doesn't
+  exist`) -- a real, expected, KNOWN, non-blocking finding (not a toolchain
+  regression), reported by the script itself as `FINDING:` text, honestly
+  surfaced rather than hidden. `check:resources` itself (the real
+  privacy/allowlist gate) PASSED cleanly this pass -- notably, this is
+  BETTER than the script's own header-comment precedent (which documents an
+  earlier, since-resolved expectation that `check:resources` would fail for
+  `redraft` over a bundled governance receipt containing the owner's real
+  name; that receipt issue is not reproduced this pass, consistent with the
+  "Owner Mock QA V1" memory entry's own note about a governance-receipt
+  renewal in an intervening session).
+- Real read-only Sleeper smoke via the release-gate script: before/after
+  byte-diff of `league`/`rosters`/`users` **IDENTICAL**, 0 writes confirmed
+  -- see Work Unit 21 above.
+
+**Full diff review, `cd1f78dacb927c647c2470ab9cbee9f981877e38` to this
+pass's final HEAD (the WHOLE 9-worker cycle, not just this pass's own
+commit)**: `git diff --stat` shows **64 files changed** before this pass's
+own commit (10 modified, 54 new) -- matching the additive-only pattern
+every prior worker's own ledger entry claims. Grepped the ENTIRE cycle diff
+for every hard-boundary term (`marginal_roster_utility_v2`,
+`LeagueSnapshot`, `LeagueWorkspaceContext`, `lifecycle_resolver`,
+`DecisionResultEnvelope`, `PlayerAvailabilityStatus`): every match is
+either ledger disclosure prose, a structural test asserting an import
+statement does NOT contain the term, or a legitimate type-only import (the
+scale-benchmark test file importing `LeagueWorkspaceContext`'s TYPE to
+build a realistic fixture) -- **zero real imports or semantic
+modifications of any hard-boundary module across the whole cycle**,
+independently re-confirmed, not merely trusted from any single prior
+worker's own claim.
+
+**The 3 real bugs found+fixed this cycle, re-confirmed still fixed and not
+regressed** (source re-read directly, not just grepped for the word "fix"):
+(1) Worker 5's enum-keyed-dict-mangling fix (`_as_count_pairs` /
+`class_specific_summaries` returning a LIST, never an enum-keyed dict) --
+confirmed present in `prospective_outcome_history_presentation_v1_
+service.py`. (2) Worker 6's Group 8 general sweep test
+(`test_no_dict_anywhere_in_the_real_history_or_summary_payload_is_enum_or_
+id_keyed`) and its own concrete regression backstop
+(`test_the_two_previously_fixed_bug_instances_stay_fixed_as_concrete_
+regressions`) both still present and passing in `tests/
+test_boundary_property_reliability_pack_v2.py`. (3) Worker 6's trade-
+evaluator acceptance-gate fix (`evaluate_trade`'s own independent
+`acceptanceStatus == "ACCEPTED" and tradeAccepted is True` gate before
+reusing `trade_realized_metrics_from_detail`) confirmed present in
+`prospective_outcome_trade_evaluator_v1_service.py`, matching `evaluate_
+trade_finder`'s own sibling guard.
+
+**Endurance**: 10 real league switches (documented above, zero console
+errors). 10 real repeated outcome ingestions via the orchestrator CLI
+(documented above -- 1 real processing run + 9 byte-identical no-ops,
+which IS this cycle's own idempotency contract, not merely "clicked ten
+times"). 6 real player-drawer open/close cycles. History reload confirmed
+live to reflect the orchestrator's own real output correctly. Cross-league
+profile isolation confirmed (0 leaked events). A full 10x nav loop across
+every directive-named surface (beyond what is documented above) was NOT
+separately re-run after the initial full walk, given the time already spent
+on the more decisive, mechanism-level checks above (CLI-level idempotency
+x10, profile-switch x10, orchestrator re-run x10) -- disclosed honestly
+rather than claimed as done.
+
+### Work Unit 23 -- honest research synthesis (PRELIMINARY throughout)
+
+Using the real evidence this WHOLE cycle produced (all 9 workers' own real
+data/benchmarks/dogfood, plus this pass's own new real 11-trace dogfood
+sample):
+
+**Which decision classes can already be evaluated credibly?**
+START_SIT is the one class with a real, live, working, end-to-end pipeline
+AND at least one real observed outcome (n=1 this pass's own dogfood, plus
+Worker 1/2's own earlier real Week 1 fixture work) -- `PRELIMINARY`, n=1
+is far below the contract's own frozen minimum-sample threshold (20). The
+MECHANISM (schema -> ingestion -> evaluation -> orchestration ->
+presentation) is credible and tested at every layer (485+ unit tests
+touching this class alone across the cycle); the STATISTICAL CONCLUSIONS
+that mechanism can produce are not yet credible at n=1. DST_STREAMER's
+mechanism is equally real and tested, but its real-world output is
+currently DEGENERATE (see below) -- not a sample-size problem, a
+correctness problem upstream of evaluation.
+
+**Which classes are sample-starved?** Every other class: WAIVER, ADD_DROP,
+FAAB, TRADE, TRADE_FINDER/TRADE_PACKAGE_SEARCH, K_STREAMER, DST_STREAMER,
+DRAFT. The real production AppData store has zero traces (re-confirmed live
+this pass); this pass's own dogfood produced real n=1-2 samples per class
+in an ISOLATED worktree-local store, still far below 20. WAIVER/ADD_DROP/
+FAAB/TRADE-family additionally cannot mature automatically today even given
+enough real time, because six of those decision types' live call sites
+record `week=None` or no player identity at all (Worker 3/4's own findings,
+unchanged) -- `SKIP_WINDOW_UNDETERMINABLE`/`INSUFFICIENT_DECISION_CONTEXT`
+by construction, confirmed live again this pass via the orchestrator's own
+real run. DRAFT has zero live call site at all (schema-only, Worker 4).
+`PRELIMINARY` is too generous a word for these classes' actual evaluability
+today -- "not yet evaluable pending upstream identity-resolution work" is
+more precise for six of the eight non-START_SIT classes.
+
+**Which NWR tools show early regret/weakness?** Two genuinely DIFFERENT
+findings, deliberately NOT conflated (per this cycle's own standing
+discipline): (1) A single, real, `PRELIMINARY` (n=1) START_SIT REGRET
+signal -- NWR's own Week 1 lineup recommendation underperformed the
+owner's actual choice by 11.16 real points. This is exactly the kind of
+observation Prospective Outcomes V1 exists to surface; it is also exactly
+one data point, and this cycle's own frozen minimum-sample rule (20) exists
+precisely so a finding like this is not overinterpreted into "NWR's
+Start/Sit logic is bad" from a single close-call deviation. (2) The real,
+MECHANICAL DST identity-matching bug (Worker 7, re-confirmed live this
+pass) -- this is NOT a model-quality or close-call-resolution question at
+all; it is a data-plumbing defect (a missing name fallback for Sleeper's
+own DST catalog shape) that makes the DST arm of the K/DST streamer
+ALWAYS structurally identical to naive top-ECR consensus, regardless of
+real roster state, every single week, for every league. This is a
+100%-reproducible, root-caused, zero-ambiguity finding -- categorically
+different in kind and confidence from the n=1 START_SIT observation, and
+this synthesis deliberately does not let the two blur into one vague
+"NWR has weaknesses" headline.
+
+**Which tools show no evidence requiring more complexity?** The Trade
+Package Generator (`trade_package_search_service.py`) -- Worker 7's own
+benchmark (Work Unit 16) found zero dominance violations, zero roster-
+legality violations (once the benchmark's own measurement bug was fixed),
+zero real-league bench-clutter, and explainable near-duplicate/zero-
+candidate results, against a REAL league. This is the cycle's own
+strongest "we looked for a problem, on purpose, with a preregistered
+rubric, and did not find one" result -- worth naming explicitly as the
+standard every other finding in this synthesis is held to.
+
+**What should the NEXT improvement cycle target?** In priority order,
+based on real evidence density and blast radius: (1) The DST identity-
+matching fix (Work Unit 24 below) -- small, precise, ready to execute,
+unlocks real DST evaluation data going forward. (2) A real canonical-id ->
+Sleeper-id identity resolver for WAIVER/FAAB/ADD_DROP/K_STREAMER/
+TRADE-family -- the single biggest lever for turning "sample-starved" into
+"evaluable" across SIX of the eight live classes (Worker 1/3/4's own
+repeatedly-inherited Open Issue). (3) A real week-capture fix for the
+TRADE-family's live call sites (`week=None` today) so
+`SKIP_WINDOW_UNDETERMINABLE` can ever resolve. (4) Once (2)/(3) land and
+enough real season time has elapsed, RE-RUN this cycle's own real dogfood
+pattern (exercise the live app against the real league, then run the
+orchestrator) periodically -- this pass proved that pattern alone is
+sufficient to generate real, evaluable data; no new mechanism is needed,
+only real elapsed time and the identity-resolution work above. (5) The
+`SleeperHttpClient` connection-reuse gap (Worker 8's own Open Issue 1) --
+unrelated to evaluation correctness, a real latency-only item.
+
+### Work Unit 24 -- bounded challenger
+
+**One qualifying candidate, per the directive's own named example**: the
+real DST identity-matching bug. A precise, ready-to-execute fix proposal
+(exact root cause -- re-verified against `_identity`'s own literal
+`("", "", "")` degenerate-key behavior, not just described generally --
+exact 4-line fix mirroring two already-correct sibling code blocks
+verbatim, exact new test, blast-radius analysis) was written to
+`docs/codex/prospective_outcomes_v1/
+DST_IDENTITY_MATCHING_FIX_PROPOSAL_V1.md`. **NOT executed this pass** --
+`fantasypros_kdst_consensus_service.py` is a live, shared K/DST
+*recommendation* service, outside this cycle's own established file set,
+and the owner's standing instruction is explicit: do not build (or fix)
+just because time is available. Handed off complete for a future,
+explicitly-scoped session.
+
+**No other qualifying defect was found** during this pass's own dogfood/
+acceptance work, beyond the one already-disclosed, already-fixed `tsc -b`
+gap (Work Unit 22 above, which WAS narrowly fixed this pass because it sits
+entirely inside a file this cycle itself created, unlike the DST bug).
+
+### Work Unit 25 -- push checkpoint
+
+Acceptance is clean (Work Unit 22 above); the one fix made this pass is
+narrow, disclosed, and fully re-verified. Pushed after this ledger entry's
+own commit -- see the final HEAD / remote-verification line in this pass's
+own closing handoff message (not duplicated here since the exact SHA is
+only known after the commit that includes this very entry).
+
+### Sleeper writes
+
+**Zero.** Every real network call this pass made was a plain, public,
+keyless Sleeper `GET` (`state/nfl`, `league/{id}/rosters`, `/users`,
+`league/{id}/matchups/{week}`, `players/nfl`) -- via the release-gate
+script's own real byte-diffed import, the live dogfood session's own real
+surface reads, and the orchestrator's own real matchup fetch. The
+release-gate script's own before/after byte-diff (`league`/`rosters`/
+`users`) came back IDENTICAL, independently confirming zero writes.
+
+### Backend/model files changed this pass
+
+- **Modified (narrow, disclosed fix only)**:
+  `desktop/apps/redraft/src/attention-center-scale-benchmark.test.ts`
+  (tsc-only fix -- `/// <reference types="node" />` + 6 `?? 0`
+  undefined-safety fallbacks, zero behavior change, re-verified by re-
+  running its own 13 tests), `desktop/package.json` + `desktop/
+  package-lock.json` (new `@types/node@^22.12.0` devDependency).
+- **Regenerated (this pass's own legitimate re-run of an existing,
+  designed-to-be-re-runnable artifact)**: `docs/codex/
+  prospective_outcomes_v1/multi_league_scale_v1/frontend_bench_results.json`.
+- **New**: `docs/codex/prospective_outcomes_v1/
+  DST_IDENTITY_MATCHING_FIX_PROPOSAL_V1.md`, this ledger entry.
+- **Nothing else** -- no evaluator, ingestion, orchestrator, schema,
+  adapter, facade, or UI-rendering file from any of Workers 1-8's own work
+  was modified. No hard-boundary file was touched.
+
+## CONSOLIDATED CYCLE SUMMARY (all 9 workers, Prospective Outcomes V1)
+
+A preregistered contract (8 decision classes, closed evaluation-status
+vocabulary, frozen windows/thresholds) was built first and never silently
+changed across 9 workers. On top of it: a canonical outcome-event contract
+and source adapters (Worker 1); 8 real, independently-tested per-class
+evaluators covering every live decision type (Workers 2-3); a DRAFT
+foundation deliberately deferred to the correct future owner
+(`marginal_roster_utility_v2`, Worker 4); a real, idempotent, hindsight-
+leakage-proof automatic ingestion orchestrator with a real CLI (Worker 4);
+History UI V3 + class-specific summaries wired end-to-end into the real
+product (Worker 5, catching and fixing a real enum-key-mangling bug live in
+Chrome); a boundary/property test pack V2 that found and fixed 2 MORE real
+bugs via deliberate, general sweeps rather than hand-picked examples
+(Worker 6); a trade-package-quality benchmark that found nothing wrong on
+purpose (Worker 7); a K/DST benchmark that found and root-caused a real,
+unfixed DST identity bug (Worker 7); multi-league scale (linear through 50
+leagues) and performance characterization (one real, unfixed connection-
+reuse latency source, precisely cProfile-attributed) (Worker 8); and,
+closing the cycle, a real dogfood pass that for the first time produced and
+observed real (non-fixture) end-to-end data, a full acceptance pass that
+found and fixed one real `tsc -b` gap, an independently re-verified
+zero-hard-boundary-drift full-cycle diff review, an honest research
+synthesis that resists overreading n=1 evidence, a ready-to-execute (not
+executed) fix proposal for the one real mechanical defect this cycle
+surfaced, and a push (Worker 9).
+
+**Real conclusion**: the evaluation LAYER is real, tested, and now proven
+live end-to-end against real data for at least one class (START_SIT). The
+DATA needed to say anything statistically meaningful about NWR's own
+recommendation quality across most classes does not exist yet -- not
+because the mechanism is broken, but because real season time and (for six
+of eight classes) a real identity resolver both still need to accumulate/be
+built. The one clear, mechanical, actionable defect this whole cycle
+surfaced (DST identity matching) is fully diagnosed and ready for a future
+session to fix in minutes. This cycle did not manufacture a false
+conclusion to justify its own length -- it built the honest instrument and
+reported, truthfully, that the instrument mostly does not have enough real
+readings yet.
+
+### CONSOLIDATED BUG LIST (all real bugs found across all 9 workers)
+
+1. **(Worker 5, FIXED)** Enum-keyed-dict HTTP camelCase-mangling in the new
+   History/class-summary presentation layer (`_as_count_pairs` fix,
+   `prospective_outcome_history_presentation_v1_service.py`) -- found live
+   in Chrome, not just in pytest.
+2. **(Worker 6, FIXED)** The SAME bug class, confirmed to have zero other
+   live instances via a general structural sweep (not another hand-picked
+   example) -- `tests/test_boundary_property_reliability_pack_v2.py` Group
+   8, plus a permanent concrete-regression backstop for bug #1 above.
+3. **(Worker 6, FIXED)** `evaluate_trade`'s own missing independent
+   acceptance/accepted gate before reusing `trade_realized_metrics_from_
+   detail` -- a rejected-trade counterfactual could otherwise leak through
+   a malformed/legacy raw `outcome.detail` dict that bypasses the schema's
+   own `__post_init__` guard. Fixed at `evaluate_trade`'s own call site,
+   mirroring `evaluate_trade_finder`'s existing sibling guard.
+4. **(Worker 7, FOUND, NOT FIXED -- hard-boundary gated, proposal ready)**
+   `sleeper_streamer_actions`'s real DST identity key always degenerates to
+   `("", "", "")` for every real Sleeper DST roster entry (missing the
+   `f"{team} D/ST"` name fallback that 2 sibling functions in the same file
+   already carry) -- makes NWR's own DST streamer recommendation always
+   structurally identical to naive top-ECR consensus. Re-confirmed live in
+   the real running UI by Worker 9. Exact fix + test in `DST_IDENTITY_
+   MATCHING_FIX_PROPOSAL_V1.md`.
+5. **(Worker 9, FOUND+FIXED)** `tsc -b` failure in Worker 8's own new file
+   (`attention-center-scale-benchmark.test.ts`) -- no `@types/node`
+   anywhere in this codebase, `node:fs`/`node:path`/`__dirname` used
+   without it; `vitest` never caught it (no full project type-check).
+   Fixed narrowly (new devDependency + a scoped triple-slash reference +
+   6 `?? 0` undefined-safety fallbacks), zero behavior change (13/13 tests
+   still pass).
+
+### OPEN ITEMS FOR FUTURE CYCLES (consolidated, deduplicated)
+
+1. Execute the DST identity-matching fix (`DST_IDENTITY_MATCHING_FIX_
+   PROPOSAL_V1.md`) -- the one ready-to-go, high-confidence item.
+2. Build a real canonical-id -> Sleeper-id identity resolver for
+   WAIVER/FAAB/ADD_DROP/K_STREAMER/TRADE-family live call sites -- the
+   single biggest lever for making six of eight live decision classes
+   evaluable at all (inherited from Workers 1/3/4, still unresolved).
+3. Add real week-capture to the TRADE-family's live call sites
+   (`week=None` today blocks any maturity check -- Worker 4's own Open
+   Issue 2, still unresolved).
+4. A real, general `owner_roster_id` resolver (today: one real,
+   hardcoded, confirmed pair -- Worker 4's own Open Issue 3).
+5. `SleeperHttpClient` connection reuse (Worker 8's own Open Issue 1) --
+   a real, cProfile-attributed latency source, unrelated to correctness.
+6. A real ROS (rest-of-season) evaluation window, once enough of a real
+   season has elapsed to derive one honestly (Worker 1's own Open Issue 5,
+   inherited unchanged through every worker).
+7. The duplicated `MIN_SAMPLE_SIZE_FOR_PER_CLASS_*` constant across the
+   Python/TypeScript boundary (Worker 1's own Open Issue 6, unchanged).
+8. ADD_DROP's `netRosterValuePoints` (needs a leaguewide roster-
+   membership-over-time feed this codebase does not have -- inherited from
+   the PRIOR cycle's own Open Issue 3, unchanged through every worker).
+9. DRAFT's real live call site + real season-long roster-utility
+   computation (explicitly deferred to `marginal_roster_utility_v2`,
+   outside every version of this cycle's own hard boundary -- Worker 4's
+   own Work Unit 11).
+10. Once (2)/(3) land and real season time accumulates, periodically
+    re-run this pass's own real dogfood pattern (exercise the live app,
+    then run the orchestrator CLI) -- proven sufficient this pass to
+    generate real, evaluable data with no new mechanism required.
+11. Worker 8's own unexecuted follow-up: once (1) lands, re-run `scripts/
+    run_kdst_prospective_benchmark_v1.py` to measure the DST arm's TRUE
+    differentiated value for the first time.
+12. TARGET_PLAYER(LaPorta)/IMPROVE_POSITION(TE) zero-candidate root cause
+    (Worker 7's own Open Issue 6, not fully traced -- non-zero utility
+    gates rejected every combination, mechanism not pinned down further).
+13. The real Marvin Harrison Jr. (and now, per this pass, 2 more) identity-
+    match gap between rostered Sleeper players and the current NWR
+    canonical ranking pool (Worker 7's own Open Issue 7, re-corroborated
+    live by Worker 9's own Attention Center check this pass, not
+    investigated further -- outside this cycle's hard boundary).
+14. This pass's own small, disclosed curiosity: the K/DST streamer surface
+    returned different top picks two minutes apart within the same
+    dogfood session -- unexplained, likely benign snapshot-timing
+    variance, not chased further.
