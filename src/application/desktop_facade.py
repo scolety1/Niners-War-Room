@@ -3347,11 +3347,79 @@ class DesktopBackendFacade:
             raise FacadeError(
                 "WAIVERS_ROSTER_NOT_FOUND", "The owner's Sleeper roster could not be found.", status=409
             )
+        # NWR Waiver Night V1 (Worker 3, Work Unit 6): a real, previously
+        # undocumented gap -- nothing anywhere in this codebase (backend or
+        # frontend) ever read Sleeper's own real `league.settings.
+        # waiver_type` / `waiver_budget` or `roster.settings.
+        # waiver_budget_used` / `waiver_position`. The FAAB math below
+        # (`suggest_faab_bids`) was always genuinely contextual (never a
+        # static table) but was fed the frontend's hardcoded $100/$100/14-
+        # week defaults, never the real live league budget -- only
+        # coincidentally correct for this real Fantasy Gamers league today
+        # (week 2, $0 spent). Read the real settings here, read-only, and
+        # surface them as `faabContext` so the frontend can seed its real
+        # remaining/total budget instead of a hardcoded guess, and honestly
+        # suppress the FAAB $ bid UI for a genuinely non-FAAB league
+        # (`waiver_type != 1` is Sleeper's own real rolling-waiver-priority
+        # mode) rather than ever show a fabricated bid. Never changes what
+        # `suggest_faab_bids` itself computes below -- purely additive.
+        try:
+            league_settings_raw = self._sleeper_get_json(sleeper, f"league/{league_id}")
+        except (OSError, ValueError):
+            league_settings_raw = None
+        faab_context: dict[str, Any] | None = None
+        league_settings = (
+            league_settings_raw.get("settings") if isinstance(league_settings_raw, Mapping) else None
+        )
+        if isinstance(league_settings, Mapping):
+            raw_waiver_type = league_settings.get("waiver_type")
+            raw_total_budget = league_settings.get("waiver_budget")
+            roster_settings = own_roster.get("settings")
+            raw_budget_used = (
+                roster_settings.get("waiver_budget_used") if isinstance(roster_settings, Mapping) else None
+            )
+            raw_waiver_position = (
+                roster_settings.get("waiver_position") if isinstance(roster_settings, Mapping) else None
+            )
+            is_faab_league = raw_waiver_type == 1
+            real_remaining_budget = (
+                raw_total_budget - raw_budget_used
+                if is_faab_league
+                and isinstance(raw_total_budget, int)
+                and isinstance(raw_budget_used, int)
+                else None
+            )
+            faab_context = {
+                "isFaabLeague": is_faab_league,
+                "totalBudgetDollars": raw_total_budget if is_faab_league else None,
+                "remainingBudgetDollars": real_remaining_budget,
+                "waiverPosition": raw_waiver_position,
+                "source": "SLEEPER_LIVE",
+            }
         resolved = resolve_roster_canonical_ids(
             roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
             players_catalog=players, ranking_rows=ranking_rows,
         )
         manual_assets = self._manual_assets_for_profile(selected.profile_id)
+        # NWR Waiver Night V1 (Worker 3, Work Unit 5): `redraft_my_roster()`
+        # has no reserve/IR field (see docs/codex/waiver_night_v1/LEDGER.md,
+        # Worker 2's disclosed gap) -- a player parked on IR occupies a
+        # separate real Sleeper "reserve" roster slot, not an ordinary bench
+        # slot. Read the real raw `reserve` list directly here (independent
+        # of that gap) so a reserve-slotted player can never be offered as
+        # an Add/Drop drop recommendation: dropping him would not free the
+        # bench slot type the drop UI implies, and this app has no signal
+        # to reason about IR-specific roster mechanics. Reproduced live-
+        # structurally with 3 of this league's real opponent rosters
+        # (raw `reserve` field non-empty) -- this owner's own roster has 0
+        # reserve players right now, so this exact wrong-recommendation
+        # could not be reproduced against the owner's own live data; a
+        # dedicated test fixture below constructs one to verify the fix.
+        reserve_canonical_ids = {
+            resolved.canonical_id_by_sleeper_id[str(raw_id)]
+            for raw_id in (own_roster.get("reserve") or [])
+            if str(raw_id) in resolved.canonical_id_by_sleeper_id
+        }
 
         weekly_by_sleeper_id = None
         weekly_source_status = None
@@ -3387,10 +3455,19 @@ class DesktopBackendFacade:
             profile=selected, ranking=ranking, manual_assets=manual_assets, mode=mode,
             weekly_projections_by_sleeper_id=weekly_by_sleeper_id, limit=25,
         )
-        drop_candidates = rank_drop_candidates(
+        # The FULL roster (including any reserve/IR player) is still passed
+        # in here so every OTHER candidate's own marginal-utility
+        # computation continues to reflect the real, actual roster
+        # composition -- only the reserve player himself is filtered out of
+        # the returned candidate/pairing list, immediately below.
+        drop_candidates_all = rank_drop_candidates(
             roster_canonical_ids=resolved.canonical_player_ids, profile=selected, ranking=ranking,
             manual_assets=manual_assets, player_names=resolved.player_names_by_canonical_id,
             player_positions=resolved.player_positions_by_canonical_id,
+        )
+        drop_candidates = tuple(
+            candidate for candidate in drop_candidates_all
+            if candidate.canonical_player_id not in reserve_canonical_ids
         )
         pairings = pair_add_drop(add_candidates=add_candidates, drop_candidates=drop_candidates, top_n=10)
         faab_bids = suggest_faab_bids(
@@ -3547,6 +3624,7 @@ class DesktopBackendFacade:
                 "traceId": waiver_trace_id,
                 "leagueSnapshotId": waivers_league_snapshot_id,
                 "decisionEnvelope": waivers_envelope.to_dict(),
+                "faabContext": faab_context,
                 "unmatchedRosterSleeperPlayerIds": list(resolved.unmatched_sleeper_player_ids),
                 "addCandidates": [_candidate_payload(candidate) for candidate in add_candidates],
                 "dropCandidates": [

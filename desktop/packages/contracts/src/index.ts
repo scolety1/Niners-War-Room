@@ -1126,6 +1126,24 @@ export interface WaiverAddDropPairing {
   netMarginalUtility: number | null;
 }
 
+/**
+ * NWR Waiver Night V1 (Worker 3, Work Unit 6): the real, live Sleeper FAAB/
+ * waiver-priority context for the active league -- read-only ground truth
+ * (`league.settings.waiver_type`/`waiver_budget` + the owner's own
+ * `roster.settings.waiver_budget_used`/`waiver_position`), never a
+ * fabricated/static value. `null` only when this could not be read (e.g. a
+ * non-Sleeper profile). When `isFaabLeague` is `false`, this is a real
+ * rolling-waiver-priority league -- never show a dollar bid range; show
+ * `waiverPosition` instead.
+ */
+export interface WaiverFaabContext {
+  isFaabLeague: boolean;
+  totalBudgetDollars: number | null;
+  remainingBudgetDollars: number | null;
+  waiverPosition: number | null;
+  source: "SLEEPER_LIVE";
+}
+
 export interface WaiversResult {
   leagueId: string;
   mode: "THIS_WEEK" | "REST_OF_SEASON";
@@ -1136,6 +1154,7 @@ export interface WaiversResult {
   traceId?: string | null;
   leagueSnapshotId?: string;
   decisionEnvelope?: DecisionResultEnvelope;
+  faabContext: WaiverFaabContext | null;
   unmatchedRosterSleeperPlayerIds: string[];
   addCandidates: WaiverAddCandidate[];
   dropCandidates: WaiverDropCandidate[];

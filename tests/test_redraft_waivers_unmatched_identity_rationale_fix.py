@@ -96,6 +96,10 @@ def _fake_get_json(self: Any, path: str) -> Any:
         return _ROSTERS
     if path == "players/nfl":
         return _PLAYERS
+    if path == "league/9999":
+        # NWR Waiver Night V1 (Worker 3, Work Unit 6): `redraft_waivers` now
+        # also reads real league settings for the new `faabContext` field.
+        return {"settings": {"waiver_type": 1, "waiver_budget": 100}}
     raise AssertionError(f"unexpected Sleeper GET path in test: {path}")
 
 
@@ -144,6 +148,8 @@ def test_redraft_waivers_rationale_still_reports_a_real_number_when_matched(
             return _ROSTERS
         if path == "players/nfl":
             return matched_players
+        if path == "league/9999":
+            return {"settings": {"waiver_type": 1, "waiver_budget": 100}}
         raise AssertionError(f"unexpected Sleeper GET path in test: {path}")
 
     monkeypatch.setattr(desktop_facade_module.SleeperHttpClient, "get_json", _fake_get_json_matched)

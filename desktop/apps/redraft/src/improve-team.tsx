@@ -22,7 +22,7 @@ import {
   formatNumber,
   normalizeCommandSearch,
 } from "@nwr/ui";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { DecisionExplain } from "./decision-explain";
@@ -110,6 +110,23 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
     waiversLoader,
     [isSleeper, mode, week, remainingBudget, weeksRemaining, totalBudget, data.activeProfileId],
   );
+
+  // NWR Waiver Night V1 (Worker 3, Work Unit 6): seed the FAAB budget
+  // fields from the real, live Sleeper `faabContext` the backend now
+  // reads (league.settings.waiver_budget/waiver_type + the owner's own
+  // roster.settings.waiver_budget_used) the FIRST time it arrives for this
+  // profile, instead of leaving them on the previous hardcoded $100/$100
+  // guess. Only seeds once per profile so it never fights a manual edit
+  // the owner makes afterward (e.g. to scenario-plan a different budget).
+  const budgetSeededForProfileRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!waivers?.faabContext?.isFaabLeague) return;
+    if (budgetSeededForProfileRef.current === data.activeProfileId) return;
+    budgetSeededForProfileRef.current = data.activeProfileId ?? null;
+    const { totalBudgetDollars, remainingBudgetDollars } = waivers.faabContext;
+    if (typeof totalBudgetDollars === "number") setTotalBudget(totalBudgetDollars);
+    if (typeof remainingBudgetDollars === "number") setRemainingBudget(remainingBudgetDollars);
+  }, [waivers?.faabContext, data.activeProfileId]);
 
   const positions = useMemo(() => ["ALL", ...new Set((waivers?.addCandidates ?? []).map((row) => row.position))], [waivers]);
   const addRows = useMemo(
@@ -510,13 +527,40 @@ function FaabTab({
   );
   const perWeekBudget = weeksRemaining > 0 ? remainingBudget / weeksRemaining : remainingBudget;
 
+  // NWR Waiver Night V1 (Worker 3, Work Unit 6): `waivers.faabContext` is
+  // the real, live Sleeper read (league.settings.waiver_type). A league
+  // this reads as genuinely NOT FAAB (Sleeper's rolling waiver-priority
+  // mode) must never show a fabricated dollar bid range -- show the
+  // owner's real waiver-priority position instead. `faabContext` itself
+  // can be `null` (e.g. still loading, or a non-Sleeper profile) -- that is
+  // NOT the same as a confirmed non-FAAB league, so the dollar UI is only
+  // suppressed on an explicit `isFaabLeague === false`, never on `null`.
+  if (waivers?.faabContext && waivers.faabContext.isFaabLeague === false) {
+    return <>
+      <div className="metric-grid">
+        <MetricCard
+          icon="target"
+          label="Waiver priority"
+          value={waivers.faabContext.waiverPosition != null ? `#${waivers.faabContext.waiverPosition}` : "—"}
+          detail="this league uses waiver priority order, not FAAB"
+          tone="violet"
+        />
+      </div>
+      {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+      <EmptyState
+        title="This is not a FAAB league"
+        message="Sleeper reports this league uses rolling waiver-priority order, not a FAAB budget -- no dollar bid range is shown. Claim order follows your real waiver position above (lower is earlier)."
+      />
+    </>;
+  }
+
   return <>
     <div className="metric-grid">
       <MetricCard icon="activity" label="Remaining budget" value={`$${remainingBudget}`} detail={`of $${totalBudget} total`} tone="gold" />
       <MetricCard icon="target" label="Weeks remaining" value={weeksRemaining} detail="regular season weeks left" tone="violet" />
       <MetricCard icon="board" label="Per-week budget" value={`$${perWeekBudget.toFixed(1)}`} detail="remaining ÷ weeks remaining" tone="cyan" />
     </div>
-    <Panel title="FAAB settings" eyebrow="Used to compute every suggested bid range below">
+    <Panel title="FAAB settings" eyebrow="Seeded from your real live Sleeper budget -- edit to plan a different scenario">
       <div className="profile-edit-actions">
         <label className="form-field"><span>Remaining budget ($)</span><input type="number" min={0} value={remainingBudget} onChange={(event) => setRemainingBudget(Math.max(0, Number(event.target.value) || 0))} /></label>
         <label className="form-field"><span>Total season budget ($)</span><input type="number" min={1} value={totalBudget} onChange={(event) => setTotalBudget(Math.max(1, Number(event.target.value) || 1))} /></label>

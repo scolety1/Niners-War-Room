@@ -403,27 +403,288 @@ rostered player across all 10 real rosters), not a static file:
   that changed, so the fix applies symmetrically to both roster-sync and
   free-agent-pool identity matching without touching either call site.
 
-## OPEN ISSUES FOR THE NEXT WORKER (Work Units 4-6: waiver ranking,
-## Add/Drop, FAAB live)
+## Worker 3 (this pass) -- Work Unit 4: waiver ranking, Work Unit 5:
+## Add/Drop, Work Unit 6: FAAB live
 
-1. **`redraft_my_roster()` has no reserve/IR field** (see above) -- a
-   player on IR renders identically to an ordinary bench player. Real,
-   disclosed gap; not reproduced as a live wrong-data mismatch this pass
-   only because this specific owner has 0 players on IR right now (3 of
-   9 real opponents do). Worth deciding whether Work Units 4-6 (waiver
-   ranking / Add-Drop / live FAAB) need this distinction surfaced before
-   shipping -- an Add/Drop flow that can't tell "bench" from "IR" could
-   plausibly suggest replacing an IR slot the wrong way.
-2. **`matchupContext` came back `null`** from
-   `redraft_league_workspace_context()` this pass despite real,
-   non-empty raw `league/{id}/matchups/2` data existing. NOT
-   investigated (hard-boundary-protected `LeagueWorkspaceContext`
-   surface) -- flag for whoever owns that composition function
-   (`build_week_matchup_context`), since Work Units 4-6 (especially
-   live FAAB / Add-Drop around an in-progress week) may depend on it.
-3. **Items 1-4 carried over from Worker 1**, above -- still open,
-   unrelated to Work Units 2/3, real follow-up for whoever eventually
-   scopes an identity-alias-dedup or K/DST-coverage pass.
-4. Worker 1's disclosed FantasyPros top-10-per-query cap and the
-   duplicate `TEAM_ALIASES` files remain unconsolidated -- no change
-   this pass.
+Start HEAD `18f66c73` (Worker 2's suffix-stripping + free-agent-pool
+verification, above). Real, live, read-only verification against the real
+Fantasy Gamers Sleeper league (`1312983576827920384`, owner `scolety`,
+2026-09-15, in-season week 2, `waiver_type=1`/FAAB confirmed live), using
+the EXISTING `waiver_engine_service.py` unchanged -- not rebuilt.
+
+### Work Unit 4 result: PASS
+
+Instantiated the real `DesktopBackendFacade` against this worktree's real
+active profile and called `redraft_waivers()` live in both modes:
+
+- **THIS_WEEK (week=2): real weekly projection genuinely available.**
+  `weeklyProviderHealth`: `status: OK`, `freshness: LIVE`,
+  `totalRows: 9420`, `nonzeroProjectionRows: 901`, live-fetched this pass
+  (not cached/stale). 25 real add candidates returned, e.g. Tyrone Tracy
+  (RB NYG, wk_proj 1.9 -- note: THIS_WEEK's own weekly number can be low
+  for a player whose ROS value is driven by a role change; the mode
+  correctly reports it rather than hiding it), Juwan Johnson/Hunter
+  Henry/Dalton Schultz (real streaming TEs), Jared Goff (real streaming
+  QB). Every field the directive asked for is present per candidate:
+  `playerName`/`position`/`team`/`weeklyProjectedPoints`/
+  `rosReplacementValue`/`rosOverallRank`/`marginalUtility`/
+  `becomesStarter`/`identityStatus`("status")/`marginalUtilityExplanation`
+  ("reason")/`playerAvailabilityStatus`("availability", correctly `null`
+  for every real candidate spot-checked -- an absent entry in the
+  canonical `PlayerAvailabilityStatus` map means "no known status issue",
+  never a fabricated "OK", by that service's own documented contract; not
+  a bug).
+- **REST_OF_SEASON: PASS.** Same 25 real candidates, ranked identically by
+  real marginal utility (THIS_WEEK only re-breaks ties with live weekly
+  points, confirmed structurally in `rank_waiver_candidates`' `sort_key`).
+- **Real sanity spot-check:** top drop candidate (weakest real bench
+  piece) was the owner's own Marvin Harrison (`marginalUtility: 0.0`) --
+  plausible for a real rookie WR in a limited early-season role behind
+  this roster's other real starters. Top real adds (Tracy, streaming
+  TEs/QB) are genuine, currently-relevant real 2026 waiver-wire names, not
+  synthetic ones -- passes the "do the top candidates make sense given
+  the real roster gaps" sanity bar.
+- **K/DST are never evaluated by this waiver-ranking path at all, by
+  design, not a bug this pass introduced.** The owner's own real K
+  (Ka'imi Fairbairn, Sleeper id `3451`) and DST (`NE`) both show up in
+  `unmatchedRosterSleeperPlayerIds` every real run -- traced to the fact
+  that K/DST have zero rows in the main governed NWR ranking by design
+  (see the `practical_mode` comment elsewhere in this file), so
+  `resolve_roster_canonical_ids`' identity join can never match them, and
+  the same is true for every K/DST free agent (never a real add
+  candidate, never a real drop candidate via this path). This is the
+  real, concrete evidence for Work Unit 7 below, not a guess.
+
+### Work Unit 5 result: PASS, with one real bug found + fixed
+
+**Real, reproducible bug found:** Worker 2's flagged gap (`redraft_my_
+roster()` has no reserve/IR field) also affected `redraft_waivers`'
+Add/Drop pairing specifically. Raw-confirmed live: a real Sleeper roster's
+`players` list INCLUDES any IR/reserve-slotted player (the `reserve` list
+is a labeled subset of `players`, never a separate pool) -- so
+`rank_drop_candidates` ranked an IR player as an ordinary drop candidate,
+using the same `marginal_roster_utility_v2` call as any other bench piece.
+Since an IR-stashed player often has a genuinely low live marginal
+utility, he could become the single weakest drop and get surfaced as the
+Add/Drop pairing's recommended drop -- a real wrong recommendation
+(dropping a reserve-slot player doesn't free the bench-slot type an
+ordinary Add/Drop implies, and this app has no signal to reason about
+IR-specific mechanics). This owner's own roster has 0 IR players right
+now, so it could not be reproduced against live owner data -- per the
+directive, a test fixture was constructed instead:
+roster = [bench-1: Christian McCaffrey, ir-1: Bijan Robinson (`reserve`)],
+free agent = Tyreek Hill. **Reproduced on the pre-fix code** (`git stash`
++ rerun): Bijan Robinson (marginal utility 238.8, real ranking-driven,
+genuinely lower than McCaffrey's 275.1 in this fixture) was recommended as
+the drop. **Fixed** in `desktop_facade.py`'s `redraft_waivers`: reads the
+real raw `own_roster["reserve"]` list directly (independent of the
+`redraft_my_roster()` gap), resolves it to canonical ids, and filters any
+reserve-slotted player OUT of the returned/paired drop-candidate list --
+the FULL roster (reserve included) is still passed into
+`rank_drop_candidates` so every OTHER bench player's own marginal-utility
+computation still reflects the real, actual roster composition; only the
+reserve player himself is excluded from being offered as a drop. Re-ran
+the same fixture post-fix: McCaffrey (the real ordinary bench player) is
+now correctly recommended instead. `waiver_engine_service.py` itself is
+UNCHANGED -- the fix is entirely at the facade call site.
+
+**Roster legality after a hypothetical move (structural verification,
+not a new legality engine call):** every Add/Drop pairing is a strict
+1-for-1 swap (one free agent in, one already-rostered non-reserve player
+out), so total roster size and slot count are unchanged by construction;
+combined with the reserve-exclusion fix above, the drop side can now only
+ever be an ordinary starter/bench player, never a roster slot with
+different legality semantics. Position-cap-aware legality itself lives
+inside the closed, hard-boundary-protected `marginal_roster_utility_v2` --
+not re-verified or touched here.
+
+**Never recommends dropping a player not on the owner's real roster:**
+structurally guaranteed -- `drop_candidates` is built exclusively from
+`resolved.canonical_player_ids`, itself derived only from
+`own_roster.get("players")` (the real, live-fetched Sleeper roster), never
+from any other source.
+
+Directive's optional "2-3 drop alternatives where close" was NOT built --
+`pair_add_drop` only ever pairs the single weakest real drop candidate
+(`drop_candidates[0]`) with every add, a pre-existing, disclosed
+simplification (see that function's own docstring). The directive said
+"if the service already supports this" -- it doesn't; treated as
+out-of-scope new feature work for a same-night pass, not a bug.
+
+### Work Unit 6 result: PASS, with one real bug found + fixed
+
+**Real, previously-undocumented gap found:** grepped the entire codebase
+(backend AND frontend) for `waiver_budget`/`waiver_type` -- ZERO hits
+anywhere except this ledger. `suggest_faab_bids` itself
+(`waiver_engine_service.py`) was always genuinely contextual (real
+percentile-of-pool math, never a static table) -- confirmed unchanged --
+but nothing ever fed it real Sleeper budget data. The facade method's
+`remaining_budget_dollars`/`total_budget_dollars` are caller-supplied
+parameters, and the ONLY real caller
+(`desktop/apps/redraft/src/improve-team.tsx`) seeded them from hardcoded
+`useState(100)` defaults with a manual-edit form -- only coincidentally
+correct for this real league today (week 2, $0 spent). It would silently
+go stale the first week the owner actually won a bid, and, worse, a
+genuinely non-FAAB (Sleeper rolling waiver-priority) league would still
+show a fabricated dollar bid range, since nothing ever checked
+`waiver_type`.
+
+**Fixed:** `redraft_waivers` now also reads the real, live
+`league/{id}` settings (one more read-only GET, through the same cached
+`_sleeper_get_json` wrapper rosters/players already use) plus the
+already-fetched `own_roster["settings"]`, and returns a new, additive
+`faabContext` field: `isFaabLeague` (real `waiver_type == 1`),
+`totalBudgetDollars`/`remainingBudgetDollars` (both `null` when not FAAB
+-- never fabricated), `waiverPosition` (real `roster.settings.
+waiver_position`, useful for a non-FAAB league too), `source:
+"SLEEPER_LIVE"`. `suggest_faab_bids` itself is completely unchanged.
+Frontend (`improve-team.tsx`): seeds `remainingBudget`/`totalBudget` from
+this real data the first time it loads for a profile (still editable
+afterward, for scenario planning -- never fights a manual edit), and the
+FAAB tab now checks `faabContext.isFaabLeague === false` to replace the
+dollar-bid UI entirely with the real waiver-priority position instead
+(never shows a fake bid for a confirmed non-FAAB league). Added
+`WaiverFaabContext` to `contracts/src/index.ts`. `npm run typecheck` and
+`npx vitest run` (423 tests) both clean after the frontend change.
+
+**Real live verification (this owner's real league):** `faabContext`:
+`{"isFaabLeague": true, "totalBudgetDollars": 100,
+"remainingBudgetDollars": 100, "waiverPosition": 10, "source":
+"SLEEPER_LIVE"}` -- exactly matches Worker 2's independent raw pull
+(`waiver_budget=100`, `waiver_budget_used=0`) and the raw
+`roster.settings.waiver_position=10`. Top real FAAB suggestion: Tyrone
+Tracy, bid $30-50, urgency `MEDIUM` (bench-depth reasoning; correctly not
+`HIGH` since `becomesStarter` is `false` for this roster right now).
+**Urgency enum verified live as the real HIGH/MEDIUM/LOW contract
+values** (`FAAB_URGENCY_TIER`'s existing 3-tier mapping, unchanged --
+confirmed by direct read of the live JSON response, not just the
+pre-existing regression test).
+
+**No real non-FAAB Sleeper league exists in this environment to verify
+the suppression path against live data** -- the only other real profile
+is `provider="local"` (not Sleeper). Verified instead with a constructed
+fixture (`tests/test_redraft_waivers_faab_context_fix.py`,
+`waiver_type=0`): `isFaabLeague: false`,
+`totalBudgetDollars`/`remainingBudgetDollars` both `null`,
+`waiverPosition` still real/populated. Flagged for a future worker to
+re-confirm against a real non-FAAB league if/when one becomes available.
+
+### Tests (this pass)
+
+- **New**: `tests/test_redraft_waivers_ir_reserve_drop_exclusion_fix.py`
+  (3 tests -- the real IR-drop bug reproduction + fix verification +
+  no-reserve equivalence guard).
+- **New**: `tests/test_redraft_waivers_faab_context_fix.py` (3 tests --
+  real FAAB league, real non-FAAB league, league-settings-read-failure
+  degrades honestly rather than crashing).
+- Updated 2 existing test fixtures
+  (`tests/test_redraft_waivers_unmatched_identity_rationale_fix.py`,
+  `tests/test_weekly_home_sleeper_fetch_caching.py`) to model the new
+  real `league/{id}` GET call this pass adds -- both were strict
+  path-allowlist fixtures that would otherwise raise on an unmodeled real
+  call; `test_weekly_home_sleeper_fetch_caching.py`'s own dedup-caching
+  assertions continued passing unmodified (the new call uses the same
+  cached `_sleeper_get_json` wrapper, so it dedupes the same way rosters/
+  players already do).
+- `python -m pytest tests/test_redraft_waivers_ir_reserve_drop_exclusion_fix.py
+  tests/test_redraft_waivers_faab_context_fix.py
+  tests/test_redraft_waivers_unmatched_identity_rationale_fix.py
+  tests/test_waiver_engine_service.py -q`: **23 passed**.
+- Targeted regression slice (`pytest -k "decision_trace or
+  prospective_outcome or live_player_intelligence or
+  boundary_property_reliability or composition or player_availability or
+  fantasypros_kdst or team_code_alias or waiver_engine or sleeper or
+  redraft_waivers or faab or weekly_home or desktop_facade_architecture"`):
+  **629 passed, 0 failed** (up from Worker 2's 611 baseline for a smaller
+  slice, +18 net new/broadened tests this pass added or now includes).
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures this worktree's documented baseline
+  expects, re-confirmed unaffected.
+- Frontend: `npm run typecheck` (tsc -b, both apps) clean; `npx vitest run`
+  (desktop workspace): **423 passed** (0 failed).
+- `git diff -U0` grepped (added/removed lines only, not context) for every
+  hard-boundary term (`marginal_roster_utility_v2`, `LeagueSnapshot`,
+  `LeagueWorkspaceContext`, `lifecycle_resolver`, `DecisionResultEnvelope`,
+  `PlayerAvailabilityStatus`): **zero matches**.
+
+### Zero Sleeper writes, verified 3 ways
+
+1. Structural: `SleeperHttpClient` exposes only `get_json` (`dir()`
+   confirmed live) -- structurally incapable of writing. Grepped
+   `desktop_facade.py` for `POST`/`PUT`/`PATCH`/`DELETE`: zero matches.
+2. `git diff` of every touched file grepped for any Sleeper write-shaped
+   call: zero matches.
+3. Before/after byte-diff of `GET league/{id}/rosters`, taken immediately
+   before and after this pass's ENTIRE live verification run (both real
+   facade calls and raw pulls, including the new `league/{id}` settings
+   read): **byte-identical**, SHA-256 `cd1b3932...` both times, `7145`
+   bytes unchanged -- the exact same hash Worker 2's own before/after
+   check recorded, i.e. genuinely nothing changed league-wide across two
+   full workers' worth of live verification today.
+
+### Backend/model files changed this pass
+
+- **Modified**: `src/application/desktop_facade.py` -- `redraft_waivers`
+  only: (a) reads real `own_roster["reserve"]`, filters reserve-slotted
+  canonical ids out of the returned/paired drop-candidate list (Work Unit
+  5 fix); (b) reads real `league/{id}` settings + the owner's own
+  `roster["settings"]`, adds the new `faabContext` response field (Work
+  Unit 6 fix). No other facade method touched.
+- **Modified**: `desktop/packages/contracts/src/index.ts` -- added
+  `WaiverFaabContext` interface + `faabContext` field on `WaiversResult`
+  (additive only).
+- **Modified**: `desktop/apps/redraft/src/improve-team.tsx` -- seeds real
+  FAAB budget state from `faabContext` once per profile; `FaabTab` shows
+  real waiver-priority position instead of a dollar bid range when
+  `faabContext.isFaabLeague === false`.
+- **Modified** (test-fixture-only, not production behavior):
+  `tests/test_redraft_waivers_unmatched_identity_rationale_fix.py`,
+  `tests/test_weekly_home_sleeper_fetch_caching.py`.
+- **New**: `tests/test_redraft_waivers_ir_reserve_drop_exclusion_fix.py`,
+  `tests/test_redraft_waivers_faab_context_fix.py`.
+- This ledger.
+- `waiver_engine_service.py` itself: **UNCHANGED** -- both fixes are
+  entirely at the `desktop_facade.py` call site, per the directive's "use
+  the existing waiver engine, do not rebuild it."
+- `docs/codex/prospective_outcomes_v1/multi_league_scale_v1/
+  frontend_bench_results.json` was regenerated as a side effect of running
+  `npx vitest run` (a perf-benchmark artifact, timing noise only) --
+  reverted with `git checkout --` before committing, not part of this
+  pass's real changes.
+
+## OPEN ISSUES FOR THE NEXT WORKER (Work Units 7-8: K/DST waiver
+## completeness, Improve Team UI live data)
+
+1. **K/DST are structurally invisible to `redraft_waivers` end-to-end.**
+   Real, concrete live evidence this pass: the owner's own real K (Ka'imi
+   Fairbairn, Sleeper id `3451`) and DST (`NE`) both always show up in
+   `unmatchedRosterSleeperPlayerIds`, never as a drop candidate; the same
+   identity-join gap means no K/DST free agent can ever become a real add
+   candidate either. Root cause: K/DST simply have zero rows in the main
+   governed NWR ranking `resolve_roster_canonical_ids` joins against
+   (`practical_mode`'s own comment elsewhere in this codebase confirms
+   this is by design, not an oversight). This app already HAS a separate,
+   real, live K/DST pathway (`sleeper_streamer_actions`, the FantasyPros
+   ECR-based streamer service Worker 1 fixed for JAC/JAX) -- Work Unit 7 is
+   almost certainly about deciding whether/how to fold that separate
+   pathway's real signal into (or alongside) the main Waivers/Add-Drop
+   surface so K/DST aren't a silent blind spot there, NOT about building a
+   new K/DST ranking signal from scratch.
+2. **No real non-FAAB Sleeper league exists in this environment.** This
+   pass's `faabContext.isFaabLeague === false` path is verified only via a
+   constructed test fixture (`waiver_type=0`), not live. Re-confirm
+   against a real non-FAAB league if/when one becomes available to this
+   owner.
+3. **`pair_add_drop`'s "2-3 close drop alternatives" was not built** --
+   the directive itself hedged this as optional ("if the service already
+   supports this"); it doesn't. Real, scoped follow-up if ever prioritized
+   (would touch `waiver_engine_service.py`, not just the facade call
+   site).
+4. **`matchupContext` came back `null`** from
+   `redraft_league_workspace_context()` (Worker 2's finding, still open,
+   still not investigated -- hard-boundary-protected surface). Carried
+   forward again since Work Unit 8 (Improve Team UI live data) may depend
+   on it.
+5. Items 1-4 carried over from Worker 1, and Worker 1's disclosed
+   FantasyPros top-10-per-query cap / duplicate `TEAM_ALIASES` files --
+   still open, unrelated to Work Units 4-6, no change this pass.

@@ -220,6 +220,14 @@ def _fake_get_json_counting(call_log: list[str]):
             return _USERS
         if path == "players/nfl":
             return _PLAYERS
+        if path == "league/9999":
+            # NWR Waiver Night V1 (Worker 3, Work Unit 6): `redraft_waivers`
+            # now also reads real league settings (waiver_type/waiver_budget)
+            # for the new `faabContext` field -- through the SAME cached
+            # `_sleeper_get_json` wrapper as rosters/players, so it is
+            # expected to be dedup'd inside a composed weekly-home call just
+            # like they are.
+            return {"settings": {"waiver_type": 1, "waiver_budget": 100}}
         # Weekly projections (a DIFFERENT endpoint, already covered by its
         # own disk TTL cache in weekly_projection_provider_service.py, and
         # deliberately untouched by this pass) -- let it fail honestly so
