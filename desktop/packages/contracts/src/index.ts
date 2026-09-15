@@ -2056,6 +2056,182 @@ export interface DecisionTraceOutcome {
   detail?: DecisionTraceOutcomeDetail | null;
 }
 
+// ---------------------------------------------------------------------------
+// History UI V3 (NWR Prospective Outcomes V1, Work Unit 13): the real
+// `OutcomeEvaluation` contract (`prospective_outcome_evaluation_v1_service.
+// py`) and the 8 real per-class evaluator `to_dict()` shapes
+// (`prospective_outcome_*_evaluator_v1_service.py`, Workers 2/3) that back
+// the new `evaluationDetail` field on `DecisionTraceHistoryEvent` below.
+// Field names and the `evaluationStatus` union here are a literal,
+// intentionally-1:1 mirror of those Python modules' own camelCase output --
+// exactly the same "backend enum -> API -> TS contract" discipline
+// `DecisionTraceOutcomeDetail` above already established.
+// ---------------------------------------------------------------------------
+
+// The real, closed 5-member set (`EVALUATION_STATUSES`,
+// prospective_outcome_evaluation_v1_service.py). Never a parallel/invented
+// set -- these are the exact strings the backend emits.
+export type OutcomeEvaluationStatus =
+  | "PENDING_OUTCOME"
+  | "PENDING_WINDOW"
+  | "EVALUATED"
+  | "INSUFFICIENT_DECISION_CONTEXT"
+  | "NOT_APPLICABLE";
+
+export interface OutcomeEvaluationWindow {
+  label: string;
+  horizonWeeks: number | null;
+}
+
+export interface OutcomeEvaluation {
+  schemaVersion: string;
+  traceId: string;
+  decisionType: string;
+  leagueKey: string;
+  leagueId: string;
+  leagueSnapshotId: string | null;
+  recommendationGeneratedAt: string;
+  outcomeObservedAt: string | null;
+  outcomeWindow: OutcomeEvaluationWindow;
+  outcomeSource: string | null;
+  outcomeSourceAsOf: string | null;
+  ownerAction: Record<string, unknown> | null;
+  factualOutcome: Record<string, unknown> | null;
+  evaluationStatus: OutcomeEvaluationStatus | string;
+  evaluationMetrics: Record<string, unknown>;
+  issues: string[];
+}
+
+// The base fallback envelope -- used verbatim for DRAFT (no real evaluator
+// this cycle, contract Section 2/hard boundary) and any tool this frontend
+// build doesn't recognize.
+export interface BaseEvaluationPayload {
+  traceId: string;
+  evaluation: OutcomeEvaluation;
+}
+
+export interface StartSitEvaluatorPayload {
+  traceId: string;
+  evaluation: OutcomeEvaluation;
+  recommendedPlayerRealizedPoints: number | null;
+  ownerSelectedPlayerRealizedPoints: number | null;
+  lineupOpportunityCostPoints: number | null;
+  bestLegalAlternativePlayerId: string | null;
+  bestLegalAlternativeActualPoints: number | null;
+  ownerActionObserved: boolean;
+  issues: string[];
+}
+
+export interface WaiverEvaluatorPayload {
+  traceId: string;
+  evaluation: OutcomeEvaluation;
+  recommendedPlayerId: string | null;
+  recommendedDropPlayerId: string | null;
+  claimableAtRecommendationTime: boolean | null;
+  claimSubmitted: boolean | null;
+  claimWon: boolean | null;
+  faabPaid: number | null;
+  horizonWeeks: number | null;
+  subsequentTotalPoints: number | null;
+  subsequentRosterUsageWeeks: number | null;
+  issues: string[];
+}
+
+export interface AddDropEvaluatorPayload {
+  traceId: string;
+  evaluation: OutcomeEvaluation;
+  addedPlayerId: string | null;
+  droppedPlayerId: string | null;
+  horizonWeeks: number | null;
+  addedPlayerSubsequentPoints: number | null;
+  addedPlayerSubsequentRosterUsageWeeks: number | null;
+  droppedPlayerSubsequentPoints: number | null;
+  droppedPlayerReversed: boolean | null;
+  netRosterValuePoints: number | null;
+  issues: string[];
+}
+
+export interface FaabEvaluatorPayload {
+  traceId: string;
+  evaluation: OutcomeEvaluation;
+  recommendedPlayerId: string | null;
+  // Deliberately TWO SEPARATE keys, never merged (contract Section 2).
+  playerDecisionQuality: {
+    subsequentPoints: number | null;
+    subsequentRosterUsageWeeks: number | null;
+    horizonWeeks: number;
+  } | null;
+  bidRangeCalibration: {
+    suggestedBidLow: number | null;
+    suggestedBidHigh: number | null;
+    amountBid: number | null;
+    won: boolean | null;
+    actualWinningBid: number | null;
+    bidWithinSuggestedRange: boolean | null;
+    marginVsActualWinningBid: number | null;
+  } | null;
+  issues: string[];
+}
+
+export interface TradeEvaluatorPayload {
+  traceId: string;
+  evaluation: OutcomeEvaluation;
+  ownerActionRaw: string | null;
+  recommendedGivesIds: string[];
+  recommendedReceivesIds: string[];
+  acceptanceStatus: TradeAcceptanceStatus | string | null;
+  tradeAccepted: boolean | null;
+  horizonWeeks: number | null;
+  netSubsequentPointsDeltaPoints: number | null;
+  givesSubsequentPointsByPlayer: OutcomePlayerPoints[] | null;
+  receivesSubsequentPointsByPlayer: OutcomePlayerPoints[] | null;
+  issues: string[];
+}
+
+export interface TradeFinderEvaluatorPayload {
+  traceId: string;
+  decisionType: string;
+  evaluation: OutcomeEvaluation;
+  ownerActionRaw: string | null;
+  recommendedGivesIds: string[];
+  recommendedReceivesIds: string[];
+  packageDisposition: TradePackageDisposition | string | null;
+  tradeAccepted: boolean | null;
+  horizonWeeks: number | null;
+  netSubsequentPointsDeltaPoints: number | null;
+  givesSubsequentPointsByPlayer: OutcomePlayerPoints[] | null;
+  receivesSubsequentPointsByPlayer: OutcomePlayerPoints[] | null;
+  issues: string[];
+}
+
+export interface StreamerEvaluatorPayload {
+  traceId: string;
+  evaluation: OutcomeEvaluation;
+  position: string; // "K" | "DST"
+  recommendedPlayerId: string | null;
+  recommendedPlayerActualPoints: number | null;
+  actualStarterPlayerId: string | null;
+  actualStarterActualPoints: number | null;
+  currentOptionPlayerId: string | null;
+  currentOptionActualPoints: number | null;
+  availableAlternativeIdsAtRecommendation: string[];
+  bestAvailableAlternativeId: string | null;
+  bestAvailableAlternativeActualPoints: number | null;
+  regretVsActualStarterPoints: number | null;
+  replacementLevelDeltaPoints: number | null;
+  issues: string[];
+}
+
+export type DecisionTraceEvaluationDetail =
+  | StartSitEvaluatorPayload
+  | WaiverEvaluatorPayload
+  | AddDropEvaluatorPayload
+  | FaabEvaluatorPayload
+  | TradeEvaluatorPayload
+  | TradeFinderEvaluatorPayload
+  | StreamerEvaluatorPayload
+  | BaseEvaluationPayload;
+
 export interface DecisionTraceHistoryEvent {
   traceId: string;
   league: string;
@@ -2074,6 +2250,13 @@ export interface DecisionTraceHistoryEvent {
   ownerActionRecordedAt: string | null;
   outcome: DecisionTraceOutcome | null;
   outcomeRecordedAt: string | null;
+  // History UI V3 (Work Unit 13): the real per-class `OutcomeEvaluation`
+  // presentation for this row -- see
+  // `prospective_outcome_history_presentation_v1_service.py`. Optional (not
+  // `| null`) so a fixture/event captured before this pass still type-checks
+  // without modification -- absent means "this backend build predates
+  // evaluationDetail," never "evaluated to nothing."
+  evaluationDetail?: DecisionTraceEvaluationDetail;
 }
 
 export interface DecisionTraceHistoryResult {
@@ -2081,6 +2264,62 @@ export interface DecisionTraceHistoryResult {
   leagueName: string;
   totalCount: number;
   events: DecisionTraceHistoryEvent[];
+}
+
+// ---------------------------------------------------------------------------
+// Class-specific summary (NWR Prospective Outcomes V1, Work Unit 14):
+// `redraft_decision_trace_outcome_summary`'s real response shape. Every
+// summary axis is `{summaryStatus, sampleSize}` plus real computed fields
+// ONLY when `summaryStatus === "SUMMARIZED"` -- gated by the preregistered
+// `MIN_SAMPLE_SIZE_FOR_PER_CLASS_SUMMARY` (20) entirely on the backend; this
+// contract never re-derives that gate.
+// ---------------------------------------------------------------------------
+
+export type DecisionClassSummaryStatus = "NOT_ENOUGH_DATA_YET" | "SUMMARIZED";
+
+export interface DecisionClassSummaryAxis {
+  summaryStatus: DecisionClassSummaryStatus | string;
+  sampleSize: number;
+  [computedField: string]: unknown;
+}
+
+// Real evaluationStatus/acceptanceStatus/packageDisposition COUNT pairs --
+// deliberately a LIST, never a dict keyed by the enum string itself. A dict
+// keyed by an arbitrary enum-like string (e.g. `{"EVALUATED": 24}`) gets
+// mangled by the backend's own generic camelCase-key transform
+// (`"EVALUATED"` -> `"eVALUATED"`) -- the exact same real bug class already
+// disclosed for player-id dict keys (`OutcomePlayerPoints[]` above). Found
+// and fixed live this pass (`prospective_outcome_history_presentation_v1_
+// service.py`'s own `_as_count_pairs`).
+export interface DecisionClassStatusCount {
+  status: string;
+  count: number;
+}
+
+export interface DecisionClassDispositionCount {
+  disposition: string;
+  count: number;
+}
+
+export interface DecisionClassSummary {
+  decisionType: string;
+  statusCounts: DecisionClassStatusCount[];
+  // TRADE only.
+  acceptanceStatusCounts?: DecisionClassStatusCount[];
+  // TRADE_FINDER only.
+  packageDispositionCounts?: DecisionClassDispositionCount[];
+  [axisOrField: string]: unknown;
+}
+
+export interface DecisionTraceOutcomeSummaryResult {
+  profileId: string;
+  leagueName: string;
+  totalTraceCount: number;
+  // A LIST, not a dict keyed by decisionType -- same real reason as
+  // `statusCounts` above (`"START_SIT"`/`"K_STREAMER"`/etc. are exactly the
+  // kind of ENUM-like string this transform mangles). Each entry already
+  // carries its own real `decisionType` field.
+  summaries: DecisionClassSummary[];
 }
 
 export interface NavigationItem {

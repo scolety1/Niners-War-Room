@@ -7,6 +7,7 @@ import {
   type DataHealthReport,
   type DecisionTraceHistoryEvent,
   type DecisionTraceHistoryResult,
+  type DecisionTraceOutcomeSummaryResult,
   type DesktopMode,
   type DynastyBootstrap,
   type DynastyComparison,
@@ -331,6 +332,12 @@ export class NwrApiClient {
   // docstring for why there is no per-league parameter here.
   redraftDecisionTraceHistory(): Promise<DecisionTraceHistoryResult> {
     return this.request("/api/v1/redraft/decision-trace-history");
+  }
+
+  // History UI V3 / class-specific summary (Work Unit 14). Scoped to the
+  // currently active Redraft profile only, same as the history read above.
+  redraftDecisionTraceOutcomeSummary(): Promise<DecisionTraceOutcomeSummaryResult> {
+    return this.request("/api/v1/redraft/decision-trace-outcome-summary");
   }
 
   // Append-only write paths -- real and callable, though nothing in this

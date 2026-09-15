@@ -1047,3 +1047,23 @@
 .decision-history__detail-row dt { opacity: 0.7; white-space: nowrap; }
 .decision-history__detail-row dt::after { content: ":"; }
 .decision-history__detail-row dd { margin: 0; word-break: break-word; }
+
+/* History UI V3 (NWR Prospective Outcomes V1, Work Units 13-14): the real
+   class-specific one-line headline under the Outcome Status badge, and the
+   per-class summary card grid below the ledger table. */
+.decision-history__status-headline { font-size: 11px; opacity: 0.85; }
+.decision-history__summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+.decision-history__summary-card {
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.decision-history__summary-card h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.85; }
+.decision-history__summary-card dl { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.decision-history__summary-card dt { opacity: 0.7; font-size: 11px; }
+.decision-history__summary-card dd { margin: 0 0 4px; font-size: 12px; }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { DecisionTraceHistoryEvent, RedraftBootstrap } from "@nwr/contracts";
+import type { DecisionClassSummary, DecisionTraceHistoryEvent, RedraftBootstrap } from "@nwr/contracts";
 import {
   Button,
   DataTable,
@@ -15,15 +15,18 @@ import {
 
 import { useAsync } from "./weekly-shared";
 import {
+  buildClassSummaryDisplay,
   buildOutcomeDetailSections,
+  CLASS_SUMMARY_TITLE,
+  evaluationStatusLabel,
+  evaluationStatusTone,
+  formatClassSpecificHeadline,
   formatDecisionType,
   formatGeneratedAt,
   formatOutcome,
   formatOwnerAction,
   hasOutcomeDetail,
   ownerActionOptionsForDecisionType,
-  statusLabel,
-  statusTone,
   summarizeRecommendation,
 } from "./decision-history-format";
 
@@ -193,6 +196,27 @@ function OutcomeDetail({ event }: { event: DecisionTraceHistoryEvent }) {
  * future pass would need to clear before adding one.
  */
 
+/**
+ * History UI V3 (Work Unit 13): the exact 6 columns the governing directive
+ * names -- DATE / LEAGUE / DECISION TYPE / NWR RECOMMENDATION / OWNER
+ * ACTION / OUTCOME STATUS. "League" is new in V3 (V2 omitted it, relying
+ * solely on the page's own single-league scoping -- see the module doc
+ * below); every other column is the same real data V2 already rendered,
+ * unchanged in substance.
+ *
+ * The Outcome Status column now renders the real `OutcomeEvaluation`
+ * status (`evaluationStatusLabel`/`evaluationStatusTone`, the 5-member
+ * closed set the backend actually emits -- `PENDING_OUTCOME`/
+ * `PENDING_WINDOW`/`EVALUATED`/`INSUFFICIENT_DECISION_CONTEXT`/
+ * `NOT_APPLICABLE`) rather than V2's ledger-append status
+ * (`RECOMMENDED`/`OWNER_ACTION_RECORDED`/`OUTCOME_RECORDED`, still shown
+ * nowhere on this page anymore -- it answered "has this row been appended
+ * to," not "could NWR's recommendation actually be evaluated," which is
+ * what an owner reading this column actually wants to know). A one-line,
+ * real, class-specific headline (`formatClassSpecificHeadline`) sits right
+ * under the badge -- never a synthesized score, only the real metric each
+ * of the 8 evaluators already computed.
+ */
 function buildColumns(client: NwrApiClient, onRecorded: () => void): TableColumn[] {
   return [
     {
@@ -200,12 +224,15 @@ function buildColumns(client: NwrApiClient, onRecorded: () => void): TableColumn
       render: (row) => <span>{formatGeneratedAt(String(row.generatedAt))}</span>,
     },
     {
-      key: "decisionType", label: "Decision", sort: "text",
+      key: "league", label: "League", sort: "text",
+      render: (row) => <span>{String(row.league ?? "—")}</span>,
+    },
+    {
+      key: "decisionType", label: "Decision type", sort: "text",
       render: (row) => <span>{formatDecisionType(String(row.decisionType))}</span>,
     },
-    { key: "week", label: "Week", align: "right", render: (row) => (row.week == null ? "—" : String(row.week)) },
     {
-      key: "recommendation", label: "Recommendation",
+      key: "recommendation", label: "NWR recommendation",
       render: (row) => <span>{summarizeRecommendation(row as unknown as DecisionTraceHistoryEvent)}</span>,
     },
     {
@@ -222,16 +249,98 @@ function buildColumns(client: NwrApiClient, onRecorded: () => void): TableColumn
       key: "status", label: "Outcome status",
       render: (row) => {
         const event = row as unknown as DecisionTraceHistoryEvent;
+        const evaluationStatus = event.evaluationDetail?.evaluation.evaluationStatus;
+        const headline = formatClassSpecificHeadline(event);
         return (
           <div className="decision-history__status-cell">
-            <StatusBadge tone={statusTone(String(row.status))} label={statusLabel(String(row.status))} />
-            <span className="copy-muted">{formatOutcome(event)}</span>
+            {evaluationStatus ? (
+              <StatusBadge tone={evaluationStatusTone(evaluationStatus)} label={evaluationStatusLabel(evaluationStatus)} />
+            ) : (
+              <span className="copy-muted">{formatOutcome(event)}</span>
+            )}
+            {headline && headline !== evaluationStatusLabel(evaluationStatus ?? "") ? (
+              <span className="copy-muted decision-history__status-headline">{headline}</span>
+            ) : null}
             <OutcomeDetail event={event} />
           </div>
         );
       },
     },
   ];
+}
+
+/**
+ * Work Unit 14: one independent card per real decision class, gated by the
+ * same preregistered minimum-sample rule the backend itself already
+ * enforces (`MIN_SAMPLE_SIZE_FOR_PER_CLASS_SUMMARY` = 20) -- this component
+ * renders whatever `redraft_decision_trace_outcome_summary` actually
+ * returned, never recomputing a gate client-side. **No card here is ever
+ * combined with another into a cross-class figure** -- each card's own
+ * title (`CLASS_SUMMARY_TITLE`) and rows come from exactly one class's own
+ * `summarize_*` output. Given the real production trace store is currently
+ * empty (Worker 4's own confirmed finding, unchanged as of this pass),
+ * every card will honestly show "NOT ENOUGH DATA YET" rows against real
+ * production data today -- that is the correct, expected result, not a
+ * loading/error state.
+ */
+function ClassSummaryPanel({ client }: { client: NwrApiClient }) {
+  const loader = () => client.redraftDecisionTraceOutcomeSummary();
+  const { result, error, working, reload } = useAsync(loader, [client]);
+
+  if (!result && working) {
+    return <p className="copy-muted" aria-live="polite">Reading per-class outcome summaries…</p>;
+  }
+  if (error) {
+    return (
+      <ErrorState
+        message={error instanceof NwrApiError ? error.message : "Class-specific summaries could not be read."}
+        onRetry={reload}
+      />
+    );
+  }
+  if (!result) return null;
+
+  // `result.summaries` is a real LIST (each entry carries its own
+  // `decisionType`), never a dict keyed by decisionType -- see
+  // `DecisionTraceOutcomeSummaryResult`'s own contract comment for why (the
+  // same real HTTP camelCase-key mangling bug this pass found and fixed for
+  // `statusCounts`). Ordered here by the app's own preferred display order
+  // (`CLASS_SUMMARY_TITLE`'s key order), not whatever order the backend
+  // happened to return.
+  const byType = new Map(result.summaries.map((summary) => [summary.decisionType, summary]));
+  const entries = Object.keys(CLASS_SUMMARY_TITLE)
+    .map((decisionType) => [decisionType, byType.get(decisionType)] as const)
+    .filter((entry): entry is [string, DecisionClassSummary] => Boolean(entry[1]));
+
+  return (
+    <Panel
+      title="Class-specific outcome summaries"
+      eyebrow={`${result.totalTraceCount} total recorded trace${result.totalTraceCount === 1 ? "" : "s"} this league`}
+    >
+      <p className="copy-muted decision-history__disclosure">
+        Every class below is evaluated and summarized entirely independently -- a Start/Sit point delta and a FAAB
+        dollar-calibration figure are never comparable, and no card here is ever combined into one cross-class score.
+      </p>
+      <div className="decision-history__summary-grid">
+        {entries.map(([decisionType, summary]) => {
+          const display = buildClassSummaryDisplay(decisionType, summary);
+          return (
+            <div className="decision-history__summary-card" key={decisionType}>
+              <h4>{display.title}</h4>
+              <dl>
+                {display.rows.map((row) => (
+                  <div className="decision-history__detail-row" key={row.label}>
+                    <dt>{row.label}</dt>
+                    <dd>{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          );
+        })}
+      </div>
+    </Panel>
+  );
 }
 
 export function DecisionHistoryPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
@@ -268,6 +377,7 @@ export function DecisionHistoryPage({ client, data }: { client: NwrApiClient; da
           </Panel>
         )
       ) : null}
+      <ClassSummaryPanel client={client} />
       <p className="copy-muted decision-history__disclosure">
         No calibration, accuracy, or "was NWR right" metric is shown here -- real season outcomes don't yet exist for
         anything recorded so far, and this page never invents one.
