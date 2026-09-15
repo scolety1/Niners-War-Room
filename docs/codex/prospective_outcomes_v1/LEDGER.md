@@ -1830,3 +1830,245 @@ only new (`??`) files):
    characterization)**, the directive's own next-named work, were not
    started this pass -- Work Units 16-17 (this pass's own assignment)
    were the full scope this time.
+
+## Worker 8 (this pass) -- Work Units 19-20: multi-league scale
+## characterization + performance characterization (MEASUREMENT ONLY)
+
+Start HEAD `8969e52f` (Worker 7's closing commit). Not merged, not pushed,
+not deployed. Verified live before writing any code: branch, clean
+worktree, the 520-test targeted slice, `test_desktop_application_api.py`'s
+same 4 pre-existing failures (`test_dynasty_facade_composes_real_governed_
+workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_
+trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_
+contract`, `test_facade_has_no_streamlit_or_app_component_dependency`).
+
+Read in full before writing any code: this ledger (Workers 1-7),
+`desktop/apps/redraft/src/attention-center.ts`/`attention-center-page.tsx`/
+`attention-center.test.ts` (the Multi-League Attention Center, built in an
+earlier session -- NOT this cycle; grepped this ledger for "Attention
+Center" and found zero prior mentions, confirming it), and
+`player-detail-state.ts`/`player-detail-drawer.tsx`/`player-drawer-core.tsx`
+(Player Drawer). This whole pass is MEASUREMENT ONLY: neither
+`attention-center.ts`'s own aggregation logic, `desktop_facade.py`,
+`player_availability_status_service.py`, nor any of this cycle's 8
+evaluators/orchestrator was modified.
+
+**A real, disclosed naming finding**: a literal `"fanout"`/`"status_fanout"`
+string search across the whole repo (Python + TypeScript + docs) returned
+ZERO hits. Read the live-player-intelligence cycle's own ledger and
+`player_availability_status_service.py` directly instead: the directive's
+"status-fanout infrastructure... even though nothing is wired into
+recommendations" refers to the real, callable `redraft_player_availability_
+status` facade endpoint (`load_player_availability_statuses`/
+`player_availability_authority_health`) -- a real, standalone read
+authority, confirmed genuinely unwired into any recommendation (module
+docstring: "the one product-facing authority every Draft/Lineup/Waivers/
+Trades surface SHOULD eventually read... instead of each surface
+separately re-deriving its own status heuristic," present tense, not yet
+true). "Fan-out" means calling this same per-repo-root endpoint once per
+league during multi-league aggregation -- exercised for real this pass.
+
+### Work Unit 19 -- multi-league scale characterization
+
+**New**: `scripts/run_multi_league_scale_benchmark_v1.py` (real backend
+harness), `desktop/apps/redraft/src/attention-center-scale-benchmark.test.ts`
+(real vitest harness, 13 tests, all passing -- imports and runs the REAL,
+unmodified `runAttentionCenterAggregation`/`searchPlayerAcrossLeagues`
+from `attention-center.ts`, never a reimplementation), `docs/codex/
+prospective_outcomes_v1/multi_league_scale_v1/` (`backend_results.json`,
+`frontend_bench_results.json`, `RESULTS.md`).
+
+**Isolated, LOCAL-provider profile sets only** (per the directive's own
+safety instruction): every profile at every tested size (5/10/25/50) is
+`provider="local"`, created under a fresh temp `redraft_root` per size via
+the real `create_profile`/`redraft_bootstrap` path (`repo_root=REPO_ROOT`
+for the real bundled projection snapshot -- the exact same isolation
+pattern `tests/test_desktop_application_api.py` already uses for
+isolated redraft-mode tests). The owner's real AppData store and real
+Sleeper leagues were never touched by this work unit.
+
+**A real methodological finding this pass caught and corrected before
+trusting any number**: `tracemalloc.start()` measurably inflated every
+real call's wall time by roughly 5x when first tried in the same pass as
+timing (dataHealth 27ms -> 138ms, workspaceContext 14ms -> 71ms, live-
+confirmed by a direct side-by-side comparison). The script now runs two
+SEPARATE passes per size -- timing with no tracemalloc active, memory-only
+with tracemalloc active and that pass's own timing discarded -- rather
+than reporting an instrumentation-inflated number as real latency.
+
+**Real result**: per-league cost is flat across the whole tested range
+(~42.7ms/league at n=5, ~43.0ms/league at n=50, ratio 1.007) -- linear
+scaling, confirmed independently by BOTH harnesses (the frontend's own
+isolated-overhead measurement shows negligible JS orchestration cost, and
+its "realistic" end-to-end number, 2364.8ms at n=50, closely corroborates
+the backend's own independently-measured 2150.2ms). Full real numbers,
+tables, and the exact SCALE FINDING verdict are in `RESULTS.md`. tracemalloc
+peak stays flat (~2 MiB) across every tested size -- no evidence of
+per-league memory accumulation. Windows has no `resource` module
+(confirmed live) and no `psutil` is installed (confirmed live); tracemalloc
+was judged sufficient given the flat result, per the directive's own
+"don't over-engineer memory measurement" instruction.
+
+7 new pytest tests (`tests/test_multi_league_scale_and_performance_
+benchmark_v1.py`, shared with Work Unit 20 -- see below), all passing,
+plus 13 new vitest tests, all passing.
+
+### Work Unit 20 -- performance characterization
+
+**New**: `scripts/run_performance_characterization_v1.py`, `docs/codex/
+prospective_outcomes_v1/performance_characterization_v1/` (`results.json`,
+`RESULTS.md`).
+
+**Safety, read before touching this script**: `DesktopBackendFacade.
+activate_redraft_profile` performs a REAL local write (`active_profile.
+json`) -- so this script NEVER constructs a facade against the real
+AppData Redraft store directly. It `shutil.copytree`s the real store to a
+temp directory first (a read of the original, a write only to the copy),
+then operates on the copy. The real Fantasy Gamers Sleeper league (id
+`1312983576827920384`) is read through that copy's own already-saved real
+`provider=sleeper` profile (`4c5f04762921420595e4d8c7cda76582`) -- every
+resulting network call is a plain, public, keyless Sleeper GET, the same
+real read-only surface every prior worker's own real-data script uses.
+Outcome ingestion is measured against a SEPARATE, fresh, isolated,
+throwaway root seeded with realistic fixture traces (same construction
+pattern already established in `tests/test_prospective_outcome_ingestion_
+orchestrator_v1_service.py`), never the real production trace ledger
+(confirmed still real-empty, unchanged from Worker 7's own open issue 1).
+
+**Real numbers for every directive-named surface** (Cold startup, League
+open, Home, Lineup, Improve Team, Trade Finder, Trade Package Search,
+Player Drawer first/warm-open, Draft refresh, History V3, outcome
+ingestion) -- full table in `RESULTS.md`.
+
+**A real, disclosed finding on Player Drawer** (read `player-detail-
+state.ts` in full before benchmarking): there is NO dedicated backend
+endpoint for opening the drawer. Identity is caller-supplied (every
+surface that opens it already has the row data) and the only shared
+lookup (`deriveBackbone`) is an in-memory filter against the already-
+loaded `PlayerAvailabilityStatus` list -- so "first open" and "warm open"
+genuinely do not differ in backend cost; both are a sub-millisecond array
+lookup. No performance concern, none to fix.
+
+**A real, cProfile-corroborated finding on the Sleeper-network-bound
+surfaces** (Home/Lineup/Improve Team/Trade Finder/Trade Package Search):
+this pass's own 5-reps-per-surface benchmark loop showed high variance
+(Lineup: 9616.6ms median / 15657.2ms P95), but an ISOLATED cProfile run of
+the identical `redraft_weekly_lineup(week=2)` call (no preceding rapid-
+fire calls) completed in 1.271s, with `{method 'read' of
+'_ssl._SSLSocket' objects}` (55.6%) and TCP/TLS `connect`+`do_handshake`
+(16.9%) accounting for the overwhelming majority of real cost --
+`SleeperHttpClient.get_json` uses a plain `urlopen` per call with NO
+persistent session/connection-pooling/keep-alive reuse across calls, so
+every real GET pays a fresh handshake. This is real, but a DIFFERENT
+dimension of the same "real network I/O dominates" story the earlier
+Weekly Home latency fix (commit `00446dcd`, prior session) already
+addressed -- that fix eliminated redundant re-fetches WITHIN one call;
+connection reuse ACROSS calls is untouched. **Not fixed this pass**:
+`SleeperHttpClient` is used broadly across the whole codebase, and
+switching it to a persistent session would need its own equivalence proof
+across every call site -- larger/riskier than this pass's own bounded-fix
+bar. Flagged precisely for a future worker with that scope; the isolated
+cProfile evidence (not the noisier benchmark-loop numbers) is the more
+trustworthy per-call estimate for a single real user's occasional usage,
+disclosed as such in `RESULTS.md` rather than silently averaged away.
+
+**OPTIMIZATION MADE: NONE.** Every surface is either already comfortably
+fast (League open, History V3, Player Drawer, League switch -- sub-
+millisecond to low-single-digit-millisecond) or is dominated by real,
+external, precisely root-caused network I/O that does not meet this
+pass's own bounded/equivalence-proven fix bar. No code was changed in
+`desktop_facade.py`, any `src/services/*` module, or `attention-center.ts`.
+
+### Tests (full)
+
+- `tests/test_multi_league_scale_and_performance_benchmark_v1.py`: 7 new
+  tests, all passing -- pure statistics-helper correctness, a real
+  assertion that the isolated scale-benchmark store never resolves under
+  the real AppData Redraft root, a hermetic (no-network) run of the
+  Attention Center fan-out bench against an isolated store, the
+  linearity-check verdict on both a linear and a synthetic superlinear
+  input, and a hermetic ingestion-fixture-seeding round trip.
+- `desktop/apps/redraft/src/attention-center-scale-benchmark.test.ts`: 13
+  new tests, all passing.
+- Targeted regression slice (`pytest -k "decision_trace or
+  prospective_outcome or live_player_intelligence or
+  boundary_property_reliability or composition or player_availability or
+  trade_package_quality_benchmark or kdst_prospective_benchmark or
+  multi_league_scale_and_performance"`): **527 passed, 0 failed** (520
+  pre-existing + 7 new this pass).
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures documented in every prior worker's own
+  baseline. Re-confirmed live after this pass's changes.
+- `git status --porcelain` shows only new (`??`) files this pass touched
+  or created; grepped every one for every hard-boundary term
+  (`marginal_roster_utility_v2`, `LeagueSnapshot`, `LeagueWorkspaceContext`,
+  `lifecycle_resolver`, `DecisionResultEnvelope`, `PlayerAvailabilityStatus`):
+  matches exist ONLY as read-only type imports / measured-endpoint names
+  (e.g. importing `LeagueWorkspaceContext`'s TYPE to build a realistic
+  fixture, calling the already-existing `PlayerAvailabilityStatus`
+  endpoint) -- the exact same legitimate-mention pattern Workers 3/4/5's
+  own files already established, never a semantic change to any of those
+  systems.
+
+### Real data / Sleeper access this pass
+
+Read-only throughout, zero writes. Real GETs: `state/nfl` (current week),
+and through the real Fantasy Gamers profile COPY: `league/{id}/rosters`,
+`/users`, `players/nfl`, `league/{id}/matchups/{week}`, plus a real FFC
+ADP fetch (Draft refresh) and real FantasyPros K/DST consensus reads
+(Improve Team). The real AppData Redraft store itself was only ever
+`shutil.copytree`'d (a read of the original); every real local write
+(profile activation, ADP snapshot, ingestion ledger) landed exclusively in
+a temp-directory copy or a separate fresh throwaway root, never the
+original path.
+
+### Backend/model files changed this pass
+
+**All new, zero modifications to any existing file**:
+
+- `scripts/run_multi_league_scale_benchmark_v1.py`
+- `scripts/run_performance_characterization_v1.py`
+- `tests/test_multi_league_scale_and_performance_benchmark_v1.py`
+- `desktop/apps/redraft/src/attention-center-scale-benchmark.test.ts`
+- `docs/codex/prospective_outcomes_v1/multi_league_scale_v1/` (`backend_
+  results.json`, `frontend_bench_results.json`, `RESULTS.md`)
+- `docs/codex/prospective_outcomes_v1/performance_characterization_v1/`
+  (`results.json`, `RESULTS.md`)
+- This ledger.
+
+## OPEN ISSUES FOR THE NEXT WORKER (Work Units 21-22: real dogfood + full
+## acceptance)
+
+1. **A real connection-reuse gap in `SleeperHttpClient`** (Work Unit 20's
+   own cProfile finding, see above): every real GET pays a fresh TCP+TLS
+   handshake (no persistent session/connection pooling anywhere in this
+   codebase's Sleeper client). Real, root-caused, NOT fixed -- would touch
+   a broadly-shared low-level dependency and needs its own equivalence
+   proof across every call site, out of this pass's own bounded-fix risk
+   bar.
+2. **The Attention Center's sequential, one-league-at-a-time fan-out** is
+   confirmed linear and comfortably acceptable through 50 leagues (~2.1-
+   2.4s median), but the ARCHITECTURAL reason (exactly one active-profile
+   pointer on the backend) means it can never be trivially parallelized
+   without a real per-profile-scoped read path or a queueing layer -- a
+   real, disclosed, NOT-attempted-here future option if an owner ever
+   genuinely runs 50+ leagues and finds 2+ seconds too slow in practice
+   (not evidenced as a real complaint today).
+3. **This pass's own bulk scale-test fixtures were all LOCAL-provider**
+   (per the directive's own safety instruction) -- a genuine "50 real-
+   shaped Sleeper leagues" number does not exist and should not be
+   fabricated; see `multi_league_scale_v1/RESULTS.md`'s own "Scope,
+   disclosed" section for how to combine this pass's two real, separate
+   measurements analytically instead.
+4. **Every open issue from Worker 7's own list** (real production trace
+   store still has zero traces; identity resolution for WAIVER/FAAB/
+   ADD_DROP/K_STREAMER/DST_STREAMER/TRADE-family; the real DST identity-
+   matching defect in `sleeper_streamer_actions`, NOT fixed, hard-boundary
+   gated; the single-real-league Trade Package Quality Benchmark; n=1-week
+   K/DST Prospective Benchmark; the unresolved TARGET_PLAYER/
+   IMPROVE_POSITION zero-candidate root cause; the real Marvin Harrison Jr.
+   identity-match gap) is UNCHANGED, inherited, not touched this pass --
+   see Worker 7's own entry above for full detail.
+5. **Work Units 21-22 (real dogfood + full acceptance)**, the directive's
+   own next-named work, were not started this pass -- Work Units 19-20
+   (this pass's own assignment) were the full scope this time.
