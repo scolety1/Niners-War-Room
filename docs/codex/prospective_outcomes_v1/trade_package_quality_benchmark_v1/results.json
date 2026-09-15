@@ -1,0 +1,1232 @@
+{
+  "notes": [
+    "3 of the owner's real rostered Sleeper players did not resolve to the canonical ranking pool: ['11628', '3451', 'NE'] (K/DST are never NWR-projected by design; any other id here is a real identity-match gap, not fabricated)."
+  ],
+  "realLeagueId": "1312983576827920384",
+  "realProfileId": "4c5f04762921420595e4d8c7cda76582",
+  "reports": [
+    {
+      "benchForBenchClutterRate": 0.0,
+      "candidateCount": 15,
+      "diversity": {
+        "distinctPlayerRatio": 0.7333,
+        "distinctPlayersUsed": 11,
+        "maxSinglePlayerFrequency": 6,
+        "mostRecycledPlayerId": "00-0040734",
+        "totalCandidates": 15
+      },
+      "dominanceViolations": [],
+      "elapsedSeconds": 1.203,
+      "holeFitRows": [
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0040734",
+            "00-0040730"
+          ],
+          "youSend": [
+            "00-0036252"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0040734",
+            "00-0040730"
+          ],
+          "youSend": [
+            "00-0036971"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0040730"
+          ],
+          "youSend": [
+            "00-0039918"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0040734"
+          ],
+          "youSend": [
+            "00-0039918"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0039067",
+            "00-0038120"
+          ],
+          "youSend": [
+            "00-0036252"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0039146",
+            "00-0040730"
+          ],
+          "youSend": [
+            "00-0039918"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0039146",
+            "00-0040734"
+          ],
+          "youSend": [
+            "00-0039918"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0039067",
+            "00-0038120"
+          ],
+          "youSend": [
+            "00-0038117"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0036912",
+            "00-0031588"
+          ],
+          "youSend": [
+            "00-0036252"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0040730"
+          ],
+          "youSend": [
+            "00-0036252"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0040734"
+          ],
+          "youSend": [
+            "00-0036252"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0036912",
+            "00-0031588"
+          ],
+          "youSend": [
+            "00-0038117"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0038120"
+          ],
+          "youSend": [
+            "00-0038117"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0040730"
+          ],
+          "youSend": [
+            "00-0038117"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "00-0040734"
+          ],
+          "youSend": [
+            "00-0038117"
+          ]
+        }
+      ],
+      "label": "REAL_FANTASY_GAMERS_FIND_WIN_WIN",
+      "mode": "FIND_WIN_WIN",
+      "nearDuplicatePairs": [
+        {
+          "jaccardSimilarity": 0.5,
+          "opponentRosterId": "10",
+          "packageA": {
+            "youReceive": [
+              "00-0040734",
+              "00-0040730"
+            ],
+            "youSend": [
+              "00-0036252"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "00-0040734",
+              "00-0040730"
+            ],
+            "youSend": [
+              "00-0036971"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.6667,
+          "opponentRosterId": "10",
+          "packageA": {
+            "youReceive": [
+              "00-0040734",
+              "00-0040730"
+            ],
+            "youSend": [
+              "00-0036252"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "00-0040730"
+            ],
+            "youSend": [
+              "00-0036252"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.6667,
+          "opponentRosterId": "10",
+          "packageA": {
+            "youReceive": [
+              "00-0040734",
+              "00-0040730"
+            ],
+            "youSend": [
+              "00-0036252"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "00-0040734"
+            ],
+            "youSend": [
+              "00-0036252"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.6667,
+          "opponentRosterId": "10",
+          "packageA": {
+            "youReceive": [
+              "00-0040730"
+            ],
+            "youSend": [
+              "00-0039918"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "00-0039146",
+              "00-0040730"
+            ],
+            "youSend": [
+              "00-0039918"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.6667,
+          "opponentRosterId": "10",
+          "packageA": {
+            "youReceive": [
+              "00-0040734"
+            ],
+            "youSend": [
+              "00-0039918"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "00-0039146",
+              "00-0040734"
+            ],
+            "youSend": [
+              "00-0039918"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.5,
+          "opponentRosterId": "10",
+          "packageA": {
+            "youReceive": [
+              "00-0039146",
+              "00-0040730"
+            ],
+            "youSend": [
+              "00-0039918"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "00-0039146",
+              "00-0040734"
+            ],
+            "youSend": [
+              "00-0039918"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.5,
+          "opponentRosterId": "5",
+          "packageA": {
+            "youReceive": [
+              "00-0039067",
+              "00-0038120"
+            ],
+            "youSend": [
+              "00-0036252"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "00-0039067",
+              "00-0038120"
+            ],
+            "youSend": [
+              "00-0038117"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.6667,
+          "opponentRosterId": "5",
+          "packageA": {
+            "youReceive": [
+              "00-0039067",
+              "00-0038120"
+            ],
+            "youSend": [
+              "00-0038117"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "00-0038120"
+            ],
+            "youSend": [
+              "00-0038117"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.5,
+          "opponentRosterId": "3",
+          "packageA": {
+            "youReceive": [
+              "00-0036912",
+              "00-0031588"
+            ],
+            "youSend": [
+              "00-0036252"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "00-0036912",
+              "00-0031588"
+            ],
+            "youSend": [
+              "00-0038117"
+            ]
+          }
+        }
+      ],
+      "packagesEvaluated": 900,
+      "rosterConsolidationViolations": [],
+      "sizeUtilityDistribution": {
+        "1-for-1": {
+          "count": 7,
+          "meanOwnerNetUtility": 12.1729,
+          "medianOwnerNetUtility": 11.69
+        },
+        "1-for-2": {
+          "count": 8,
+          "meanOwnerNetUtility": 16.9925,
+          "medianOwnerNetUtility": 13.575
+        }
+      },
+      "starterImpactRows": [
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": -10.8,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0040734",
+            "00-0040730"
+          ],
+          "youSend": [
+            "00-0036252"
+          ]
+        },
+        {
+          "label": "BOTH_SIDES_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 17.6,
+          "ownerStartingLineupValueDelta": -20.0,
+          "youReceive": [
+            "00-0040734",
+            "00-0040730"
+          ],
+          "youSend": [
+            "00-0036971"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 3.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0040730"
+          ],
+          "youSend": [
+            "00-0039918"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 3.4,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0040734"
+          ],
+          "youSend": [
+            "00-0039918"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": -7.36,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0039067",
+            "00-0038120"
+          ],
+          "youSend": [
+            "00-0036252"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 3.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0039146",
+            "00-0040730"
+          ],
+          "youSend": [
+            "00-0039918"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 3.4,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0039146",
+            "00-0040734"
+          ],
+          "youSend": [
+            "00-0039918"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 10.14,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0039067",
+            "00-0038120"
+          ],
+          "youSend": [
+            "00-0038117"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": -30.8,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0036912",
+            "00-0031588"
+          ],
+          "youSend": [
+            "00-0036252"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": -5.4,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0040730"
+          ],
+          "youSend": [
+            "00-0036252"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": -5.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0040734"
+          ],
+          "youSend": [
+            "00-0036252"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": -13.3,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0036912",
+            "00-0031588"
+          ],
+          "youSend": [
+            "00-0038117"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 10.14,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0038120"
+          ],
+          "youSend": [
+            "00-0038117"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 11.2,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0040730"
+          ],
+          "youSend": [
+            "00-0038117"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 11.6,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "00-0040734"
+          ],
+          "youSend": [
+            "00-0038117"
+          ]
+        }
+      ],
+      "truncated": true
+    },
+    {
+      "benchForBenchClutterRate": null,
+      "candidateCount": 0,
+      "diversity": {
+        "distinctPlayerRatio": null,
+        "distinctPlayersUsed": 0,
+        "maxSinglePlayerFrequency": 0,
+        "mostRecycledPlayerId": null,
+        "totalCandidates": 0
+      },
+      "dominanceViolations": [],
+      "elapsedSeconds": 0.1792,
+      "holeFitRows": [],
+      "label": "REAL_FANTASY_GAMERS_TARGET_PLAYER_LAPORTA",
+      "mode": "TARGET_PLAYER",
+      "nearDuplicatePairs": [],
+      "packagesEvaluated": 120,
+      "rosterConsolidationViolations": [],
+      "sizeUtilityDistribution": {},
+      "starterImpactRows": [],
+      "truncated": true
+    },
+    {
+      "benchForBenchClutterRate": null,
+      "candidateCount": 0,
+      "diversity": {
+        "distinctPlayerRatio": null,
+        "distinctPlayersUsed": 0,
+        "maxSinglePlayerFrequency": 0,
+        "mostRecycledPlayerId": null,
+        "totalCandidates": 0
+      },
+      "dominanceViolations": [],
+      "elapsedSeconds": 0.5317,
+      "holeFitRows": [],
+      "label": "REAL_FANTASY_GAMERS_IMPROVE_POSITION_TE",
+      "mode": "IMPROVE_POSITION",
+      "nearDuplicatePairs": [],
+      "packagesEvaluated": 372,
+      "rosterConsolidationViolations": [],
+      "sizeUtilityDistribution": {},
+      "starterImpactRows": [],
+      "truncated": true
+    },
+    {
+      "benchForBenchClutterRate": 0.9333,
+      "candidateCount": 15,
+      "diversity": {
+        "distinctPlayerRatio": 1.5333,
+        "distinctPlayersUsed": 23,
+        "maxSinglePlayerFrequency": 15,
+        "mostRecycledPlayerId": "my-wr5",
+        "totalCandidates": 15
+      },
+      "dominanceViolations": [],
+      "elapsedSeconds": 0.644,
+      "holeFitRows": [
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp0-rb2",
+            "opp0-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp1-rb2",
+            "opp1-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp2-rb2",
+            "opp2-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp3-rb2",
+            "opp3-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp4-rb2",
+            "opp4-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp5-rb2",
+            "opp5-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp6-rb2",
+            "opp6-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp0-rb2",
+            "opp0-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp1-rb2",
+            "opp1-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp2-rb2",
+            "opp2-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp3-rb2",
+            "opp3-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp4-rb2",
+            "opp4-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp5-rb2",
+            "opp5-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp6-rb2",
+            "opp6-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "addressedARealHole": false,
+          "ownerHolesResolved": [],
+          "youReceive": [
+            "opp0-rb2"
+          ],
+          "youSend": [
+            "my-wr5"
+          ]
+        }
+      ],
+      "label": "SYNTHETIC_FIXTURE_FIND_WIN_WIN",
+      "mode": "FIND_WIN_WIN",
+      "nearDuplicatePairs": [
+        {
+          "jaccardSimilarity": 0.6,
+          "opponentRosterId": "2",
+          "packageA": {
+            "youReceive": [
+              "opp0-rb2",
+              "opp0-wr4"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "opp0-rb2",
+              "opp0-wr5"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.5,
+          "opponentRosterId": "2",
+          "packageA": {
+            "youReceive": [
+              "opp0-rb2",
+              "opp0-wr4"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "opp0-rb2"
+            ],
+            "youSend": [
+              "my-wr5"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.5,
+          "opponentRosterId": "2",
+          "packageA": {
+            "youReceive": [
+              "opp0-rb2",
+              "opp0-wr5"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "opp0-rb2"
+            ],
+            "youSend": [
+              "my-wr5"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.6,
+          "opponentRosterId": "3",
+          "packageA": {
+            "youReceive": [
+              "opp1-rb2",
+              "opp1-wr4"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "opp1-rb2",
+              "opp1-wr5"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.6,
+          "opponentRosterId": "4",
+          "packageA": {
+            "youReceive": [
+              "opp2-rb2",
+              "opp2-wr4"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "opp2-rb2",
+              "opp2-wr5"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.6,
+          "opponentRosterId": "5",
+          "packageA": {
+            "youReceive": [
+              "opp3-rb2",
+              "opp3-wr4"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "opp3-rb2",
+              "opp3-wr5"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.6,
+          "opponentRosterId": "6",
+          "packageA": {
+            "youReceive": [
+              "opp4-rb2",
+              "opp4-wr4"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "opp4-rb2",
+              "opp4-wr5"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.6,
+          "opponentRosterId": "7",
+          "packageA": {
+            "youReceive": [
+              "opp5-rb2",
+              "opp5-wr4"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "opp5-rb2",
+              "opp5-wr5"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          }
+        },
+        {
+          "jaccardSimilarity": 0.6,
+          "opponentRosterId": "8",
+          "packageA": {
+            "youReceive": [
+              "opp6-rb2",
+              "opp6-wr4"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          },
+          "packageB": {
+            "youReceive": [
+              "opp6-rb2",
+              "opp6-wr5"
+            ],
+            "youSend": [
+              "my-rb2",
+              "my-wr5"
+            ]
+          }
+        }
+      ],
+      "packagesEvaluated": 900,
+      "rosterConsolidationViolations": [],
+      "sizeUtilityDistribution": {
+        "1-for-1": {
+          "count": 1,
+          "meanOwnerNetUtility": 8.8,
+          "medianOwnerNetUtility": 8.8
+        },
+        "2-for-2": {
+          "count": 14,
+          "meanOwnerNetUtility": 18.23,
+          "medianOwnerNetUtility": 18.23
+        }
+      },
+      "starterImpactRows": [
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp0-rb2",
+            "opp0-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp1-rb2",
+            "opp1-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp2-rb2",
+            "opp2-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp3-rb2",
+            "opp3-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp4-rb2",
+            "opp4-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp5-rb2",
+            "opp5-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp6-rb2",
+            "opp6-wr4"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp0-rb2",
+            "opp0-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp1-rb2",
+            "opp1-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp2-rb2",
+            "opp2-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp3-rb2",
+            "opp3-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp4-rb2",
+            "opp4-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp5-rb2",
+            "opp5-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "NEITHER_SIDE_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": 0.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp6-rb2",
+            "opp6-wr5"
+          ],
+          "youSend": [
+            "my-rb2",
+            "my-wr5"
+          ]
+        },
+        {
+          "label": "ONE_SIDED_STARTER_IMPACT",
+          "opponentStartingLineupValueDelta": -10.0,
+          "ownerStartingLineupValueDelta": 0.0,
+          "youReceive": [
+            "opp0-rb2"
+          ],
+          "youSend": [
+            "my-wr5"
+          ]
+        }
+      ],
+      "truncated": true
+    }
+  ]
+}
