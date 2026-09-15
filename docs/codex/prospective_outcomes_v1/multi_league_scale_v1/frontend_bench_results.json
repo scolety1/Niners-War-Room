@@ -1,0 +1,103 @@
+{
+  "generatedBy": "attention-center-scale-benchmark.test.ts",
+  "aggregation": [
+    {
+      "leagues": 5,
+      "mode": "isolated_overhead",
+      "medianMs": 0.1255000000000024,
+      "p95Ms": 0.32799999999998875,
+      "minMs": 0.06199999999999761,
+      "maxMs": 0.6531000000000091,
+      "reps": 41
+    },
+    {
+      "leagues": 5,
+      "mode": "realistic",
+      "medianMs": 234.30999999999995,
+      "p95Ms": 237.30649999999991,
+      "minMs": 219.0981,
+      "maxMs": 237.30649999999991,
+      "reps": 9
+    },
+    {
+      "leagues": 10,
+      "mode": "isolated_overhead",
+      "medianMs": 0.13400000000001455,
+      "p95Ms": 0.3162999999999556,
+      "minMs": 0.10770000000002256,
+      "maxMs": 0.5275000000001455,
+      "reps": 41
+    },
+    {
+      "leagues": 10,
+      "mode": "realistic",
+      "medianMs": 471.18359999999984,
+      "p95Ms": 474.84200000000055,
+      "minMs": 463.6511999999998,
+      "maxMs": 474.84200000000055,
+      "reps": 9
+    },
+    {
+      "leagues": 25,
+      "mode": "isolated_overhead",
+      "medianMs": 0.2717000000002372,
+      "p95Ms": 0.3883000000005268,
+      "minMs": 0.24880000000030122,
+      "maxMs": 0.5520999999998821,
+      "reps": 41
+    },
+    {
+      "leagues": 25,
+      "mode": "realistic",
+      "medianMs": 1178.3276000000005,
+      "p95Ms": 1181.6690000000008,
+      "minMs": 1152.860700000001,
+      "maxMs": 1181.6690000000008,
+      "reps": 9
+    },
+    {
+      "leagues": 50,
+      "mode": "isolated_overhead",
+      "medianMs": 0.5552999999999884,
+      "p95Ms": 0.8708000000005995,
+      "minMs": 0.5468999999975495,
+      "maxMs": 1.5231000000021595,
+      "reps": 41
+    },
+    {
+      "leagues": 50,
+      "mode": "realistic",
+      "medianMs": 2364.8009999999995,
+      "p95Ms": 2369.577000000005,
+      "minMs": 2351.875899999999,
+      "maxMs": 2369.577000000005,
+      "reps": 9
+    }
+  ],
+  "playerSearch": [
+    {
+      "leagues": 5,
+      "medianMs": 0.0031999999991967343,
+      "p95Ms": 0.009899999997287523,
+      "reps": 41
+    },
+    {
+      "leagues": 10,
+      "medianMs": 0.0036000000036437996,
+      "p95Ms": 0.010699999998905696,
+      "reps": 41
+    },
+    {
+      "leagues": 25,
+      "medianMs": 0.008000000001629815,
+      "p95Ms": 0.008600000001024455,
+      "reps": 41
+    },
+    {
+      "leagues": 50,
+      "medianMs": 0.01389999999810243,
+      "p95Ms": 0.01479999999719439,
+      "reps": 41
+    }
+  ]
+}

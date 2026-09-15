@@ -1,0 +1,259 @@
+{
+  "scaleSizes": [
+    5,
+    10,
+    25,
+    50
+  ],
+  "reps": 5,
+  "byLeagueCount": [
+    {
+      "leagues": 5,
+      "attentionCenterFanout": {
+        "totalPass": {
+          "medianMs": 213.48600002238527,
+          "p95Ms": 229.7526000184007,
+          "minMs": 211.41019999049604,
+          "maxMs": 229.7526000184007,
+          "reps": 5
+        },
+        "perLeagueCall_activate": {
+          "medianMs": 0.7791999960318208,
+          "p95Ms": 1.0867000091820955,
+          "minMs": 0.685199978761375,
+          "maxMs": 1.123199996072799,
+          "reps": 25
+        },
+        "perLeagueCall_dataHealth": {
+          "medianMs": 27.423400024417788,
+          "p95Ms": 28.800000029150397,
+          "minMs": 26.85229998314753,
+          "maxMs": 29.529499995987862,
+          "reps": 25
+        },
+        "perLeagueCall_workspaceContext": {
+          "medianMs": 14.17010003933683,
+          "p95Ms": 16.197500051930547,
+          "minMs": 14.006100012920797,
+          "maxMs": 27.281299990136176,
+          "reps": 25
+        }
+      },
+      "statusFanout": {
+        "totalPass": {
+          "medianMs": 3.5276999697089195,
+          "p95Ms": 4.213000007439405,
+          "minMs": 3.42989998171106,
+          "maxMs": 4.213000007439405,
+          "reps": 5
+        },
+        "perLeagueCall": {
+          "medianMs": 0.15710003208369017,
+          "p95Ms": 0.19799999427050352,
+          "minMs": 0.1517999917268753,
+          "maxMs": 0.21250004647299647,
+          "reps": 25
+        }
+      },
+      "leagueSwitch": {
+        "medianMs": 0.5574499955400825,
+        "p95Ms": 0.583200016990304,
+        "minMs": 0.5367999547161162,
+        "maxMs": 0.672800000756979,
+        "reps": 30
+      },
+      "tracemallocPeakBytes": 2035957,
+      "tracemallocCurrentBytesAtEnd": 24009,
+      "tracemallocMeasuredSeparatelyFromTiming": true
+    },
+    {
+      "leagues": 10,
+      "attentionCenterFanout": {
+        "totalPass": {
+          "medianMs": 437.6149000017904,
+          "p95Ms": 451.2271999847144,
+          "minMs": 423.8914999878034,
+          "maxMs": 451.2271999847144,
+          "reps": 5
+        },
+        "perLeagueCall_activate": {
+          "medianMs": 0.7772000099066645,
+          "p95Ms": 1.0757999843917787,
+          "minMs": 0.6816000095568597,
+          "maxMs": 2.3111000191420317,
+          "reps": 50
+        },
+        "perLeagueCall_dataHealth": {
+          "medianMs": 27.495749993249774,
+          "p95Ms": 31.74020000733435,
+          "minMs": 26.815100049134344,
+          "maxMs": 45.34999997122213,
+          "reps": 50
+        },
+        "perLeagueCall_workspaceContext": {
+          "medianMs": 14.230949978809804,
+          "p95Ms": 15.258400002494454,
+          "minMs": 13.95090000005439,
+          "maxMs": 18.900600029155612,
+          "reps": 50
+        }
+      },
+      "statusFanout": {
+        "totalPass": {
+          "medianMs": 7.409999961964786,
+          "p95Ms": 9.076399961486459,
+          "minMs": 7.113700034096837,
+          "maxMs": 9.076399961486459,
+          "reps": 5
+        },
+        "perLeagueCall": {
+          "medianMs": 0.16219995450228453,
+          "p95Ms": 0.2437999937683344,
+          "minMs": 0.152900000102818,
+          "maxMs": 0.3279000520706177,
+          "reps": 50
+        }
+      },
+      "leagueSwitch": {
+        "medianMs": 0.5792999872937799,
+        "p95Ms": 0.6560999900102615,
+        "minMs": 0.5511000053957105,
+        "maxMs": 0.7203000131994486,
+        "reps": 30
+      },
+      "tracemallocPeakBytes": 2046543,
+      "tracemallocCurrentBytesAtEnd": 28145,
+      "tracemallocMeasuredSeparatelyFromTiming": true
+    },
+    {
+      "leagues": 25,
+      "attentionCenterFanout": {
+        "totalPass": {
+          "medianMs": 1076.475300011225,
+          "p95Ms": 1082.4172000284307,
+          "minMs": 1074.476899986621,
+          "maxMs": 1082.4172000284307,
+          "reps": 5
+        },
+        "perLeagueCall_activate": {
+          "medianMs": 0.7433000137098134,
+          "p95Ms": 0.9376999805681407,
+          "minMs": 0.6558999884873629,
+          "maxMs": 1.0529999854043126,
+          "reps": 125
+        },
+        "perLeagueCall_dataHealth": {
+          "medianMs": 27.41119998972863,
+          "p95Ms": 29.520300042349845,
+          "minMs": 26.82289999211207,
+          "maxMs": 41.106299962848425,
+          "reps": 125
+        },
+        "perLeagueCall_workspaceContext": {
+          "medianMs": 14.173800009302795,
+          "p95Ms": 15.20730002084747,
+          "minMs": 13.889699999708682,
+          "maxMs": 26.694699947256595,
+          "reps": 125
+        }
+      },
+      "statusFanout": {
+        "totalPass": {
+          "medianMs": 18.68009997997433,
+          "p95Ms": 19.405100028961897,
+          "minMs": 17.849900003056973,
+          "maxMs": 19.405100028961897,
+          "reps": 5
+        },
+        "perLeagueCall": {
+          "medianMs": 0.15979999443516135,
+          "p95Ms": 0.2022999688051641,
+          "minMs": 0.15049998182803392,
+          "maxMs": 0.24770002346485853,
+          "reps": 125
+        }
+      },
+      "leagueSwitch": {
+        "medianMs": 0.5943499854765832,
+        "p95Ms": 0.6710000452585518,
+        "minMs": 0.5522000137716532,
+        "maxMs": 0.7357000140473247,
+        "reps": 30
+      },
+      "tracemallocPeakBytes": 2154459,
+      "tracemallocCurrentBytesAtEnd": 140780,
+      "tracemallocMeasuredSeparatelyFromTiming": true
+    },
+    {
+      "leagues": 50,
+      "attentionCenterFanout": {
+        "totalPass": {
+          "medianMs": 2150.152300018817,
+          "p95Ms": 2161.381799960509,
+          "minMs": 2135.667000024114,
+          "maxMs": 2161.381799960509,
+          "reps": 5
+        },
+        "perLeagueCall_activate": {
+          "medianMs": 0.7345000049099326,
+          "p95Ms": 0.9227999835275114,
+          "minMs": 0.6482999888248742,
+          "maxMs": 1.4642999740317464,
+          "reps": 250
+        },
+        "perLeagueCall_dataHealth": {
+          "medianMs": 27.330300014000386,
+          "p95Ms": 29.59629998076707,
+          "minMs": 26.742300018668175,
+          "maxMs": 46.07780004153028,
+          "reps": 250
+        },
+        "perLeagueCall_workspaceContext": {
+          "medianMs": 14.165650005452335,
+          "p95Ms": 15.042199986055493,
+          "minMs": 13.932400033809245,
+          "maxMs": 30.05739999935031,
+          "reps": 250
+        }
+      },
+      "statusFanout": {
+        "totalPass": {
+          "medianMs": 35.78350000316277,
+          "p95Ms": 37.190700008068234,
+          "minMs": 34.209600009489805,
+          "maxMs": 37.190700008068234,
+          "reps": 5
+        },
+        "perLeagueCall": {
+          "medianMs": 0.15269999857991934,
+          "p95Ms": 0.19500002963468432,
+          "minMs": 0.14599994756281376,
+          "maxMs": 0.4044999950565398,
+          "reps": 250
+        }
+      },
+      "leagueSwitch": {
+        "medianMs": 0.5670500104315579,
+        "p95Ms": 0.6507000070996583,
+        "minMs": 0.5275000003166497,
+        "maxMs": 0.7948999991640449,
+        "reps": 30
+      },
+      "tracemallocPeakBytes": 2177097,
+      "tracemallocCurrentBytesAtEnd": 154837,
+      "tracemallocMeasuredSeparatelyFromTiming": true
+    }
+  ],
+  "linearityCheck": {
+    "perLeagueMsAtSmallestN": {
+      "n": 5,
+      "msPerLeague": 42.697200004477054
+    },
+    "perLeagueMsAtLargestN": {
+      "n": 50,
+      "msPerLeague": 43.003046000376344
+    },
+    "ratio": 1.0071631394065002,
+    "verdictHint": "LINEAR_OR_BETTER"
+  }
+}
