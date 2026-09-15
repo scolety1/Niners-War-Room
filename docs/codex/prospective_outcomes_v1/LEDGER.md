@@ -1575,3 +1575,258 @@ finding).
    benchmark)**, the directive's own next-named work, were not started this
    pass -- Work Unit 18 (this pass's own assignment) plus the real
    ingestion-verification pass were the full scope this time.
+
+## Worker 7 (this pass) -- Work Units 16-17: trade-package quality
+## benchmark + K/DST prospective benchmark scaffolding
+
+Start HEAD `346dff9b` (Worker 6's closing commit). Not merged, not pushed,
+not deployed. Verified live before writing any code: branch, clean
+worktree, the 485-test targeted slice, `test_desktop_application_api.py`'s
+same 4 pre-existing failures (`test_dynasty_facade_composes_real_governed_
+workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_
+trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_
+contract`, `test_facade_has_no_streamlit_or_app_component_dependency`).
+
+Read in full before writing any code: this ledger (Workers 1-6),
+`src/services/trade_package_search_service.py` (the real, unmodified
+package generator) and its own preregistered
+`docs/codex/post_ui_v1/TRADE_PACKAGE_SEARCH_QUALITY_GATES_P1_3.md`,
+`tests/test_trade_package_search_service.py`, and `fantasypros_kdst_
+consensus_service.py` (the real K/DST streamer, including its real
+`streamer_actions`/`sleeper_streamer_actions`/`sleeper_opponent_rosters`
+functions) plus the live K/DST call site in `desktop_facade.py`
+(`redraft_kdst_streamer`). This pass is MEASUREMENT ONLY -- neither the
+trade-package search/scoring logic nor the K/DST streamer's own
+recommendation logic was modified.
+
+### Work Unit 16 -- Trade Package Quality Benchmark
+
+**New**: `docs/codex/prospective_outcomes_v1/TRADE_PACKAGE_QUALITY_
+BENCHMARK_V1.md` (preregistered rubric, written first), `src/services/
+trade_package_quality_benchmark_v1_service.py` (9 rubric dimensions as
+pure, read-only functions over the generator's own real
+`TradePackageSearchResult`/`TradePackageCandidate` objects -- dominance
+re-verification, mutual starter-value gain, position-need fit,
+bench-for-bench clutter rate, near-duplicate detection (Jaccard
+similarity), size/utility distribution, independently-re-verified roster
+consolidation legality, diversity, latency), `tests/test_trade_package_
+quality_benchmark_v1_service.py` (23 tests, hand-built fixtures proving
+each dimension's scoring logic on known-good/known-bad cases), `scripts/
+run_trade_package_quality_benchmark_v1.py` (the real runner).
+
+**Real sample**: the real "Fantasy Gamers" Sleeper league (id
+`1312983576827920384`, read-only, current real 10-team rosters), scored
+with the REAL, currently-installed NWR ranking loaded read-only from the
+owner's real AppData Redraft profile (`4c5f04762921420595e4d8c7cda76582`)
+via plain `load_profile`/`load_projection_snapshot`/`generate_rankings`
+calls -- no facade instance was constructed (the facade's own endpoint
+additionally appends a real decision trace; this script calls
+`search_win_win_packages`/`search_target_player_packages`/`search_
+improve_position_packages` directly, so ZERO local writes happen anywhere,
+on top of zero Sleeper writes). Three real runs (FIND_WIN_WIN;
+TARGET_PLAYER on Sam LaPorta, a real elite TE on a real opponent roster;
+IMPROVE_POSITION on TE, the owner's own real, disclosed thinnest
+position) plus one clearly-labeled SYNTHETIC 10-team fixture for a larger
+candidate sample.
+
+**Two real bugs found and fixed live, both in this pass's OWN new
+benchmark script, never in the generator**: (1) the script's first draft
+used the RAW Sleeper roster size as the pre-trade baseline for its
+independent roster-legality re-check, producing 8 false "violations" --
+the real search operates on the CANONICAL (identity-resolved) roster
+(12 players for the owner, not 15: K/DST are never NWR-projected by
+design, plus one real identity-match gap this pass found, a rostered WR
+not present in the current ranking pool); fixed by using the same
+canonical counts the search itself uses, re-run: zero violations. (2) the
+synthetic fixture's first draft built a 16-player roster against a
+15-slot league cap, making every trade illegal by construction and
+returning zero candidates; fixed by widening the fixture's own bench size
+to match its own roster count.
+
+**Verdict**: no coherent, mechanically-explainable failure pattern found.
+Zero dominance violations, zero exact/near-duplicate-rate red flags (9
+near-duplicate pairs were mechanically explained by a small real
+candidate pool, not a generator flaw), zero bench-for-bench clutter in
+the real league (93% in the fully-symmetric SYNTHETIC fixture, honestly
+explained as an artifact of that fixture's own "nothing broken to fix"
+design, not a real defect), zero roster-legality violations once this
+pass's own measurement bug was fixed, latency well inside the 5s target
+(worst case 1.20s). TARGET_PLAYER(LaPorta)/IMPROVE_POSITION(TE) both
+returned zero real candidates against the real league -- plausible (the
+real target opponent is itself deep everywhere the owner could offer
+surplus) but not root-caused further this pass (disclosed open item).
+**No ranking challenger is recommended** -- full results in `docs/codex/
+prospective_outcomes_v1/trade_package_quality_benchmark_v1/RESULTS.md`
+and the raw `results.json` alongside it.
+
+### Work Unit 17 -- K/DST Prospective Benchmark Scaffolding
+
+**New**: `docs/codex/prospective_outcomes_v1/KDST_PROSPECTIVE_BENCHMARK_
+V1.md` (preregistered scaffolding design, written first), `src/services/
+kdst_prospective_benchmark_v1_service.py` (pure composition over
+already-fetched real inputs -- zero network I/O -- building 4 comparison
+arms per position/week: NWR_RECOMMENDATION, PROVIDER_CONSENSUS,
+RAW_PROJECTION, REPLACEMENT_LEVEL; `compare_arms`/`summarize_kdst_
+benchmark`, the latter ALWAYS reporting the real sample size and labeling
+it `PRELIMINARY` below a disclosed 8-week transparency floor, never
+fabricating a verdict), `tests/test_kdst_prospective_benchmark_v1_service.py`
+(12 tests), `scripts/run_kdst_prospective_benchmark_v1.py` (the real
+runner).
+
+**A real, honest finding this scaffolding starts from**: reading the live
+`redraft_kdst_streamer` call site BEFORE writing any benchmark code
+confirmed NWR's own K/DST "recommendation" IS, by construction, the
+FantasyPros consensus ECR order (no separate NWR-computed K/DST score
+exists anywhere in this codebase) -- so "NWR recommendation vs provider
+consensus" is not two independent methods for K/DST the way it is for
+skill positions; this benchmark measures the one real value-add that DOES
+exist (Sleeper roster-availability filtering) directly, rather than
+pretending two independent methods exist where only one does.
+`RAW_PROJECTION` IS legitimately available for K/DST specifically
+(Sleeper's own real weekly-projections endpoint, `weekly_projection_
+service.py`, prior-cycle work reused here, not duplicated) -- a real,
+non-NWR projection source, unlike the "K/DST are unmodeled" excuse that
+applies to NWR's OWN projection pipeline.
+
+**A real, mechanical DST identity-matching defect found this pass,
+documented, NOT fixed (hard boundary)**: `sleeper_streamer_actions`'s
+real identity key returns `("", "", "")` for EVERY real Sleeper DST
+roster entry, because Sleeper's own `players/nfl` catalog gives DST
+entries `first_name`/`last_name` only, never `full_name`/
+`search_full_name` -- unlike `resolve_roster_canonical_ids`/`sleeper_
+free_agent_pool`/`weekly_projection_service.build_weekly_projection_rows`,
+which all already carry the DST name-fallback that this ONE function
+alone is missing. Live-verified twice (once during design, once
+populating the real week): a real query against all 10 real DST rows this
+league actually rosters showed every one reported `rosterStatus:
+"AVAILABLE"`, including the owner's own real, started DST. K is
+unaffected (K catalog entries DO carry `full_name`; the owner's own real
+K correctly resolved to `"YOUR_STARTER"`). Real consequence: NWR's DST
+recommendation is, in practice, ALWAYS identical to naive top-ECR
+consensus (the differentiating roster filter never fires), while for K
+the two arms DID genuinely differ this real week (NWR correctly skipped
+two real, actually-rostered kickers). A second, smaller, real provider-
+convention difference (FantasyPros `"JAC"` vs Sleeper `"JAX"` for
+Jacksonville) was found and handled ONLY inside this benchmark's own join
+code, never in production. Per the hard boundary, neither was fixed --
+flagged for a future worker explicitly authorized to touch
+`fantasypros_kdst_consensus_service.py`.
+
+**Real, PRELIMINARY (n=1 week) result**: real Week 1 2026 data for the
+Fantasy Gamers league. K: NWR's real pick (Cam Little, 12.0 actual pts)
+beat naive provider consensus (Brandon Aubrey, 1.0 actual pts) by 11 real
+points, and beat even the raw-projection arm's own pick (Matt Gay, 10.0).
+DST: NWR and provider consensus picked the identical real team
+(Jacksonville, 15.0 actual pts) -- the disclosed identity-bug consequence,
+not independent agreement. **No challenger proposed for either position**
+-- n=1 week is explicitly too small, per the owner's standing instruction.
+Full results in `docs/codex/prospective_outcomes_v1/kdst_prospective_
+benchmark_v1/RESULTS.md` and the raw `week_01_2026.json` alongside it.
+
+### Real data / Sleeper access this pass
+
+Read-only throughout. Real GETs: `league/{id}/rosters`, `/users`,
+`players/nfl`, `stats/nfl/regular/2026/1`, `projections/nfl/regular/
+2026/1` (all Sleeper, public/keyless), plus real FantasyPros `consensus-
+rankings` calls (K, DST, week 1) via the owner's already-configured
+`NWR_FANTASYPROS_API_KEY` env var and the SAME real, existing
+`FantasyProsConsensusClient` the live app already uses -- no new provider
+client built. The owner's real AppData Redraft profile
+(`4c5f04762921420595e4d8c7cda76582`) was read via `load_profile`/`load_
+projection_snapshot` only -- zero writes to that root, confirmed by
+construction (this pass calls no `save_*`/`record_*`/`install_*` function
+against it anywhere). Zero Sleeper writes (no write-capable Sleeper
+endpoint exists anywhere in this codebase's real call sites, matching
+every prior worker's own finding).
+
+### Tests (full)
+
+- 2 new test files, 35 new tests total (23 + 12), all passing.
+- Targeted regression slice (`pytest -k "decision_trace or
+  prospective_outcome or live_player_intelligence or
+  boundary_property_reliability or composition or player_availability or
+  trade_package_quality_benchmark or kdst_prospective_benchmark"`): **520
+  passed, 0 failed** (485 pre-existing + 35 new this pass).
+- `tests/test_trade_package_search_service.py` +
+  `tests/test_trade_package_search_facade_wiring.py` (the real generator's
+  own existing tests, re-confirmed unaffected): **28 passed**, unmodified.
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures documented in every prior worker's own
+  baseline. Re-confirmed live after this pass's changes.
+- `git diff`/new-file grep for every hard-boundary term
+  (`marginal_roster_utility_v2`, `LeagueSnapshot`, `LeagueWorkspaceContext`,
+  `lifecycle_resolver`, `DecisionResultEnvelope`,
+  `PlayerAvailabilityStatus`) across every file this pass touched or
+  created: **zero matches**.
+
+### Backend/model files changed this pass
+
+**All new, zero modifications to any existing file** (`trade_package_
+search_service.py` and `fantasypros_kdst_consensus_service.py` -- the two
+systems being measured -- are untouched, confirmed by `git status` showing
+only new (`??`) files):
+
+- `src/services/trade_package_quality_benchmark_v1_service.py`
+- `src/services/kdst_prospective_benchmark_v1_service.py`
+- `tests/test_trade_package_quality_benchmark_v1_service.py`
+- `tests/test_kdst_prospective_benchmark_v1_service.py`
+- `scripts/run_trade_package_quality_benchmark_v1.py`
+- `scripts/run_kdst_prospective_benchmark_v1.py`
+- `docs/codex/prospective_outcomes_v1/TRADE_PACKAGE_QUALITY_BENCHMARK_V1.md`
+- `docs/codex/prospective_outcomes_v1/trade_package_quality_benchmark_v1/`
+  (`results.json`, `RESULTS.md`)
+- `docs/codex/prospective_outcomes_v1/KDST_PROSPECTIVE_BENCHMARK_V1.md`
+- `docs/codex/prospective_outcomes_v1/kdst_prospective_benchmark_v1/`
+  (`week_01_2026.json`, `RESULTS.md`)
+- This ledger.
+
+## OPEN ISSUES FOR THE NEXT WORKER (Work Units 19-20: multi-league scale
+## characterization + performance characterization)
+
+1. **The real production trace store still has zero decision traces
+   recorded in it** -- unchanged, inherited from every prior worker.
+   Nothing this pass wrote to or read from that real path (this pass's own
+   benchmark scaffolding tracks a SEPARATE, new artifact store under
+   `docs/codex/prospective_outcomes_v1/`, not the decision-trace ledger).
+2. **Identity resolution for WAIVER/FAAB/ADD_DROP/K_STREAMER/DST_STREAMER/
+   TRADE-family** (the decision-TRACE evaluation layer's own open issue,
+   distinct from this pass's own DST-streamer-recommendation identity
+   finding above) remains unchanged, inherited from Worker 1/3/4/5/6. Not
+   touched this pass.
+3. **The real, mechanical DST identity-matching defect in `sleeper_
+   streamer_actions`** (see Work Unit 17 above) is real, validated, and
+   NOT fixed -- a future worker explicitly authorized to touch
+   `fantasypros_kdst_consensus_service.py` should add the same DST
+   `full_name` fallback (`if position == "DST" and not name and team: name
+   = f"{team} D/ST"`) that `resolve_roster_canonical_ids`/`sleeper_free_
+   agent_pool`/`weekly_projection_service.build_weekly_projection_rows`
+   already carry.
+4. **This pass's own Trade Package Quality Benchmark used only ONE real
+   league.** A genuine "coherent pattern across multiple real cases"
+   standard would need this same harness run against a second real
+   league -- a natural fit for Work Unit 19 (multi-league scale
+   characterization), the directive's own next-named work.
+5. **This pass's own K/DST Prospective Benchmark has n=1 real week.** The
+   scaffolding (`kdst_prospective_benchmark_v1_service.py` + the runner
+   script) is real and reusable -- re-run with `WEEK` advanced once
+   additional real weeks complete. No challenger should be proposed from
+   any small sample without a coherent, mechanical, multi-case pattern,
+   per the owner's standing instruction (repeated here for the next
+   worker, since it is very easy to over-read a few good/bad weeks).
+6. **TARGET_PLAYER(LaPorta)/IMPROVE_POSITION(TE) both returned zero real
+   candidates** against the real Fantasy Gamers league this pass -- not
+   root-caused beyond confirming the utility gates rejected every
+   evaluated combination (120 and 372 respectively, non-zero). A future
+   pass with more time could trace the exact rejected `net_marginal_
+   utility` numbers to confirm the "opponent is already deep everywhere"
+   explanation more precisely.
+7. **A real identity-match gap this pass found (not investigated
+   further)**: the owner's real rostered WR, Sleeper id `11628` (Marvin
+   Harrison Jr.), did not resolve to the current NWR canonical ranking
+   pool during Work Unit 16's real search. Out of this pass's own scope
+   (ranking/identity resolution is untouched by this cycle's hard
+   boundary) -- worth a real look by a future worker with that scope.
+8. **Work Units 19-20 (multi-league scale characterization + performance
+   characterization)**, the directive's own next-named work, were not
+   started this pass -- Work Units 16-17 (this pass's own assignment)
+   were the full scope this time.
