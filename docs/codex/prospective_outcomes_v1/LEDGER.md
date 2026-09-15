@@ -1324,3 +1324,254 @@ dev processes were cleanly shut down afterward (`netstat` confirmed ports
 8. **Boundary property test pack V2** (Work Unit 18, per the directive's own
    numbering) was not started this pass, per this pass's own explicit
    Work Unit 13-14 assignment.
+
+## Worker 6 (this pass) -- Work Unit 18: boundary/property reliability
+## pack V2 + real outcome-ingestion verification
+
+Start HEAD `21406326` (Worker 5's closing commit). Not merged, not pushed,
+not deployed. Verified live before writing any code: branch, clean
+worktree, the 473-test targeted slice, `test_desktop_application_api.py`'s
+same 4 pre-existing failures (`test_dynasty_facade_composes_real_governed_
+workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_
+trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_
+contract`, `test_facade_has_no_streamlit_or_app_component_dependency`).
+
+Read in full before writing any code: this ledger (Workers 1-5), and
+`tests/test_boundary_property_reliability_pack_v1.py` (the prior cycle's
+own 7-group pack, built for the *live_player_intelligence* saga) -- this
+pass is a genuine V2, targeting bug classes THIS cycle found, never
+duplicating V1's own 7 groups.
+
+### Part A -- `tests/test_boundary_property_reliability_pack_v2.py` (new,
+### 12 tests)
+
+`hypothesis` was re-checked (`pip show hypothesis` -> not found; no
+reference in any requirements file) -- still not a dependency, no new
+dependency added, matching V1's own precedent.
+
+**GROUP 8 -- the general enum/dict-key-mangling sweep the directive asked
+for.** Not another hand-picked example: builds one real, isolated redraft
+profile (a real `DesktopBackendFacade` + real ledger + real `ingest_*`
+functions, one trace per evaluated class plus a DRAFT trace, real Sleeper
+team-code ids like `"SF"` deliberately used for K/DST), calls the real
+`redraft_decision_trace_history`/`redraft_decision_trace_outcome_summary`
+facade methods, and runs the result through the EXACT real HTTP boundary
+transform every route in `server.py` uses (`contract_envelope`, not a
+re-implementation). Then walks the ENTIRE resulting JSON tree: builds a
+closed "real schema field name" whitelist via the SAME static-source-scan
+technique V1's own Group 1 uses (extracts every `"<key>":` literal from
+the 8 evaluators' + the base evaluation module's + the history-presentation
+module's own `to_dict()`-style code, plus the two real facade payload-
+building functions), builds a closed "known real enum/status/disposition
+value" set (`TOOL_TYPES`, `EVALUATION_STATUSES`, the real
+acceptance/disposition/ledger-status literals confirmed by reading
+`prospective_outcome_ingestion_v1_service.py`/`in_season_decision_trace_
+service.py` directly) UNIONED with every bare-token-shaped string leaf
+value actually found in the real payload itself (never hand-picked), and
+asserts no dict key anywhere in the tree is a member of that combined set
+(raw OR camelCased) unless it's also a real schema field name. A second,
+narrower test directly re-confirms both of the two already-fixed shapes by
+name (`actualPointsByPlayer` is a list; `statusCounts`/
+`acceptanceStatusCounts`/`packageDispositionCounts` are lists) as a
+concrete regression backstop alongside the general sweep.
+
+**GROUP 9 -- idempotency, generalized across all 8 real evaluators.**
+Builds one deliberately-chosen, fully-EVALUATED representative record per
+class (standing in for the general property; no `hypothesis`), calls each
+of the 8 `evaluate_*` functions three times (twice on the same object, once
+on an independent `copy.deepcopy`), and asserts byte-identical `to_dict()`
+output every time -- generalizing Worker 4's own single orchestrator-level
+idempotency test directly to the evaluator layer. A second test proves
+`class_specific_summaries` (this cycle's one real aggregation function) is
+itself idempotent over the same result set.
+
+**GROUP 10 -- hindsight-leakage, generalized across all 8 real
+evaluators.** For the 4 evaluators with NO context/fetch parameter at all
+(`evaluate_add_drop`/`evaluate_faab`/`evaluate_k_streamer`/`evaluate_dst_
+streamer`), the guarantee is proven STRUCTURALLY by signature introspection
+(`inspect.signature(...).parameters == {"record"}` -- there is no
+parameter through which a future fact could leak, generalizing Worker 1's
+own `_assert_no_current_state_parameter` pattern). For the 4 that DO accept
+an optional context/fetch (`evaluate_start_sit`/`evaluate_waiver`/
+`evaluate_trade`/`evaluate_trade_finder`), a deliberately fabricated,
+CONTRADICTORY "future" `RealizedOutcomeFetch`/`RecommendationTimeContext`
+is passed in and the already-recorded realized-outcome facts (read only
+from the trace's own immutable `outcome.detail`) are proven byte-identical
+to the baseline -- while also proving the contradictory context's
+recommendation-time-only fields (e.g. TRADE's `recommended_gives_ids`) DO
+legitimately flow through, so the test proves real isolation, not that the
+parameter is silently ignored altogether.
+
+**GROUP 11 -- TRADE-family rejected/unaccepted-disposition guard,
+generalized across a representative sweep of real and fabricated
+dispositions.** Swept `acceptanceStatus` over `REJECTED`/`PENDING`/
+`CANCELLED`/`UNKNOWN`/empty-string (plus one deliberately INCONSISTENT
+fabrication: `tradeAccepted=True` with a non-`ACCEPTED` status) for TRADE,
+and `packageDisposition` over `SENT`/`CONSIDERED`/`IGNORED`/`UNKNOWN`/
+`PENDING`/`WITHDRAWN` for both TRADE_FINDER and TRADE_PACKAGE_SEARCH --
+every case constructs a raw `outcome.detail` dict directly (bypassing the
+schema dataclass's own `__post_init__` guard entirely) to prove the
+EVALUATION layer's own guard, not just the ingestion layer's discipline, is
+what actually blocks a scored counterfactual. One positive-control test
+proves a genuinely ACCEPTED package IS scored, so the guard is proven to be
+a real gate, not a function that always refuses.
+
+### A real, disclosed bug found and fixed by GROUP 11's own sweep
+
+`evaluate_trade`'s own `net_subsequent_points_delta_points` (TRADE, Work
+Unit 7) did **not** independently check `acceptanceStatus`/`tradeAccepted`
+before calling `trade_realized_metrics_from_detail(detail)` -- that shared
+helper only checks whether `realizedRosterOutcome` is present, trusting
+every real caller (`ingest_trade_outcome`) never to populate it for a
+rejected/unknown trade. That trust IS honored by every real ingestion path
+today, but was not independently enforced at this evaluator's own call
+site -- contradicting this module's own documented "three independent
+layers" rejected-trade guarantee (Worker 3's own ledger entry, Work Unit
+7). A raw `outcome.detail` dict reaching this evaluator any other way (a
+malformed/legacy ledger row, a future caller writing `detail` directly)
+could otherwise surface a scored counterfactual for a rejected trade. Real,
+live proof: `test_no_non_accepted_trade_ever_produces_a_scored_realized_
+outcome` failed BEFORE the fix (`net_subsequent_points_delta_points ==
+999.0` for a fabricated `REJECTED` detail carrying a fabricated realized
+outcome) and passes after. **Fixed narrowly**, at `evaluate_trade`'s own
+call site only (`src/services/prospective_outcome_trade_evaluator_v1_
+service.py`): gates the `trade_realized_metrics_from_detail` call on
+`acceptanceStatus == "ACCEPTED" and tradeAccepted is True`, returning the
+same all-`None` metrics shape that helper itself already returns for a
+genuinely realized-outcome-free trade -- mirrors the SAME guard `evaluate_
+trade_finder` (Work Unit 8) already applies at its own call site (verified
+by reading it directly before writing the fix). No other evaluator,
+ingestion function, or schema dataclass was touched. Every pre-existing
+`test_prospective_outcome_trade_evaluator_v1_service.py` test (15) still
+passes unmodified.
+
+### Tests (full)
+
+- New: `tests/test_boundary_property_reliability_pack_v2.py` -- **12
+  passed** (2 Group 8 + 2 Group 9 + 5 Group 10 + 3 Group 11).
+- Targeted regression slice (`pytest -k "decision_trace or
+  prospective_outcome or live_player_intelligence or
+  boundary_property_reliability or composition or player_availability"`):
+  **485 passed, 0 failed** (473 pre-existing + 12 new this pass).
+- `tests/test_prospective_outcome_trade_evaluator_v1_service.py` (the one
+  file touched by the bug fix): **15 passed**, unmodified.
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures documented in every prior worker's own
+  baseline. Re-confirmed live after this pass's changes.
+- `git diff` grepped for every hard-boundary term
+  (`marginal_roster_utility_v2`, `LeagueSnapshot`, `LeagueWorkspaceContext`,
+  `lifecycle_resolver`, `DecisionResultEnvelope`,
+  `PlayerAvailabilityStatus`): **zero matches**.
+
+### Part B -- real outcome-ingestion verification against current data
+
+Real, read-only checks against the real production AppData store and the
+real Fantasy Gamers Sleeper league (id `1312983576827920384`, owner
+`scolety`), using Worker 4's own real, tested orchestrator CLI
+(`scripts/run_prospective_outcome_ingestion_v1.py`):
+
+- **Real production store, re-confirmed still empty.** `python scripts/
+  run_prospective_outcome_ingestion_v1.py --root
+  "<real AppData>\com.ninerswarroom.redraft\state\redraft" --dry-run`
+  returned `{"countsByAction": {}, "currentNflWeek": 2, "dryRun": true,
+  "plan": []}` -- a real, live `GET state/nfl` call (current real NFL week
+  is still 2), zero decision traces found, matching Worker 4/5's own
+  finding exactly. A direct filesystem walk of the real
+  `state/redraft/` directory independently confirms no `decision_traces/`
+  subdirectory exists at all (confirmed via `find`, not merely trusted from
+  the prior ledger).
+- **No isolated demo/test root from Workers 1-5 qualifies as a genuinely
+  "matured" real recommendation.** Checked every demo/summary artifact this
+  cycle left behind: `docs/codex/prospective_outcome_v1/
+  startsit_ingestion_demo_v1/summary.json` (Worker 1's real START_SIT
+  source-adapter demo) and `docs/codex/prospective_outcomes_v1/
+  history_ui_v3_demo_v1/summary.json` (Worker 5's History UI V3 demo,
+  whose `redraft_root` temp directory -- unusually -- still exists on this
+  machine, `nwr-history-ui-v3-demo-xg_ibvgk`). Both are explicitly,
+  honestly disclosed by their OWN scripts' docstrings as
+  MECHANISM-DEMONSTRATION baselines: every trace in both roots had its
+  `recommendation` AND its `outcome` recorded back-to-back within the SAME
+  script execution, never separated by real elapsed time -- there was never
+  a real pre-existing recommendation sitting and waiting for a real-world
+  outcome to catch up to it. Running the real orchestrator against either
+  root would find nothing genuinely new to ingest (Worker 5's root's
+  `league_id` is the synthetic `"demo-league-1"`, not a real Sleeper
+  league, so the orchestrator's real network-fetch path does not even
+  apply to it) -- this was confirmed by reading each script's own explicit
+  disclosure rather than by running a real ingestion against clearly-
+  synthetic data and reporting a misleading "before/after" delta.
+- **Honest result, per the directive's own anticipated case**: **nothing
+  to ingest yet.** The real production store has zero traces (no live call
+  site has ever actually fired against the owner's real profile), and no
+  demo root anywhere in this cycle's own history contains a real
+  recommendation that predates its own outcome. This is NOT a regression or
+  a newly-discovered gap -- it is the same honest state Worker 4/5 already
+  found and disclosed, re-verified live rather than assumed.
+
+### Sleeper writes
+
+**Zero.** The one real network call this pass made was the orchestrator's
+own real, public, keyless `GET state/nfl` (via `--dry-run`, which also
+independently guarantees no local writes regardless). Every other real
+network-touching path this pass exercised was inside `pytest` (Group 8's
+`DesktopBackendFacade` calls are 100% local/hermetic -- no Sleeper network
+I/O at all, only real ledger/evaluator code running against a pytest
+`tmp_path` root). No write-capable Sleeper endpoint exists anywhere in this
+codebase's real call sites (confirmed by this pass's own reading of
+`run_prospective_outcome_ingestion_v1.py`'s module docstring plus the
+orchestrator module itself, matching every prior worker's own same
+finding).
+
+### Backend/model files changed this pass
+
+- **New**: `tests/test_boundary_property_reliability_pack_v2.py`.
+- **Modified (one real, narrow, disclosed bug fix)**:
+  `src/services/prospective_outcome_trade_evaluator_v1_service.py`
+  (`evaluate_trade`'s own `metrics` computation now independently gates on
+  `acceptanceStatus`/`tradeAccepted` before reusing `trade_realized_
+  metrics_from_detail`, matching `evaluate_trade_finder`'s own existing
+  guard -- see "A real, disclosed bug" above). No other evaluator,
+  ingestion function, schema dataclass, orchestrator, or facade/UI file was
+  touched.
+- This ledger.
+
+## OPEN ISSUES FOR THE NEXT WORKER (Work Units 16-17: trade-package quality
+## benchmark + K/DST prospective benchmark)
+
+1. **The real production trace store still has zero decision traces
+   recorded in it** -- unchanged, re-verified live this pass (not merely
+   assumed) rather than newly found. Nothing this pass wrote to or read
+   from that real path beyond one real, live, read-only `GET state/nfl`
+   plus a local, read-only directory listing.
+2. **Identity resolution for WAIVER/FAAB/ADD_DROP/K_STREAMER/DST_STREAMER/
+   TRADE-family** remains the real, concrete blocker to real automatic
+   evaluation for those six classes -- unchanged, inherited from Worker
+   1/3/4/5. Not touched this pass.
+3. **TRADE/TRADE_FINDER/TRADE_PACKAGE_SEARCH have no real week to anchor a
+   maturity check to**, and **`owner_roster_id` resolution is a real,
+   caller-supplied mapping, not a general resolver** -- both unchanged from
+   Worker 4's own Open Issues 2-3.
+4. **A real ROS window, the duplicated `MIN_SAMPLE_SIZE_FOR_PER_CLASS_*`
+   constant, ADD_DROP's still-uncomputed `netRosterValuePoints`, and real
+   owner (roster 9) WAIVER/ADD_DROP/FAAB outcome data** are all unchanged,
+   inherited open items from Worker 1/2/3 -- none were touched this pass.
+5. **The real, disclosed bug this pass found and fixed** (`evaluate_trade`'s
+   own missing acceptance/accepted gate before reusing `trade_realized_
+   metrics_from_detail`) was fixed narrowly at its own call site -- worth a
+   wider audit some future session for any OTHER evaluator call site that
+   reuses a shared metrics-extraction helper without independently
+   re-checking the same gate its sibling call site already enforces (this
+   pass found exactly one such gap; did not exhaustively search for a
+   second one beyond TRADE/TRADE_FINDER).
+6. **A real, unusual finding, not a bug**: Worker 5's own History UI V3
+   demo-root temp directory (`nwr-history-ui-v3-demo-xg_ibvgk`) is still
+   present on this machine from an earlier session, despite being created
+   via `tempfile.mkdtemp` (normally OS-cleaned eventually). Harmless
+   (FIXTURE data only, never touches the real production store), but worth
+   knowing this machine's temp directory is not being swept as aggressively
+   as might be assumed -- not cleaned up by this pass either, to avoid
+   deleting another session's/worker's artifact without being asked.
+7. **Work Units 16-17 (trade-package quality benchmark + K/DST prospective
+   benchmark)**, the directive's own next-named work, were not started this
+   pass -- Work Unit 18 (this pass's own assignment) plus the real
+   ingestion-verification pass were the full scope this time.
