@@ -351,6 +351,9 @@ def record_outcome(
     outcome: str,
     notes: str = "",
     detail: Mapping[str, Any] | None = None,
+    outcome_source: str | None = None,
+    outcome_source_as_of: str | None = None,
+    outcome_observed_at: str | None = None,
 ) -> DecisionTraceRecord:
     """The append-only OUTCOME write path (NWR Post-UI Product V1, P1-4).
 
@@ -361,7 +364,7 @@ def record_outcome(
     backward compatibility with every existing caller -- this module still
     computes no calibration metric over it.
 
-    NWR Prospective Outcome V1: `detail` is the new, OPTIONAL,
+    NWR Prospective Outcome V1: `detail` is the OPTIONAL,
     decision-type-specific structured payload (see
     `prospective_outcome_schema_v1_service.py` -- one distinct dataclass
     per decision type, e.g. `StartSitOutcomeDetail`/`WaiverOutcomeDetail`/
@@ -371,6 +374,28 @@ def record_outcome(
     the stored outcome payload at all when absent, so every pre-existing
     caller/row/test that only ever passed `outcome`/`notes` round-trips
     byte-for-byte the same as before this change.
+
+    NWR Prospective Outcomes V1 (Work Unit 1, canonical outcome event
+    contract): three further OPTIONAL provenance fields, each additive and
+    independently omittable, matching the exact same backward-compatible
+    pattern `detail` already established -- none is added to the stored
+    payload at all unless the caller actually supplies it, so any call that
+    predates this pass (or that still only wants `outcome`/`notes`/`detail`)
+    round-trips byte-for-byte identically:
+    - `outcome_source`: a short, real provenance tag naming WHERE the
+      factual outcome data came from (e.g. "SLEEPER") -- never a guess,
+      never defaulted to a value the caller didn't actually supply.
+    - `outcome_source_as_of`: a real ISO-8601 UTC timestamp for WHEN the
+      source data this outcome was computed from was actually fetched
+      (distinct from `outcome_recorded_at_utc`, which is when THIS ledger
+      append happened -- the source fetch may have occurred earlier, e.g.
+      inside an orchestration job).
+    - `outcome_observed_at`: a real ISO-8601 UTC timestamp for WHEN the
+      real-world event itself became observable (e.g. a week's games
+      finished, a waiver period closed) -- distinct from both of the above.
+    See `prospective_outcome_evaluation_v1_service.py` (the canonical
+    single-event outcome-evaluation contract this pass builds on top of
+    this ledger) for how these three fields are consumed.
     """
 
     existing = {record.trace_id: record for record in load_decision_traces(root, profile_id)}
@@ -380,6 +405,12 @@ def record_outcome(
     outcome_payload: dict[str, Any] = {"outcome": outcome, "notes": notes}
     if detail is not None:
         outcome_payload["detail"] = dict(detail)
+    if outcome_source is not None:
+        outcome_payload["source"] = outcome_source
+    if outcome_source_as_of is not None:
+        outcome_payload["sourceAsOf"] = outcome_source_as_of
+    if outcome_observed_at is not None:
+        outcome_payload["observedAt"] = outcome_observed_at
     updated = replace(
         original,
         status="OUTCOME_RECORDED",

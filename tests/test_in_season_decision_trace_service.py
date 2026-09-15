@@ -418,6 +418,61 @@ def test_record_outcome_with_detail_appends_a_new_line_never_mutates_the_origina
     assert reloaded[0].recommendation == {"projectedTotal": 100.0, "starters": ["p1"]}  # preserved verbatim
 
 
+# NWR Prospective Outcomes V1 (Work Unit 1, canonical outcome event
+# contract): three further additive, independently omittable provenance
+# fields on `record_outcome` -- `outcome_source`/`outcome_source_as_of`/
+# `outcome_observed_at`. Same backward-compatible pattern `detail` already
+# established.
+
+
+def test_record_outcome_without_provenance_fields_is_still_byte_identical(tmp_path) -> None:
+    record = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="WAIVER",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"add": "FA X"},
+    )
+    updated = record_outcome(tmp_path, "profile-1", record.trace_id, outcome="WON_MATCHUP", notes="close one")
+    assert updated.outcome == {"outcome": "WON_MATCHUP", "notes": "close one"}
+    assert "source" not in updated.outcome
+    assert "sourceAsOf" not in updated.outcome
+    assert "observedAt" not in updated.outcome
+
+
+def test_record_outcome_with_provenance_fields_stores_only_the_ones_supplied(tmp_path) -> None:
+    record = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="START_SIT",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"starters": ["p1"]},
+    )
+    updated = record_outcome(
+        tmp_path, "profile-1", record.trace_id, outcome="STARTER_MATCHED_RECOMMENDATION",
+        outcome_source="SLEEPER", outcome_source_as_of="2026-09-14T12:00:00+00:00",
+    )
+    assert updated.outcome["source"] == "SLEEPER"
+    assert updated.outcome["sourceAsOf"] == "2026-09-14T12:00:00+00:00"
+    assert "observedAt" not in updated.outcome  # not supplied -- honestly absent, not a null placeholder
+
+    reloaded = load_decision_traces(tmp_path, "profile-1")[0]
+    assert reloaded.outcome["source"] == "SLEEPER"
+    assert reloaded.outcome["sourceAsOf"] == "2026-09-14T12:00:00+00:00"
+
+
+def test_record_outcome_provenance_never_touches_the_original_recommendation_line(tmp_path) -> None:
+    record = record_decision_trace(
+        tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="START_SIT",
+        engine_version="v1", data_versions={}, roster_state_player_ids=["p1"],
+        recommendation={"starters": ["p1"]},
+    )
+    record_outcome(
+        tmp_path, "profile-1", record.trace_id, outcome="X",
+        outcome_source="SLEEPER", outcome_source_as_of="now", outcome_observed_at="now",
+    )
+    path = tmp_path / "decision_traces" / "profile-1.jsonl"
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    original_row = json.loads(lines[0])
+    assert "outcome" not in original_row
+
+
 def test_record_outcome_detail_round_trips_through_a_file_reload(tmp_path) -> None:
     record = record_decision_trace(
         tmp_path, "profile-1", league_id="lg1", season=2026, week=1, tool="FAAB",
