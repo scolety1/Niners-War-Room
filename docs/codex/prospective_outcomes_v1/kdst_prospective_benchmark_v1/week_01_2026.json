@@ -1,0 +1,153 @@
+{
+  "leagueId": "1312983576827920384",
+  "notes": [
+    "21 real Sleeper roster id(s) for DST did not resolve to a FantasyPros consensus row this week -- this is the real, disclosed DST identity-matching defect documented in KDST_PROSPECTIVE_BENCHMARK_V1.md (Sleeper's own DST catalog entries carry no full_name/search_full_name field), NOT fixed by this pass."
+  ],
+  "ownerRosterId": "9",
+  "records": [
+    {
+      "arms": [
+        {
+          "actualPoints": 12.0,
+          "arm": "NWR_RECOMMENDATION",
+          "dataStatus": "OK",
+          "note": "",
+          "playerId": "11786",
+          "playerName": "Cam Little",
+          "sourceValue": 3,
+          "team": "JAC"
+        },
+        {
+          "actualPoints": 1.0,
+          "arm": "PROVIDER_CONSENSUS",
+          "dataStatus": "OK",
+          "note": "",
+          "playerId": "11533",
+          "playerName": "Brandon Aubrey",
+          "sourceValue": 1,
+          "team": "DAL"
+        },
+        {
+          "actualPoints": 10.0,
+          "arm": "RAW_PROJECTION",
+          "dataStatus": "OK",
+          "note": "",
+          "playerId": "6083",
+          "playerName": "Matt Gay",
+          "sourceValue": 7.62,
+          "team": "LV"
+        },
+        {
+          "actualPoints": 9.0,
+          "arm": "REPLACEMENT_LEVEL",
+          "dataStatus": "OK",
+          "note": "",
+          "playerId": "3451",
+          "playerName": "Ka'imi Fairbairn",
+          "sourceValue": null,
+          "team": "HOU"
+        }
+      ],
+      "leagueId": "1312983576827920384",
+      "notes": [],
+      "ownerRosterId": "9",
+      "position": "K",
+      "season": 2026,
+      "week": 1
+    },
+    {
+      "arms": [
+        {
+          "actualPoints": 15.0,
+          "arm": "NWR_RECOMMENDATION",
+          "dataStatus": "OK",
+          "note": "",
+          "playerId": "JAX",
+          "playerName": "Jacksonville Jaguars",
+          "sourceValue": 1,
+          "team": "JAC"
+        },
+        {
+          "actualPoints": 15.0,
+          "arm": "PROVIDER_CONSENSUS",
+          "dataStatus": "OK",
+          "note": "",
+          "playerId": "JAX",
+          "playerName": "Jacksonville Jaguars",
+          "sourceValue": 1,
+          "team": "JAC"
+        },
+        {
+          "actualPoints": 15.0,
+          "arm": "RAW_PROJECTION",
+          "dataStatus": "OK",
+          "note": "",
+          "playerId": "LV",
+          "playerName": "LV D/ST",
+          "sourceValue": 8.54,
+          "team": "LV"
+        },
+        {
+          "actualPoints": 6.0,
+          "arm": "REPLACEMENT_LEVEL",
+          "dataStatus": "OK",
+          "note": "",
+          "playerId": "NE",
+          "playerName": "NE D/ST",
+          "sourceValue": null,
+          "team": "NE"
+        }
+      ],
+      "leagueId": "1312983576827920384",
+      "notes": [
+        "21 real Sleeper roster id(s) for DST did not resolve to a FantasyPros consensus row this week -- this is the real, disclosed DST identity-matching defect documented in KDST_PROSPECTIVE_BENCHMARK_V1.md (Sleeper's own DST catalog entries carry no full_name/search_full_name field), NOT fixed by this pass."
+      ],
+      "ownerRosterId": "9",
+      "position": "DST",
+      "season": 2026,
+      "week": 1
+    }
+  ],
+  "sampleLabel": "PRELIMINARY",
+  "season": 2026,
+  "summary": {
+    "DST": {
+      "meanDeltaVsProviderConsensus": 0.0,
+      "meanDeltaVsRawProjection": 0.0,
+      "meanDeltaVsReplacementLevel": -9.0,
+      "perWeekComparisons": [
+        {
+          "deltaVsProviderConsensus": 0.0,
+          "deltaVsRawProjection": 0.0,
+          "deltaVsReplacementLevel": -9.0,
+          "nwrRecommendationActualPoints": 15.0,
+          "position": "DST",
+          "season": 2026,
+          "week": 1
+        }
+      ],
+      "sampleSizeLabel": "PRELIMINARY",
+      "sampleSizeWeeks": 1
+    },
+    "K": {
+      "meanDeltaVsProviderConsensus": -11.0,
+      "meanDeltaVsRawProjection": -2.0,
+      "meanDeltaVsReplacementLevel": -3.0,
+      "perWeekComparisons": [
+        {
+          "deltaVsProviderConsensus": -11.0,
+          "deltaVsRawProjection": -2.0,
+          "deltaVsReplacementLevel": -3.0,
+          "nwrRecommendationActualPoints": 12.0,
+          "position": "K",
+          "season": 2026,
+          "week": 1
+        }
+      ],
+      "sampleSizeLabel": "PRELIMINARY",
+      "sampleSizeWeeks": 1
+    },
+    "generatedFromRealWeeks": 2
+  },
+  "week": 1
+}
