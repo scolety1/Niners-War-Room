@@ -254,3 +254,225 @@ fields independently, once, at the ingestion call boundary only.
    that "didn't exist before" was not started this pass -- Work Units
    0-2 as literally assigned did not include it; flagged here so it isn't
    silently dropped from the cycle's own stated ambitions.
+
+## Worker 2 (this pass) -- Work Units 3-6: Start/Sit, Waiver, Add/Drop,
+## FAAB evaluators
+
+Start HEAD `e4de619b` (Worker 1's closing commit). Not merged, not pushed,
+not deployed. Verified live before writing any code: branch, clean
+worktree, the 313-test targeted slice, `test_desktop_application_api.py`'s
+same 4 pre-existing failures (`test_dynasty_facade_composes_real_governed_
+workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_
+trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_
+contract`, `test_facade_has_no_streamlit_or_app_component_dependency`).
+
+Read in full before writing any code: `PROSPECTIVE_OUTCOME_EVALUATION_
+CONTRACT.md`, Worker 1's ledger entry above, and both of Worker 1's new
+modules (`prospective_outcome_evaluation_v1_service.py`,
+`prospective_outcome_source_adapter_v1_service.py`) plus the schema/
+ingestion modules they build on. Nothing below re-derives a preregistered
+window/threshold, bypasses `compute_outcome_evaluation`, or invents a new
+identity-resolution/network path -- every evaluator's `evaluate_*` function
+CALLS `compute_outcome_evaluation` first and only ADDS metrics on top.
+
+### New shared module
+
+`src/services/prospective_outcome_evaluator_shared_v1_service.py` -- three
+tiny functions (`summary_status`, `mean_of`, `rate_of`) reused by all four
+evaluators' summary functions, importing (not redefining)
+`MIN_SAMPLE_SIZE_FOR_PER_CLASS_SUMMARY` (20) from Worker 1's evaluation
+module.
+
+### A real, disclosed refinement found and applied consistently
+
+Worker 1's own `_extract_waiver`/`_extract_add_drop` intentionally blank
+ALL of a class's metrics (including real, already-known booleans like
+`claimSubmitted`/`claimWon`/`addedPlayerId`) whenever the SINGLE combined
+`evaluationStatus` is `PENDING_WINDOW` -- a necessary side effect of
+`OutcomeEvaluation.__post_init__`'s own invariant (contract Section 4)
+applied to one status field per record. This worker's WAIVER/ADD_DROP
+evaluators read those specific fields directly from the already-stored
+`outcome.detail` payload instead (never from `evaluation.evaluation_
+metrics`), so a real, already-observed fact (a claim was submitted and won;
+an add/drop pair's identity; whether a drop was reversed) is never lost
+just because the bounded-horizon VALUE metric hasn't been observed yet.
+Directly implements the directive's own instruction: "If a claim was never
+submitted, that's adoption/follow-through information, not automatic
+recommendation failure -- keep these conceptually distinct." No change was
+made to Worker 1's own module to do this -- the refinement lives entirely
+at this new evaluator layer.
+
+### Work Unit 3 -- START/SIT (`prospective_outcome_start_sit_evaluator_v1_service.py`)
+
+Decomposes the already-computed `lineupOpportunityCostPoints` into its two
+real components (recommended-player vs owner-selected-player realized
+points) and adds `bestLegalAlternative*` -- real "regret versus legal
+recommendation-time alternatives," computed ONLY from
+`eligibleAlternativeIdsAtLock` (the trace's own frozen field) and a
+caller-supplied `RealizedOutcomeFetch` (the SAME matchup fetch Worker 1's
+own adapter already fetches -- no new network call). Never substituted
+into the primary metric (extends contract Section 5 rule 4's STREAMER
+discipline to START_SIT). A real, disclosed simplification: whole-bench
+maximum, not position-slot-aware (the trace's frozen fields carry no
+lineup-slot-eligibility data).
+
+**Real data**: one test runs the full pipeline against the SAME real,
+committed Week 1 2026 Fantasy Gamers fixture Worker 1 used (reused, not
+re-pulled), verifying a real best-legal-alternative computed from real
+`players_points` against the real bench.
+
+13 new tests, all passing.
+
+### Work Unit 4 -- WAIVER (`prospective_outcome_waiver_evaluator_v1_service.py`)
+
+Adds `claimableAtRecommendationTime` (was the recommended player actually
+in the trace's own frozen `free_agent_state_player_ids`, via
+`recommendation_time_context_from_trace` -- zero network I/O) -- honestly
+`None` when a real call site never recorded a free-agent snapshot (a real,
+disclosed gap: the live FAAB trace call site in `desktop_facade.py` does
+NOT populate this field; only WAIVER's does). `recommendedDropPlayerId` is
+read only from real, already-used `recommendation` payload keys -- `None`
+when absent, since `WaiverOutcomeDetail` itself carries no structured drop
+field. `summarize_waiver_evaluations` gates THREE axes independently
+(claim-submission rate, claim-win rate, mean subsequent value).
+
+15 new tests, all passing.
+
+### Work Unit 5 -- ADD/DROP (`prospective_outcome_add_drop_evaluator_v1_service.py`)
+
+Same PENDING_WINDOW refinement as WAIVER. `netRosterValuePoints` stays
+honestly `None` with a disclosed issue this entire pass (unchanged
+dependency: `droppedPlayerSubsequentPoints`, the prior cycle's own Open
+Issue 3, still has no leaguewide roster-membership-over-time feed to
+compute it from) -- never approximated as "added value only" pretending to
+be a complete net figure. Every real result carries a fixed
+`CAUSAL_ISOLATION_DISCLOSURE` string (one add/drop is one transaction among
+potentially many, never scored as the sole driver of a roster's later real
+results).
+
+11 new tests, all passing.
+
+### Work Unit 6 -- FAAB (`prospective_outcome_faab_evaluator_v1_service.py`)
+
+Reuses `FaabPlayerDecisionQuality`/`FaabBidRangeCalibration` verbatim.
+Independence is PROVEN, not merely structural: a good-pickup/bad-calibration
+test, a bad-pickup/good-calibration test, and a test that widens only the
+suggested bid range between two otherwise-identical evaluations and asserts
+`playerDecisionQuality` is byte-identical while `bidRangeCalibration`
+changes. `summarize_faab_evaluations` gates the two axes INDEPENDENTLY,
+proven by a test where 20 quality samples clear the bar while only 5 of
+them also carry a real calibration observation.
+
+11 new tests, all passing.
+
+### Real data exercised this pass
+
+- START_SIT: the same real, committed Week 1 2026 Fantasy Gamers fixture
+  Worker 1 used (reused, not re-pulled) -- see Work Unit 3 above.
+- A genuine, real, READ-ONLY `GET league/1312983576827920384/
+  transactions/{1,2}` call was made against the real Fantasy Gamers league
+  this pass (zero writes) to check whether real waiver/FAAB transaction
+  volume now exists, per this pass's own directive. **Finding, disclosed
+  honestly**: it partially UPDATES the prior cycle's own expectation --
+  real transactions DO now exist league-wide (5 real `free_agent`-type
+  add/drop transactions across rounds 1-2, from other real rosters), but
+  **none touch roster 9 (owner `scolety`) and none carry a real
+  `waiver_bid` value yet** (all are the instant, un-bid `free_agent` type,
+  not a `waiver`-type FAAB claim). So a real, live WAIVER/FAAB evaluation
+  for the actual owner-facing trace this app would record is still not yet
+  possible from real data -- WAIVER/ADD_DROP/FAAB evaluators were exercised
+  against realistic fixtures this pass, honestly disclosed as fixtures, not
+  claimed as real-owner-data. Worth a real re-check once the owner's own
+  roster (9) has a real waiver/FAAB transaction.
+
+### Tests (full)
+
+- 4 new test files, 50 new tests total (13 + 15 + 11 + 11), all passing.
+- Targeted regression slice (`pytest -k "decision_trace or
+  prospective_outcome or live_player_intelligence or
+  boundary_property_reliability or composition or player_availability"`):
+  **363 passed, 0 failed** (313 pre-existing + 50 new this pass).
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures documented in Worker 1's own baseline.
+  Re-confirmed live after this pass's changes.
+- `git diff` grepped for every hard-boundary term
+  (`marginal_roster_utility_v2`, `LeagueSnapshot`, `LeagueWorkspaceContext`,
+  `lifecycle_resolver`, `DecisionResultEnvelope`,
+  `PlayerAvailabilityStatus`): **zero matches**.
+
+### Backend/model files changed this pass
+
+**All new, zero modifications to any existing file** (not even Worker 1's
+own modules -- every refinement lives at this new evaluator layer, reading
+`outcome.detail` directly rather than editing `_extract_waiver`/
+`_extract_add_drop`):
+
+- `src/services/prospective_outcome_evaluator_shared_v1_service.py`
+- `src/services/prospective_outcome_start_sit_evaluator_v1_service.py`
+- `src/services/prospective_outcome_waiver_evaluator_v1_service.py`
+- `src/services/prospective_outcome_add_drop_evaluator_v1_service.py`
+- `src/services/prospective_outcome_faab_evaluator_v1_service.py`
+- `tests/test_prospective_outcome_start_sit_evaluator_v1_service.py`
+- `tests/test_prospective_outcome_waiver_evaluator_v1_service.py`
+- `tests/test_prospective_outcome_add_drop_evaluator_v1_service.py`
+- `tests/test_prospective_outcome_faab_evaluator_v1_service.py`
+- This ledger.
+
+## OPEN ISSUES FOR THE NEXT WORKER (Work Units 7-10: Trade, Trade
+## Finder/Package, K, DST evaluators)
+
+1. **Orchestration wiring still does not exist** -- unchanged from Worker
+   1's own Open Issue 2. Nothing in `desktop_facade.py` calls any
+   `evaluate_*`/`summarize_*` function from this pass, or Worker 1's
+   `compute_outcome_evaluation`/adapters. A real, scheduled (or on-demand)
+   job remains the natural next integration step, now with real,
+   reusable, TESTED per-class evaluator functions to call into (not only
+   the raw ingestion functions).
+2. **Position-slot-aware START_SIT regret** is a real, disclosed
+   simplification this pass leaves open: `bestLegalAlternative*` is a
+   whole-bench maximum, not aware of which specific lineup SLOT the
+   deviation happened in (the trace's own frozen fields carry no
+   positional lineup-slot-eligibility data). A future pass wanting a
+   slot-exact regret number needs that data added to the trace/recommendation
+   payload upstream first -- not fabricated here.
+3. **ADD_DROP's `netRosterValuePoints` remains uncomputable** -- inherited,
+   unchanged, from the prior cycle's own Open Issue 3
+   (`droppedPlayerSubsequentPoints`). This pass's evaluator surfaces the gap
+   honestly (a disclosed issue string on every real result) rather than
+   silently reporting an incomplete "net" as if it were complete.
+4. **WAIVER's `claimableAtRecommendationTime` is `None` for FAAB-family
+   traces by construction** -- the real, live FAAB trace call site in
+   `desktop_facade.py` does not record `free_agent_state_player_ids` at
+   all (only WAIVER's call site does). Closing this is a real, small,
+   additive fix to that one call site (out of this pass's own scope: it
+   would touch `desktop_facade.py`, not a hard-boundary file, but still
+   outside Work Units 3-6 as literally assigned).
+5. **Real owner (roster 9) WAIVER/ADD_DROP/FAAB outcome data still does
+   not exist** as of this pass (see "Real data exercised" above) -- this
+   pass's evaluators for those three classes are tested against realistic
+   fixtures only, honestly disclosed as such. Worth a real re-check once
+   the real Fantasy Gamers league produces its first real waiver/FAAB
+   transaction for the owner's own roster.
+6. **History UI V3** -- rendering these evaluators' output in the History
+   page -- was not attempted this pass either (still Work Units 3-6 as
+   literally assigned: backend evaluator logic, not UI). A future worker
+   should reuse each evaluator's `to_dict()` method as the payload shape
+   and preserve the existing "no aggregate accuracy score across classes"
+   rule.
+7. **A real ROS window, the duplicated `MIN_SAMPLE_SIZE_FOR_PER_CLASS_*`
+   constant, and the still-missing identity resolver for canonical-id
+   decision types** are all unchanged, inherited open items from Worker 1
+   (see above) -- WAIVER/ADD_DROP/FAAB traces recorded by real production
+   call sites already carry Sleeper-resolved ids for the one live call
+   site (WAIVER) that exists; ADD_DROP/K_STREAMER/DST_STREAMER have NO
+   live trace call site in `desktop_facade.py` at all yet (confirmed via a
+   real grep this pass) -- a real, disclosed finding, not previously
+   stated this precisely.
+8. **Work Units 7-10 (Trade, Trade Finder/Package, K, DST evaluators)**
+   were not started this pass, per this pass's own explicit assignment
+   (Work Units 3-6 only). `ingest_trade_outcome`/`ingest_trade_finder_
+   outcome`/`ingest_streamer_outcome` and their matching
+   `_extract_trade`/`_extract_trade_finder`/`_extract_streamer` base-layer
+   extraction already exist (Worker 1) and are the natural starting point
+   for those four evaluators, following the exact same
+   `evaluate_*`/`summarize_*` pattern this pass established.
