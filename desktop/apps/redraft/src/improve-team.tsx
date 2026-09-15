@@ -518,9 +518,18 @@ function FaabTab({
   setWeeksRemaining: (value: number) => void;
   onOpenPlayer: PlayerViewer;
 }) {
+  // NWR Waiver Night V1 (FAAB nonpositive-bid fix): a candidate can now
+  // carry a real, non-fabricated $0 estimate (unmatched identity, or a
+  // real modeled marginal-utility of zero/negative -- see the two
+  // distinctly-worded `faabRationale` strings the backend now returns).
+  // A $0 result is never a positive recommendation -- it must not render
+  // as a "BID $0" card implying the player is worth claiming, so this tab
+  // only ever shows genuinely positive bid ranges (`> 0`, not just
+  // `!= null`). The player still exists elsewhere (ADD/DROP, ALL FREE
+  // AGENTS) -- this tab simply never recommends paying for him.
   const bidCandidates = useMemo(
     () => (waivers?.addCandidates ?? [])
-      .filter((row) => row.faabBidLowDollars != null)
+      .filter((row) => row.faabBidLowDollars != null && row.faabBidLowDollars > 0)
       .slice()
       .sort((a, b) => (FAAB_URGENCY_RANK[a.faabUrgency ?? ""] ?? 3) - (FAAB_URGENCY_RANK[b.faabUrgency ?? ""] ?? 3) || (b.marginalUtility ?? 0) - (a.marginalUtility ?? 0)),
     [waivers],
@@ -566,10 +575,13 @@ function FaabTab({
         <label className="form-field"><span>Total season budget ($)</span><input type="number" min={1} value={totalBudget} onChange={(event) => setTotalBudget(Math.max(1, Number(event.target.value) || 1))} /></label>
         <label className="form-field"><span>Weeks remaining</span><input type="number" min={1} max={18} value={weeksRemaining} onChange={(event) => setWeeksRemaining(Math.min(18, Math.max(1, Number(event.target.value) || 1)))} /></label>
       </div>
+      <p className="form-hint" title="Bid ranges are a relative, percentile-of-pool heuristic (who is worth more than whom, and roughly how much more) -- they are not calibrated against real FAAB auction outcomes in this or any league. A $0 result never appears here: it means either an unmatched identity or a real modeled value of zero/negative, never a positive recommendation.">
+        Bid ranges are a real, contextual heuristic estimate -- not calibrated against actual auction results. Treat them as relative guidance, not a guaranteed price.
+      </p>
     </Panel>
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {waivers && bidCandidates.length === 0 ? (
-      <EmptyState title="No available recommendation" message="No current add candidate carries a real FAAB estimate. FAAB guidance needs a live Sleeper league with waivers still open." />
+      <EmptyState title="No positive-bid recommendation" message="No current add candidate carries a positive real FAAB estimate right now -- every candidate is either an unmatched identity or a real modeled marginal utility of zero or less. FAAB guidance also needs a live Sleeper league with waivers still open." />
     ) : null}
     {bidCandidates.length ? (
       <div className="nwr-action-grid">

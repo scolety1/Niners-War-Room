@@ -311,6 +311,23 @@ def suggest_faab_bids(
     urgency and weeks-remaining context. No acceptance-probability /
     likely-competition figure is fabricated -- this app has no real signal
     for that.
+
+    Two floors/gates, applied BEFORE the positive-utility pricing formula
+    below (which is itself unchanged): an unmatched identity (no real
+    signal at all) and a zero-or-negative real `marginal_roster_utility_v2`
+    value (a real signal that says "not worth paying for") both produce a
+    non-positive ($0) result, never a fabricated positive bid -- see the
+    two distinctly-worded `rationale` strings below for why they are
+    different reasons, not the same "no bid" state.
+
+    KNOWN LIMITATION, surfaced to the owner (see `FaabTab`'s caption in
+    `improve-team.tsx`, not just this comment): the POSITIVE dollar amounts
+    this function produces are a real, contextual, percentile-of-pool
+    heuristic -- they are NOT calibrated against real FAAB auction/market
+    outcomes (no historical "what did this bid actually cost to win"
+    dataset feeds this formula). Treat the positive ranges as a relative
+    ordering signal (who is worth more than whom, and roughly how much
+    more), not a guaranteed market-clearing price.
     """
 
     if remaining_budget_dollars < 0 or total_budget_dollars <= 0 or weeks_remaining < 0:
@@ -328,15 +345,50 @@ def suggest_faab_bids(
                     player_name=candidate.player_name,
                     bid_low_pct=0.0, bid_high_pct=0.0, bid_low_dollars=0, bid_high_dollars=0,
                     urgency=FAAB_URGENCY_TIER["LOW_VALUE"], percentile_in_pool=None,
-                    rationale="No real marginal-utility signal (unmatched identity) -- $0 suggested, not fabricated.",
+                    rationale=(
+                        "Unknown identity -- this player could not be matched to NWR's own ranking, so no "
+                        "real marginal-utility signal exists to price a bid from. No positive bid is "
+                        "suggested. A $0 result here does NOT mean the player has no value -- only that "
+                        "NWR has no real signal to price a claim on him."
+                    ),
                 )
             )
             continue
         rank = utilities.index(candidate.marginal_utility)
         percentile = 1.0 - (rank / max(1, len(utilities) - 1)) if len(utilities) > 1 else 1.0
-        urgency_reason = "STARTER_UPGRADE" if candidate.becomes_starter else (
-            "BENCH_DEPTH" if candidate.marginal_utility > 0 else "LOW_VALUE"
-        )
+        # NWR Waiver Night V1 (Worker 2, FAAB nonpositive-bid fix): a zero or
+        # negative real `marginal_roster_utility_v2` value means NWR's own
+        # (closed, unmodified) valuation model has already judged this add
+        # is not worth paying for -- never a positive paid recommendation,
+        # regardless of where it happens to rank within THIS pool's
+        # percentile. This is a floor/gate on top of the existing pricing
+        # formula, not a change to it: the positive-utility branch below
+        # (percentile -> base_low/base_high -> urgency multiplier -> season
+        # taper -> dollars) is completely unreached and unmodified for any
+        # candidate that gets here. The rationale below is deliberately
+        # worded differently from the UNMATCHED_IDENTITY $0 case above: that
+        # case means "no real signal was computed at all"; this case means
+        # "a real signal WAS computed, and it says not to pay" -- the two
+        # are different reasons for a non-positive result and must read
+        # differently to the owner, per the directive.
+        if candidate.marginal_utility <= 0:
+            suggestions.append(
+                FaabBidSuggestion(
+                    canonical_player_id=candidate.canonical_player_id,
+                    player_name=candidate.player_name,
+                    bid_low_pct=0.0, bid_high_pct=0.0, bid_low_dollars=0, bid_high_dollars=0,
+                    urgency=FAAB_URGENCY_TIER["LOW_VALUE"], percentile_in_pool=round(percentile, 3),
+                    rationale=(
+                        "Modeled nonpositive value -- NWR's own marginal-roster-utility model rates this "
+                        f"add at {candidate.marginal_utility:.1f} for your current roster (not a missing "
+                        "signal, a real computed judgment). No positive bid is suggested. A $0 result here "
+                        "does NOT mean the player has no future value -- only that no paid claim is "
+                        "justified against your roster right now."
+                    ),
+                )
+            )
+            continue
+        urgency_reason = "STARTER_UPGRADE" if candidate.becomes_starter else "BENCH_DEPTH"
         # Base range scales with real percentile standing in THIS pool, not
         # a fixed lookup table. Starter upgrades get a real, disclosed
         # urgency multiplier; bench depth does not. Season-lateness tapers

@@ -1541,3 +1541,284 @@ Real, numbered list of every bug found + fixed across the whole night:
 No new bug was found or fixed by Worker 6 (this pass) -- every one of the
 7 real bugs above was re-verified live tonight and confirmed still fixed,
 with zero regressions against each other.
+
+## Waiver FAAB Fix Cycle V1 (2026-09-15, new bounded pass on top of the
+## already-pushed 6-worker Waiver Night V1 above) -- Worker 1: investigation
+## (`HARRISON_TRACY_INVESTIGATION_V1.md`), Worker 2 (this pass): nonpositive
+## FAAB bid gate/floor fix
+
+Start HEAD `e46e5a98` (Worker 1's Harrison/Tracy investigation doc, no
+production code changed by that pass). This pass's own Worker numbering
+("Worker 2") is per the fresh directive for THIS cycle, distinct from and
+unrelated to the "Worker 1-6" numbering used for the already-pushed,
+already-consolidated 6-worker night documented above -- do not confuse the
+two. Real read-only Fantasy Gamers Sleeper access (league
+`1312983576827920384`, user `scolety`) authorized; zero writes made or
+needed this pass (no Sleeper write path exists anywhere in the touched
+code, and diagnostic facade calls were made only against an isolated
+scratch copy of `local_exports/redraft_v1`, never this worktree's own
+tracked store or the owner's real AppData install).
+
+### Bug reproduced, real, live, both via unit-level call and full-pool facade call
+
+An external code review claimed `suggest_faab_bids()`
+(`src/services/waiver_engine_service.py`) could suggest a positive dollar
+bid for a zero/negative-utility or unmatched-identity candidate. Verified
+directly against the real repository implementation, not assumed:
+
+- **ACTUAL TEST RESULT** (direct unit call, pre-fix): a candidate with
+  `marginal_utility=0.0` in a small synthetic pool got `$11-20`; one with
+  `marginal_utility=-5.0` got `$2-5`. All-zero and all-negative synthetic
+  pools got positive bids on every entry (e.g. an all-zero 3-candidate
+  pool: `$30-50` for all three).
+- **LIVE OBSERVATION** (pre-fix, full real free-agent pool, isolated
+  scratch copy of this worktree's own real, live-synced Fantasy Gamers
+  Sleeper data, 2026-09-15): ranked all 723 real free agents via
+  `rank_waiver_candidates`, found 340 real candidates with
+  `marginal_utility <= 0` (incl. real, currently-relevant names: C.J.
+  Stroud at exactly `0.0`, Cooper Kupp at `-0.26`, Jerry Jeudy at `-0.12`)
+  and 358 real unmatched-identity candidates. Pre-fix, `suggest_faab_bids`
+  gave C.J. Stroud a `$28-47` bid and Cooper Kupp `$28-46` -- both real,
+  fabricated positive recommendations for players the model itself rates
+  at or below replacement/marginal value. Root cause confirmed by direct
+  code read: `base_low = 0.02 + 0.28 * percentile` / `base_high = 0.05 +
+  0.45 * percentile` has a nonzero floor (0.02/0.05) at `percentile == 0`,
+  and nothing gated on the SIGN of `marginal_utility` before this pass --
+  only the pre-existing `candidate.marginal_utility is None` (unmatched
+  identity) branch produced a genuine `$0`. **Confirmed: the review's
+  claim was real for the zero/negative-but-matched case; the
+  unmatched-identity case was already correctly `$0` before this pass.**
+
+### Fix (gate/floor only -- positive-utility formula untouched)
+
+`src/services/waiver_engine_service.py`, `suggest_faab_bids()`: inserted
+one new branch immediately after `percentile` is computed and immediately
+before the existing `urgency_reason`/`base_low`/`base_high` pricing logic:
+`if candidate.marginal_utility <= 0:` short-circuits to a
+`FaabBidSuggestion` with `bid_low_pct=bid_high_pct=0.0`,
+`bid_low_dollars=bid_high_dollars=0`, `urgency=LOW`, and a distinctly-worded
+rationale, then `continue`s -- the entire positive-utility pricing formula
+below (percentile -> base_low/base_high -> urgency multiplier -> season
+taper -> dollars) is **completely unreached and byte-for-byte unmodified**
+for any candidate that hits this branch, and **completely unmodified** in
+its own right for any candidate with `marginal_utility > 0` (verified: the
+`percentile`/`base_low`/`base_high`/`urgency_multiplier`/`season_taper`
+lines are untouched; only the vacuous
+`"BENCH_DEPTH" if candidate.marginal_utility > 0 else "LOW_VALUE"` ternary
+was simplified to `"BENCH_DEPTH"` since that branch is now only ever
+reached when utility is already `> 0`, a no-behavior-change simplification
+given the new gate above it always intercepts `<= 0` first). The
+pre-existing `marginal_utility is None` (unmatched-identity) branch is
+unchanged in mechanism, only in wording (see below).
+
+Re-verified live, post-fix, same real 723-candidate pool: **0 violations**
+-- every one of the 340 real nonpositive-utility candidates and 358 real
+unmatched-identity candidates now gets exactly `$0`/`$0`, every genuinely
+positive-utility candidate (e.g. Tyrone Tracy, still `$30-50`) is
+byte-identical to pre-fix.
+
+### Unmatched vs. nonpositive: two different reasons, two different rationale strings
+
+Per the directive, a $0 result must not collapse "we have no signal" and
+"we have a signal and it says don't pay" into one generic message:
+
+- **Unmatched identity** (`marginal_utility is None`): *"Unknown identity
+  -- this player could not be matched to NWR's own ranking, so no real
+  marginal-utility signal exists to price a bid from. No positive bid is
+  suggested. A $0 result here does NOT mean the player has no value --
+  only that NWR has no real signal to price a claim on him."*
+- **Modeled nonpositive value** (`marginal_utility <= 0`, matched):
+  *"Modeled nonpositive value -- NWR's own marginal-roster-utility model
+  rates this add at {value} for your current roster (not a missing
+  signal, a real computed judgment). No positive bid is suggested. A $0
+  result here does NOT mean the player has no future value -- only that
+  no paid claim is justified against your roster right now."*
+
+Both explicitly disclaim "worthless" (`"does NOT mean..."`), per the
+directive's explicit ask that a $0 must not imply the player is worth
+nothing.
+
+### Positive-utility formula characterization (real findings, formula unchanged)
+
+All observed directly this pass (synthetic + live data), not speculated:
+
+- **Tiny-positive vs. zero**: a `0.01`-utility candidate that happens to
+  be the strongest value in its pool prices identically (percentile 1.0,
+  full bid range) to a much larger positive utility would in that same
+  slot -- pricing is percentile-of-THIS-pool, not an absolute-utility
+  curve (expected, given the directive itself forbids inventing an
+  absolute-value curve).
+- **Tied utility**: `utilities.index(...)` returns the first matching
+  index for a repeated value, so every candidate sharing the same
+  `marginal_utility` gets the identical rank -> identical percentile ->
+  identical bid range. No secondary tiebreak exists inside this formula
+  (unlike `rank_waiver_candidates`'s own `sort_key`, which does have one).
+- **Pool-composition sensitivity**: the SAME candidate (`marginal_utility
+  5.0`) priced `$30-50` (percentile 1.0) in a 2-candidate pool but only
+  `$9-16` (percentile 0.25) once 3 stronger real candidates were added to
+  the SAME call -- confirmed real, substantial, by-design pool relativity.
+- **Remaining-budget sensitivity**: the percent range (`bid_low_pct`/
+  `bid_high_pct`) is fully stable across `remaining_budget_dollars`; only
+  the resulting dollar amount scales linearly (confirmed `$10/$50/$100/
+  $200` budgets -> proportional dollar output, identical percents).
+- **Late-season behavior**: `season_taper = min(1.0, max(0.35,
+  weeks_remaining / 14.0))` tapers the range down as the season
+  progresses but has a **floor at 35%** of the full-season value, reached
+  at `weeks_remaining <= ~4.9` -- confirmed live that `weeks_remaining` of
+  4, 2, 1, and 0 all produce the IDENTICAL clamped bid range, not a
+  further ramp toward zero as the season nears its end.
+
+### Calibration limitation surfaced (not just a code comment)
+
+- **Code**: `suggest_faab_bids()`'s own docstring now states explicitly
+  that the positive dollar amounts are a real, contextual, percentile-of-
+  pool heuristic, NOT calibrated against real FAAB auction/market
+  outcomes.
+- **Owner-visible UI**: `desktop/apps/redraft/src/improve-team.tsx`'s
+  `FaabTab`, inside the existing "FAAB settings" panel (visible every time
+  the owner opens the FAAB tab, not buried): *"Bid ranges are a real,
+  contextual heuristic estimate -- not calibrated against actual auction
+  results. Treat them as relative guidance, not a guaranteed price."*
+  (full disclosure in the `title` tooltip on hover). New minimal CSS class
+  `.form-hint` added to `redraft.css` (reuses the existing `--muted-2`
+  token, consistent with this file's other secondary-text styling).
+
+### Frontend: $0 never renders as a recommendation card
+
+`FaabTab`'s `bidCandidates` filter changed from `row.faabBidLowDollars !=
+null` to `row.faabBidLowDollars != null && row.faabBidLowDollars > 0` --
+a genuine $0 result (now correctly returned for 340+ real candidates that
+were previously either absent from this filter's consideration in a
+FAAB-mixed pool or, pre-fix, wrongly positive) must never render as a
+`"BID $0-0 for X"` DecisionExplain card implying the player is worth
+claiming. `EmptyState` copy for the zero-bid-candidates case updated to
+name the two real reasons (unmatched identity or modeled nonpositive
+utility) instead of a generic "no recommendation" message. The player
+remains visible elsewhere (ADD/DROP tab, ALL FREE AGENTS) -- this tab
+specifically only ever recommends a genuinely positive bid.
+
+### Tests
+
+- **New** (appended to `tests/test_waiver_engine_service.py`, 13 tests):
+  `test_zero_utility_never_gets_a_positive_bid`,
+  `test_negative_utility_never_gets_a_positive_bid`,
+  `test_a_negative_utility_candidate_never_gets_a_positive_bid_even_when_it_ranks_first`,
+  `test_unmatched_identity_never_gets_a_positive_bid`,
+  `test_unmatched_identity_and_nonpositive_utility_read_as_two_different_reasons`,
+  `test_all_zero_pool_produces_zero_positive_bids_anywhere`,
+  `test_all_negative_pool_produces_zero_positive_bids_anywhere`,
+  `test_mixed_pool_only_positive_utility_candidates_get_a_positive_bid`,
+  plus 5 positive-utility-formula characterization tests (tiny-positive,
+  tied, pool-composition, budget-linearity, late-season-taper-floor).
+- `python -m pytest tests/test_waiver_engine_service.py -q`: **25 passed**
+  (12 pre-existing + 13 new).
+- Targeted regression slice (same `-k` filter every prior worker this
+  cycle used): **646 passed, 0 failed** (up from the prior consolidated
+  night's 633 baseline by exactly the 13 new tests).
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures this worktree's documented baseline
+  expects, re-confirmed unaffected.
+- Frontend: `npm run typecheck` (`tsc -b`, both apps): clean, 0 errors.
+  `npx vitest run` (desktop workspace): **425 passed**, exact match to the
+  prior baseline (presentation/copy-only frontend change, no new frontend
+  unit test added -- consistent with how prior workers in this same
+  ledger treated presentation-only frontend diffs).
+- `git diff -U0` grepped for every hard-boundary term
+  (`marginal_roster_utility_v2`, `LeagueSnapshot`, `LeagueWorkspaceContext`,
+  `lifecycle_resolver`, `DecisionResultEnvelope`, `PlayerAvailabilityStatus`):
+  2 matches, both inside this pass's own new code COMMENTS/docstring in
+  `waiver_engine_service.py` explaining that `marginal_roster_utility_v2`
+  is called unchanged, never in an actual behavioral line. Confirmed by
+  direct inspection of both matched lines.
+
+### Backend/model files changed this pass
+
+- **Modified**: `src/services/waiver_engine_service.py` --
+  `suggest_faab_bids()` only: new `marginal_utility <= 0` gate/floor
+  branch (both the unmatched-identity and new nonpositive-utility
+  branches now short-circuit to `$0` with distinct rationale strings);
+  docstring gains the calibration-limitation disclosure. No other
+  function in this file touched. `marginal_roster_utility_v2` itself
+  (imported, called, never edited), `rank_waiver_candidates`,
+  `rank_drop_candidates`, `pair_add_drop`, `resolve_roster_canonical_ids`:
+  **all unchanged** (confirmed by `git diff`, zero lines touched outside
+  `suggest_faab_bids`).
+- **Modified**: `tests/test_waiver_engine_service.py` (13 new tests, see
+  above).
+- **Modified** (frontend, presentation-only): `desktop/apps/redraft/src/
+  improve-team.tsx` (`FaabTab`'s bid-candidate filter now requires a
+  positive dollar amount, not just non-null; new calibration-limitation
+  caption; updated zero-candidates `EmptyState` copy),
+  `desktop/apps/redraft/src/redraft.css` (new `.form-hint` class, 1 line).
+- This ledger.
+- `desktop_facade.py`, `desktop_api/`, `contracts/src/index.ts`: **not
+  touched** -- `faabRationale`/`faabBidLowDollars`/`faabBidHighDollars`
+  were already piped from `suggest_faab_bids()`'s output straight through
+  to the frontend before this pass, so the distinguishing copy and the
+  `$0` gate both flow through the existing contract with zero type/shape
+  changes needed.
+- `marginal_roster_utility_v2`/`shadow_numeric_authorities_service.py`,
+  `LeagueSnapshot`/`LeagueWorkspaceContext`/lifecycle-resolver/
+  `DecisionResultEnvelope`/`PlayerAvailabilityStatus`, any draft
+  recommendation/roster-legality code: **untouched**, per the hard
+  boundary.
+
+### Zero writes, verified the established way
+
+1. Structural: `suggest_faab_bids()` is pure arithmetic over already-
+   passed-in `WaiverCandidate` objects -- makes no HTTP call of any kind,
+   Sleeper or otherwise. No new Sleeper call was added anywhere this pass.
+2. The one live/full-pool reproduction this pass ran used an isolated
+   scratch copy of this worktree's own `local_exports/redraft_v1`
+   (copied to this session's own scratchpad directory before any facade
+   call, same method Worker 1's investigation used) -- nothing was
+   appended to this worktree's own tracked decision-trace store, and the
+   owner's real `%LOCALAPPDATA%\com.ninerswarroom.redraft` install was
+   never touched or read.
+3. `SleeperHttpClient` (the only real Sleeper client in this codebase)
+   still exposes only `get_json` -- unchanged, structurally incapable of
+   writing; this pass's diff touches no file that constructs or calls it.
+
+### OPEN ISSUES FOR THE NEXT WORKER
+
+1. **Section 3: LIVE/SCENARIO budget separation (the directive's own
+   named next step).** `FaabTab`'s "FAAB settings" panel seeds
+   `remainingBudget`/`totalBudget`/`weeksRemaining` from the real live
+   Sleeper read once per profile load, but the owner can then freely edit
+   those fields in place ("edit to plan a different scenario," existing
+   copy, unchanged by this pass) -- there is currently no UI/state
+   distinction between "this is the real live Sleeper budget" and "the
+   owner is now looking at a hypothetical scenario," so a bid range
+   computed after a manual edit could be silently mistaken for a real
+   live number. Not investigated or touched this pass (out of this
+   directive's bounded scope) -- flagged exactly as the directive's own
+   Section 3 for whichever worker picks this up next.
+2. **No real non-FAAB Sleeper league still exists in this environment**
+   (carried forward from every prior worker in this ledger) --
+   `faabContext.isFaabLeague === false` (which now also implies "no
+   nonpositive-bid gate even applies, since the dollar UI is suppressed
+   entirely for that league type") remains verified only via a
+   constructed test fixture, not live.
+3. **`bidCandidates`'s new `> 0` filter was verified via `npm run
+   typecheck` + the existing `npx vitest run` regression suite (425
+   passed, unchanged) and a full live/pool-level Python reproduction of
+   the underlying data (0 violations across 723 real candidates) -- it
+   was NOT re-verified via a live rendered Chrome session this pass**
+   (time-bounded; the change is a one-line filter predicate plus static
+   copy, and the underlying data contract was already exhaustively
+   Chrome-verified by Workers 4 and 6 in the prior consolidated night).
+   A future worker doing any further FAAB UI work should do one live
+   Chrome pass covering both the "some zero-bid candidates exist"
+   EmptyState copy and the calibration-limitation tooltip's actual
+   rendered hover state, neither of which this pass observed visually.
+4. All items already carried forward from the prior consolidated
+   6-worker night (K/DST streamer diagnostic cross-contamination,
+   `pair_add_drop`'s alternatives not built, `matchupContext` still
+   `null`, FantasyPros top-10-per-query cap / duplicate `TEAM_ALIASES`
+   files, the pre-existing `test_desktop_application_api.py` 4-failure
+   baseline, Work Unit 9/FAAB-transaction-context not attempted) remain
+   open and unrelated to this pass's fix, no change here.
+5. Worker 1's own open items from `HARRISON_TRACY_INVESTIGATION_V1.md`
+   (Harrison's zero is intentional-correct, not a defect -- explicitly no
+   fix scope; projection-freshness cadence question, unverified either
+   way) remain open, unrelated to the FAAB math fixed this pass.

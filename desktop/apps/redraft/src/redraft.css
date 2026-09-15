@@ -243,6 +243,7 @@
 .profile-edit-grid .form-field--details .form-field--checkbox { align-items: center; display: flex; gap: 8px; margin-top: 8px; }
 .profile-edit-grid .form-field--checkbox span { color: var(--text-soft, var(--text)); font-size: 11px; font-weight: 500; letter-spacing: normal; text-transform: none; }
 .profile-edit-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.form-hint { color: var(--muted-2); font-size: 10px; line-height: 1.5; margin: 10px 0 0; }
 .roster-slots { display: flex; flex-wrap: wrap; gap: 7px; }
 .roster-slots span { align-items: center; background: rgba(255, 255, 255, .025); border: 1px solid rgba(255, 255, 255, .065); border-radius: 8px; color: var(--muted); display: flex; font-size: 7px; gap: 5px; padding: 7px 9px; }
 .roster-slots strong { color: var(--gold-bright); font-size: 10px; }
