@@ -10,6 +10,7 @@ from src.services.redraft_engine_v1_service import (
     RosterSettings,
     ScoringSettings,
 )
+from src.services.shadow_numeric_authorities_service import marginal_roster_utility_v2
 from src.services.waiver_engine_service import (
     FAAB_URGENCY_TIER,
     WaiverCandidate,
@@ -135,25 +136,164 @@ def test_drop_candidates_ranked_weakest_first_by_real_marginal_utility() -> None
     assert utilities == sorted(utilities)  # ascending, weakest first
 
 
-def test_pair_add_drop_computes_real_net_utility() -> None:
+_PAIR_NAMES = {"qb1": "QB One", "rb1": "RB One", "rb2": "RB Two", "wr1": "WR One", "wr2": "WR Two", "te1": "TE One"}
+_PAIR_POSITIONS = {"qb1": "QB", "rb1": "RB", "rb2": "RB", "wr1": "WR", "wr2": "WR", "te1": "TE"}
+
+
+def test_pair_add_drop_computes_real_net_utility_in_the_same_context() -> None:
+    """Waiver Night V1, Section 4 fix: the add's value and the drop's value
+    must be measured against the SAME roster (the roster with the drop
+    already removed), or their difference is meaningless. Before the fix,
+    `net_marginal_utility` subtracted the drop's post-drop-roster value from
+    the add's ORIGINAL-roster value -- two different reference rosters."""
     ranking = _ranking()
     profile = ranking.profile
     add_candidates = rank_waiver_candidates(
         free_agents=_free_agent_rows(), owner_roster_canonical_ids=_owner_roster_ids(),
         profile=profile, ranking=ranking, manual_assets=_manual_assets(), mode="REST_OF_SEASON",
     )
-    names = {"qb1": "QB One", "rb1": "RB One", "rb2": "RB Two", "wr1": "WR One", "wr2": "WR Two", "te1": "TE One"}
-    positions = {"qb1": "QB", "rb1": "RB", "rb2": "RB", "wr1": "WR", "wr2": "WR", "te1": "TE"}
     drops = rank_drop_candidates(
         roster_canonical_ids=_owner_roster_ids(), profile=profile, ranking=ranking,
-        manual_assets=_manual_assets(), player_names=names, player_positions=positions,
+        manual_assets=_manual_assets(), player_names=_PAIR_NAMES, player_positions=_PAIR_POSITIONS,
     )
-    pairings = pair_add_drop(add_candidates=add_candidates, drop_candidates=drops, top_n=3)
+    pairings = pair_add_drop(
+        add_candidates=add_candidates, drop_candidates=drops,
+        owner_roster_canonical_ids=_owner_roster_ids(), profile=profile, ranking=ranking,
+        manual_assets=_manual_assets(), top_n=3,
+    )
     assert len(pairings) == 3
-    assert pairings[0].drop is drops[0]  # always the single weakest real roster piece
+    weakest_drop = drops[0]
+    roster_after_drop = [pid for pid in _owner_roster_ids() if pid != weakest_drop.canonical_player_id]
+    assert pairings[0].drop is weakest_drop  # always the single weakest real roster piece
     for pairing in pairings:
-        if pairing.add.marginal_utility is not None and drops[0].marginal_utility is not None:
-            assert pairing.net_marginal_utility == round(pairing.add.marginal_utility - drops[0].marginal_utility, 2)
+        assert pairing.drop_required is True
+        assert pairing.context_label == "SAME_CONTEXT_MARGINAL_COMPARISON"
+        # The add's ORIGINAL-roster value is preserved for transparency, but
+        # is no longer what the net is computed from.
+        assert pairing.add_utility_vs_original_roster == pairing.add.marginal_utility
+        if pairing.add.canonical_player_id and pairing.add.marginal_utility is not None:
+            expected_after_drop = marginal_roster_utility_v2(
+                pairing.add.canonical_player_id, roster_after_drop, profile, ranking, _manual_assets()
+            ).utility
+            assert pairing.add_utility_vs_post_drop_roster == expected_after_drop
+            assert pairing.drop_utility_vs_post_drop_roster == weakest_drop.marginal_utility
+            assert pairing.net_marginal_utility == round(expected_after_drop - weakest_drop.marginal_utility, 2)
+
+
+def test_pair_add_drop_same_context_fix_genuinely_changes_the_number_when_bench_depth_is_position_scarce() -> None:
+    """Concrete, deliberately constructed evidence the mismatch was real and
+    the fix actually matters (not just theoretically different): in the
+    small 6-player fixture above, every rostered player fills a real
+    starter/FLEX slot (7 required, 6 rostered), so removing any one of them
+    from context doesn't change any OTHER candidate's bench-depth rate --
+    the old and new formulas happen to agree there. This fixture instead
+    puts a real bench WR behind a real starter WR, so a free-agent WR add's
+    own real bench-depth rate (`FANTASY_BENCH_UTILITY_RATE[10]["WR"]`,
+    unmodified/read-only) genuinely differs depending on whether the
+    existing bench WR is still on the roster when the add is evaluated --
+    exactly the real-world case the directive was concerned about."""
+    rows = (
+        _row("wr-starter", "WR Starter", "WR", 200.0, 1),
+        _row("wr-bench-a", "WR Bench A", "WR", 80.0, 2),
+        _row("wr-bench-b", "WR Bench B", "WR", 50.0, 3),
+        _row("wr-free-agent", "WR Free Agent", "WR", 70.0, 4),
+    )
+    profile = LeagueProfile(
+        "fixture-league-2", "Fixture League 2", 2026, 10,
+        RosterSettings(qb=0, rb=0, wr=1, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=5),
+        ScoringSettings(reception=1), DraftContext(rounds=6, draft_slot=1),
+        practical_mode=True, provider="sleeper", provider_league_id="lg2",
+    )
+    ranking = RankingResult(profile, rows, (), (), "2026-09-01T00:00:00+00:00", "fixture-2")
+    owner_roster_ids = ["wr-starter", "wr-bench-a", "wr-bench-b"]
+    add_candidates = rank_waiver_candidates(
+        free_agents=[{
+            "sleeperPlayerId": "s-wr-fa", "playerId": "wr-free-agent", "playerName": "WR Free Agent",
+            "position": "WR", "team": "ZZZ", "overallRank": 4, "replacementAdjustedValue": 70.0,
+        }],
+        owner_roster_canonical_ids=owner_roster_ids, profile=profile, ranking=ranking,
+        manual_assets=[], mode="REST_OF_SEASON",
+    )
+    drops = rank_drop_candidates(
+        roster_canonical_ids=owner_roster_ids, profile=profile, ranking=ranking, manual_assets=[],
+        player_names={"wr-starter": "WR Starter", "wr-bench-a": "WR Bench A", "wr-bench-b": "WR Bench B"},
+        player_positions={"wr-starter": "WR", "wr-bench-a": "WR", "wr-bench-b": "WR"},
+    )
+    weakest_drop = drops[0]
+    assert weakest_drop.canonical_player_id == "wr-bench-b"  # the real weakest bench WR
+
+    pairings = pair_add_drop(
+        add_candidates=add_candidates, drop_candidates=drops, owner_roster_canonical_ids=owner_roster_ids,
+        profile=profile, ranking=ranking, manual_assets=[], top_n=1,
+    )
+    pairing = pairings[0]
+    old_formula_net = round(pairing.add.marginal_utility - weakest_drop.marginal_utility, 2)
+    # Real, reproduced evidence the mismatch mattered: the old
+    # mismatched-context formula (-3.15) and the new same-context formula
+    # (+6.86) don't just differ numerically -- they disagree on SIGN, which
+    # could flip whether this pairing looks like a good idea at all.
+    assert old_formula_net == -3.15
+    assert pairing.net_marginal_utility == 6.86
+    assert pairing.net_marginal_utility != old_formula_net
+    # Dropping the existing weakest bench WR moves the free agent from real
+    # bench depth rank 3 (redundancy 2) to depth rank 2 (redundancy 1) -- a
+    # real, higher flex-worthy rate, so the add is worth MORE in the
+    # post-drop context than in the original roster's context.
+    assert pairing.add_utility_vs_post_drop_roster > pairing.add_utility_vs_original_roster
+
+
+def test_pair_add_drop_open_slot_available_produces_add_only_pairings() -> None:
+    """Section 4 open-slot handling: a real, verified open roster slot means
+    no drop is forced -- `drop` is `None`, never a fabricated pairing."""
+    ranking = _ranking()
+    profile = ranking.profile
+    add_candidates = rank_waiver_candidates(
+        free_agents=_free_agent_rows(), owner_roster_canonical_ids=_owner_roster_ids(),
+        profile=profile, ranking=ranking, manual_assets=_manual_assets(), mode="REST_OF_SEASON",
+    )
+    drops = rank_drop_candidates(
+        roster_canonical_ids=_owner_roster_ids(), profile=profile, ranking=ranking,
+        manual_assets=_manual_assets(), player_names=_PAIR_NAMES, player_positions=_PAIR_POSITIONS,
+    )
+    pairings = pair_add_drop(
+        add_candidates=add_candidates, drop_candidates=drops,
+        owner_roster_canonical_ids=_owner_roster_ids(), profile=profile, ranking=ranking,
+        manual_assets=_manual_assets(), open_slot_available=True, top_n=3,
+    )
+    assert len(pairings) == 3
+    for pairing in pairings:
+        assert pairing.drop is None
+        assert pairing.drop_required is False
+        assert pairing.context_label == "OPEN_ROSTER_SLOT_ADD_ONLY"
+        assert pairing.net_marginal_utility == pairing.add.marginal_utility
+
+
+@pytest.mark.parametrize("open_slot_available", [False, None])
+def test_pair_add_drop_no_open_slot_or_unverified_keeps_the_conservative_forced_drop(
+    open_slot_available: bool | None,
+) -> None:
+    """`False` (verified full roster) and `None` (unverifiable) both take
+    the SAME conservative path: keep suggesting the real weakest drop
+    rather than ever silently assuming an open slot exists."""
+    ranking = _ranking()
+    profile = ranking.profile
+    add_candidates = rank_waiver_candidates(
+        free_agents=_free_agent_rows(), owner_roster_canonical_ids=_owner_roster_ids(),
+        profile=profile, ranking=ranking, manual_assets=_manual_assets(), mode="REST_OF_SEASON",
+    )
+    drops = rank_drop_candidates(
+        roster_canonical_ids=_owner_roster_ids(), profile=profile, ranking=ranking,
+        manual_assets=_manual_assets(), player_names=_PAIR_NAMES, player_positions=_PAIR_POSITIONS,
+    )
+    pairings = pair_add_drop(
+        add_candidates=add_candidates, drop_candidates=drops,
+        owner_roster_canonical_ids=_owner_roster_ids(), profile=profile, ranking=ranking,
+        manual_assets=_manual_assets(), open_slot_available=open_slot_available, top_n=3,
+    )
+    for pairing in pairings:
+        assert pairing.drop is drops[0]
+        assert pairing.drop_required is True
+        assert pairing.context_label == "SAME_CONTEXT_MARGINAL_COMPARISON"
 
 
 def test_faab_bids_scale_with_percentile_and_never_fabricate_for_unmatched() -> None:

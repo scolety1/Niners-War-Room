@@ -2195,3 +2195,343 @@ faithfully reproduces the exact failure path.
    no change here.
 6. **Section 4 (Add/Drop context repair)** -- per this pass's directive,
    handed off to the next worker; not investigated or touched this pass.
+
+## Waiver Fix Cycle V2 (this pass): Section 4 (Add/Drop context repair),
+## Section 5 (THIS_WEEK honesty)
+
+Start HEAD `96e75ec2` (Worker 3's LIVE/SCENARIO FAAB budget separation,
+above). Phase 4-5 of a bounded, owner-authorized autonomous cycle. Real,
+live, read-only verification against the real Fantasy Gamers Sleeper league
+(`1312983576827920384`, owner `scolety`, 2026-09-15, in-season week 2),
+via an isolated scratch copy of this worktree's own `local_exports/
+redraft_v1` (same zero-append method prior investigation passes used --
+nothing was appended to this worktree's own tracked decision-trace store,
+and the owner's real `%LOCALAPPDATA%\com.ninerswarroom.redraft` install was
+never touched or read).
+
+### Section 4 result: mismatch REPRODUCED and FIXED (same-context repair,
+### not a ranking-policy change)
+
+`(a)` INSPECTED CODE, then `(b)` ACTUAL TEST RESULT and `(c)` LIVE
+OBSERVATION confirmed the claim exactly as described: `pair_add_drop`
+(`waiver_engine_service.py`) computed `net = add.marginal_utility -
+weakest_drop.marginal_utility`, where `add.marginal_utility` came from
+`rank_waiver_candidates` (`marginal_roster_utility_v2` called against the
+owner's ORIGINAL roster -- the drop candidate still on it) and
+`weakest_drop.marginal_utility` came from `rank_drop_candidates`
+(`marginal_roster_utility_v2` called against the roster with the drop
+candidate already removed). Two different reference rosters subtracted
+from each other for one "net" number -- a real, reproduced methodological
+inconsistency, not a false claim.
+
+**Fixed** in `pair_add_drop` (`waiver_engine_service.py`): for each
+pairing, constructs the roster after removing the proposed (single
+weakest, unchanged drop-selection policy) drop, then recomputes the add's
+own value against THAT roster too (`add_utility_vs_post_drop_roster`), via
+the SAME unmodified, read-only `marginal_roster_utility_v2` call
+`rank_drop_candidates` already used for the drop's own value (which needs
+no recomputation -- it was already computed against this exact post-drop
+roster). `AddDropPairing` now exposes `add_utility_vs_original_roster`
+(unchanged, `== add.marginal_utility`), `add_utility_vs_post_drop_roster`
+(new), `drop_utility_vs_post_drop_roster` (`== drop.marginal_utility`),
+`net_marginal_utility` (now the same-context difference), `drop_required`,
+and `context_label` (`"SAME_CONTEXT_MARGINAL_COMPARISON"` /
+`"OPEN_ROSTER_SLOT_ADD_ONLY"` / `"NO_DROP_CANDIDATE_AVAILABLE"`). Labeled
+explicitly, in both the Python docstring and the TS contract doc comment,
+as a same-context marginal comparison, NOT an authoritative "total-roster"
+or "completed-transaction" utility -- no such objective exists anywhere
+else in this codebase, so none is claimed here.
+`marginal_roster_utility_v2`/`shadow_numeric_authorities_service.py`
+itself: **UNCHANGED** (`git diff --stat` empty), called read-only, one
+additional time per pairing (same authority, different roster argument).
+
+**Real Fantasy Gamers before/after** (`REST_OF_SEASON`, real owner roster,
+real free-agent pool, 10 real pairings, the real weakest drop is Marvin
+Harrison -- WR, marginal utility 0.0, matching every prior worker's
+documented finding):
+
+| Add | Pos | OLD net (mismatched) | NEW net (same-context) | Changed? |
+|---|---|---|---|---|
+| Tyrone Tracy | RB | 9.72 | 9.72 | no |
+| Juwan Johnson | TE | 5.57 | 5.57 | no |
+| Hunter Henry | TE | 5.46 | 5.46 | no |
+| Woody Marks | RB | 5.37 | 5.37 | no |
+| Dalton Schultz | TE | 5.35 | 5.35 | no |
+| Jared Goff | QB | 4.57 | 4.57 | no |
+| AJ Barner | TE | 2.30 | 2.30 | no |
+| **Keenan Allen** | **WR** | **1.30** | **2.38** | **yes (+83%)** |
+| Sam Darnold | QB | 1.18 | 1.18 | no |
+| **Jakobi Meyers** | **WR** | **1.14** | **2.09** | **yes (+83%)** |
+
+Honest, non-forced finding: 8 of 10 real pairings are numerically
+IDENTICAL under the fix (the add candidates are RB/TE/QB -- a different
+position than the WR drop, and Marvin Harrison's own value is already
+0.0/replacement-level, so removing him from context doesn't move a
+different-position add's bench-depth rate). The 2 real WR adds (Keenan
+Allen, Jakobi Meyers) DO genuinely change -- dropping the existing bench WR
+moves them from real bench depth rank 3 to rank 2
+(`FANTASY_BENCH_UTILITY_RATE[10]["WR"]`, unmodified), a real, higher
+flex-worthy rate. No sign flips occurred in this real league's current
+data (both went from positive to more positive), and the TOP recommended
+pairing (Tyrone Tracy / drop Marvin Harrison) is unaffected -- **the
+primary candidate ranking and drop-selection policy is unchanged**, exactly
+as directed. A deliberately constructed unit-test fixture (see Tests below)
+demonstrates a real SIGN FLIP (-3.15 -> +6.86) is possible when the drop
+and a top add share a position and the roster is deep enough at that
+position -- this real league's current roster composition just doesn't
+happen to produce one today.
+
+**Open-slot handling.** Inspected `redraft_roster_legality_service.py`
+(the DRAFT-time legality authority -- **read-only, unchanged**, confirmed
+`git diff --stat` empty) and confirmed it answers a different question
+(draft-round capacity), not in-season roster-slot occupancy. Built the
+real check instead from Sleeper's own real, per-league `roster_positions`
+array (`league/{id}`'s top-level field, already fetched this same request
+as part of `league_settings_raw` -- no new Sleeper call) compared against
+the RAW roster player-id count (`own_roster["players"]` minus `["reserve"]`
+minus `["taxi"]`) -- **never** the count of ids that happened to resolve to
+a canonical NWR identity, exactly the bug class the directive warned
+against. `redraft_waivers` now returns a new, additive `rosterSlotContext`
+field: `openSlotAvailable` (`true`/`false`/`null`), `status`
+(`OPEN_SLOT_AVAILABLE`/`NO_OPEN_SLOT`/`UNVERIFIED_ROSTER_SLOTS`),
+`rosterSlotsTotal`, `rosterSlotsOccupied`. `None`/unverifiable is treated
+the SAME as `False` (conservative default: keep suggesting the real
+weakest drop, never silently assume an open slot exists) -- disclosed
+honestly via `status`, not silently guessed either way. When a real open
+slot is verified, `pair_add_drop` returns `drop=None`/`drop_required=False`
+for every pairing -- add-only, never a fabricated forced pairing.
+**Real Fantasy Gamers league today: `rosterSlotsTotal: 15`,
+`rosterSlotsOccupied: 15`, `openSlotAvailable: False`** (matches every
+prior worker's documented `roster_positions` length and this owner's real
+15/15 roster exactly) -- this owner's real roster has NO open slot right
+now, so the add-only path could not be reproduced against live owner data;
+covered instead by 5 new facade-level fixture tests (below), the same
+directed method prior workers used for the IR/reserve fix.
+
+**IR/reserve protection re-verified, still holds.** Worker 3's earlier
+fix (reserve-slotted players excluded from `dropCandidates`/pairings) is
+UNCHANGED and re-confirmed passing (`test_redraft_waivers_ir_reserve_
+drop_exclusion_fix.py`, all 3 pre-existing tests still green, unmodified).
+A NEW combination test
+(`test_reserve_player_never_counted_as_an_occupied_open_slot_and_never_
+offered_as_a_drop`) additionally proves the reserve player is also
+correctly excluded from the new open-slot occupied-count (a real IR player
+on a 2-slot roster with 1 non-reserve occupant now correctly reads as
+"1 of 2 occupied, open slot available" -- not "2 of 2, full" -- while
+still never being offered as a drop).
+
+### Section 5 result: THIS_WEEK ordering CONFIRMED unchanged from Worker 1's
+### finding; label/explanation made honest, no ranking logic touched
+
+`(a)` Re-confirmed by direct code read, `(c)` re-confirmed live: THIS_WEEK
+and REST_OF_SEASON both call `marginal_roster_utility_v2` identically
+(`rank_waiver_candidates`, no `mode` argument passed in); weekly points
+feed only `weeklyProjectedPoints` (display) and the sort key's SECONDARY
+tie-break in THIS_WEEK mode (`sort_key`'s `primary = candidate.
+marginal_utility` unconditionally). **Real live re-confirmation**: real
+Fantasy Gamers `THIS_WEEK` (week=2) top add is still Tyrone Tracy, byte-
+identical ranking order to `REST_OF_SEASON`.
+
+**No literal false claim was found in the current UI copy** (`(a)`
+INSPECTED CODE: `improve-team.tsx`/`in-season.tsx`'s Mode `SegmentedControl`
+renders only the raw enum labels "REST_OF_SEASON"/"THIS_WEEK" with zero
+caption; the page `description` text -- "ranked by NWR's real marginal
+roster utility" -- is already true for both modes) -- so this is a real gap
+by OMISSION, not a false statement to correct. Per the directive's intent
+("make the owner-facing label/explanation... say so honestly"), added an
+explicit, honest caption under the Mode toggle in BOTH real render paths
+(`TargetsTab` in `improve-team.tsx`, the primary reachable surface; the
+legacy unrouted `WaiversPage` in `in-season.tsx`, for consistency):
+
+> REST_OF_SEASON: "Ranked by real marginal roster utility (rest-of-season
+> oriented). Switch to THIS WEEK to also see real weekly projections and
+> starter impact for the same ranking."
+> THIS_WEEK: "THIS WEEK shows the same real marginal-roster-utility ranking
+> as REST OF SEASON, plus this week's real projected points and starter
+> impact -- weekly points only break near-ties, they don't re-sort the
+> list."
+
+Also added a matching JSDoc comment on `WaiversResult.mode`
+(`contracts/src/index.ts`) so this is documented at the API boundary too,
+not just in one page's copy.
+
+**Real FAAB-horizon bug found + fixed (concrete, not omission-only):**
+`suggest_faab_bids`'s rationale string (`waiver_engine_service.py`)
+unconditionally said `"...percentile of THIS WEEK'S real free-agent
+pool..."` in EVERY mode -- but the percentile is computed purely from
+`candidate.marginal_utility`, the same REST_OF_SEASON-oriented signal
+Section 5's own finding describes, in both modes. **Fixed**: reworded to
+"percentile of this real free-agent pool, N season weeks remaining" --
+horizon-neutral, no mode dependency invented, no new weekly valuation
+model. Real live re-confirmation:
+`"Bench depth; marginal utility 9.7 ranks at the 100% percentile of this
+real free-agent pool, 13 season weeks remaining."` (was:
+"...of this week's real free-agent pool, 13 weeks remaining."`).
+
+**No ranking logic touched.** `rank_waiver_candidates`'s `sort_key`
+(the THIS_WEEK/REST_OF_SEASON primary/secondary key logic itself):
+`git diff --stat` empty for that function -- confirmed unchanged.
+
+### AddDropDetail transparency (both Sections, same file)
+
+`AddDropDetail` (`in-season.tsx`, shared by Improve Team's Add/Drop tab and
+the legacy Waivers page) now shows the same-context breakdown explicitly
+(add-vs-original, add-vs-post-drop, drop-vs-post-drop, explicitly labeled
+"not a total-roster or completed-transaction value") when a drop is
+paired, and a real, honest "NWR verified a real open roster slot... this
+add is legal without dropping anyone" message (distinct from the
+pre-existing generic fallback) when `contextLabel ===
+"OPEN_ROSTER_SLOT_ADD_ONLY"`. The pairing table's "Drop" column already
+had a pre-existing `"— (no drop needed)"` fallback for `drop == null` (a
+genuine, unused-until-now scaffold) -- automatically renders correctly for
+the new open-slot case with zero further change.
+
+### Tests
+
+- **Rewrote** the one pre-existing test that asserted the OLD (mismatched)
+  formula (`test_pair_add_drop_computes_real_net_utility` ->
+  `test_pair_add_drop_computes_real_net_utility_in_the_same_context`,
+  verified against a direct manual `marginal_roster_utility_v2` recompute).
+- **New** in `tests/test_waiver_engine_service.py`: a deliberately
+  constructed fixture proving the old/new formulas genuinely disagree
+  (-3.15 vs +6.86, a real sign flip) when the drop and a top add share a
+  position at real bench depth; open-slot-available add-only pairings;
+  no-open-slot/unverifiable both keep the conservative forced-drop
+  fallback (parametrized). `python -m pytest
+  tests/test_waiver_engine_service.py -q`: **29 passed** (was 25).
+- **New** `tests/test_redraft_waivers_open_slot_and_same_context_fix.py`
+  (5 tests, facade-level, real bundled-ranking identities): same-context
+  fields on the real API response; real open-slot add-only pairings using
+  a real `roster_positions` array; a genuinely full roster still forces
+  the real weakest drop; `roster_positions` unavailable keeps the
+  conservative forced-drop fallback; the IR/reserve x open-slot
+  combination (reserve player excluded from BOTH the drop list and the
+  occupied-slot count). **5 passed.**
+- `python -m pytest tests/test_waiver_engine_service.py
+  tests/test_redraft_waivers_open_slot_and_same_context_fix.py
+  tests/test_redraft_waivers_ir_reserve_drop_exclusion_fix.py
+  tests/test_redraft_waivers_faab_context_fix.py
+  tests/test_redraft_waivers_unmatched_identity_rationale_fix.py
+  tests/test_redraft_waivers_decision_trace_completeness_fix.py
+  tests/test_weekly_home_sleeper_fetch_caching.py
+  tests/test_shadow_numeric_authorities_service.py -q`: **121 passed**.
+- Targeted regression slice (same `-k` filter every prior worker this
+  cycle used): **659 passed, 0 failed** (up from Worker 3's 655 baseline
+  by exactly the 4 genuinely new tests added to `test_waiver_engine_
+  service.py`, which that filter's `waiver_engine` keyword already
+  matches; the 1 rewritten test doesn't change the count). Re-run with
+  `or open_slot` appended (to also pick up the new, separately-named
+  facade test file): **666 passed, 0 failed** (+5 more, one per new test
+  in `test_redraft_waivers_open_slot_and_same_context_fix.py`).
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures this worktree's documented baseline
+  expects, re-confirmed unaffected.
+- Frontend: `npm run typecheck` (`tsc -b`, both apps): clean, 0 errors.
+  `npx vitest run` (desktop workspace): **426 passed** (up from 425 by the
+  1 new `explainWaiverTarget` open-slot test; 0 failed).
+- `git diff -U0 96e75ec2 HEAD -- . ':!docs/codex/waiver_night_v1/
+  LEDGER.md'` grepped for every hard-boundary term
+  (`marginal_roster_utility_v2`, `LeagueSnapshot`, `LeagueWorkspaceContext`,
+  `lifecycle_resolver`, `DecisionResultEnvelope`, `PlayerAvailabilityStatus`):
+  matches are only the read-only call/import of `marginal_roster_utility_v2`
+  (expected -- it must be CALLED to compute the same-context value; it is
+  never redefined) and comments explaining it. `git diff --stat` for
+  `src/services/shadow_numeric_authorities_service.py` AND
+  `src/services/redraft_roster_legality_service.py`: **both empty**.
+
+### Zero Sleeper writes, verified 3 ways
+
+1. Structural: no new Sleeper HTTP call was added anywhere -- `roster_
+   positions`/`reserve`/`taxi` are all read from data (`league/{id}`,
+   `league/{id}/rosters`) this endpoint already fetches this same request;
+   `SleeperHttpClient` still exposes only `get_json`.
+2. `git diff` of every touched file grepped for any Sleeper write-shaped
+   call: zero matches.
+3. Before/after byte-diff of `GET league/1312983576827920384/rosters`,
+   taken immediately before and after this pass's entire live
+   verification run (both `redraft_waivers` calls, REST_OF_SEASON and
+   THIS_WEEK): **byte-identical**, SHA-256 `6ad88171...`, matching the
+   exact hash `HARRISON_TRACY_INVESTIGATION_V1.md` independently recorded
+   for this same real league the same day. This pass's own facade calls
+   ran against an ISOLATED SCRATCH COPY of `local_exports/redraft_v1`
+   (same method that investigation used) -- nothing was appended to this
+   worktree's own tracked decision-trace store.
+
+### Backend/model files changed this pass
+
+- **Modified**: `src/services/waiver_engine_service.py` -- `AddDropPairing`
+  dataclass gains 5 fields (see Section 4 above); `pair_add_drop` gains
+  `owner_roster_canonical_ids`/`profile`/`ranking`/`manual_assets`/
+  `open_slot_available` parameters and the same-context/open-slot logic;
+  `suggest_faab_bids`'s rationale string reworded (Section 5). No other
+  function touched. `marginal_roster_utility_v2` (imported, called
+  read-only, never edited), `rank_waiver_candidates`'s `sort_key`,
+  `rank_drop_candidates`: **all unchanged** (confirmed by `git diff`).
+- **Modified**: `src/application/desktop_facade.py` -- `redraft_waivers`
+  only: new `roster_positions`/open-slot computation (reuses
+  `league_settings_raw`, already fetched; no new Sleeper call), new
+  `roster_slot_context` local + `rosterSlotContext` response field, updated
+  `pair_add_drop` call site, expanded `addDropPairings` payload (5 new
+  keys per pairing). No other facade method touched.
+- **Modified**: `desktop/packages/contracts/src/index.ts` --
+  `WaiverAddDropPairing` gains 5 fields + doc comment; new
+  `WaiverRosterSlotContext` interface; `WaiversResult` gains
+  `rosterSlotContext` + a new doc comment on `mode` (Section 5).
+- **Modified**: `desktop/apps/redraft/src/improve-team.tsx` -- `TargetsTab`
+  gains the honest Mode caption (Section 5). `AddDropTab`'s existing
+  `pairingColumns`/`"— (no drop needed)"` fallback needed NO change (it
+  already anticipated `drop === null`).
+- **Modified**: `desktop/apps/redraft/src/in-season.tsx` -- legacy
+  `WaiversPage` gains the same honest Mode caption; `AddDropDetail` gains
+  the same-context breakdown paragraph and the honest open-slot message.
+- **Modified** (test-fixture-only): `desktop/apps/redraft/src/
+  improve-team-explain.test.ts` (fixture gains the 5 new required
+  `WaiverAddDropPairing` fields; 1 new test for the open-slot
+  `drop === null` case), `tests/test_waiver_engine_service.py`.
+- **New**: `tests/test_redraft_waivers_open_slot_and_same_context_fix.py`.
+- This ledger.
+- `src/services/shadow_numeric_authorities_service.py`
+  (`marginal_roster_utility_v2` itself),
+  `src/services/redraft_roster_legality_service.py` (draft-time legality,
+  read for reference only), `LeagueSnapshot`/`LeagueWorkspaceContext`/
+  lifecycle-resolver/`DecisionResultEnvelope`/`PlayerAvailabilityStatus`,
+  any draft recommendation code, the primary candidate ranking/
+  drop-selection POLICY (`drop_candidates[0]` remains the single weakest
+  real drop; `add_candidates` sort order untouched): **all untouched**,
+  confirmed above.
+
+## OPEN ISSUES FOR THE NEXT WORKER (final verification: full regression,
+## additional real Fantasy Gamers dogfood, checkpoint, push)
+
+1. **Full `pytest` suite (not just the targeted `-k` slice) was not run
+   this pass** -- per repo memory, the full suite has ~323 pre-existing
+   failures unrelated to most directives (missing `local_exports` data +
+   Streamlit UI-contract drift). The targeted regression slice (666
+   passed) plus the documented `test_desktop_application_api.py` 46/4
+   baseline are the same verification depth every prior worker in this
+   cycle used. A future worker doing final release verification should
+   still run the literal full suite once and diff against the ~323
+   baseline count, per that memory note.
+2. **This pass has NOT merged, deployed, or pushed**, per its own explicit
+   directive -- `git push` and any PR/merge step are for a future,
+   explicitly-authorized worker.
+3. **The real Fantasy Gamers league's current roster composition doesn't
+   exercise the open-slot path live** (15/15, no open slot right now) --
+   covered instead by 5 new facade-level fixture tests using real bundled
+   ranking identities. Worth a live re-check if/when this owner's real
+   roster ever drops below 15 rostered players (bye/injury cycles, a
+   missed pickup, etc.).
+4. **`pair_add_drop`'s "2-3 close drop alternatives" still not built** --
+   unchanged from every prior worker's note; this pass's same-context fix
+   applies only to the existing single-weakest-drop pairing design, not a
+   new multi-drop feature.
+5. All items already carried forward from the prior consolidated 6-worker
+   night, the FAAB gate/floor pass, and the LIVE/SCENARIO budget pass (K/DST
+   streamer diagnostic cross-contamination, no real non-FAAB Sleeper league
+   to test against live, `matchupContext` still `null`, FantasyPros
+   top-10-per-query cap / duplicate `TEAM_ALIASES` files, the pre-existing
+   `test_desktop_application_api.py` 4-failure baseline, Work Unit
+   9/FAAB-transaction-context not attempted, Worker 1's Harrison/Tracy
+   investigation open items, the profile-switch leak check still only
+   INSPECTED CODE not live-tested) remain open and unrelated to this pass's
+   fix, no change here.

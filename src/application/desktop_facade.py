@@ -3523,6 +3523,49 @@ class DesktopBackendFacade:
             if str(raw_id) in resolved.canonical_id_by_sleeper_id
         }
 
+        # Waiver Night V1 (Section 4, open-slot handling): an add can be
+        # LEGAL without a forced drop when the owner has a real open
+        # non-reserve roster slot. Uses the league's own real
+        # `roster_positions` array (one entry per starter/bench slot --
+        # Sleeper's own real roster-shape contract, already fetched above
+        # as part of `league_settings_raw`, no new Sleeper call) compared
+        # against RAW roster player-id counts -- never the count of ids
+        # that happened to resolve to a canonical identity, which would
+        # conflate "NWR could not identity-match this player" with "this
+        # roster slot is empty" (a real, different bug the directive
+        # explicitly warned against). Taxi-squad ids are also excluded from
+        # the occupied count (a separate real Sleeper slot type, not part
+        # of `roster_positions`); this league's real `taxi_slots` is 0, but
+        # the exclusion costs nothing and stays correct if that ever
+        # changes. `None` (never a silent guess) when `roster_positions`
+        # could not be read this request -- the conservative fallback below
+        # (`pair_add_drop`) then keeps showing the real weakest drop as a
+        # suggestion rather than assuming an open slot exists.
+        raw_roster_positions = (
+            league_settings_raw.get("roster_positions") if isinstance(league_settings_raw, Mapping) else None
+        )
+        roster_positions = (
+            [str(value) for value in raw_roster_positions]
+            if isinstance(raw_roster_positions, list) and raw_roster_positions
+            else None
+        )
+        raw_player_ids = [str(value) for value in (own_roster.get("players") or [])]
+        raw_reserve_ids = [str(value) for value in (own_roster.get("reserve") or [])]
+        raw_taxi_ids = [str(value) for value in (own_roster.get("taxi") or [])]
+        occupied_non_reserve_slots = len(raw_player_ids) - len(raw_reserve_ids) - len(raw_taxi_ids)
+        if roster_positions is not None:
+            open_slot_available: bool | None = occupied_non_reserve_slots < len(roster_positions)
+            open_slot_status = "OPEN_SLOT_AVAILABLE" if open_slot_available else "NO_OPEN_SLOT"
+        else:
+            open_slot_available = None
+            open_slot_status = "UNVERIFIED_ROSTER_SLOTS"
+        roster_slot_context = {
+            "openSlotAvailable": open_slot_available,
+            "status": open_slot_status,
+            "rosterSlotsTotal": len(roster_positions) if roster_positions is not None else None,
+            "rosterSlotsOccupied": occupied_non_reserve_slots if roster_positions is not None else None,
+        }
+
         weekly_by_sleeper_id = None
         weekly_source_status = None
         weekly_provider_health = None
@@ -3571,7 +3614,16 @@ class DesktopBackendFacade:
             candidate for candidate in drop_candidates_all
             if candidate.canonical_player_id not in reserve_canonical_ids
         )
-        pairings = pair_add_drop(add_candidates=add_candidates, drop_candidates=drop_candidates, top_n=10)
+        pairings = pair_add_drop(
+            add_candidates=add_candidates,
+            drop_candidates=drop_candidates,
+            owner_roster_canonical_ids=resolved.canonical_player_ids,
+            profile=selected,
+            ranking=ranking,
+            manual_assets=manual_assets,
+            open_slot_available=open_slot_available,
+            top_n=10,
+        )
         # `suggest_faab_bids` itself (the pricing formula) is completely
         # unchanged -- this call is only ever made with a genuine effective
         # budget (`can_compute_faab`, computed above); a non-FAAB or
@@ -3805,6 +3857,7 @@ class DesktopBackendFacade:
                 "leagueSnapshotId": waivers_league_snapshot_id,
                 "decisionEnvelope": waivers_envelope.to_dict(),
                 "faabContext": faab_context,
+                "rosterSlotContext": roster_slot_context,
                 "unmatchedRosterSleeperPlayerIds": list(resolved.unmatched_sleeper_player_ids),
                 "addCandidates": [_candidate_payload(candidate) for candidate in add_candidates],
                 "dropCandidates": [
@@ -3836,7 +3889,22 @@ class DesktopBackendFacade:
                             if pairing.drop
                             else None
                         ),
+                        # Waiver Night V1 (Section 4): `dropRequired` is
+                        # `False` only for a real, verified open roster
+                        # slot (`contextLabel ==
+                        # "OPEN_ROSTER_SLOT_ADD_ONLY"`) or when this roster
+                        # genuinely has no drop candidates at all. The three
+                        # utility fields below are a same-context marginal
+                        # comparison, not an authoritative "total-roster" or
+                        # "completed-transaction" value -- see
+                        # `AddDropPairing`'s own docstring in
+                        # `waiver_engine_service.py`.
+                        "dropRequired": pairing.drop_required,
+                        "addUtilityVsOriginalRoster": pairing.add_utility_vs_original_roster,
+                        "addUtilityVsPostDropRoster": pairing.add_utility_vs_post_drop_roster,
+                        "dropUtilityVsPostDropRoster": pairing.drop_utility_vs_post_drop_roster,
                         "netMarginalUtility": pairing.net_marginal_utility,
+                        "contextLabel": pairing.context_label,
                     }
                     for pairing in pairings
                 ],

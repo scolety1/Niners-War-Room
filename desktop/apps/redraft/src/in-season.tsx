@@ -484,6 +484,21 @@ export function AddDropDetail({
             Replacement value {formatNumber(add.rosReplacementValue ?? 0, 1)} · Marginal utility {formatNumber(add.marginalUtility ?? 0, 1)}
             {suggestedDrop ? <> vs. dropping {suggestedDrop.playerName} ({formatNumber(suggestedDrop.marginalUtility ?? 0, 1)}) — net {formatNumber(pairing?.netMarginalUtility ?? 0, 1)}</> : null}
           </p>
+          {/* Waiver Night V1 (Section 4, add/drop context repair): the "net"
+              above is now a same-context comparison -- both sides measured
+              against the roster AFTER the proposed drop, not a mix of two
+              different rosters. Spelled out here so the owner can see both
+              reference points, not just the final number, and so this is
+              never mistaken for an authoritative total-roster/
+              completed-transaction value. */}
+          {suggestedDrop && pairing?.contextLabel === "SAME_CONTEXT_MARGINAL_COMPARISON" ? (
+            <p className="copy-muted">
+              Same-context comparison: adding {add.playerName} after dropping {suggestedDrop.playerName} would be worth{" "}
+              {formatNumber(pairing?.addUtilityVsPostDropRoster ?? 0, 1)} (vs. {formatNumber(pairing?.addUtilityVsOriginalRoster ?? 0, 1)} against your roster as it stands today, before any drop);{" "}
+              {suggestedDrop.playerName}'s own value on that same post-drop roster is {formatNumber(pairing?.dropUtilityVsPostDropRoster ?? 0, 1)}.
+              This is a same-context marginal comparison, not a total-roster or completed-transaction value.
+            </p>
+          ) : null}
           <h3>Status / risk</h3>
           <p>{add.marginalUtilityExplanation}{suggestedDrop ? <><br /><span className="copy-muted">Drop rationale: {suggestedDrop.explanation}</span></> : null}</p>
           <h3>FAAB recommendation</h3>
@@ -498,7 +513,13 @@ export function AddDropDetail({
         <div>
           <h3>Position depth on your roster</h3>
           <dl className="health-list">{positions.map((position) => <div key={position}><dt>{position}</dt><dd>{depthBefore[position] ?? 0} → {depthAfter[position] ?? 0}</dd></div>)}</dl>
-          {!suggestedDrop ? <p className="copy-muted">NWR did not suggest a drop pairing for this add -- pick one from the candidates below, or add without dropping if you have an open bench slot.</p> : null}
+          {!suggestedDrop ? (
+            pairing?.contextLabel === "OPEN_ROSTER_SLOT_ADD_ONLY" ? (
+              <p className="copy-muted">NWR verified a real open roster slot on your bench -- this add is legal without dropping anyone.</p>
+            ) : (
+              <p className="copy-muted">NWR did not suggest a drop pairing for this add -- pick one from the candidates below, or add without dropping if you have an open bench slot.</p>
+            )
+          ) : null}
           <h3>Alternative drops</h3>
           {alternativeDrops.length ? (
             <ul className="health-list">{alternativeDrops.map((drop) => <li key={drop.canonicalPlayerId}>{drop.playerName} ({drop.position}) — marginal utility {formatNumber(drop.marginalUtility ?? 0, 1)}</li>)}</ul>
@@ -600,6 +621,15 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
       <SegmentedControl label="View" options={["Available to add", "Add/Drop pairings", "Consider dropping"]} value={view} onChange={setView} />
       <Button icon="activity" variant="secondary" onClick={reload} disabled={working}>{working ? "Reading…" : "Refresh"}</Button>
     </div>
+    {/* Waiver Night V1 (Section 5, THIS_WEEK honesty): see the same caption
+        on Improve Team's Targets tab -- both modes rank by the same real
+        marginal roster utility; THIS_WEEK only adds real display context
+        and a secondary tie-break, it never re-sorts by weekly points. */}
+    <p className="copy-muted">
+      {mode === "THIS_WEEK"
+        ? "THIS WEEK shows the same real marginal-roster-utility ranking as REST OF SEASON, plus this week's real projected points and starter impact -- weekly points only break near-ties, they don't re-sort the list."
+        : "Ranked by real marginal roster utility (rest-of-season oriented). Switch to THIS WEEK to also see real weekly projections and starter impact for the same ranking."}
+    </p>
     {result?.faabContext ? (
       <Panel title="FAAB (live)" eyebrow="Real, live Sleeper budget -- plan scenarios on the Improve Team FAAB tab instead">
         <p className="copy-muted">

@@ -345,6 +345,16 @@ function TargetsTab({
       <SelectField label="Position" value={position} onChange={setPosition} options={positions.map((value) => ({ value, label: value }))} />
       <Button icon="activity" variant="secondary" onClick={reload} disabled={working}>{working ? "Reading…" : "Refresh"}</Button>
     </div>
+    {/* Waiver Night V1 (Section 5, THIS_WEEK honesty): both modes rank
+        targets by the SAME real marginal roster utility -- THIS_WEEK does
+        not re-sort by this week's projected points, it only adds them as
+        real display context and a secondary tie-break. Said explicitly
+        here rather than left implied by the Mode toggle's raw labels. */}
+    <p className="copy-muted">
+      {mode === "THIS_WEEK"
+        ? "THIS WEEK shows the same real marginal-roster-utility ranking as REST OF SEASON, plus this week's real projected points and starter impact -- weekly points only break near-ties, they don't re-sort the list."
+        : "Ranked by real marginal roster utility (rest-of-season oriented). Switch to THIS WEEK to also see real weekly projections and starter impact for the same ranking."}
+    </p>
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {waivers?.rankingWarning ? <div className="alert-strip"><strong>Ranking unavailable</strong><span>{waivers.rankingWarning}</span></div> : null}
     {mode === "THIS_WEEK" ? <ProviderStatusLine health={waivers?.weeklyProviderHealth ?? null} /> : null}

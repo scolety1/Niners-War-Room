@@ -146,7 +146,42 @@ class DropCandidate:
 class AddDropPairing:
     add: WaiverCandidate
     drop: DropCandidate | None
+    # Waiver Night V1 (Section 4, add/drop context repair): whether a drop
+    # is genuinely required for this add to be legal. `False` only when a
+    # real, verified open non-reserve roster slot exists (see
+    # `redraft_waivers`'s `roster_positions`-based check) -- never inferred
+    # from anything else.
+    drop_required: bool
+    # The add's own marginal value against the roster exactly as it stands
+    # today (unchanged from `WaiverCandidate.marginal_utility` -- kept here
+    # too so a consumer never has to reach back into a different list to
+    # see both reference points side by side).
+    add_utility_vs_original_roster: float | None
+    # The add's own marginal value recomputed against the SAME roster the
+    # drop's own value was computed against (the roster with `drop` already
+    # removed) -- `None` when `drop` is `None` (nothing to compare against)
+    # or when either side's value could not be computed at all.
+    add_utility_vs_post_drop_roster: float | None
+    # The drop's own marginal value -- already computed by
+    # `rank_drop_candidates` against this same post-drop roster (dropping a
+    # player is, by definition, evaluated against the roster without him),
+    # so no recomputation is needed on this side. Equal to
+    # `drop.marginal_utility` when `drop` is not `None`.
+    drop_utility_vs_post_drop_roster: float | None
+    # A real, same-context marginal comparison
+    # (`add_utility_vs_post_drop_roster - drop_utility_vs_post_drop_roster`,
+    # both measured against the identical post-drop roster) when a drop is
+    # paired; the add's own unchanged-roster value when no drop is needed.
+    # This is NOT an authoritative "total-roster" or "completed-transaction"
+    # utility -- no such objective is defined anywhere else in this
+    # codebase, so none is claimed here.
     net_marginal_utility: float | None
+    # "SAME_CONTEXT_MARGINAL_COMPARISON" (a drop was paired and both sides
+    # were measured against the same post-drop roster),
+    # "OPEN_ROSTER_SLOT_ADD_ONLY" (a real open roster slot means no drop is
+    # needed), or "NO_DROP_CANDIDATE_AVAILABLE" (the roster has no drop
+    # candidates at all, e.g. an empty roster).
+    context_label: str
 
 
 def rank_waiver_candidates(
@@ -252,21 +287,117 @@ def rank_drop_candidates(
 
 
 def pair_add_drop(
-    *, add_candidates: Sequence[WaiverCandidate], drop_candidates: Sequence[DropCandidate], top_n: int = 10
+    *,
+    add_candidates: Sequence[WaiverCandidate],
+    drop_candidates: Sequence[DropCandidate],
+    owner_roster_canonical_ids: Sequence[str],
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    open_slot_available: bool | None = None,
+    top_n: int = 10,
 ) -> tuple[AddDropPairing, ...]:
     """Pairs each top ADD with the single weakest real roster piece
     (`drop_candidates[0]`, already ranked ascending by real marginal
     utility). A genuine, disclosed simplification: this does not solve a
     joint multi-add/multi-drop assignment across several simultaneous
-    moves, only the single best drop for one add at a time."""
+    moves, only the single best drop for one add at a time.
+
+    Same-context repair (Waiver Night V1, Section 4): the reported "net"
+    value must compare the add and the drop against the SAME roster, or the
+    difference is meaningless. Before this fix, the add's own value came
+    from `rank_waiver_candidates` (computed against the owner's ORIGINAL
+    roster, drop candidate still on it) while the drop's own value came
+    from `rank_drop_candidates` (computed against the roster with the drop
+    candidate already removed) -- two different reference rosters
+    subtracted from each other. Fixed here: this function constructs the
+    roster AFTER removing the weakest real drop and evaluates the add
+    candidate against THAT roster too (`add_utility_vs_post_drop_roster`),
+    through the SAME unmodified `marginal_roster_utility_v2` authority
+    `rank_drop_candidates` already used for the drop's own value -- no
+    retuning, no reimplementation, just a second, same-context call. The
+    drop's own value was already computed against this exact post-drop
+    roster, so it needs no recomputation. The result is a real, same-context
+    marginal comparison -- explicitly NOT an authoritative "total-roster" or
+    "completed-transaction" utility, since this codebase defines no such
+    objective anywhere else.
+
+    Open-slot handling: `open_slot_available=True` (a real, verified open
+    non-reserve roster slot -- never inferred from how many roster ids
+    happened to resolve to a canonical identity) means the add is legal on
+    its own; every pairing then carries `drop=None`/`drop_required=False`
+    and `net_marginal_utility` is simply the add's own value against the
+    roster as it stands today (there is no drop, so no second context to
+    compare against). `None` (unverifiable) is treated the same as `False`
+    here -- the conservative default is to keep showing the real weakest
+    drop as a suggestion, never to silently assume an open slot exists.
+    """
 
     weakest_drop = drop_candidates[0] if drop_candidates else None
+    roster_after_weakest_drop: list[str] | None = None
+    if weakest_drop is not None:
+        roster_after_weakest_drop = [
+            player_id for player_id in owner_roster_canonical_ids if player_id != weakest_drop.canonical_player_id
+        ]
+
     pairings: list[AddDropPairing] = []
     for add in add_candidates[:top_n]:
-        net = None
-        if add.marginal_utility is not None and weakest_drop is not None and weakest_drop.marginal_utility is not None:
-            net = round(add.marginal_utility - weakest_drop.marginal_utility, 2)
-        pairings.append(AddDropPairing(add=add, drop=weakest_drop, net_marginal_utility=net))
+        if open_slot_available is True:
+            pairings.append(
+                AddDropPairing(
+                    add=add,
+                    drop=None,
+                    drop_required=False,
+                    add_utility_vs_original_roster=add.marginal_utility,
+                    add_utility_vs_post_drop_roster=None,
+                    drop_utility_vs_post_drop_roster=None,
+                    net_marginal_utility=add.marginal_utility,
+                    context_label="OPEN_ROSTER_SLOT_ADD_ONLY",
+                )
+            )
+            continue
+
+        if weakest_drop is None:
+            pairings.append(
+                AddDropPairing(
+                    add=add,
+                    drop=None,
+                    drop_required=False,
+                    add_utility_vs_original_roster=add.marginal_utility,
+                    add_utility_vs_post_drop_roster=None,
+                    drop_utility_vs_post_drop_roster=None,
+                    net_marginal_utility=None,
+                    context_label="NO_DROP_CANDIDATE_AVAILABLE",
+                )
+            )
+            continue
+
+        add_utility_after_drop: float | None = None
+        net: float | None = None
+        if (
+            add.canonical_player_id
+            and add.marginal_utility is not None
+            and weakest_drop.marginal_utility is not None
+            and roster_after_weakest_drop is not None
+        ):
+            after_drop_result = marginal_roster_utility_v2(
+                add.canonical_player_id, roster_after_weakest_drop, profile, ranking, manual_assets
+            )
+            add_utility_after_drop = after_drop_result.utility
+            net = round(add_utility_after_drop - weakest_drop.marginal_utility, 2)
+
+        pairings.append(
+            AddDropPairing(
+                add=add,
+                drop=weakest_drop,
+                drop_required=True,
+                add_utility_vs_original_roster=add.marginal_utility,
+                add_utility_vs_post_drop_roster=add_utility_after_drop,
+                drop_utility_vs_post_drop_roster=weakest_drop.marginal_utility,
+                net_marginal_utility=net,
+                context_label="SAME_CONTEXT_MARGINAL_COMPARISON",
+            )
+        )
     return tuple(pairings)
 
 
@@ -411,7 +542,17 @@ def suggest_faab_bids(
                 rationale=(
                     f"{'Real starter upgrade' if urgency_reason == 'STARTER_UPGRADE' else 'Bench depth' if urgency_reason == 'BENCH_DEPTH' else 'Low real value'}; "
                     f"marginal utility {candidate.marginal_utility:.1f} ranks at the {percentile:.0%} "
-                    f"percentile of this week's real free-agent pool, {weeks_remaining} weeks remaining."
+                    # Waiver Night V1 (Section 5, THIS_WEEK honesty): this
+                    # rationale used to say "this week's real free-agent
+                    # pool" regardless of mode -- but `candidate.marginal_
+                    # utility` (what this percentile is actually computed
+                    # from, both here and in `rank_waiver_candidates`' own
+                    # sort key) is always the real REST_OF_SEASON-oriented
+                    # marginal-roster-utility signal, never a weekly value,
+                    # in EITHER mode. "this week's" was never accurate; it
+                    # is horizon-neutral now, and the season-taper input is
+                    # labeled for what it actually is (season weeks left).
+                    f"percentile of this real free-agent pool, {weeks_remaining} season weeks remaining."
                 ),
             )
         )

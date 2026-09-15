@@ -39,7 +39,17 @@ function drop(overrides: Partial<WaiverDropCandidate> = {}): WaiverDropCandidate
 }
 
 function pairing(overrides: Partial<WaiverAddDropPairing> = {}): WaiverAddDropPairing {
-  return { add: add(), drop: drop(), netMarginalUtility: 3.5, ...overrides };
+  return {
+    add: add(),
+    drop: drop(),
+    dropRequired: true,
+    addUtilityVsOriginalRoster: 3.1,
+    addUtilityVsPostDropRoster: 3.1,
+    dropUtilityVsPostDropRoster: -0.4,
+    netMarginalUtility: 3.5,
+    contextLabel: "SAME_CONTEXT_MARGINAL_COMPARISON",
+    ...overrides,
+  };
 }
 
 describe("explainWaiverTarget", () => {
@@ -54,6 +64,20 @@ describe("explainWaiverTarget", () => {
 
   it("omits the DROP half of the headline and the net-vs-drop clause when no pairing exists", () => {
     const explanation = explainWaiverTarget(add(), null, "REST_OF_SEASON", null);
+    expect(explanation.headline).toBe("ADD Marvin Harrison Jr.");
+    expect(explanation.rosImpact).toBe("Replacement value +4.2 · Marginal utility +3.1");
+  });
+
+  it("Waiver Night V1 Section 4: omits DROP the same way for a real open-roster-slot pairing (pairing exists, drop is null)", () => {
+    const openSlotPairing = pairing({
+      drop: null,
+      dropRequired: false,
+      addUtilityVsPostDropRoster: null,
+      dropUtilityVsPostDropRoster: null,
+      netMarginalUtility: 3.1,
+      contextLabel: "OPEN_ROSTER_SLOT_ADD_ONLY",
+    });
+    const explanation = explainWaiverTarget(add(), openSlotPairing, "REST_OF_SEASON", null);
     expect(explanation.headline).toBe("ADD Marvin Harrison Jr.");
     expect(explanation.rosImpact).toBe("Replacement value +4.2 · Marginal utility +3.1");
   });

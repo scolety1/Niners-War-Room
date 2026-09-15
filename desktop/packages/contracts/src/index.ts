@@ -1120,10 +1120,67 @@ export interface WaiverDropCandidate {
   playerAvailabilityStatus: PlayerAvailabilityStatus | null;
 }
 
+/**
+ * Waiver Night V1 (Section 4, Add/Drop context repair): before this fix,
+ * `netMarginalUtility` subtracted the add's value against the owner's
+ * ORIGINAL roster (`add.marginalUtility`) from the drop's value against the
+ * roster WITH the drop already removed -- two different reference rosters
+ * for one number. Fixed: `add`/`drop` are now both evaluated against the
+ * SAME post-drop roster before the difference is taken (via NWR's
+ * unchanged, closed `marginal_roster_utility_v2` authority). This is a
+ * real, same-context marginal comparison -- NOT an authoritative
+ * "total-roster" or "completed-transaction" utility; no such objective is
+ * defined anywhere else in this codebase.
+ */
 export interface WaiverAddDropPairing {
   add: WaiverAddCandidate;
   drop: WaiverDropCandidate | null;
+  /** `false` only for a real, verified open non-reserve roster slot
+   * (`contextLabel === "OPEN_ROSTER_SLOT_ADD_ONLY"`) or when this roster
+   * genuinely has no drop candidates at all -- never inferred from
+   * anything else. When `false`, `drop` is `null`: this add is legal on
+   * its own, never a fabricated forced pairing. */
+  dropRequired: boolean;
+  /** The add's own marginal value against the roster exactly as it stands
+   * today -- identical to `add.marginalUtility`, kept here too so both
+   * reference points sit side by side. */
+  addUtilityVsOriginalRoster: number | null;
+  /** The add's own marginal value recomputed against the SAME roster
+   * `drop`'s own value was computed against (the roster with `drop`
+   * already removed). `null` when `drop` is `null` or either side's value
+   * could not be computed. */
+  addUtilityVsPostDropRoster: number | null;
+  /** The drop's own marginal value against the post-drop roster -- equal to
+   * `drop.marginalUtility` when `drop` is not `null` (already computed
+   * against that same roster; no recomputation needed on this side). */
+  dropUtilityVsPostDropRoster: number | null;
+  /** The same-context difference (`addUtilityVsPostDropRoster -
+   * dropUtilityVsPostDropRoster`) when a drop is paired, or the add's own
+   * unchanged-roster value when no drop is needed. */
   netMarginalUtility: number | null;
+  /** "SAME_CONTEXT_MARGINAL_COMPARISON" | "OPEN_ROSTER_SLOT_ADD_ONLY" |
+   * "NO_DROP_CANDIDATE_AVAILABLE" -- see the field docs above for what
+   * each one means. */
+  contextLabel: string;
+}
+
+/**
+ * Waiver Night V1 (Section 4, open-slot handling): whether the owner has a
+ * real, verified open non-reserve roster slot this request, derived from
+ * the league's own real `roster_positions` array (Sleeper's real per-slot
+ * contract) compared against the RAW roster player-id count -- never from
+ * how many roster ids happened to resolve to a canonical NWR identity
+ * (conflating "could not identity-match" with "this slot is empty" would be
+ * a real, different bug). `openSlotAvailable`/`rosterSlotsTotal`/
+ * `rosterSlotsOccupied` are all `null` together when `roster_positions`
+ * could not be read this request (`status ===
+ * "UNVERIFIED_ROSTER_SLOTS"`) -- never a silent guess either way.
+ */
+export interface WaiverRosterSlotContext {
+  openSlotAvailable: boolean | null;
+  status: "OPEN_SLOT_AVAILABLE" | "NO_OPEN_SLOT" | "UNVERIFIED_ROSTER_SLOTS";
+  rosterSlotsTotal: number | null;
+  rosterSlotsOccupied: number | null;
 }
 
 /**
@@ -1173,6 +1230,19 @@ export interface WaiverBudgetScenarioInput {
   weeksRemaining: number;
 }
 
+/**
+ * Waiver Night V1 (Section 5, THIS_WEEK honesty): `mode` does NOT change
+ * the ranking signal `addCandidates`/`dropCandidates`/`addDropPairings`
+ * are sorted by -- both modes rank by the real, closed
+ * `marginal_roster_utility_v2` marginal-roster-utility (rest-of-season
+ * oriented), unchanged. `THIS_WEEK` additionally computes/surfaces the
+ * real weekly-projected points (`weeklyProjectedPoints`, `becomesStarter`
+ * for THIS week's lineup) and uses them ONLY as a secondary tie-break when
+ * two candidates' marginal utility is equal -- never as the primary sort
+ * key. Render this honestly (see `TargetsTab`'s Mode caption in
+ * `improve-team.tsx`) rather than implying THIS_WEEK reorders by weekly
+ * value.
+ */
 export interface WaiversResult {
   leagueId: string;
   mode: "THIS_WEEK" | "REST_OF_SEASON";
@@ -1184,6 +1254,7 @@ export interface WaiversResult {
   leagueSnapshotId?: string;
   decisionEnvelope?: DecisionResultEnvelope;
   faabContext: WaiverFaabContext;
+  rosterSlotContext: WaiverRosterSlotContext;
   unmatchedRosterSleeperPlayerIds: string[];
   addCandidates: WaiverAddCandidate[];
   dropCandidates: WaiverDropCandidate[];
