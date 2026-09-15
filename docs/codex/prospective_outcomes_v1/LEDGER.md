@@ -725,3 +725,300 @@ nothing from each other):
    fixture. Worth closing for real once that crosswalk is in scope --
    DST_STREAMER's own real exercise (`"NE"`) did not need one, since
    Sleeper's own DST ids are unambiguous team codes.
+
+## Worker 4 (this pass) -- Work Units 11-12: DRAFT outcome foundation +
+## automatic outcome ingestion orchestration
+
+Start HEAD `41af0791` (Worker 3's closing commit). Not merged, not pushed,
+not deployed. Verified live before writing any code: branch, clean
+worktree, the 413-test targeted slice, `test_desktop_application_api.py`'s
+same 4 pre-existing failures (`test_dynasty_facade_composes_real_governed_
+workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_
+trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_
+contract`, `test_facade_has_no_streamlit_or_app_component_dependency`).
+
+Read in full before writing any code: `PROSPECTIVE_OUTCOME_EVALUATION_
+CONTRACT.md`, Worker 1/2/3's ledger entries above, all 8 evaluators, the
+base evaluation/ingestion/source-adapter modules, and
+`in_season_decision_trace_service.py` (confirmed live: `TOOL_TYPES`
+already includes `"DRAFT"`, but a real grep of `desktop_facade.py` found
+ZERO `tool="DRAFT"` call sites -- the schema exists, nothing populates it
+yet, exactly as Worker 3 characterized it).
+
+### Work Unit 11 -- DRAFT outcome FOUNDATION (schema + hooks only)
+
+**New**: `src/services/prospective_outcome_draft_foundation_v1_service.py`.
+Additive alongside (never replacing) the prior cycle's `DraftOutcomeDetail`
+-- a new `DraftPickOutcomeDetail` (`KIND = "DRAFT_PICK_V1"`, a genuinely
+different kind from `DRAFT_V1`) with every dimension the directive named:
+`actual_chosen_player_id` (always required -- the one fact that's always
+real), `recommended_player_id`/`recommendation_time_candidate_set_ids`
+(the frozen recommendation-time facts), `season_points`/`starts`/
+`weeks_usable`/`roster_utility`/`replacement_value` (always `None` this
+cycle -- real computation stays out of this pass's hard boundary AND the
+2026 season has only just started, so nothing honest to compute either
+way), and a **structurally separate** `injury_designation`/
+`weeks_missed_to_injury` pair that no code path in this module reads when
+deciding `evaluation_method`.
+
+**No retroactive reconstruction, enforced structurally, not just
+documented**: `build_draft_pick_outcome_detail` -- the one real "future
+ingestion hook" this pass ships -- returns
+`DRAFT_EVALUATION_METHOD_INSUFFICIENT_CONTEXT` (a NEW constant this pass
+adds, distinct from the prior cycle's `DRAFT_EVALUATION_METHOD_DEFERRED`)
+whenever the caller cannot supply BOTH a real, non-empty `recommendation_
+time_candidate_set_ids` AND a `recommended_player_id` that is a genuine
+MEMBER of that same set -- `recommended_player_id` is forced back to `None`
+in every such case even if the caller passed a real-looking guess, so a
+guess can never leak into a field meaning "genuinely known at
+recommendation time." `DraftPickOutcomeDetail.__post_init__` enforces the
+same invariant on direct construction too (proven by a dedicated test,
+not just the builder).
+
+**Injury never proves a bad decision** -- proven three ways: (1) a direct
+field-independence test (two picks, identical recommendation context,
+different injury fields, identical `evaluation_method`), (2) a test that an
+injured player with NO recorded recommendation-time context still resolves
+to `INSUFFICIENT_DECISION_CONTEXT` (injury data never upgrades or
+downgrades that verdict), (3) a structural source-text scan for forbidden
+co-occurring phrase patterns (`"injury"` + `"proof of a bad"`, etc.) --
+none found.
+
+**Hard boundary respected structurally**: a real test parses this module's
+own `import`/`from` lines and asserts none names
+`marginal_roster_utility_v2`/`shadow_numeric_authorities_service`/
+`league_workspace_context_service`/`lifecycle_resolver`/
+`player_availability_status` -- the module DOCSTRING does discuss
+`marginal_roster_utility_v2` in prose (disclosing why it's not touched, the
+same way every prior worker's own ledger entry does), so the test checks
+real imports, not a blanket ban on the word.
+
+`draft_outcome_ready_for_season_long_evaluation` is a real, honest stub --
+always `False` this cycle, mirroring the contract's own explicit deferral
+of a real ROS window rather than inventing a season-readiness threshold
+with no real basis yet.
+
+13 new tests, all passing.
+
+### Work Unit 12 -- automatic outcome INGESTION ORCHESTRATION
+
+**New**: `src/services/prospective_outcome_ingestion_orchestrator_v1_
+service.py` + `scripts/run_prospective_outcome_ingestion_v1.py` (the real,
+callable CLI command the directive asked for).
+
+**Real per-tool identity findings, read directly from `desktop_facade.py`
+before writing any code** (same discipline Worker 3 used): WAIVER's real
+live call site records `recommendation.topAddCanonicalId` (NWR's OWN
+ranking-id space, not a Sleeper id); FAAB's real live call site records
+only `playerName`/`bidLowDollars`/`bidHighDollars` (no id at all);
+K_STREAMER/DST_STREAMER confirmed unchanged from Worker 3 (`playerName`/
+`team` only); ADD_DROP has no live call site; TRADE/TRADE_FINDER/
+TRADE_PACKAGE_SEARCH all record real `week=None` at their live call sites
+(confirmed by reading each one directly this pass) AND record canonical
+(not Sleeper) player ids in `gives`/`receives`/`myGivePlayerId`/etc.
+**Only START_SIT's real live call site already records raw Sleeper ids
+directly** (`recommendation.starters`) -- the ONE class this pass gives a
+real, full, network-fetching pipeline. Building a brand-new canonical-id
+-> Sleeper-id resolver for the other five was judged OUT of this pass's
+scope (the directive's own framing is "reuse the existing adapters/
+ingestion/evaluators," not "build new identity resolution" -- Worker 1's
+own Open Issue 3, still explicitly unresolved, inherited unchanged).
+
+**The real design, per class**:
+- **START_SIT**: `plan_ingestion_action` gates on (a) no outcome yet, (b)
+  `current_nfl_week > week` (the frozen `SAME_WEEK_LOCK_TO_FINAL` window,
+  imported verbatim from Worker 1's `EVALUATION_WINDOWS` -- never
+  re-derived), (c) a real, caller-supplied `owner_roster_id` for that
+  `league_id`. When all three hold, `execute_plan_item` performs a REAL
+  `fetch_owner_matchup_entry` + `adapt_and_ingest_start_sit_outcome` +
+  `record_outcome(..., outcome_source="SLEEPER", ...)` + `evaluate_
+  start_sit` -- exactly the same pieces Worker 1/2 already built and
+  tested, composed for the first time into something that actually runs
+  automatically.
+- **WAIVER/FAAB/ADD_DROP/K_STREAMER/DST_STREAMER**: once their real,
+  preregistered window has genuinely matured (BOUNDED_HORIZON 4 weeks for
+  the first three, SAME_WEEK for the last two -- both imported from the
+  SAME frozen `EVALUATION_WINDOWS`), this orchestrator calls the SAME
+  `ingest_*_outcome` function every evaluator already trusts with the
+  player-id argument(s) honestly `None`, then `record_outcome(outcome=
+  "INSUFFICIENT_DECISION_CONTEXT", detail=...)`. This makes the gap a
+  REAL, EXPLICIT, visible ledger fact -- not a silent skip indistinguishable
+  from "not yet processed" (directive item 6, proven directly: a test
+  asserts ZERO network calls happen on this path, since there is nothing
+  honest to fetch without a resolved identity).
+- **TRADE / TRADE_FINDER / TRADE_PACKAGE_SEARCH**: `week=None` means there
+  is no real week to anchor a bounded-horizon maturity check to --
+  `plan_ingestion_action` returns `SKIP_WINDOW_UNDETERMINABLE` for every
+  one of these, genuinely untouched, rather than fabricating a week. A
+  real, disclosed open issue (below), not silently dropped.
+- **DRAFT**: always `SKIP_DEFERRED_DRAFT`.
+
+**Idempotency -- the directive's own required proof, delivered for real,
+twice over**: `plan_ingestion_action` checks `record.outcome is not None`
+FIRST, unconditionally, before any maturity/identity logic -- the ONLY
+thing that ever sets `record.outcome` is `record_outcome` itself, so a
+trace this orchestrator (or any other real caller) already processed is
+always `SKIP_ALREADY_PROCESSED` on every subsequent run.
+`test_running_ingestion_twice_produces_byte_identical_ledger_state`
+(pytest, hermetic) builds a 3-trace mixed store (one real-fixture
+START_SIT, one insufficient-context WAIVER, one still-immature FAAB), runs
+`run_ingestion` twice, and asserts the RAW ledger file text is
+byte-for-byte identical after the second run, the second run's own
+`SleeperHttpClient` double makes ZERO calls, and `load_decision_traces`
+returns an equal tuple both times -- not merely "no crash." **Then proven
+again for real, outside pytest, against genuinely live Sleeper data**: a
+real isolated demo root (`scripts/run_prospective_outcome_ingestion_v1.py`
+run four times in sequence against one real START_SIT trace (real Week 1
+2026 Fantasy Gamers data, mechanism-demonstration baseline, same honest
+framing as the prior cycle's own demo script), one real WAIVER trace, and
+one real DST_STREAMER trace) -- run 1 processed START_SIT for real (a real
+`GET league/.../matchups/1` call, `lineupOpportunityCostPoints: 0.0`,
+`evaluationStatus: "EVALUATED"`) and left WAIVER genuinely immature; run 2
+made a real, live, byte-for-byte-verified no-op (`diff` confirmed
+identical); a real DST_STREAMER trace was then added and run 3 correctly
+produced a real, explicit `INSUFFICIENT_DECISION_CONTEXT` (SAME_WEEK window
+had matured, identity unresolved); run 4 again produced a real,
+byte-for-byte-verified no-op across all three traces together.
+
+**Maturity respected**: `test_immature_events_are_genuinely_untouched`
+(WAIVER, week 5, current week 6 -- `5+4=9`, not yet `>`) proves the trace's
+own `outcome` stays `None` and zero network calls are made; the real live
+demo run above proves the same thing against a genuinely real WAIVER trace
+(current real NFL week is only 2 as of this pass -- nothing bounded-horizon
+CAN be real-matured yet, an honest, expected finding this early in the
+2026 season, not a bug).
+
+**`INSUFFICIENT_DECISION_CONTEXT` visibility**: proven both in pytest
+(`test_run_ingestion_never_fetches_network_for_insufficient_context_path`)
+and against real live data (the DST_STREAMER run above) -- the ledger's
+`outcome.outcome` field literally reads `"INSUFFICIENT_DECISION_CONTEXT"`
+and `outcome.detail.recommendedPlayerId` is `None`, visibly distinct from a
+trace that's simply never been touched (`outcome is None` entirely).
+
+**A real, honestly-scoped operational gap, distinguished from a decision-
+context gap**: `SKIP_OWNER_ROSTER_UNKNOWN` -- a START_SIT trace whose
+league has no caller-supplied `owner_roster_id` mapping is left genuinely
+`PENDING_OUTCOME`, NEVER marked `INSUFFICIENT_DECISION_CONTEXT` (that
+status is reserved for a genuine recommendation-time-context gap, not an
+orchestration-configuration one). The CLI script's one real, built-in
+mapping is the one real, confirmed pair this codebase has (`1312983576827
+920384 -> 9`, Fantasy Gamers/`scolety`, matching the prior cycle's own demo
+script) -- a general per-profile resolver is explicitly out of scope (open
+issue below).
+
+**Real production trace store checked directly**: `GET .../state/nfl`
+confirmed the real current NFL week is `2` as of this pass (`display_week:
+1`, `week: 2` -- Week 1's games have concluded). The REAL AppData redraft
+root (`...\com.ninerswarroom.redraft\state\redraft`) has NO
+`decision_traces/` directory at all -- confirmed via a real, read-only run
+of the CLI script against that exact path: `countsByAction: {}`,
+`processed: []`, zero files created. This is an honest finding (no live
+call site has ever actually recorded a trace there yet, matching Worker
+1/2/3's own accumulated findings about which call sites are truly wired
+end-to-end), not a bug in this pass's own code.
+
+`execute_plan_item` also gets two direct misuse-guard tests (rejecting a
+`SKIP_*` action; rejecting a `PROCESS_FULL_START_SIT` item with no
+`owner_roster_id` supplied) and a structural hindsight-leakage assertion
+(`_assert_plan_function_is_safe`, asserted at import time on
+`plan_ingestion_action`, plus a test that actually triggers it on a
+deliberately-bad function -- the same pattern every module this cycle
+uses).
+
+26 new tests, all passing.
+
+### Tests (full)
+
+- 2 new test files (`test_prospective_outcome_draft_foundation_v1_
+  service.py`, `test_prospective_outcome_ingestion_orchestrator_v1_
+  service.py`), 39 new tests total (13 + 26), all passing.
+- Targeted regression slice (`pytest -k "decision_trace or
+  prospective_outcome or live_player_intelligence or
+  boundary_property_reliability or composition or player_availability"`):
+  **452 passed, 0 failed** (413 pre-existing + 39 new this pass).
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures documented in every prior worker's own
+  baseline. Re-confirmed live after this pass's changes.
+- Hard-boundary grep across every file this pass actually created: every
+  match is disclosure prose (module docstrings explaining what was NOT
+  touched and why) or a test assertion checking real `import` lines --
+  zero real imports/modifications of any hard-boundary module.
+
+### Backend/model files changed this pass
+
+**All new. Zero modifications to any existing file** (confirmed via `git
+status --porcelain` -- every changed path is untracked/new):
+
+- `src/services/prospective_outcome_draft_foundation_v1_service.py`
+- `src/services/prospective_outcome_ingestion_orchestrator_v1_service.py`
+- `scripts/run_prospective_outcome_ingestion_v1.py`
+- `tests/test_prospective_outcome_draft_foundation_v1_service.py`
+- `tests/test_prospective_outcome_ingestion_orchestrator_v1_service.py`
+- This ledger.
+
+### Sleeper writes
+
+**Zero.** Every real network call this pass made (or that the CLI script
+makes) is a plain `GET` against a public, keyless Sleeper endpoint
+(`state/nfl`, `league/{id}/matchups/{week}`) -- the same real, already-
+wired endpoints every other real call site in this codebase uses. All real
+LOCAL ledger writes this pass verified went to isolated scratch roots
+(pytest's own `tmp_path`, and a real, disclosed demo root under this
+session's scratchpad directory) -- NEVER the real production AppData
+store, which this pass only ever READ from (confirmed empty of decision
+traces, zero files created by that read).
+
+## OPEN ISSUES FOR THE NEXT WORKER (Work Units 13-14: History UI V3 +
+## class-specific summary)
+
+1. **Identity resolution for WAIVER/FAAB/ADD_DROP/K_STREAMER/DST_STREAMER/
+   TRADE-family remains the real, concrete blocker to real (non-
+   insufficient-context) automatic evaluation for those six classes** --
+   unchanged in substance from Worker 1's Open Issue 3, now sharpened with
+   this pass's own confirmed real payload keys (`topAddCanonicalId` for
+   WAIVER; no id at all for FAAB; `playerName`/`team` for K/DST; canonical
+   ids for the whole TRADE family). Building a real canonical-id ->
+   Sleeper-id crosswalk (via `resolve_roster_canonical_ids` + a fresh
+   players-catalog/ranking-rows fetch) would let this orchestrator give
+   these classes the same real, full pipeline START_SIT gets. Out of this
+   pass's own scope.
+2. **TRADE/TRADE_FINDER/TRADE_PACKAGE_SEARCH have no real week to anchor a
+   maturity check to** -- their real live call sites record `week=None`.
+   This orchestrator leaves them permanently `SKIP_WINDOW_UNDETERMINABLE`
+   until a future pass either (a) adds a real week capture to those call
+   sites, or (b) derives a week from the eventual matched Sleeper trade
+   transaction's own real timing. Not fixed this pass (would touch
+   `desktop_facade.py`, out of scope).
+3. **`owner_roster_id` resolution is a real, caller-supplied mapping, not a
+   general resolver** -- the CLI script ships the ONE real, confirmed pair
+   (Fantasy Gamers `1312983576827920384 -> 9`). A future worker wanting
+   this to work automatically for an arbitrary profile needs to read that
+   profile's own stored Sleeper identity (would touch profile-loading code
+   adjacent to, but not necessarily inside, the hard boundary) -- not
+   attempted this pass.
+4. **The real production trace store has zero decision traces recorded
+   in it** (confirmed this pass, not merely assumed) -- every real, live
+   call site this codebase has (START_SIT, WAIVER, FAAB, K_STREAMER,
+   DST_STREAMER, TRADE, TRADE_FINDER, TRADE_PACKAGE_SEARCH) exists in code
+   but has apparently never actually fired against the owner's real
+   production profile/root yet (or a different root than the one this pass
+   checked is in use -- worth confirming with the owner directly). The
+   orchestrator and CLI script are real and ready the moment real traces
+   start accumulating there.
+5. **DRAFT's real live call site still does not exist** -- Work Unit 11
+   built the schema/hooks a future wiring pass needs
+   (`build_draft_pick_outcome_detail`), but no code anywhere calls
+   `record_decision_trace(..., tool="DRAFT", ...)` yet. That wiring (and
+   the real season-long roster-utility computation `roster_utility`/
+   `season_points`/etc. are placeholders for) is explicitly out of this
+   cycle's hard boundary.
+6. **History UI V3** (Work Unit 13) and **class-specific summary
+   surfacing** (Work Unit 14) were not attempted this pass, per this pass's
+   own explicit Work Unit 11-12 assignment. Every evaluator's `to_dict()`
+   (Workers 2/3) and this pass's own `IngestionRunReport.to_dict()`/
+   `ExecutedIngestionResult.to_dict()` are the real, tested payload shapes
+   to build on.
+7. **A real ROS window, the duplicated `MIN_SAMPLE_SIZE_FOR_PER_CLASS_*`
+   constant, ADD_DROP's still-uncomputed `netRosterValuePoints`, and real
+   owner (roster 9) WAIVER/ADD_DROP/FAAB outcome data** are all unchanged,
+   inherited open items from Worker 1/2/3 -- none were touched this pass.
