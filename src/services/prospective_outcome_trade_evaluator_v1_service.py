@@ -218,7 +218,31 @@ def evaluate_trade(
     owner_action_raw = (
         str(ctx.owner_action.get("action")) if isinstance(ctx.owner_action, Mapping) and ctx.owner_action.get("action") is not None else None
     )
-    metrics = trade_realized_metrics_from_detail(detail)
+    # Real, disclosed bug found and fixed THIS pass (boundary/property test
+    # pack V2, Group 11): `trade_realized_metrics_from_detail` only checks
+    # whether `realizedRosterOutcome` is present, not whether the trade was
+    # actually accepted -- it trusted every real caller (`ingest_trade_
+    # outcome`) to never populate `realizedRosterOutcome` for a rejected/
+    # unknown trade, which IS always true for data produced by that real
+    # ingestion function, but was not independently enforced HERE. A stored
+    # `outcome.detail` dict that reached this evaluator any other way (a
+    # malformed/legacy ledger row, a future caller writing `detail`
+    # directly) could otherwise surface a scored counterfactual for a
+    # rejected trade, contradicting this module's own documented
+    # three-layer rejected-trade guarantee. Mirrors the SAME guard
+    # `evaluate_trade_finder` (Work Unit 8) already applies at its own call
+    # site -- narrowed to this one call, no other behavior touched.
+    is_accepted = detail.get("acceptanceStatus") == "ACCEPTED" and detail.get("tradeAccepted") is True
+    metrics = (
+        trade_realized_metrics_from_detail(detail)
+        if is_accepted
+        else {
+            "horizonWeeks": None,
+            "netSubsequentPointsDeltaPoints": None,
+            "givesSubsequentPointsByPlayer": None,
+            "receivesSubsequentPointsByPlayer": None,
+        }
+    )
 
     return TradeEvaluatorResult(
         trace_id=record.trace_id,
