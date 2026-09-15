@@ -166,6 +166,63 @@ def test_normalize_team_code_covers_known_fantasypros_sleeper_aliases_and_passes
     assert normalize_team_code("  jax  ") == "JAX"
 
 
+def test_identity_boundary_strips_generational_suffix_sleeper_drops() -> None:
+    # Real, live-reproduced gap (waiver-night sync pass, 2026-09-15):
+    # Sleeper's real players/nfl catalog routinely drops a player's
+    # generational suffix (e.g. "Marvin Harrison" for the real Sleeper
+    # catalog row, vs "Marvin Harrison Jr." from NWR's own ranking/
+    # consensus data) while other sources keep it. _identity() must
+    # resolve both spellings to the same key.
+    assert _identity("Marvin Harrison Jr.", "WR", "ARI") == _identity(
+        "Marvin Harrison", "WR", "ARI"
+    )
+    assert _identity("Kenneth Walker III", "RB", "SEA") == _identity(
+        "Kenneth Walker", "RB", "SEA"
+    )
+    assert _identity("Deebo Samuel Sr.", "WR", "SF") == _identity(
+        "Deebo Samuel", "WR", "SF"
+    )
+
+
+def test_identity_boundary_suffix_stripping_only_matches_a_trailing_token() -> None:
+    # Guard against over-stripping: a name that merely ends in the same
+    # letters as a suffix (no separate trailing token) must be unaffected.
+    # (K/DST are used here since those are _identity()'s default allowed
+    # positions; the WR/QB end-to-end case is covered by the other new
+    # tests via sleeper_free_agent_pool's SLEEPER_FANTASY_POSITIONS.)
+    assert _identity("Kevin Harvick", "K", "CAR") == ("kevinharvick", "K", "CAR")
+    assert _identity("Marcus Levi", "K", "CAR") == ("marcuslevi", "K", "CAR")
+
+
+def test_sleeper_free_agent_pool_matches_ranking_despite_missing_sleeper_suffix() -> None:
+    # End-to-end regression for the real bug: a Sleeper catalog entry with
+    # no generational suffix must still attach the NWR ranking row that
+    # carries one, rather than showing UNRANKED for a real ranked player.
+    free_agents = sleeper_free_agent_pool(
+        rosters=[{"owner_id": "owner", "players": []}],
+        players={
+            "s1": {
+                "full_name": "Marvin Harrison",
+                "position": "WR",
+                "team": "ARI",
+                "active": True,
+            }
+        },
+        rankings=[
+            {
+                "playerId": "canonical-1",
+                "playerName": "Marvin Harrison Jr.",
+                "position": "WR",
+                "team": "ARI",
+                "overallRank": 5,
+            }
+        ],
+    )
+    assert len(free_agents) == 1
+    assert free_agents[0]["playerId"] == "canonical-1"
+    assert free_agents[0]["rankingAuthority"] == "NWR REDRAFT RANKING"
+
+
 def test_team_code_alias_table_never_maps_a_code_to_itself_pointlessly() -> None:
     # Sanity guard on the shared table itself: every key must be a real
     # alias (map to something different), not a no-op entry.

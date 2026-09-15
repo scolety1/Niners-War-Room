@@ -171,8 +171,7 @@ does not actually touch.
 - Nothing in `desktop_facade.py`, `desktop_api/`, or any consumer/UI
   layer touched.
 
-## OPEN ISSUES FOR THE NEXT WORKER (Work Unit 2: current Sleeper roster
-## sync verification)
+## OPEN ISSUES FROM WORKER 1 (Work Unit 1), CARRIED FORWARD
 
 1. **Duplicate local `TEAM_ALIASES`/`_team_key` copies were not
    consolidated onto the new shared module.** At least 5 other files
@@ -208,7 +207,223 @@ does not actually touch.
    distinct K-side bug (only the DST full_name gap was documented). Now
    fixed by the same one-line change, verified live, but worth noting
    explicitly since no prior worker's finding named it.
-5. **Work Unit 2 itself** (current Sleeper roster sync verification, the
-   next assignment per this cycle's own naming) was not started this
-   pass -- Work Unit 1 (this alias fix) was this pass's sole scope, per
-   its own directive.
+
+## Worker 2 (this pass) -- Work Unit 2: current Sleeper roster sync
+## verification, Work Unit 3: real free-agent pool verification
+
+Start HEAD `63a81142` (Worker 1's JAC/JAX + K fix, above). Real, live,
+read-only verification against the real Fantasy Gamers Sleeper league
+(`1312983576827920384`, owner `scolety`, real user id
+`1000507609050337280`, roster_id `9`), 2026-09-15, in-season week 2
+(NFL `state/nfl`: `week=2`, games not yet started -- all `0.0` points,
+a genuinely current, not-stale fact).
+
+### Work Unit 2 result: PASS, with one real bug found + fixed
+
+Verification method: instantiated the real `DesktopBackendFacade`
+against this worktree's real, already-active `local_exports/redraft_v1`
+profile (`941b99ade350410391b1b67c0890af79`, "Fantasy Gamers", already
+the active profile -- no state was created or changed), called
+`redraft_my_roster()`, and independently pulled the raw Sleeper
+`league/{id}/rosters` + `state/nfl` + `league/{id}` + `league/{id}/users`
+directly via `SleeperHttpClient` (GET-only), then diffed.
+
+- **Owner roster (scolety, roster_id 9): exact match.** 15 players, 9
+  starters, 6 bench, 0 reserve/IR (this owner has none on IR right now --
+  see IR/reserve note below). Raw Sleeper player-id set == facade
+  `redraft_my_roster()` player-id set (`raw_ids == facade_ids`: `True`,
+  15/15, zero missing/extra either direction). Starter-id set also exact
+  match (`raw_starter_set == facade_starter_set`: `True`).
+- **League-wide roster table (raw, all 10 teams, for the record):**
+
+  | roster_id | owner | players | starters | reserve | FAAB used |
+  |---|---|---|---|---|---|
+  | 1 | QuippyR | 16 | 9 | 1 | 0 |
+  | 2 | JalenTheAsian | 16 | 9 | 1 | 0 |
+  | 3 | SadiesLadies | 15 | 9 | 0 | 0 |
+  | 4 | logans21 | 15 | 9 | 0 | 0 |
+  | 5 | kdizzy7 | 15 | 9 | 0 | 0 |
+  | 6 | Ootley | 15 | 9 | 0 | 0 |
+  | 7 | LiLDcK | 16 | 9 | 1 | 0 |
+  | 8 | JohnnyDisB | 14 | 9 | 0 | 0 |
+  | 9 | **scolety (owner)** | 15 | 9 | 0 | 0 |
+  | 10 | josh702 | 15 | 9 | 0 | 0 |
+
+  League settings (raw): `waiver_type=1` (FAAB), `waiver_budget=100`,
+  `reserve_slots=2`, `taxi_slots=0`, `total_rosters=10`,
+  `roster_positions=[QB,RB,RB,WR,WR,TE,FLEX,K,DEF,BN,BN,BN,BN,BN,BN]`.
+  Owner's remaining FAAB (raw `waiver_budget` minus this roster's
+  `settings.waiver_budget_used`): **100/100** (nothing spent yet, real
+  and current for week 2 preseason-of-the-week state). Sync timestamp:
+  **2026-09-15, live pull this pass** (not a cached/stale read).
+
+- **Real bug found and fixed:** `redraft_my_roster()` marked
+  Marvin Harrison Jr. (the owner's own real rostered WR, Sleeper id
+  `11628`) as `identityStatus: UNMATCHED_IDENTITY` even though he IS in
+  NWR's own ranking data. Root cause: Sleeper's real `players/nfl`
+  catalog drops generational suffixes (`full_name` = "Marvin Harrison",
+  no "Jr.") while NWR's own ranking/consensus rows keep them ("Marvin
+  Harrison Jr."). `_identity()` -- the SAME shared boundary Worker 1 just
+  fixed for JAC/JAX -- alnum-normalizes the full string with no suffix
+  handling, so "marvinharrisonjr" never equalled "marvinharrison". Live
+  scan of all 564 rows in this profile's real ranking output found
+  **26/26 real, currently-rostered-or-draftable players carrying a
+  suffix (Jr./Sr./II/III/IV) failed this exact match before the fix**
+  (Kenneth Walker III, Deebo Samuel Sr., Brian Thomas Jr., Michael Penix
+  Jr., etc. -- full list in the diff/verification transcript). Confirmed
+  zero name collisions introduced by stripping the suffix across all 564
+  real ranking rows (no two different real players in this profile's
+  ranking collapse to the same stripped name+position+team key).
+  **Fixed** in `src/services/fantasypros_kdst_consensus_service.py`:
+  `_identity()` now strips a trailing, whitespace-separated generational
+  suffix token (`Jr`/`Sr`/`II`/`III`/`IV`/`V`, optional trailing period,
+  case-insensitive) before alnum-normalizing the name. Guarded so it only
+  strips a genuine trailing token (e.g. "Steve Smith" / "Marcus Levi" are
+  unaffected -- confirmed via a dedicated over-stripping regression test).
+  Re-verified live after the fix: Marvin Harrison now resolves
+  `identityStatus: MATCHED` in the owner's real roster, with roster
+  player-id/starter-id exact-match unaffected (still `True`/`True`).
+- **Honest gap, not fixed (documented for the next worker, not silently
+  dropped):** `redraft_my_roster()` has no `reserve`/IR field at all --
+  every roster row is only ever `starter: true/false`, so a player on IR
+  would render identically to an ordinary bench player, losing real
+  information. This owner's own roster has 0 players on IR right now (3
+  of the 9 opponent rosters DO have exactly 1 each, raw-confirmed above),
+  so this pass could not reproduce a live *mismatch* against the owner's
+  own data -- it is a real, disclosed completeness gap, not a proven
+  wrong-data bug, and was deliberately NOT built out this pass (new UI
+  surface / new facade field is feature work, not a same-night
+  verify-and-fix scope). Flagged below for the next worker.
+- Also directly verified (read-only, via `redraft_league_workspace_context()`,
+  NOT modified -- this method is inside the hard-boundary-protected
+  `LeagueWorkspaceContext` composition): `currentWeek` resolves live and
+  correctly to **2** (matches raw `state/nfl`), `syncStatus: LIVE`, no
+  `issues`. `matchupContext` came back `null` even though the real raw
+  `league/{id}/matchups/2` endpoint DOES return real data (10 rows, all
+  `0.0` points since week 2 hasn't kicked off). This was NOT
+  investigated further or touched (hard boundary explicitly forbids
+  `LeagueWorkspaceContext` semantics) -- flagged as an open question for
+  whichever worker owns that surface, not assumed to be a bug.
+
+### Work Unit 3 result: PASS
+
+Verified `sleeper_free_agent_pool` (unchanged mechanism/name, still the
+canonical one -- confirmed no newer successor exists) is genuinely
+derived as (live Sleeper `players/nfl` catalog) MINUS (every currently
+rostered player across all 10 real rosters), not a static file:
+
+- Raw Sleeper player catalog: **12,227** real entries. Raw rostered-
+  everywhere count (union across all 10 real rosters): **152**. Facade
+  `redraft_free_agents()` free-agent count: **718** (position-filtered to
+  `SLEEPER_FANTASY_POSITIONS`, inactive-excluded -- not `12227 - 152`,
+  by design, confirmed correct via source read).
+- **Zero overlap**, computed directly: intersection of the facade's
+  free-agent Sleeper-id set with the raw all-rosters-rostered-id set is
+  the empty set (`0` matches).
+- **Real spot checks, both directions, across QB/RB/WR/TE/K/DEF:**
+  - 8 of the owner's own real rostered players (Caleb Williams QB,
+    Marvin Harrison WR, Carnell Tate WR, Ka'imi Fairbairn K, Jonathan
+    Taylor RB, Michael Pittman WR, Trevor Lawrence QB, Travis Etienne
+    RB): **none** appear in the free-agent list (all `False`, correct).
+  - 8 real opponent-rostered players sampled across 4 different opposing
+    rosters (Spencer Shrader K, Quinshon Judkins RB, Sam LaPorta TE,
+    Chris Boswell K, Brian Thomas WR, Ladd McConkey WR, MarShawn Lloyd
+    RB, Bucky Irving RB): **none** appear in the free-agent list (all
+    `False`, correct).
+  - 6 genuinely unrostered real, active, currently-on-an-NFL-team
+    players, one per fantasy position (Salvon Ahmed RB/CHI, Jerry Jeudy
+    WR/CLE, Behren Morton QB/NE, Oronde Gadsden TE/LAC, Ryan Fitzgerald
+    K/CAR, Indianapolis DEF): **all 6** correctly appear as free agents
+    (`True`).
+  - (First attempt at the "genuinely unrostered" spot check picked
+    inactive/no-current-team retired players by mistake -- those
+    correctly do NOT show as free agents either, since
+    `sleeper_free_agent_pool` requires a non-empty `team`; re-ran with
+    `active is True and team` players and got clean `True`s above. Not a
+    bug -- retired/teamless players are not real fantasy free agents.)
+- **Unmatched-identity players are never silently dropped**: confirmed
+  by code read -- `sleeper_free_agent_pool` always emits a row for every
+  active, position-eligible, teamed catalog entry regardless of whether
+  a ranking match was found; unmatched rows get
+  `rankingAuthority: "UNRANKED"` / `playerId: ""` rather than being
+  omitted. The suffix fix above (Work Unit 2's bug) directly improves
+  this: fewer real players now incorrectly show `UNRANKED` when they
+  actually have a real NWR ranking.
+
+### Tests (this pass)
+
+- New tests added to `tests/test_fantasypros_kdst_consensus_service.py`:
+  `test_identity_boundary_strips_generational_suffix_sleeper_drops`,
+  `test_identity_boundary_suffix_stripping_only_matches_a_trailing_token`,
+  `test_sleeper_free_agent_pool_matches_ranking_despite_missing_sleeper_suffix`.
+- `python -m pytest tests/test_fantasypros_kdst_consensus_service.py
+  tests/test_team_code_alias_service.py -q`: **26 passed**.
+- Targeted regression slice (`pytest -k "decision_trace or
+  prospective_outcome or live_player_intelligence or
+  boundary_property_reliability or composition or player_availability or
+  fantasypros_kdst or team_code_alias or waiver_engine or sleeper"`):
+  **611 passed, 0 failed**.
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** --
+  the SAME 4 pre-existing failures this worktree's documented baseline
+  expects (`test_dynasty_facade_composes_real_governed_workflows`,
+  `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`,
+  `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`,
+  `test_facade_has_no_streamlit_or_app_component_dependency`).
+  Re-confirmed unaffected by this pass's change.
+- `git diff` grepped for every hard-boundary term
+  (`marginal_roster_utility_v2`, `LeagueSnapshot`, `LeagueWorkspaceContext`,
+  `lifecycle_resolver`, `DecisionResultEnvelope`,
+  `PlayerAvailabilityStatus`): **zero matches**.
+
+### Zero Sleeper writes, verified 3 ways
+
+1. Structural: grepped the one touched production file for
+   `POST`/`PUT`/`PATCH`/`DELETE` -- zero matches (it has no HTTP methods
+   at all; identity normalization is pure string logic).
+2. `SleeperHttpClient` (the only Sleeper client used, both by this
+   verification script and by every facade method exercised) exposes
+   only `get_json` -- structurally incapable of writing.
+3. Before/after byte-diff of `GET league/{id}/rosters`, taken
+   immediately before and after this pass's entire live verification
+   run (both facade calls and raw pulls): **byte-identical**, SHA-256
+   `cd1b3932...` both times, `7145` bytes unchanged.
+
+### Backend/model files changed this pass
+
+- **Modified**: `src/services/fantasypros_kdst_consensus_service.py`
+  (added `_strip_generational_suffix()` + one call site inside
+  `_identity()`'s name normalization -- same shared boundary Worker 1's
+  JAC/JAX fix touched, no other production code changed).
+- **Modified**: `tests/test_fantasypros_kdst_consensus_service.py` (3 new
+  tests, described above).
+- This ledger.
+- Nothing in `desktop_facade.py`, `desktop_api/`, `waiver_engine_service.py`,
+  or any consumer/UI layer touched -- `resolve_roster_canonical_ids` and
+  `sleeper_free_agent_pool` both import `_identity` from the one file
+  that changed, so the fix applies symmetrically to both roster-sync and
+  free-agent-pool identity matching without touching either call site.
+
+## OPEN ISSUES FOR THE NEXT WORKER (Work Units 4-6: waiver ranking,
+## Add/Drop, FAAB live)
+
+1. **`redraft_my_roster()` has no reserve/IR field** (see above) -- a
+   player on IR renders identically to an ordinary bench player. Real,
+   disclosed gap; not reproduced as a live wrong-data mismatch this pass
+   only because this specific owner has 0 players on IR right now (3 of
+   9 real opponents do). Worth deciding whether Work Units 4-6 (waiver
+   ranking / Add-Drop / live FAAB) need this distinction surfaced before
+   shipping -- an Add/Drop flow that can't tell "bench" from "IR" could
+   plausibly suggest replacing an IR slot the wrong way.
+2. **`matchupContext` came back `null`** from
+   `redraft_league_workspace_context()` this pass despite real,
+   non-empty raw `league/{id}/matchups/2` data existing. NOT
+   investigated (hard-boundary-protected `LeagueWorkspaceContext`
+   surface) -- flag for whoever owns that composition function
+   (`build_week_matchup_context`), since Work Units 4-6 (especially
+   live FAAB / Add-Drop around an in-progress week) may depend on it.
+3. **Items 1-4 carried over from Worker 1**, above -- still open,
+   unrelated to Work Units 2/3, real follow-up for whoever eventually
+   scopes an identity-alias-dedup or K/DST-coverage pass.
+4. Worker 1's disclosed FantasyPros top-10-per-query cap and the
+   duplicate `TEAM_ALIASES` files remain unconsolidated -- no change
+   this pass.

@@ -10,12 +10,34 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from dataclasses import dataclass
 from typing import Any, Mapping
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from src.services.team_code_alias_service import normalize_team_code
+
+
+# Real, live-reproduced gap (waiver-night sync pass, 2026-09-15): Sleeper's
+# real `players/nfl` catalog routinely strips a player's generational suffix
+# (e.g. "Marvin Harrison" for Marvin Harrison Jr., "Kenneth Walker" for
+# Kenneth Walker III) while NWR's own ranking/consensus rows keep it. Since
+# `_identity()` is the single shared name/position/team boundary every
+# Sleeper-vs-NWR-ranking and Sleeper-vs-FantasyPros comparison in this file
+# goes through, an unstripped suffix silently broke identity matching for
+# every affected real player (confirmed live against the real Fantasy
+# Gamers league: 26/26 real ranked players carrying a suffix failed to
+# match their own Sleeper catalog row before this fix; the owner's own
+# rostered Marvin Harrison Jr. showed as UNMATCHED_IDENTITY). Stripped only
+# as a trailing, whitespace-separated token so it never touches a name that
+# merely ends in the same letters (e.g. "Steve Smith" is unaffected; only a
+# separate " Jr"/" Sr"/" II"/" III"/" IV"/" V" token at the end is removed).
+_GENERATIONAL_SUFFIX_RE = re.compile(r"\s+(jr|sr|ii|iii|iv|v)\.?$", re.IGNORECASE)
+
+
+def _strip_generational_suffix(name: str) -> str:
+    return _GENERATIONAL_SUFFIX_RE.sub("", name).strip()
 
 
 FANTASYPROS_AUTHORITY = "EXTERNAL CONSENSUS — FANTASYPROS"
@@ -394,7 +416,11 @@ def _identity(
     *,
     allowed_positions: frozenset[str] = SUPPORTED_POSITIONS,
 ) -> tuple[str, str, str]:
-    normalized_name = "".join(character for character in str(name or "").casefold() if character.isalnum())
+    normalized_name = "".join(
+        character
+        for character in _strip_generational_suffix(str(name or "")).casefold()
+        if character.isalnum()
+    )
     normalized_position = _sleeper_position(position)
     normalized_team = normalize_team_code(team)
     if not normalized_name or normalized_position not in allowed_positions or not normalized_team:
