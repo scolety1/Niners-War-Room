@@ -6,6 +6,7 @@ from src.services.fantasypros_kdst_consensus_service import (
     FANTASYPROS_AUTHORITY,
     FantasyProsConsensusClient,
     FantasyProsProviderError,
+    _identity,
     _parse_consensus,
     provider_status,
     sleeper_free_agent_pool,
@@ -13,6 +14,7 @@ from src.services.fantasypros_kdst_consensus_service import (
     sleeper_streamer_actions,
     streamer_actions,
 )
+from src.services.team_code_alias_service import TEAM_CODE_ALIASES, normalize_team_code
 
 
 def _payload():
@@ -54,9 +56,13 @@ def test_sleeper_dst_roster_entries_with_no_full_name_still_resolve_as_rostered(
     # (e.g. "Jacksonville" / "Jaguars"). FantasyPros' own consensus rows
     # report DST player_name as that same full team name -- confirmed live
     # in the running app UI ("Jacksonville Jaguars"), not a placeholder like
-    # "JAX D/ST".
+    # "JAX D/ST". player_team_id is the real FantasyPros K/DST consensus
+    # code for Jacksonville ("JAC", reconfirmed live against the real
+    # FantasyPros API this pass -- never "JAX") -- deliberately NOT "JAX"
+    # here, since Sleeper's own real catalog for this same franchise
+    # reports "JAX". This is the real JAC/JAX alias case.
     payload = {"players": [
-        {"player_id": 1, "player_name": "Jacksonville Jaguars", "player_position_id": "DST", "player_team_id": "JAX", "rank_ecr": 1, "tier": 1},
+        {"player_id": 1, "player_name": "Jacksonville Jaguars", "player_position_id": "DST", "player_team_id": "JAC", "rank_ecr": 1, "tier": 1},
         {"player_id": 2, "player_name": "Los Angeles Chargers", "player_position_id": "DST", "player_team_id": "LAC", "rank_ecr": 2, "tier": 1},
         {"player_id": 3, "player_name": "Houston Texans", "player_position_id": "DST", "player_team_id": "HOU", "rank_ecr": 3, "tier": 1},
     ]}
@@ -112,6 +118,73 @@ def test_sleeper_k_roster_matching_is_unaffected_by_the_dst_full_name_fallback()
     assert unmatched == ()
     assert actions[0]["recommendation"] == "START"
     assert actions[1]["recommendation"] == "ADD"
+
+
+def test_identity_boundary_resolves_fantasypros_jac_against_sleeper_jax() -> None:
+    # The exact canonical-boundary fix: FantasyPros' real K/DST consensus
+    # API reports Jacksonville as "JAC" (reconfirmed live this pass);
+    # Sleeper's real catalog reports it as "JAX". _identity() is the
+    # shared boundary both sides feed through -- it must produce the SAME
+    # key for both spellings of the same real franchise.
+    assert _identity("Jacksonville Jaguars", "DST", "JAC") == _identity(
+        "Jacksonville Jaguars", "DST", "JAX"
+    )
+
+
+def test_identity_boundary_leaves_ordinary_team_codes_unaffected() -> None:
+    # Codes that need no aliasing must resolve identically before and
+    # after normalization -- the alias table must not perturb the common
+    # case.
+    for team in ("HOU", "SF", "KC", "BUF", "PHI", "DET"):
+        assert _identity("Some Team", "DST", team) == (
+            "someteam",
+            "DST",
+            team,
+        )
+
+
+def test_normalize_team_code_covers_known_fantasypros_sleeper_aliases_and_passes_through_unknowns() -> None:
+    # JAC/JAX reconfirmed live this pass against the real FantasyPros
+    # K/DST consensus API and the real Sleeper players/nfl catalog. The
+    # rest are carried over from other already-tested FantasyPros-facing
+    # modules in this codebase (real, established aliases -- not
+    # reconfirmed against THIS endpoint this pass, since it only ever
+    # returns its own top-10 ranked rows per query and none of the
+    # queried weeks/positions happened to include one of these teams).
+    assert normalize_team_code("JAC") == "JAX"
+    assert normalize_team_code("LA") == "LAR"
+    assert normalize_team_code("STL") == "LAR"
+    assert normalize_team_code("SD") == "LAC"
+    assert normalize_team_code("OAK") == "LV"
+    assert normalize_team_code("WSH") == "WAS"
+    assert normalize_team_code("ARZ") == "ARI"
+    # A code with no known alias passes through unchanged -- never
+    # guessed, never invented.
+    assert normalize_team_code("SF") == "SF"
+    assert normalize_team_code("hou") == "HOU"
+    assert normalize_team_code(None) == ""
+    assert normalize_team_code("  jax  ") == "JAX"
+
+
+def test_team_code_alias_table_never_maps_a_code_to_itself_pointlessly() -> None:
+    # Sanity guard on the shared table itself: every key must be a real
+    # alias (map to something different), not a no-op entry.
+    for source, canonical in TEAM_CODE_ALIASES.items():
+        assert source != canonical
+
+
+def test_sleeper_k_roster_matching_is_unaffected_by_team_code_normalization() -> None:
+    # K-regression, at the alias-table level specifically: an ordinary K
+    # team code that needs no aliasing must resolve exactly as before.
+    rows = _parse_consensus(_payload(), season=2026, week=1, position="K")
+    actions, unmatched = sleeper_streamer_actions(
+        rows,
+        rosters=[{"owner_id": "owner", "players": ["s1"], "starters": ["s1"]}],
+        players={"s1": {"full_name": "K Two", "position": "K", "team": "BBB"}},
+        owner_user_id="owner",
+    )
+    assert unmatched == ()
+    assert actions[0]["recommendation"] == "START"
 
 
 def test_provider_rejects_other_positions_and_malformed_rows() -> None:

@@ -15,6 +15,8 @@ from typing import Any, Mapping
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from src.services.team_code_alias_service import normalize_team_code
+
 
 FANTASYPROS_AUTHORITY = "EXTERNAL CONSENSUS — FANTASYPROS"
 FANTASYPROS_API_BASE = "https://api.fantasypros.com/public/v2/json"
@@ -394,7 +396,7 @@ def _identity(
 ) -> tuple[str, str, str]:
     normalized_name = "".join(character for character in str(name or "").casefold() if character.isalnum())
     normalized_position = _sleeper_position(position)
-    normalized_team = str(team or "").upper().strip()
+    normalized_team = normalize_team_code(team)
     if not normalized_name or normalized_position not in allowed_positions or not normalized_team:
         return ("", "", "")
     return normalized_name, normalized_position, normalized_team
