@@ -135,7 +135,12 @@ export function explainStreamerPlay(row: KdstStreamerRow, alternativeRow: KdstSt
     why: row.tier != null
       ? `NWR's ${row.authority} consensus places ${row.playerName} in Tier ${row.tier} at ${row.position} for Week ${row.week}.`
       : `NWR's ${row.authority} consensus ranks ${row.playerName} #${row.ecr} at ${row.position} for Week ${row.week}.`,
-    thisWeekImpact: `${row.rosterStatus} · Week ${row.week}`,
+    // Real display bug found + fixed alongside the STREAMERS table (same
+    // pass): `rosterStatus` is the backend's raw enum ("YOUR_STARTER",
+    // "ROSTERED_ELSEWHERE") -- humanized here too so the DecisionExplain
+    // card's "THIS WEEK" line and the table below it read consistently.
+    // Presentation-only; `row.rosterStatus` itself is unchanged.
+    thisWeekImpact: `${row.rosterStatus.replaceAll("_", " ")} · Week ${row.week}`,
     alternative: alternativeRow
       ? `${alternativeRow.playerName}${alternativeRow.tier != null ? ` (Tier ${alternativeRow.tier})` : ` (#${alternativeRow.ecr})`}`
       : null,

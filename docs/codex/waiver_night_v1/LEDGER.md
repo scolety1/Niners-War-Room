@@ -688,3 +688,247 @@ re-confirm against a real non-FAAB league if/when one becomes available.
 5. Items 1-4 carried over from Worker 1, and Worker 1's disclosed
    FantasyPros top-10-per-query cap / duplicate `TEAM_ALIASES` files --
    still open, unrelated to Work Units 4-6, no change this pass.
+
+## Worker 4 (this pass) -- Work Unit 7: K/DST waiver completeness,
+## Work Unit 8: Improve Team UI live data
+
+Start HEAD `e1a1bb0a` (Worker 3's IR-drop exclusion + real FAAB context,
+above). Real, live, read-only verification against the real Fantasy
+Gamers Sleeper league (`1312983576827920384`, owner `scolety`, 2026-09-15,
+in-season week 2).
+
+### Work Unit 7 result: PASS -- the existing Streamers tab already wires
+### the real K/DST streamer pathway correctly; one real display bug found
+### + fixed (cosmetic, not scoring)
+
+Confirmed FIRST via a direct, isolated `DesktopBackendFacade.
+redraft_kdst_streamer(week=2)` call (before touching the UI at all) that
+Worker 3's suspicion was correct: the separate, real
+`sleeper_streamer_actions` pathway (`fantasypros_kdst_consensus_service.py`,
+already fixed for JAC/JAX and generational suffixes by Workers 1-2) already
+resolves the owner's own real K and DST correctly --
+`Ka'imi Fairbairn (HOU, K) -> rosterStatus YOUR_STARTER, recommendation
+START` and `New England Patriots (NE, DST) -> rosterStatus YOUR_STARTER,
+recommendation START` -- with zero backend changes needed. The Streamers
+tab (`ImproveTeamPage` -> `StreamersTab`, `improve-team.tsx`) already reads
+this exact endpoint via `client.kdstStreamer(week)` and already renders a
+full FantasyPros-ECR-vs-Sleeper-availability table plus a DecisionExplain
+card per position -- this surface was NOT rewired this pass, only verified
+and then cosmetically fixed (below).
+
+**A rostered K/DST can never appear as an ADD candidate -- structurally
+guaranteed, re-confirmed by direct code read of `streamer_actions()`
+(`fantasypros_kdst_consensus_service.py`): the `ADD`/`ALTERNATIVE`
+recommendation branch is only ever reached when `rosterStatus ==
+"AVAILABLE"`; every rostered player falls into `YOUR_STARTER`/`YOUR_ROSTER`
+/`ROSTERED` first.** Live-verified directly in the rendered Chrome table,
+not just read in source (see Work Unit 8 below for the exact rows).
+
+**Real display bug found + fixed:** `rosterStatus`/`recommendation` are
+raw backend enum values with underscores (`"YOUR_STARTER"`,
+`"ROSTERED_ELSEWHERE"`), and were rendered completely unhumanized in two
+places: the STREAMERS table's "Sleeper status"/"Action" columns
+(`buildStreamerColumns` in `improve-team.tsx`, no `render` on the status
+column, `StatusBadge`'s `label` passed the raw enum straight through) and
+the DecisionExplain card's "this week" line
+(`explainStreamerPlay`'s `thisWeekImpact` in `improve-team-explain.ts`).
+Every OTHER enum-shaped value already surfaced in this same file IS
+humanized (`result.writeBehavior.replaceAll("_", " ")`, a few lines above
+the bug) -- this was a real, live-reproduced inconsistency, not a guess:
+before the fix, the real Chrome session showed `"YOUR_STARTER · Week 1"`
+and `"ROSTERED_ELSEWHERE"` verbatim with underscores. **Fixed**,
+presentation-only, in both files (`.replaceAll("_", " ")` on
+`rosterStatus`/`recommendation` immediately before display; the
+underlying enum values themselves, the backend response, and
+`sleeper_streamer_actions`' own scoring/classification logic are
+completely unchanged). Re-verified live after a real `npm run build` +
+hard reload: the same real rows now render `"YOUR STARTER"`,
+`"ROSTERED ELSEWHERE"`, `"AVAILABLE"`, `"ADD"`, `"ALTERNATIVE"`, `"START"`
+with spaces.
+
+**Real live label verification, both positions, both against week 1 and
+week 2 (FantasyPros' top-10-per-query cap means the owner's real DST,
+New England, is only inside the returned set for some weeks -- confirmed
+by direct comparison, not treated as a bug; see Worker 1's own disclosed
+"Data-availability limit" note above)**:
+- Week 1 K table (10 rows): Ka'imi Fairbairn (HOU) row 4 -> `YOUR STARTER`
+  / `START`. Every other rostered K (Brandon Aubrey, Cameron Dicker, Cam
+  Little, Jason Myers, Jake Bates, Chris Boswell) -> `ROSTERED` /
+  `ROSTERED ELSEWHERE`. Every unrostered K (Evan McPherson, Tyler Loop,
+  Chase McLaughlin) -> `AVAILABLE` / `ADD` (top pick only) or
+  `ALTERNATIVE`.
+- Week 1 DST table (10 rows): New England not present in FantasyPros'
+  real top-10 for week 1 (a real provider fact, not a bug); every other
+  row resolves the same `ROSTERED`/`AVAILABLE` pattern correctly
+  (Jacksonville -> `ROSTERED ELSEWHERE`, matching Worker 1's own JAC/JAX
+  fix holding live; Detroit -> `AVAILABLE`/`ADD`).
+- Week 2 K table: Ka'imi Fairbairn (HOU) -> `YOUR STARTER` / `START`
+  again, real live re-confirmation.
+- Week 2 DST table: **New England Patriots (NE) row 9 -> `YOUR STARTER` /
+  `START`** -- the exact real ownership label the directive asked to
+  verify, confirmed live in the rendered UI (not just the facade call).
+  Jacksonville, LAC, PIT, LAR, PHI, SEA, DEN, HOU, BAL all correctly
+  `ROSTERED` / `ROSTERED ELSEWHERE`; Tampa Bay `AVAILABLE`/`ADD`; Green
+  Bay `AVAILABLE`/`ALTERNATIVE`.
+
+### Work Unit 8 result: PASS, all 5 tabs confirmed real/populated, zero
+### console errors
+
+Launched a real production `vite build` + the real Python desktop API
+backend via `desktop/scripts/nwr_release_gate_smoke.ps1 -KeepRunning
+-SleeperLeagueId 1312983576827920384 -SleeperUsername scolety` (backend
+port 18742, vite preview port 1422) -- the same real bridge-smoke harness
+Worker 8 of the prior `prospective_outcomes_v1` cycle used. The script's
+own real, read-only Sleeper before/after byte-diff (league/rosters/users)
+came back **IDENTICAL** -- 0 writes confirmed independently by the
+script itself, not merely trusted. Opened the real app in a real Chrome
+tab (`claude-in-chrome`, `http://127.0.0.1:1422/#/league/
+941b99ade350410391b1b67c0890af79/improve`, the real active Fantasy Gamers
+profile) and exercised all 5 Improve Team tabs:
+
+- **TARGETS**: PASS. `25 TARGETS` badge; real top target `ADD Tyrone
+  Tracy / DROP Marvin Harrison`, `$30-50 MEDIUM urgency`, replacement
+  value +35.1 / marginal utility +9.7 -- exact match to Worker 3's own
+  documented real finding.
+- **ADD/DROP**: PASS, all 3 views. "Available to add" (25 shown, Tyrone
+  Tracy top). "Consider dropping" (13 shown, weakest first -- Marvin
+  Harrison 0.0 marginal utility is the real weakest, matching Worker 3;
+  zero IR/reserve players shown, consistent with the owner's real 0-IR
+  roster and Worker 3's exclusion fix still holding structurally). "Add/
+  Drop pairings" (10 shown, every pairing drops Marvin Harrison --
+  correct, single-weakest-drop-candidate design, unchanged this pass).
+  `Unresolved roster Sleeper IDs: 3451, NE` still correctly shown at the
+  bottom -- this is the SAME real, disclosed gap Worker 3 documented
+  (K/DST invisible to `redraft_waivers` specifically, by design), now
+  cross-verified as expected/non-regressed since Work Unit 7 confirmed
+  the Streamers tab is the correct real channel for K/DST.
+- **FAAB**: PASS. Remaining Budget `$100` of `$100` total, 14 weeks
+  remaining, explicit "SEEDED FROM YOUR REAL LIVE SLEEPER BUDGET" caption
+  -- confirms Worker 3's fix is live, not a coincidental hardcoded
+  default. Top real bid: Tyrone Tracy, `$30-50 MEDIUM urgency`.
+- **STREAMERS**: PASS -- see Work Unit 7 above for the exact real K/DST
+  ownership labels, both weeks.
+- **ALL FREE AGENTS**: PASS. `718 unrostered players` -- exact match to
+  Worker 2's own documented real count. Real spot-checks: Marvin Harrison,
+  Ka'imi Fairbairn, and New England's DST slot are correctly ABSENT (all
+  rostered); genuinely unrostered real players (Jared Goff, Keenan Allen,
+  every D/ST except the 10 actually rostered, etc.) all correctly present
+  and `AVAILABLE`.
+- **Player Drawer**: PASS. Clicked "View" on Jared Goff (a real free
+  agent) from the ALL FREE AGENTS table -- drawer opened with the correct
+  player (`Jared Goff / QB · DET`), `OPENED FROM IMPROVE TEAM` tag,
+  honest `NO STATUS ISSUE` state.
+- **Console errors**: `read_console_messages` (pattern `.`, no filter)
+  returned **zero messages of any kind** (not just zero errors) across
+  the entire session -- every tab visit, both Streamers refreshes (weeks
+  1 and 2), the Add/Drop view-toggle clicks, and the drawer open/close.
+- **Network**: `read_network_requests` confirmed every call this pass's
+  own UI interactions made was to the local NWR backend
+  (`127.0.0.1:18742/api/v1/redraft/...`) -- never directly to Sleeper or
+  FantasyPros from the browser (those calls happen server-side, already
+  covered by the release-gate script's own before/after Sleeper diff).
+
+Backend + vite preview processes this pass started were both killed at
+the end (`taskkill`); `local_exports/release_gate/<timestamp>/` (git-
+ignored) and a throwaway local `python -m http.server` used only to route
+around a same-origin restriction while iframing for wide-viewport
+rendering were not part of any commit.
+
+### Tests (this pass)
+
+- **Modified**: `desktop/apps/redraft/src/improve-team-explain.test.ts`
+  -- 2 new tests (`humanizes the raw backend rosterStatus enum in
+  thisWeekImpact`, `humanizes ROSTERED_ELSEWHERE the same way`), covering
+  the one real bug fixed this pass.
+- `npx vitest run apps/redraft/src/improve-team-explain.test.ts
+  apps/redraft/src/home-action-explain.test.ts
+  apps/redraft/src/attention-center.test.ts`: **48 passed**.
+- Full monorepo `npx vitest run` (from `desktop/`): **425 passed** (up
+  from Worker 3's 423 baseline by exactly the 2 new tests this pass
+  added; 0 failed).
+- `npm run typecheck` (`tsc -b`, both apps): clean, 0 errors, both before
+  and after the fix.
+- No Python/backend files touched this pass -- Work Unit 7 needed no
+  backend fix (the existing pathway already worked correctly), so no
+  Python test suite re-run was needed beyond the read-only facade call
+  used to FIRST verify the pathway (no state written, no fixture/test
+  file touched).
+- `git diff -U0` (added/removed lines only) grepped for every hard-
+  boundary term (`marginal_roster_utility_v2`, `LeagueSnapshot`,
+  `LeagueWorkspaceContext`, `lifecycle_resolver`, `DecisionResultEnvelope`,
+  `PlayerAvailabilityStatus`, and also `sleeper_streamer_actions`/
+  `streamer_actions` to confirm the streamer's own scoring function was
+  never edited): zero matches on the hard-boundary list; the streamer
+  function names appear only in this ledger's prose, not in any diff
+  hunk.
+
+### Zero Sleeper writes, verified 3 ways
+
+1. The release-gate script's own real, independent before/after byte-
+   diff of `league/{id}/rosters` + `users` (fetched directly from
+   `api.sleeper.app`, not through the app) came back **IDENTICAL**.
+2. Structural: no Python file was touched this pass at all (0 backend
+   diff), so the already-established GET-only `SleeperHttpClient`
+   contract (verified by Workers 1-3) is trivially unchanged.
+3. `read_network_requests` in the real Chrome session showed every
+   request this pass's own UI interactions triggered went to the local
+   NWR backend only, never directly to Sleeper/FantasyPros from the
+   browser.
+
+### Backend/model files changed this pass
+
+**None.** Work Unit 7 required zero backend changes -- the real K/DST
+streamer pathway (`sleeper_streamer_actions`,
+`fantasypros_kdst_consensus_service.py`; `redraft_kdst_streamer`,
+`desktop_facade.py`) was already correct and already wired into the
+Streamers tab before this pass began; this pass only verified it live and
+fixed a presentation-only display bug in the frontend.
+
+- **Modified**: `desktop/apps/redraft/src/improve-team.tsx` (added a
+  `humanizeStreamerEnum` helper + `render` on the STREAMERS table's
+  "Sleeper status"/"Action" columns), `desktop/apps/redraft/src/
+  improve-team-explain.ts` (`thisWeekImpact` now humanizes `rosterStatus`
+  the same way), `desktop/apps/redraft/src/improve-team-explain.test.ts`
+  (2 new tests).
+- Nothing in `src/services/`, `src/application/desktop_facade.py`,
+  `src/desktop_api/`, or any other backend/model file touched.
+
+## OPEN ISSUES FOR THE NEXT WORKER (Work Units 9-11: FAAB transaction
+## context, non-Sleeper leagues, decision trace)
+
+1. **`unmatchedSleeperPlayerIds` (the K/DST streamer's OWN unmatched-id
+   diagnostic field, returned by `redraft_kdst_streamer` but never
+   rendered anywhere in the frontend) is internally cross-contaminated
+   between K and DST.** Found this pass while investigating the streamer
+   pathway, NOT fixed (not user-visible, and fixing it would mean editing
+   `sleeper_streamer_actions` itself -- the hard boundary explicitly says
+   verify/wire the streamer, don't touch its scoring/matching logic).
+   Root cause: `sleeper_streamer_actions`'s internal loop filters roster
+   players by `position in SUPPORTED_POSITIONS` (`{K, DST}`, both
+   positions, always) rather than by the position of the specific
+   consensus rows passed in for that call -- so when called for DST rows,
+   every rostered K in the league also gets scanned, inevitably fails to
+   match any DST provider id, and gets added to that call's `unmatched`
+   set (and vice versa for the K call). Confirmed live: calling
+   `redraft_kdst_streamer(week=2)` returned Ka'imi Fairbairn's own Sleeper
+   id (`3451`, a K) inside the **DST** position's `unmatchedSleeperPlayerIds`
+   list, not the K list. This does NOT affect the real rosterStatus/
+   recommendation values shown to the owner (verified live, Work Unit 7
+   above) -- it only pollutes an internal diagnostic list nothing reads.
+   A future worker explicitly scoped to that file could narrow the filter
+   to the row's own target position per call; flagged, not touched.
+2. **No real non-FAAB Sleeper league still exists in this environment.**
+   Worker 3's `faabContext.isFaabLeague === false` path remains verified
+   only via a constructed test fixture, not live. Still open.
+3. **`pair_add_drop`'s "2-3 close drop alternatives" still not built.**
+   Unchanged from Worker 3's note -- optional, would touch
+   `waiver_engine_service.py`.
+4. **`matchupContext` still returns `null`** from
+   `redraft_league_workspace_context()`. Not investigated this pass
+   either (hard-boundary-protected surface); did NOT block Work Unit 8 --
+   Weekly Home was not part of this pass's tab checklist, and nothing in
+   the 5 Improve Team tabs depends on `matchupContext`.
+5. Items 1-5 from Worker 3's own carried-forward list (Worker 1's
+   FantasyPros top-10-per-query cap, duplicate `TEAM_ALIASES` files, the
+   pre-existing `test_desktop_application_api.py` 4-failure baseline)
+   remain open and unrelated to Work Units 7-8, no change this pass.

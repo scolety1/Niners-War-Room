@@ -612,13 +612,28 @@ function streamerPlayerId(row: { position: string; playerName: string }): string
   return `kdst-${row.position}-${row.playerName}`;
 }
 
+// Real display bug found + fixed (Work Unit 7, waiver night V4 pass):
+// `rosterStatus`/`recommendation` are backend enum values with underscores
+// ("YOUR_STARTER", "ROSTERED_ELSEWHERE") and were rendered raw (no
+// `render` on the "Sleeper status" column, and `StatusBadge`'s `label`
+// passed the raw enum through unchanged) -- every OTHER enum-shaped value
+// already surfaced in this same file is humanized before display (see
+// `result.writeBehavior.replaceAll("_", " ")` a few lines below). This is
+// presentation-only: the real underlying ownership classification
+// (`YOUR_STARTER`/`YOUR_ROSTER`/`ROSTERED`/`AVAILABLE`) is unchanged and
+// still verified correct against the real Fantasy Gamers league (Ka'imi
+// Fairbairn K and New England DST both resolve `YOUR_STARTER` live).
+function humanizeStreamerEnum(value: string): string {
+  return value.replaceAll("_", " ");
+}
+
 function buildStreamerColumns(onOpenPlayer: PlayerViewer): TableColumn[] {
   const base: TableColumn[] = [
     { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
     { key: "ecr", label: "FantasyPros ECR", sort: "number", align: "right" },
     { key: "tier", label: "Tier", sort: "number" },
-    { key: "rosterStatus", label: "Sleeper status", sort: "text" },
-    { key: "recommendation", label: "Action", sort: "text", render: (row) => <StatusBadge tone={String(row.recommendation) === "ADD" || String(row.recommendation) === "START" ? "safe" : "review"} label={String(row.recommendation)} /> },
+    { key: "rosterStatus", label: "Sleeper status", sort: "text", render: (row) => humanizeStreamerEnum(String(row.rosterStatus)) },
+    { key: "recommendation", label: "Action", sort: "text", render: (row) => <StatusBadge tone={String(row.recommendation) === "ADD" || String(row.recommendation) === "START" ? "safe" : "review"} label={humanizeStreamerEnum(String(row.recommendation))} /> },
   ];
   return appendPlayerDetailColumn(base, (row) => onOpenPlayer({
     playerId: streamerPlayerId({ position: String(row.position), playerName: String(row.playerName) }),

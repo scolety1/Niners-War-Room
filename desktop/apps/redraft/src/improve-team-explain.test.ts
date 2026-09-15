@@ -144,4 +144,21 @@ describe("explainStreamerPlay", () => {
     expect(explainStreamerPlay(streamerRow({ recommendation: "HOLD" }), null).tone).toBe("neutral");
     expect(explainStreamerPlay(streamerRow({ recommendation: "ROSTERED_ELSEWHERE" }), null).tone).toBe("neutral");
   });
+
+  // Real display bug found + fixed (waiver night V4, Work Unit 7 live
+  // verification): `rosterStatus` is the backend's raw enum
+  // ("YOUR_STARTER", "ROSTERED_ELSEWHERE") and was rendered unhumanized in
+  // both the STREAMERS table and this card's own "this week" line.
+  // Presentation-only fix -- confirmed live against the real Fantasy
+  // Gamers league (Ka'imi Fairbairn K and New England DST both resolve
+  // "YOUR STARTER" now, not "YOUR_STARTER").
+  it("humanizes the raw backend rosterStatus enum in thisWeekImpact (underscore -> space)", () => {
+    const explanation = explainStreamerPlay(streamerRow({ rosterStatus: "YOUR_STARTER" }), null);
+    expect(explanation.thisWeekImpact).toBe("YOUR STARTER · Week 3");
+  });
+
+  it("humanizes ROSTERED_ELSEWHERE the same way", () => {
+    const explanation = explainStreamerPlay(streamerRow({ rosterStatus: "ROSTERED_ELSEWHERE", recommendation: "ROSTERED_ELSEWHERE" }), null);
+    expect(explanation.thisWeekImpact).toBe("ROSTERED ELSEWHERE · Week 3");
+  });
 });
