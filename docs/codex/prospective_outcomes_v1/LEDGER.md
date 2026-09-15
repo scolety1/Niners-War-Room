@@ -1022,3 +1022,305 @@ traces, zero files created by that read).
    constant, ADD_DROP's still-uncomputed `netRosterValuePoints`, and real
    owner (roster 9) WAIVER/ADD_DROP/FAAB outcome data** are all unchanged,
    inherited open items from Worker 1/2/3 -- none were touched this pass.
+
+## Worker 5 (this pass) -- Work Units 13-14: History UI V3 + class-specific
+## summary
+
+Start HEAD `9038d1fd` (Worker 4's closing commit). Not merged, not pushed,
+not deployed. Verified live before writing any code: branch, clean
+worktree, the 452-test targeted slice, `test_desktop_application_api.py`'s
+same 4 pre-existing failures (`test_dynasty_facade_composes_real_governed_
+workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_
+trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_
+contract`, `test_facade_has_no_streamlit_or_app_component_dependency`).
+
+Read in full before writing any code: `PROSPECTIVE_OUTCOME_EVALUATION_
+CONTRACT.md`, Worker 1-4's ledger entries above, all 8 evaluators' real
+`to_dict()` field names and `evaluate_*`/`summarize_*` signatures, and the
+existing History UI V2 (`decision-history.tsx`/`decision-history-format.ts`,
+an earlier session's own prior pass) -- upgraded in place, never rebuilt.
+
+### The real, concrete gap found before writing any UI code
+
+Nothing in `desktop_facade.py` or any HTTP route called `compute_outcome_
+evaluation` or any of the 8 real `evaluate_*`/`summarize_*` functions
+(Worker 1-4's own Open Issue, restated in every prior ledger entry). History
+UI V2's `redraft_decision_trace_history` only ever returned the raw
+ingestion-layer `outcome.detail` (the 8 schema dataclasses), never the
+richer `OutcomeEvaluation` contract (`evaluationStatus`/`evaluationMetrics`/
+`issues`) or any per-class evaluator's own extra fields
+(`lineupOpportunityCostPoints`, `bidRangeCalibration`, etc.). Building
+History UI V3 as specified required real, additive backend wiring first --
+this pass's own judgment call, not a silent scope expansion: the directive's
+own hard-boundary text allows "render their output, don't modify it,"
+and rendering requires the output to actually reach the frontend first.
+
+### New backend module: `src/services/prospective_outcome_history_presentation_v1_service.py`
+
+Pure composition, zero new evaluation logic -- imports and calls the 8 real
+`evaluate_*` functions (never re-implements one), dispatched by
+`record.tool`, and each 8 real `summarize_*` functions for the class
+summary. Two public functions:
+
+- `evaluation_payload_for_record(record)` -- the real per-row evaluation
+  payload for History UI V3, one evaluator's own `to_dict()` verbatim.
+  DRAFT (no real evaluator this cycle, hard boundary) and any unrecognized
+  tool fall back to the base `compute_outcome_evaluation(record).to_dict()`
+  wrapped in the same `{traceId, evaluation}` envelope every evaluator uses.
+- `class_specific_summaries(records)` -- Work Unit 14's real per-class
+  summary, one independent entry per class (`CLASS_SUMMARY_DECISION_TYPES`,
+  9 real values -- the 8 evaluated classes plus DRAFT, which always reports
+  a real, structurally-distinct "deferred to `marginal_roster_utility_v2`"
+  note, never `NOT_ENOUGH_DATA_YET`). TRADE_FINDER and TRADE_PACKAGE_SEARCH
+  are summarized TOGETHER under one shared `"TRADE_FINDER"` entry (Worker
+  3's own established design), never merged with plain TRADE. Every
+  `summarize_*` function's own minimum-sample gate
+  (`MIN_SAMPLE_SIZE_FOR_PER_CLASS_SUMMARY = 20`, Worker 1's own constant) is
+  reused verbatim, never re-derived.
+
+### A real, disclosed bug found and fixed THIS pass -- discovered by the
+### real Chrome dogfood, not by code review alone
+
+Wiring `class_specific_summaries` to a real HTTP response and actually
+rendering it in a real browser tab (not just pytest) surfaced a real bug:
+`desktop_facade.py`'s response envelope runs every dict KEY in the JSON
+response through a generic snake_case/ENUM -> camelCase transform
+(`contracts.py::camel_case_key`) -- the SAME real bug class already
+disclosed and fixed for player-id dict keys in `prospective_outcome_
+schema_v1_service.py` (`_points_by_player_list`, e.g. Sleeper DST code
+`"NE"` -> `"nE"`). Worker 2/3's own `summarize_*_evaluations` functions
+(correct, fully tested in isolation -- pytest never exercises the HTTP
+envelope) build real `statusCounts`/`acceptanceStatusCounts`/
+`packageDispositionCounts` dicts KEYED BY a real enum string
+(`"EVALUATED"` -> mangled to `"eVALUATED"` over HTTP); this pass's own
+first version of `class_specific_summaries` made the exact same mistake at
+its own top level (a dict keyed by `decisionType`, e.g. `"START_SIT"` ->
+`"startSit"`). Real, live proof: a real Chrome tab rendered the Class-
+Specific Summary panel as a visibly EMPTY grid with a real 200 OK network
+response underneath it -- `curl` against the real live endpoint confirmed
+the exact mangled JSON. **Fixed narrowly, at this pass's own new
+presentation layer only** (never touching Worker 2/3's `summarize_*`
+functions' own dict-returning code): `_as_count_pairs` reshapes every
+enum-keyed dict into a `[{status|disposition, count}]` LIST before it
+leaves this module, and `class_specific_summaries` itself now returns a
+LIST (each entry already carrying its own real `decisionType` field)
+instead of a dict keyed by decisionType. Re-verified live in the same
+Chrome tab after the fix: all 9 real class cards render correctly. A new
+test (`test_status_counts_and_disposition_counts_never_carry_a_raw_enum_
+keyed_dict`) proves this can't silently regress.
+
+### Facade/HTTP wiring (additive only)
+
+- `_decision_trace_history_event_payload` (existing function) gains one new
+  key, `evaluationDetail` -- the real per-row payload from
+  `evaluation_payload_for_record`. Every pre-existing key is unchanged.
+- New facade method `redraft_decision_trace_outcome_summary()` -- loads the
+  active profile's own real ledger, calls `class_specific_summaries`, scoped
+  identically to `redraft_decision_trace_history` (same active-profile
+  requirement, same never-cross-league guarantee, proven by a real test).
+- New route `GET /api/v1/redraft/decision-trace-outcome-summary` wired in
+  `src/desktop_api/server.py`, following the exact existing pattern.
+
+### History UI V3 (Work Unit 13)
+
+`desktop/apps/redraft/src/decision-history.tsx` /
+`decision-history-format.ts` upgraded IN PLACE (V2's `hasOutcomeDetail`/
+`buildOutcomeDetailSections`/`OwnerActionCell`/owner-action capture flow all
+reused unchanged). The exact 6 columns: DATE / LEAGUE (new in V3 -- V2
+omitted it, relying on the page's own single-league scoping) / DECISION
+TYPE / NWR RECOMMENDATION / OWNER ACTION / OUTCOME STATUS. Outcome Status
+now shows the real `OutcomeEvaluation.evaluationStatus` (the 5 real, closed
+values -- `PENDING_OUTCOME`/`PENDING_WINDOW`/`EVALUATED`/
+`INSUFFICIENT_DECISION_CONTEXT`/`NOT_APPLICABLE`, confirmed directly from
+`EVALUATION_STATUSES` in `prospective_outcome_evaluation_v1_service.py`,
+never the directive's own paraphrased guesses and never a parallel
+vocabulary), replacing V2's ledger-append status
+(`RECOMMENDED`/`OWNER_ACTION_RECORDED`/`OUTCOME_RECORDED`, which answered
+"has this been appended to" rather than "could this be evaluated" -- no
+longer shown anywhere on this page). A real, honest one-line class-specific
+headline (`formatClassSpecificHeadline`) sits under the badge, built ONLY
+from real evaluator fields -- verified live to produce the directive's own
+worked examples verbatim: `"+4.8 pts over chosen starter"` (START_SIT),
+`"Won at $18; suggested $15-$21"` (FAAB), `"Rejected — no evaluation"` /
+`"Accepted; net +6.5 pts over 4wk horizon"` (TRADE -- the "still open"
+variant is real too, rendered whenever `netSubsequentPointsDeltaPoints` is
+genuinely still `null`), `"Recommended 12.0 actual pts; current roster K
+scored 6.0"` (K/DST). The expandable "View outcome detail" affordance
+(`buildEvaluationDetailSections`) now renders from the real
+`evaluationDetail` payload for all 8 classes (an `Evaluation` section with
+the real window/status/issues, plus each class's own real fields -- FAAB's
+two axes stay genuinely separate sections, TRADE's realized-outcome section
+only appears for an actually-accepted trade), falling back to V2's own raw
+`outcome.detail` rendering only for a legacy event with no `evaluationDetail`
+at all. **No aggregate "NWR ACCURACY: X%" figure anywhere -- confirmed by a
+real test that greps the rendered output for forbidden terms.**
+
+### Class-specific summary (Work Unit 14)
+
+A new `ClassSummaryPanel` on the SAME History page (not a new page/app),
+fetching `redraftDecisionTraceOutcomeSummary()` and rendering one
+independent card per real class (`buildClassSummaryDisplay`), each reading
+ONLY that class's own real `summarize_*` fields -- proven live: at 24 real
+EVALUATED START_SIT samples (above the real 20-sample threshold), the card
+shows a real computed `"Average lineup opportunity cost (regret): +0.81
+pts"`; every other class, genuinely below threshold in the same real
+fixture data, honestly shows `"NOT ENOUGH DATA YET (n=X, need 20)"` per
+axis, never a number computed from too few points. TRADE's real
+`acceptanceStatusCounts` (`"ACCEPTED: 1, REJECTED: 1"`) render as raw counts,
+never a rate -- matching Worker 3's own standing prohibition. DRAFT renders
+its structurally-distinct deferred note. **Never one combined grid/score --
+each card is visually and structurally independent, confirmed by a
+real test that asserts no card ever references another class's own
+decisionType or numeric value.**
+
+### Real-data honesty (confirmed, not merely asserted)
+
+The real production AppData trace store's own confirmed-empty state
+(Worker 4's finding) is unchanged and is NOT contradicted by anything this
+pass renders -- every real number shown live in this pass's own Chrome
+dogfood (the `+0.81 pts` START_SIT mean, the `+4.8`/`Won at $18` headlines,
+etc.) comes from a clearly-disclosed FIXTURE root
+(`scripts/build_history_ui_v3_demo_root_v1.py`, its own module docstring
+states this explicitly), never the real production store. That script was
+never pointed at the real owner AppData path. Against the real, empty
+production store, every class on this page will honestly show
+`NOT_ENOUGH_DATA_YET`/`PENDING_OUTCOME` -- exactly the directive's own
+stated expectation, not a defect.
+
+### New demo/dogfood script: `scripts/build_history_ui_v3_demo_root_v1.py`
+
+Zero network I/O (every `ingest_*_outcome` call is a pure function over
+fabricated, schema-shaped JSON) -- builds one real, isolated redraft
+profile with 35 real trace records spanning: 24 real EVALUATED START_SIT
+traces (22 bulk + the 2 directive-worked-example ones, clearing the real
+20-sample summary threshold live), one genuinely `PENDING_OUTCOME` trace,
+one genuinely `INSUFFICIENT_DECISION_CONTEXT` legacy bare-outcome trace, one
+real accepted + one real rejected TRADE, one accepted TRADE_FINDER, one
+K_STREAMER + one DST_STREAMER (both matching the directive's own worked
+example numbers exactly), one WAIVER won + one WAIVER not-submitted, one
+FAAB win (`$18` vs suggested `$15-$21`, the directive's own exact example),
+one ADD_DROP. Writes only to an isolated temp `redraft_root`, never the
+real production AppData store. A committed disclosure summary lives at
+`docs/codex/prospective_outcomes_v1/history_ui_v3_demo_v1/summary.json`.
+
+### Real Chrome dogfood (not just unit tests)
+
+A real, live desktop-API standalone process (`scripts/run_nwr_desktop_api.py
+--port 18742 --mode redraft`, `NWR_REDRAFT_HOME` pointed at the demo root
+above) plus a real Vite dev server (`--port 1422`) plus a real Chrome MCP
+tab, exactly the pattern the "Draft Room GUI consolidation" session
+established (`HashRouter`, real route `#/decision-history` ->
+auto-redirects to `#/league/<profileId>/decision-history`). Confirmed live:
+all 35 rows render with real headlines matching every one of the
+directive's own worked examples verbatim (quoted above); the FAAB row's
+expandable detail renders both axes correctly (`Player decision quality`/
+`Bid range calibration` as genuinely separate sections); all 9 class-summary
+cards render (only after the bug fix above); zero console errors on a
+clean page load (one transient error WAS observed mid-development, tied to
+a Vite HMR hot-update race against stale in-memory state from BEFORE the
+backend bug fix was deployed -- confirmed self-resolved by a full reload,
+not present in the final code, disclosed here rather than omitted). Both
+dev processes were cleanly shut down afterward (`netstat` confirmed ports
+1422/18742 clear).
+
+### Tests
+
+- New: `tests/test_prospective_outcome_history_presentation_v1_service.py`
+  -- 21 passed (dispatch correctness for all 8 classes + DRAFT/unknown-tool
+  fallback, per-class summary independence, TRADE_FINDER/
+  TRADE_PACKAGE_SEARCH combination, the enum-keyed-dict bug fix proven at
+  the source, and 8 facade-level wiring tests including a real
+  never-leaks-across-leagues check for the new summary endpoint).
+- Targeted regression slice (`pytest -k "decision_trace or
+  prospective_outcome or live_player_intelligence or
+  boundary_property_reliability or composition or player_availability"`):
+  **473 passed, 0 failed** (452 pre-existing + 21 new this pass).
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures documented in every prior worker's own
+  baseline. Re-confirmed live after this pass's changes.
+- Frontend: `desktop/apps/redraft/src/decision-history-format.test.ts`
+  extended with a full History UI V3 / Work Unit 14 test block (55 tests in
+  that file total, up from 31) -- `evaluationStatusLabel`/`evaluationStatusTone`
+  over the real closed 5-status set, `formatClassSpecificHeadline` for
+  every one of the 8 classes (including the directive's own exact worked
+  examples), `buildOutcomeDetailSections`'s new evaluationDetail-sourced
+  path (with a test proving it's preferred over the legacy raw-detail path
+  when both are present), and `buildClassSummaryDisplay` (threshold gating,
+  cross-class independence, DRAFT's structural distinctness, the real
+  `{status, count}` list shape).
+- Full monorepo `npx vitest run` (from `desktop/`): **410 passed, 28 test
+  files, 0 failed.**
+- `npm run typecheck` (`tsc -b apps/dynasty/tsconfig.json apps/redraft/
+  tsconfig.json`): **clean, zero errors.**
+- Hard-boundary grep (`marginal_roster_utility_v2`, `LeagueSnapshot`,
+  `LeagueWorkspaceContext`, `lifecycle_resolver`, `DecisionResultEnvelope`,
+  `PlayerAvailabilityStatus`) across this pass's ENTIRE diff: every match is
+  disclosure prose (this module's own docstring, a DRAFT summary note, a
+  pre-existing `leagueSnapshotId` field name) -- zero real imports/
+  modifications of any hard-boundary module or semantic.
+
+### Backend/model files changed this pass
+
+- **New**: `src/services/prospective_outcome_history_presentation_v1_
+  service.py`, `tests/test_prospective_outcome_history_presentation_v1_
+  service.py`, `scripts/build_history_ui_v3_demo_root_v1.py`,
+  `docs/codex/prospective_outcomes_v1/history_ui_v3_demo_v1/summary.json`.
+- **Modified (additive only)**: `src/application/desktop_facade.py`
+  (`_decision_trace_history_event_payload` gains one new key,
+  `evaluationDetail`; new method `redraft_decision_trace_outcome_summary`),
+  `src/desktop_api/server.py` (one new route constant + GET dispatch line).
+  **None of the 8 evaluators' or the orchestrator's own computation logic
+  was touched** -- every evaluator/summarizer function is called, never
+  edited (the one genuine bug fix lives entirely in this pass's own new
+  module, reshaping OUTPUT for the frontend, never evaluation logic).
+- **Frontend, modified**: `desktop/packages/contracts/src/index.ts` (new
+  `OutcomeEvaluation`/8 evaluator-payload/`DecisionClassSummary` types, all
+  additive), `desktop/packages/api-client/src/index.ts` (new
+  `redraftDecisionTraceOutcomeSummary` method), `desktop/apps/redraft/src/
+  decision-history-format.ts` (History UI V3 additions, V2's own exports
+  unchanged), `desktop/apps/redraft/src/decision-history.tsx` (League
+  column, evaluationStatus-based Outcome Status cell, new
+  `ClassSummaryPanel`), `desktop/apps/redraft/src/redraft.css` (new rules,
+  additive), `desktop/apps/redraft/src/decision-history-format.test.ts`
+  (extended, not replaced).
+
+## OPEN ISSUES FOR THE NEXT WORKER (Work Units 15+18: real outcome
+## ingestion for matured recommendations + boundary property test pack V2)
+
+1. **The real production trace store still has zero decision traces
+   recorded in it** -- unchanged from Worker 4's own finding; nothing this
+   pass did writes to or reads from that real path. History UI V3 and the
+   class-specific summary are real and ready the moment real traces start
+   accumulating there; today they will honestly show
+   `PENDING_OUTCOME`/`NOT_ENOUGH_DATA_YET` throughout.
+2. **The orchestrator (`prospective_outcome_ingestion_orchestrator_v1_
+   service.py`, Worker 4) is still not wired to run automatically** -- it
+   exists and is tested/demoed via its own CLI script, but nothing schedules
+   or triggers it from the live app. Work Unit 15's own "real outcome
+   ingestion for matured recommendations" is the natural place to close
+   this, now with a real, live-verified UI on the other end to actually see
+   the results land.
+3. **Identity resolution for WAIVER/FAAB/ADD_DROP/K_STREAMER/DST_STREAMER/
+   TRADE-family** remains the real, concrete blocker to real (non-
+   insufficient-context) automatic evaluation for those six classes --
+   unchanged, inherited from Worker 1/3/4. History UI V3 will correctly
+   render `INSUFFICIENT_DECISION_CONTEXT` for these once real traces exist,
+   which is the honest, expected behavior until that resolver is built.
+4. **TRADE/TRADE_FINDER/TRADE_PACKAGE_SEARCH have no real week to anchor a
+   maturity check to** -- unchanged from Worker 4's own Open Issue 2.
+5. **`owner_roster_id` resolution is a real, caller-supplied mapping, not a
+   general resolver** -- unchanged from Worker 4's own Open Issue 3.
+6. **A real, disclosed presentation-layer bug class was found and fixed
+   THIS pass** (enum-keyed dicts mangled by the HTTP camelCase-key
+   transform) -- fixed at this pass's own new module only. Any FUTURE
+   backend surface that puts a real enum/status string as a JSON object KEY
+   (not just this cycle's own modules) is at risk of the exact same bug;
+   worth a wider, deliberate audit some session, though out of this pass's
+   own scope to do exhaustively.
+7. **A real ROS window, the duplicated `MIN_SAMPLE_SIZE_FOR_PER_CLASS_*`
+   constant, ADD_DROP's still-uncomputed `netRosterValuePoints`, and real
+   owner (roster 9) WAIVER/ADD_DROP/FAAB outcome data** are all unchanged,
+   inherited open items from Worker 1/2/3 -- none were touched this pass.
+8. **Boundary property test pack V2** (Work Unit 18, per the directive's own
+   numbering) was not started this pass, per this pass's own explicit
+   Work Unit 13-14 assignment.
