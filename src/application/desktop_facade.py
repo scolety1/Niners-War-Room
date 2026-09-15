@@ -3485,15 +3485,61 @@ class DesktopBackendFacade:
             week=week,
         )
         waivers_status_versions = self._status_versions_snapshot()
+        # NWR Waiver Night V1 (Work Unit 11 verification pass, 2026-09-15):
+        # two real, previously-undocumented decision-trace completeness
+        # gaps found while verifying the WAIVER/FAAB traces against the
+        # directive's required-field list (league, week, roster/free-agent
+        # snapshot, weekly-projection version, ROS version, recommendation,
+        # DROP, FAAB range, alternatives, trace ID):
+        # (1) `recommendation` never included the paired DROP candidate,
+        #     even though `pairings` (built above, unchanged) already has
+        #     it -- a real WAIVER trace only ever recorded "what to add",
+        #     never "what to drop", losing half of the recommendation this
+        #     endpoint actually made. Also meant two genuinely different
+        #     recommendations (same top add, different drop -- e.g. the
+        #     roster changed on the bench only) could incorrectly
+        #     fingerprint as identical for dedup purposes.
+        # (2) `data_versions` only ever carried `{"mode": mode}` -- never
+        #     the ROS ranking's own real provenance (`ranking.
+        #     projection_sha256`/`generated_at_utc`, already computed above,
+        #     the same field START_SIT's own trace and the Monte Carlo
+        #     draft-room calls already treat as the real ranking-version
+        #     signal at other call sites in this file) or, for THIS_WEEK
+        #     mode, the real weekly-projection source/freshness already
+        #     computed into `weekly_provider_health` above. Both are purely
+        #     additive to `data_versions` (never hashed into the dedup
+        #     fingerprint -- see `_content_fingerprint`, which only hashes
+        #     tool/week/roster/free-agent state/recommendation/alternatives
+        #     -- so this fix cannot affect dedup behavior, only trace
+        #     completeness).
+        waivers_top_pairing = next(iter(pairings), None)
+        waivers_data_versions = {"mode": mode, "rosProjectionSha256": ranking.projection_sha256}
+        if mode == "THIS_WEEK" and weekly_provider_health:
+            waivers_data_versions["weeklyProjectionSource"] = str(
+                weekly_provider_health.get("provider") or ""
+            )
+            waivers_data_versions["weeklyProjectionRetrievedAt"] = str(
+                weekly_provider_health.get("retrievedAt") or ""
+            )
         waiver_trace_id = self._record_decision_trace_safe(
             profile_id=selected.profile_id, league_id=league_id, season=selected.season, week=week,
             tool="WAIVER", engine_version="waiver_engine_service-v1",
-            data_versions={"mode": mode},
+            data_versions=waivers_data_versions,
             roster_state_player_ids=list(resolved.canonical_player_ids),
             free_agent_state_player_ids=[candidate.sleeper_player_id for candidate in add_candidates],
             recommendation={
                 "topAdd": add_candidates[0].player_name if add_candidates else None,
                 "topAddCanonicalId": add_candidates[0].canonical_player_id if add_candidates else None,
+                "dropPlayerName": (
+                    waivers_top_pairing.drop.player_name
+                    if waivers_top_pairing and waivers_top_pairing.drop
+                    else None
+                ),
+                "dropCanonicalPlayerId": (
+                    waivers_top_pairing.drop.canonical_player_id
+                    if waivers_top_pairing and waivers_top_pairing.drop
+                    else None
+                ),
             },
             alternatives=[
                 {"playerName": candidate.player_name, "marginalUtility": candidate.marginal_utility}
@@ -3508,7 +3554,7 @@ class DesktopBackendFacade:
                 self._record_decision_trace_safe(
                     profile_id=selected.profile_id, league_id=league_id, season=selected.season,
                     week=week, tool="FAAB", engine_version="waiver_engine_service-v1",
-                    data_versions={"mode": mode},
+                    data_versions=waivers_data_versions,
                     roster_state_player_ids=list(resolved.canonical_player_ids),
                     recommendation={
                         "playerName": top_bid.player_name,
@@ -3516,6 +3562,15 @@ class DesktopBackendFacade:
                         "bidHighDollars": top_bid.bid_high_dollars,
                         "urgency": top_bid.urgency,
                     },
+                    alternatives=[
+                        {
+                            "playerName": candidate.player_name,
+                            "bidLowDollars": faab_by_id[candidate.canonical_player_id].bid_low_dollars,
+                            "bidHighDollars": faab_by_id[candidate.canonical_player_id].bid_high_dollars,
+                        }
+                        for candidate in add_candidates[1:5]
+                        if candidate.canonical_player_id in faab_by_id
+                    ],
                     league_snapshot_id=waivers_league_snapshot_id,
                     status_versions=waivers_status_versions,
                 )

@@ -321,7 +321,28 @@ function LeagueSyncTab({
       <dl className="health-list">
         <div><dt>Platform</dt><dd>{providerFormat(profile)}</dd></div>
         <div><dt>Sync status</dt><dd>{context ? syncHealthLabel(context.syncStatus) : contextWorking ? "Reading…" : "Unavailable"}</dd></div>
-        <div><dt>Last synced</dt><dd>{context?.syncAsOf ?? "unavailable"}</dd></div>
+        {/* WU10 honesty fix (2026-09-15): `syncAsOf` is the PROFILE
+            record's own `updated_at_utc` (see `redraft_league_workspace_
+            context`'s `sync_as_of=selected.updated_at_utc` -- unchanged,
+            hard-boundary-protected `LeagueWorkspaceContext` semantics, not
+            touched here). For a Sleeper profile that is a genuine "last
+            synced" moment. For a Local/ESPN profile it is only ever the
+            last time ANY part of the profile record changed (a scoring
+            edit, a rename, a K/DST-reuse fix) -- it can be newer than the
+            actual roster/draft data and would mislead an owner into
+            thinking their roster is current. Labeled honestly per
+            provider instead of unconditionally as "Last synced". */}
+        <div><dt>{isSleeper ? "Last synced" : "Profile record last changed"}</dt><dd>{context?.syncAsOf ?? "unavailable"}</dd></div>
+        {!isSleeper ? (
+          <div>
+            <dt>Roster last known from</dt>
+            <dd>
+              {data.draftBoard?.updatedAtUtc
+                ? `Draft results as of ${data.draftBoard.updatedAtUtc}${data.draftBoard.complete ? "" : " (draft not marked complete)"}`
+                : "No draft data recorded for this profile yet"}
+            </dd>
+          </div>
+        ) : null}
         <div><dt>Current week</dt><dd>{context ? formatCurrentWeek(context.currentWeek) : "unavailable"}</dd></div>
       </dl>
       {context?.issues.length ? <p className="copy-muted">{context.issues.join(" · ")}</p> : null}
@@ -333,7 +354,16 @@ function LeagueSyncTab({
           <Button disabled={resyncWorking} icon="activity" onClick={() => void resync()}>{resyncWorking ? "Refreshing…" : "Refresh from Sleeper"}</Button>
         </div>
       ) : (
-        <EmptyState icon="alert" message="Local and ESPN profiles have no live connection to refresh -- scoring and roster changes are made manually in Settings." title="No live sync for this provider" />
+        // WU10 honesty fix (2026-09-15): the previous message here claimed
+        // "roster changes are made manually in Settings" -- false. Settings
+        // (ProfileEditor/editableProfile, profile.tsx) only edits league
+        // name/roster SLOT COUNTS/scoring/draft rules; it has no field for
+        // which specific players are on the roster. Once a Local/ESPN
+        // draft is complete, NWR has no mechanism anywhere (live sync,
+        // CSV import, or manual editor) to record a subsequent add/drop/
+        // trade -- the roster shown anywhere in NWR for this league is
+        // frozen at draft results. Do not claim otherwise.
+        <EmptyState icon="alert" message="Local and ESPN profiles have no live connection to refresh. NWR does not track waiver, trade, or free-agent transactions for these leagues -- your roster here reflects draft results only, as of the timestamp above. Settings (below) can only change league scoring and roster slot structure, not who is currently on your team." title="No live sync for this provider" />
       )}
     </Panel>
     {syncCategory ? (

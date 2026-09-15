@@ -664,8 +664,24 @@ export function MyRosterContent({ client, data }: { client: NwrApiClient; data: 
     ),
     [openPlayerDetail],
   );
+  // WU10 honesty fix (2026-09-15): tell the owner WHERE their last-known
+  // roster actually lives (Draft Room's own board, real `updatedAtUtc`)
+  // instead of just a dead end -- there is no live sync or manual roster
+  // editor for these providers, so this is genuinely the only real
+  // roster data NWR has for this league.
+  const draftRosterAsOf = data.draftBoard?.updatedAtUtc;
   return <>
-    {!isSleeper ? <EmptyState title="Sleeper league required" message="ESPN and local profiles have no live roster source." /> : null}
+    {!isSleeper ? (
+      <EmptyState
+        title="Sleeper league required"
+        message={
+          draftRosterAsOf
+            ? `ESPN and local profiles have no live roster source. NWR's last known roster for this league is from draft results as of ${draftRosterAsOf}; it does not reflect any waiver, trade, or free-agent move since.`
+            : "ESPN and local profiles have no live roster source, and no draft data has been recorded for this profile yet."
+        }
+        action={<Link to="/draft-room-v2">Open Draft Room (My Team)</Link>}
+      />
+    ) : null}
     {working ? <p className="draft-feedback">Reading current Sleeper roster…</p> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {result?.rankingWarning ? <div className="alert-strip"><strong>Ranking unavailable</strong><span>{result.rankingWarning}</span></div> : null}

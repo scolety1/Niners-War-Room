@@ -932,3 +932,302 @@ fixed a presentation-only display bug in the frontend.
    FantasyPros top-10-per-query cap, duplicate `TEAM_ALIASES` files, the
    pre-existing `test_desktop_application_api.py` 4-failure baseline)
    remain open and unrelated to Work Units 7-8, no change this pass.
+
+## Worker 5 (this pass) -- Work Unit 10: non-Sleeper leagues, Work Unit 11:
+## waiver decision trace
+
+Start HEAD `ad8c8872` (Worker 4's K/DST streamer humanization fix, above).
+
+### Work Unit 10 result: PASS, with two real honesty bugs found + fixed
+
+**Real profile inventory.** The worktree's own `local_exports/redraft_v1`
+(2 profiles: real Fantasy Gamers Sleeper test data + one throwaway
+"Isolation Check Local" fixture) is NOT the owner's real profile store --
+per repo memory, that lives at
+`%LOCALAPPDATA%\com.ninerswarroom.redraft\state\redraft\profiles`. Read
+that real store directly (6 profile files):
+
+| profile_id | league name | provider | team_count | draft picks | draft updated_at_utc | classification |
+|---|---|---|---|---|---|---|
+| `4c5f0476...` | Fantasy Gamers | sleeper | 10 | 150/150 (complete) | 2026-09-09 | **LIVE_SYNC_SUPPORTED** -- real, working live read (Workers 1-4 exhaustively verified this exact mechanism this session) |
+| `fb1c4940...` | 2026 KHA High Stakes League | espn | 16 | 157/240 (real real-world draft, complete per memory) | 2026-09-03 | **STALE/NEEDS_OWNER_UPDATE** |
+| `4b4a9902...` | 403 N 18th and friends | espn | 8 | 118/118 (complete) | 2026-09-08 | **STALE/NEEDS_OWNER_UPDATE** |
+| `eafa580e...` | Tester | espn | 10 | 135 | 2026-09-09 | dev/QA artifact, not a real owner league (name says so) -- flagged below, NOT fixed (out of scope: this is currently the ACTIVE profile, which is odd but a product/data decision, not a bug this pass introduces or should silently "fix" by switching it) |
+| `f92cff21...` | 2026 KHA High Stakes League – TEST | espn | 16 | 9 | 2026-09-06 | dev/QA artifact (name says so) |
+| `16d2e550...` | 2026 KHA High Stakes League – PRACTICE 20260905 | local | 16 | 6 | 2026-09-06 | dev/QA artifact (name says so) |
+
+Real owner leagues: **3** (Fantasy Gamers/Sleeper, KHA/ESPN, 403 N
+18th/ESPN). The other 3 are dev/QA leftovers (`Tester`/`TEST`/`PRACTICE`
+naming makes this unambiguous, not a guess) -- not touched, not deleted
+(deletion wasn't asked for and risks destroying real test fixtures another
+session may still want).
+
+**ESPN live-integration check (real, not assumed):** grepped the entire
+backend for `SWID`/`espn_s2`/`fantasy.espn.com`/any ESPN HTTP client class
+-- zero real integration exists anywhere (only a manual-setup checklist
+doc and unrelated `nflverse`/data-health references that happen to contain
+the substring "espn"). Confirmed no hack/scrape/stub exists and none was
+added. `_active_sleeper_context()` (`desktop_facade.py`) already
+structurally refuses ESPN/local profiles for every in-season surface
+(`redraft_my_roster`, `redraft_waivers`, Trade Analysis/Finder, weekly
+lineup, etc.) with `SLEEPER_REDRAFT_PROFILE_REQUIRED` (409) -- this is
+correct, honest, pre-existing behavior, unchanged.
+
+**Real bug 1 (fixed):** `league.tsx`'s `LeagueSyncTab` (League workspace ->
+Sync tab) told the owner, for any Local/ESPN profile: *"scoring and roster
+changes are made manually in Settings."* This is false. Settings
+(`ProfileEditor`/`editableProfile` in `profile.tsx`, confirmed by direct
+read) only edits league name, roster SLOT COUNTS (qb/rb/wr/te/flex/k/dst/
+benchSize -- structural limits), scoring rules, and draft rules -- there is
+no field anywhere in this app for which SPECIFIC PLAYERS are on a Local/
+ESPN roster. Once a draft is complete, the pick-correction UI (the only
+mechanism that ever writes to a draft board's roster) is structurally
+disabled (`canRecordPick` requires `!board.complete` in LIVE_READ_ONLY mode
+or `ownerTurn` in MOCK mode, both false post-draft -- confirmed by direct
+code read, `draft-room-v2.tsx`). **There is no live sync, CSV import, or
+manual editor anywhere in this codebase that can record a post-draft
+add/drop/trade for a Local/ESPN league.** The message pointed the owner at
+a nonexistent capability. **Fixed**, presentation-only, in
+`desktop/apps/redraft/src/league.tsx`: the EmptyState now states plainly
+that NWR does not track transactions for these providers and that Settings
+only changes scoring/roster structure, not team composition.
+
+**Real bug 2 (fixed):** the same panel's "Last synced" row showed
+`context.syncAsOf` unconditionally, labeled "Last synced" for every
+provider. `syncAsOf` is `LeagueWorkspaceContext`'s `sync_as_of`, which
+`redraft_league_workspace_context()` sets to `selected.updated_at_utc` --
+the PROFILE record's own last-modified timestamp (this is unchanged,
+hard-boundary-protected `LeagueWorkspaceContext` backend logic; NOT touched
+this pass). For a Sleeper profile that field really is refreshed on every
+resync, so "Last synced" is honest. For a Local/ESPN profile it is only
+ever "the last time ANY part of the profile record changed" (e.g. a
+scoring edit, a rename, an unrelated K/DST-reuse fix from a prior session)
+-- reproducibly demonstrated live from the real store above: 403 N 18th's
+profile `updated_at_utc` is `2026-09-09T00:48:33Z`, a full day AFTER its
+draft board's real last pick (`2026-09-08T02:50:29Z`), because of an
+unrelated later Settings-adjacent fix, not because any roster data changed.
+Labeling that "Last synced" would tell the owner their roster reflects
+09-09 state when the real roster data (draft results) is frozen as of
+09-08 and has had zero owner-visible refresh mechanism since. **Fixed**,
+presentation-only: relabeled to "Profile record last changed" for
+non-Sleeper profiles (keeps "Last synced" only for Sleeper, where it's
+true), and added a new, honestly-labeled "Roster last known from" row for
+non-Sleeper profiles using the DRAFT BOARD's own real `updatedAtUtc`
+(`data.draftBoard.updatedAtUtc`, already loaded as part of
+`RedraftBootstrap` for every provider, an existing field this pass did not
+add -- `redraft_draft_room_v1_service.py`'s `build_draft_room_payload` was
+not touched) -- the one real, accurate "as of" timestamp this app actually
+has for a frozen non-Sleeper roster.
+
+**Also fixed, same root cause, different surface:** `in-season.tsx`'s
+`MyRosterContent` (My Roster page/tab) already correctly blocked non-
+Sleeper profiles ("ESPN and local profiles have no live roster source" --
+true, left as-is), but gave the owner no path forward. Added the same real
+`data.draftBoard.updatedAtUtc` timestamp to that message plus a link to
+Draft Room (`/draft-room-v2`, where the real, frozen `myRoster` from the
+draft board IS actually viewable) -- the simplest already-existing real
+path to "the last roster NWR actually knows about," since no refresh path
+exists.
+
+Neither fix touches `LeagueWorkspaceContext`'s backend semantics, the
+draft-room service's scoring/matching logic, or any hard-boundary item --
+both are presentation-only, using fields the backend already returns.
+
+### Work Unit 11 result: PASS, with two real trace-completeness bugs found
+### + fixed, dedup re-verified live and holding
+
+Read `in_season_decision_trace_service.py` in full (NOT modified --
+confirmed by `git diff`, zero lines changed in that file). Checked the
+directive's exact required-field list against the real WAIVER/FAAB trace
+calls in `desktop_facade.py`'s `redraft_waivers` (the method Workers 3-4
+both touched this session):
+
+- league/week/roster-snapshot/free-agent-snapshot/trace-ID: already
+  correctly captured (`league_id`, `week`, `resolved.canonical_player_ids`,
+  `[candidate.sleeper_player_id for candidate in add_candidates]`, real
+  `trace_id` returned by `_record_decision_trace_safe`).
+- **Real bug found (fixed): `recommendation` never included the DROP.**
+  Only `topAdd`/`topAddCanonicalId` were ever recorded on the WAIVER
+  trace, even though `pair_add_drop` (unchanged) already computes the
+  paired drop candidate a few lines above the trace call -- a real WAIVER
+  recommendation is "add X, drop Y," and the ledger only ever recorded
+  half of it. **Fixed**: added `dropPlayerName`/`dropCanonicalPlayerId`
+  to the WAIVER trace's `recommendation` (`None` when no drop candidate
+  exists, e.g. an empty roster -- never fabricated). This also closes a
+  latent dedup-accuracy gap: two genuinely different recommendations
+  (same top add, different drop, e.g. the bench changed) would previously
+  fingerprint identically and incorrectly dedup; now they correctly
+  differ.
+- **Real bug found (fixed): `data_versions` never carried a "weekly-
+  projection version" or "ROS version."** Both WAIVER and FAAB always
+  passed `data_versions={"mode": mode}` only -- contrast with the
+  already-existing START_SIT trace a few hundred lines above, which
+  already includes `weekly_projection_source`. **Fixed**: both traces now
+  add `rosProjectionSha256` (`ranking.projection_sha256`, already computed
+  in scope -- the same real ranking-provenance field other call sites in
+  this file, e.g. the Monte Carlo draft-room calls, already treat as the
+  authoritative ranking-version signal), and, for THIS_WEEK mode only,
+  `weeklyProjectionSource`/`weeklyProjectionRetrievedAt` from the
+  already-computed `weekly_provider_health` dict. Both additions are
+  purely additive to `data_versions`, which `_content_fingerprint`
+  (unchanged) never hashes -- confirmed by direct code read that this
+  cannot affect dedup behavior, only trace completeness.
+- **Real gap found (fixed): the FAAB trace never recorded `alternatives`**
+  (the call site never passed the parameter, defaulting to empty) despite
+  `faab_by_id` already having every other real add candidate's bid range
+  available. **Fixed**: FAAB trace now includes up to 4 real bid-range
+  alternatives (`playerName`/`bidLowDollars`/`bidHighDollars` for
+  `add_candidates[1:5]`).
+- **FAAB range**: already correctly captured on the FAAB trace itself
+  (`bidLowDollars`/`bidHighDollars`/`urgency`) -- unchanged, confirmed
+  correct.
+
+**Dedup re-verified live, specifically for the newly-fixed waiver/FAAB
+paths, per the directive's explicit ask.** Real, live test against the
+real Fantasy Gamers Sleeper league (`1312983576827920384`, via this
+worktree's own already-active real profile
+`941b99ade350410391b1b67c0890af79` in `local_exports/redraft_v1`,
+2026-09-15, in-season week 2):
+- Called `redraft_waivers(mode="REST_OF_SEASON")` **3x in immediate
+  succession**: all 3 calls returned the SAME `traceId`
+  (`31789fc1-219a-...`); the ledger gained exactly **1** new WAIVER line
+  and **1** new FAAB line for that scope, not 3.
+- Called `redraft_waivers(mode="THIS_WEEK", week=2)` **2x in immediate
+  succession**: both calls returned the SAME `traceId`
+  (`133ea933-74d4-...`); the ledger gained exactly 1 new WAIVER line and 1
+  new FAAB line for THAT scope (week=2 is a legitimately distinct scope
+  from `week=None`/REST_OF_SEASON, per `record_decision_trace`'s own
+  documented `== week` scoping -- both are real, intentionally separate
+  events, not duplicates of each other).
+- Net: 40 total ledger lines before this run's real live calls -> 40 + 4
+  (2 REST_OF_SEASON + 2 THIS_WEEK, one WAIVER + one FAAB each) = correct,
+  observed exactly.
+- Inspected the 4 real new lines directly: the WAIVER lines now show
+  `"dropPlayerName": "Marvin Harrison"` (the owner's real weakest bench
+  piece, matching every prior worker's own documented finding) alongside
+  the real top add (Tyrone Tracy); `data_versions` on the REST_OF_SEASON
+  lines correctly has NO `weeklyProjectionSource` key (mode-gated, as
+  designed), while the THIS_WEEK lines correctly DO
+  (`"weeklyProjectionSource": "SLEEPER"`,
+  `"weeklyProjectionRetrievedAt": "2026-09-15T19:39:05..."`); both
+  WAIVER and FAAB lines share the identical real
+  `rosProjectionSha256`; the FAAB line's `alternatives` now has 4 real
+  entries (Juwan Johnson/Hunter Henry/Woody Marks/Dalton Schultz, each
+  with a real bid range).
+- **Zero Sleeper writes, verified the established way**: before/after
+  byte-diff (SHA-256) of `GET league/{id}/rosters`, taken immediately
+  before the first call and immediately after the last call of this
+  entire live test (7 facade calls total: 3 REST_OF_SEASON + 2 THIS_WEEK +
+  the 2 real weekly-projection fetches those trigger) --
+  **byte-identical**, `cd1b3932...` both times, matching the exact hash
+  every prior worker in this session has independently recorded for this
+  same real league today.
+
+### Tests (this pass)
+
+- **New**: `tests/test_redraft_waivers_decision_trace_completeness_fix.py`
+  (4 tests -- WAIVER trace now records the paired drop; WAIVER and FAAB
+  traces now carry the real, matching `rosProjectionSha256`; FAAB trace
+  now records real bid-range alternatives; the dedup window still holds
+  for both WAIVER and FAAB after these changes, via 3 rapid identical
+  calls producing exactly 1 line per tool).
+- `python -m pytest tests/test_redraft_waivers_decision_trace_completeness_fix.py -q`:
+  **4 passed**.
+- Targeted regression slice (same `-k` filter Workers 2-4 used): **633
+  passed, 0 failed** (up from Worker 4's 629 baseline by exactly the 4 new
+  tests).
+- `tests/test_desktop_application_api.py`: **46 passed / 4 failed** -- the
+  SAME 4 pre-existing failures this worktree's documented baseline
+  expects, re-confirmed unaffected.
+- Frontend: `npm run typecheck` (tsc -b, both apps) clean, 0 errors.
+  `npx vitest run` (desktop workspace): **425 passed** (0 failed, exact
+  match to Worker 4's baseline -- these were presentation-only text/prop
+  changes to two already-tested components, no new frontend test needed
+  beyond confirming zero regressions).
+- `git diff -U0` grepped for every hard-boundary term
+  (`marginal_roster_utility_v2`, `LeagueSnapshot`, `LeagueWorkspaceContext`,
+  `lifecycle_resolver`, `DecisionResultEnvelope`, `PlayerAvailabilityStatus`):
+  the only match is this pass's own code COMMENT in `league.tsx` explaining
+  that `LeagueWorkspaceContext`'s semantics were deliberately NOT touched
+  -- zero matches in any actual code change. `git diff` on
+  `src/services/in_season_decision_trace_service.py` itself: **empty**
+  (the dedup mechanism's own logic was not touched, per the hard
+  boundary -- only verified, as directed).
+- A benchmark artifact (`docs/codex/prospective_outcomes_v1/
+  multi_league_scale_v1/frontend_bench_results.json`) was regenerated as a
+  side effect of `npx vitest run` (timing noise only, same as Worker 3's
+  note) -- reverted with `git checkout --` before committing.
+
+### Zero Sleeper writes, verified 3 ways (whole pass)
+
+1. The live decision-trace test's own before/after byte-diff of
+   `GET league/{id}/rosters` (SHA-256) came back **identical**.
+2. Structural: `desktop_facade.py`'s only change this pass is inside the
+   ALREADY-READ-ONLY `redraft_waivers` method (adds fields to values
+   already computed from GET-only reads; adds no new Sleeper call of any
+   kind). Grepped the diff for `POST`/`PUT`/`PATCH`/`DELETE`: zero matches.
+3. `SleeperHttpClient` (the only Sleeper client used) still exposes only
+   `get_json` -- structurally incapable of writing; unchanged this pass.
+
+### Work Unit 9 (FAAB transaction context): SKIPPED FOR TIME, honestly
+
+Work Units 10-11 (both higher priority per the directive, and both turned
+up real, concrete, fixable bugs worth the time) consumed this pass's
+available budget. Work Unit 9 was explicitly scoped by the directive as
+"optional, only if time remains" and "a nice-to-have... skip cleanly." No
+code was written for it, no partial/half-verified implementation was left
+behind. Real Sleeper `league/{id}/transactions/{round}` data for the
+Fantasy Gamers league was not investigated this pass; genuinely open for a
+future worker (not carried forward as a "bug," since nothing was broken --
+it simply was not attempted).
+
+### Backend/model files changed this pass
+
+- **Modified**: `src/application/desktop_facade.py` -- `redraft_waivers`
+  only: WAIVER trace's `recommendation` gains
+  `dropPlayerName`/`dropCanonicalPlayerId`; both WAIVER and FAAB traces'
+  `data_versions` gain `rosProjectionSha256` (+ `weeklyProjectionSource`/
+  `weeklyProjectionRetrievedAt` for THIS_WEEK mode only); FAAB trace call
+  gains a real `alternatives` list. No other facade method touched. No
+  change to `_record_decision_trace_safe`'s own signature/behavior, no
+  change to `record_decision_trace`/`_content_fingerprint`/the dedup
+  mechanism itself (`in_season_decision_trace_service.py` has zero diff).
+- **Modified** (frontend, presentation-only): `desktop/apps/redraft/src/
+  league.tsx` (Sync tab: honest per-provider "last changed" label + new
+  "Roster last known from" row + corrected EmptyState copy for Local/ESPN
+  profiles), `desktop/apps/redraft/src/in-season.tsx` (`MyRosterContent`'s
+  non-Sleeper EmptyState now shows the real draft-board timestamp + a
+  Draft Room link).
+- **New**: `tests/test_redraft_waivers_decision_trace_completeness_fix.py`.
+- This ledger.
+- `waiver_engine_service.py`, `redraft_draft_room_v1_service.py`,
+  `in_season_decision_trace_service.py`: **UNCHANGED**.
+
+## OPEN ISSUES FOR THE NEXT WORKER (Work Units 12-15: real waiver dogfood,
+## performance, full test suite, final push)
+
+1. **`Tester` (`eafa580e...`) is currently the ACTIVE profile** in the
+   real owner install, not one of the 3 real owner leagues. Not changed
+   this pass (a profile-selection/product decision, not a bug this pass
+   should silently "fix" by switching it out from under the owner) --
+   flagged so the next worker doesn't mistake it for a real league if
+   dogfooding against "whatever's currently active."
+2. **KHA (`fb1c4940...`) and 403 N 18th (`4b4a9902...`) rosters are
+   real, stale, and currently have no path back to current** -- this
+   pass made the UI honest about that fact (Work Unit 10) but did not
+   (and structurally could not, without a real ESPN API credential/auth
+   flow the owner would need to supply, which this pass was explicitly
+   told never to fake/hack) build a refresh mechanism. If the owner wants
+   these leagues usable for waivers again, that is real, separately-scoped
+   future work (either a real ESPN OAuth/cookie-based integration, or a
+   manual CSV/roster-paste importer built from scratch -- neither exists
+   today).
+3. **Work Unit 9 (FAAB transaction context) not attempted** -- see above,
+   skipped cleanly for time, not carried forward as a defect.
+4. Items 1-5 from Worker 4's own carried-forward list (the K/DST streamer
+   diagnostic cross-contamination, no real non-FAAB Sleeper league to test
+   against live, `pair_add_drop`'s alternatives not built, `matchupContext`
+   still `null`, Worker 1's FantasyPros top-10 cap / duplicate
+   `TEAM_ALIASES` files / the pre-existing `test_desktop_application_api.py`
+   4-failure baseline) remain open, unrelated to Work Units 10-11, no
+   change this pass.
