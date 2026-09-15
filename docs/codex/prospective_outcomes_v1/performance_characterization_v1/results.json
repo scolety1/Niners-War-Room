@@ -1,0 +1,111 @@
+{
+  "coldStartup": {
+    "wallClockIncludingInterpreterStartup": {
+      "medianMs": 424.9417000100948,
+      "p95Ms": 429.5202000066638,
+      "minMs": 420.7131000002846,
+      "maxMs": 429.5202000066638,
+      "reps": 3
+    },
+    "note": "subprocess wall time = interpreter startup + import + facade construction + first bootstrap (seeds the bundled projection snapshot into a fresh isolated store); does not include the Tauri native shell/webview launch, which this environment cannot reliably drive."
+  },
+  "realLeagueSurfaces": {
+    "realLeagueId": "1312983576827920384",
+    "currentNflWeek": 2,
+    "leagueOpen": {
+      "medianMs": 0.6605000235140324,
+      "p95Ms": 1.0673000360839069,
+      "minMs": 0.5979000125080347,
+      "maxMs": 1.0673000360839069,
+      "reps": 5
+    },
+    "home": {
+      "medianMs": 4302.6415999629535,
+      "p95Ms": 11099.290599988308,
+      "minMs": 2562.732300022617,
+      "maxMs": 11099.290599988308,
+      "reps": 5
+    },
+    "lineup": {
+      "medianMs": 9616.614700003993,
+      "p95Ms": 15657.224199967459,
+      "minMs": 866.8271999922581,
+      "maxMs": 15657.224199967459,
+      "reps": 5
+    },
+    "improveTeam_waivers": {
+      "medianMs": 2001.585200021509,
+      "p95Ms": 4241.317500011064,
+      "minMs": 1022.8081999812275,
+      "maxMs": 4241.317500011064,
+      "reps": 5
+    },
+    "improveTeam_kdstStreamer": {
+      "medianMs": 1290.8909000107087,
+      "p95Ms": 2063.942499982659,
+      "minMs": 1270.8657000330277,
+      "maxMs": 2063.942499982659,
+      "reps": 5
+    },
+    "tradeFinder": {
+      "medianMs": 1742.423499992583,
+      "p95Ms": 2542.7366999792866,
+      "minMs": 1687.7603000029922,
+      "maxMs": 2542.7366999792866,
+      "reps": 5
+    },
+    "tradePackageSearch_findWinWin": {
+      "medianMs": 2383.0810000072233,
+      "p95Ms": 2627.8899000026286,
+      "minMs": 2315.1412999723107,
+      "maxMs": 2627.8899000026286,
+      "reps": 5
+    },
+    "historyV3": {
+      "medianMs": 0.31460000900551677,
+      "p95Ms": 0.7134999614208937,
+      "minMs": 0.2859000233002007,
+      "maxMs": 0.7134999614208937,
+      "reps": 5
+    },
+    "draftRefreshAdp": {
+      "singleCallMs": 211.8686999892816,
+      "reps": 1
+    },
+    "playerDrawerBackingStatusRead_firstOpen": {
+      "medianMs": 0.23529998725280166,
+      "p95Ms": 0.23529998725280166,
+      "minMs": 0.23529998725280166,
+      "maxMs": 0.23529998725280166,
+      "reps": 1
+    },
+    "playerDrawerBackingStatusRead_warmOpen": {
+      "medianMs": 0.1002000062726438,
+      "p95Ms": 0.12159999459981918,
+      "minMs": 0.09680003859102726,
+      "maxMs": 0.12159999459981918,
+      "reps": 5
+    },
+    "playerDrawerNote": "No dedicated backend endpoint exists for opening the Player Drawer (confirmed by reading player-detail-state.ts/player-detail-drawer.tsx this pass) -- identity is caller-supplied and status is an in-memory lookup against the already-loaded PlayerAvailabilityStatus list. The numbers above are for that one shared backing read, not a drawer-specific call."
+  },
+  "outcomeIngestion": {
+    "traces_0": {
+      "singleRunMs": 0.049200025387108326,
+      "countsByAction": {}
+    },
+    "traces_5": {
+      "singleRunMs": 549.3826000019908,
+      "countsByAction": {
+        "PROCESS_FULL_START_SIT": 3,
+        "SKIP_IMMATURE_WINDOW": 2
+      }
+    },
+    "traces_20": {
+      "singleRunMs": 1268.331400002353,
+      "countsByAction": {
+        "PROCESS_FULL_START_SIT": 10,
+        "SKIP_IMMATURE_WINDOW": 10
+      }
+    }
+  }
+}
