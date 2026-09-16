@@ -3,6 +3,7 @@ import type { LeagueProfile, RedraftBootstrap, RedraftProfileUpdateInput } from 
 import { Button, ErrorState, Icon, PageHeader, Panel, StatusBadge } from "@nwr/ui";
 import { useEffect, useState } from "react";
 
+import { serializeActiveProfileCall } from "./attention-center";
 import { leagueFormat, leagueIdentityFormat } from "./league-context";
 
 // NWR UI expansion pass (2026-09-12, League surface): `editableProfile`/
@@ -94,7 +95,11 @@ export function ProfilePage({
     if (working) return;
     setWorking(`activate:${profile.profileId}`); setError(null); setMessage("");
     try {
-      onUpdate(await client.activateRedraftProfile(profile.profileId));
+      // Routed through the shared active-profile queue (attention-center.ts)
+      // so this call can never interleave with a mid-flight Attention
+      // Center sweep's own `activateRedraftProfile` calls against the same
+      // backend pointer -- see that module's comment for the full race.
+      onUpdate(await serializeActiveProfileCall(() => client.activateRedraftProfile(profile.profileId)));
       setMessage(`${profile.leagueName} is active.`);
     } catch (reason) { fail(reason, "Profile could not be activated."); }
     finally { setWorking(""); }

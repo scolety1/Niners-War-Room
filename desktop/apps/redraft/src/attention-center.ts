@@ -451,32 +451,61 @@ async function runAttentionCenterAggregationUnserialized(
   return { leagues, ownershipByProfile, restoredBootstrap, restoreError };
 }
 
-// Module-level serialization: every call to `runAttentionCenterAggregation`
-// (regardless of caller) is forced to run strictly after the previous call
-// has fully settled (including its own restore step) before starting its
-// own loop. This is a structural, second-layer defense against the "rapid
-// switching" state-leak risk the directive calls out explicitly -- even if
-// a UI bug ever fired this function twice in quick succession (a double
-// click, two mounted instances of the page, a fast re-render), the two
-// runs can never interleave their `activateRedraftProfile` calls, because
-// only one call is ever "in flight" against the single shared active-
-// profile pointer at a time. See attention-center.test.ts's dedicated
-// no-interleave regression test.
-let attentionCenterQueue: Promise<unknown> = Promise.resolve();
+// Module-level serialization: every call that touches the backend's single
+// shared active-profile pointer -- not just Attention Center's own sweep --
+// is forced to run strictly after the previous such call has fully settled
+// before starting. This began as an Attention-Center-only guard (only
+// `runAttentionCenterAggregation` calls could never interleave with each
+// other), but that left a real residual gap: a background sweep and an
+// UNRELATED in-app league navigation (the header quick-switcher in
+// shell-identity.tsx, the deep-link/bookmark activation gate in
+// RedraftApp.tsx's `LeagueScopedPage`, Manage Leagues in leagues.tsx, and
+// Profile's activate/create/duplicate actions in profile.tsx) each called
+// `client.activateRedraftProfile` directly, entirely outside this queue.
+// Concretely: if the owner opens Attention Center (which activates League
+// A, reads it, activates League B, reads it, ... then restores whatever was
+// active before the sweep started) and, WHILE that sweep is still mid-flight,
+// follows a direct link/bookmark/header-switcher to a different league, that
+// navigation's own `activateRedraftProfile` call and the sweep's next
+// `activateRedraftProfile` call race against the SAME server-side pointer
+// with no ordering guarantee -- the sweep could attribute one league's data
+// to another, or its own unconditional `finally` restore could silently
+// clobber the league the owner just navigated to back to whatever was
+// active before Attention Center ran (confirmed by inspection: none of
+// those 4 other call sites referenced `attentionCenterQueue` before this
+// fix; each guards only against a second call from ITSELF, e.g.
+// `switchRequestRef`/`inFlightFor`/`activationInFlight`, never against a
+// concurrent call from a wholly different surface). `serializeActiveProfileCall`
+// is the fix: the SAME queue, now used by every direct
+// `activateRedraftProfile` call site in the app, so two calls from any
+// combination of surfaces can never interleave against the shared pointer --
+// each caller's own existing local guard still decides whether ITS response
+// is still wanted once its turn comes up; this queue only decides ordering
+// against the shared backend pointer itself. See attention-center.test.ts's
+// dedicated no-interleave regression tests (both the original
+// sweep-vs-sweep case and the new sweep-vs-unrelated-call case).
+let activeProfileQueue: Promise<unknown> = Promise.resolve();
+
+/** Queues `run` behind every other in-flight `activateRedraftProfile`-class
+ * call (from ANY caller/surface) so the backend's single active-profile
+ * pointer is never targeted by two overlapping requests. Swallows the
+ * queued slot's own outcome (not `run`'s real result) so one failed/rejected
+ * call never permanently jams the queue for the next caller. */
+export function serializeActiveProfileCall<T>(run: () => Promise<T>): Promise<T> {
+  const result = activeProfileQueue.then(run, run);
+  activeProfileQueue = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
+}
 
 export function runAttentionCenterAggregation(
   client: AttentionCenterClient,
   profiles: LeagueProfile[],
   originalActiveProfileId: string | null,
 ): Promise<AttentionCenterResult> {
-  const run = () => runAttentionCenterAggregationUnserialized(client, profiles, originalActiveProfileId);
-  const result = attentionCenterQueue.then(run, run);
-  // Swallow so one failed run never permanently jams the queue for the
-  // next caller -- `result` itself still rejects/resolves normally for
-  // THIS caller.
-  attentionCenterQueue = result.then(
-    () => undefined,
-    () => undefined,
+  return serializeActiveProfileCall(() =>
+    runAttentionCenterAggregationUnserialized(client, profiles, originalActiveProfileId),
   );
-  return result;
 }

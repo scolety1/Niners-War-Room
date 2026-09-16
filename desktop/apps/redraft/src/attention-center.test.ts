@@ -17,6 +17,7 @@ import {
   rosterIdentityFlags,
   runAttentionCenterAggregation,
   searchPlayerAcrossLeagues,
+  serializeActiveProfileCall,
   summarizeLeagueAttention,
   waiverOpportunityFlags,
   workspaceFlags,
@@ -452,5 +453,36 @@ describe("runAttentionCenterAggregation -- state-leakage regressions", () => {
     expect(activateCalls).toEqual(["A", "B", "A", "X", "Y", "X"]);
     expect(firstResult.restoredBootstrap?.activeProfileId).toBe("A");
     expect(secondResult.restoredBootstrap?.activeProfileId).toBe("X");
+  });
+
+  it("never interleaves a sweep with an UNRELATED direct activateRedraftProfile call routed through the same shared queue (the residual cross-surface race Worker 3 flagged and this pass closed)", async () => {
+    const { client, activateCalls, getCurrentActive } = buildFakeClient(["A", "B", "C", "Z"]);
+    // Simulate: the owner opens Attention Center (a 3-league sweep,
+    // originally-active "A"), and WHILE it is still mid-flight, follows a
+    // direct link/bookmark/header-switch to league "Z" -- a call that goes
+    // through `serializeActiveProfileCall` exactly the way
+    // RedraftApp.tsx's `LeagueScopedPage`, shell-identity.tsx's
+    // `switchLeague`, leagues.tsx's `activate`, and profile.tsx's
+    // `activate` all now do (see those files). Before this pass, that
+    // navigation call bypassed the queue entirely and could land in the
+    // middle of the sweep's own activate/read sequence.
+    const sweep = runAttentionCenterAggregation(
+      client,
+      [profile({ profileId: "A" }), profile({ profileId: "B" }), profile({ profileId: "C" })],
+      "A",
+    );
+    const navigation = serializeActiveProfileCall(() => client.activateRedraftProfile("Z"));
+    const [sweepResult, navigationBootstrap] = await Promise.all([sweep, navigation]);
+    // The sweep's own activate sequence (A, B, C, then restore-to-A) must
+    // appear fully contiguous, with the unrelated navigation's activate("Z")
+    // queued strictly AFTER it -- never interleaved in between.
+    expect(activateCalls).toEqual(["A", "B", "C", "A", "Z"]);
+    expect(sweepResult.restoredBootstrap?.activeProfileId).toBe("A");
+    // The navigation call's own response is honored last, since it was
+    // queued after the sweep's restore -- the backend pointer ends on "Z",
+    // matching where the owner actually navigated, not silently clobbered
+    // back to "A" by the sweep's restore (which already happened earlier).
+    expect(navigationBootstrap.activeProfileId).toBe("Z");
+    expect(getCurrentActive()).toBe("Z");
   });
 });

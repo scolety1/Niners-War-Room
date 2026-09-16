@@ -7,7 +7,10 @@ manually-edited profile (e.g. an ESPN league, which has no live-sync
 import) that rosters K/DST as real starters had NO way to enable it, so
 ranking generation failed with an opaque, unhelpful error."""
 
+import csv
+import hashlib
 import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from src.application.desktop_facade import DesktopBackendFacade
@@ -22,13 +25,50 @@ _BUNDLED_SNAPSHOT_CSV = (
 
 
 def _install_fresh_test_snapshot(tmp_path: Path) -> None:
-    """The repo's own bundled seed receipt
-    (docs/hq/model/.../NWR_DATA_GOVERNANCE.json) has a real, already-expired
-    `valid_until` (2026-08-29) -- a genuine, separately-flagged finding from
-    this QA pass (see NWR_OWNER_MOCK_QA_V1), not something this test should
-    depend on. Installs the identical, real, already-governed 608-player
-    CSV under a freshly-dated receipt bound to the same file, purely for
-    this hermetic test fixture -- never touches the committed receipt."""
+    """Full Cycle V1, Worker 5 (Section 3D item 3): this used to install the
+    real bundled 608-player CSV UNCHANGED, with its own real, fixed
+    `source_as_of=2026-08-08` baked into every row, under a freshly-dated
+    RECEIPT (`valid_until=2099-01-01`). That freshened the receipt's own
+    expiry (a real, separately-flagged finding from NWR_OWNER_MOCK_QA_V1 --
+    the committed seed receipt's `valid_until` of 2026-08-29 is genuinely
+    expired) but did nothing about `install_projection_snapshot`'s OWN,
+    separate 30-day `source_as_of` freshness gate
+    (`_source_as_of_reason`/`MAX_PROJECTION_AGE_DAYS`,
+    redraft_engine_v1_service.py), which is computed against real wall-clock
+    "today" independent of the receipt. Triaged 2026-09-16: as real time
+    advanced past 2026-09-07 (`2026-08-08` + 30 days), this fixture started
+    failing on its own -- confirmed NOT a product bug (`_source_as_of_reason`
+    correctly computes `today = datetime.now(UTC).date()`, no off-by-one/
+    timezone defect) and NOT a design flaw (the 30-day gate is the real,
+    intentional "no stale projections without an explicit draft-day
+    authorization" governance rule). It is fixture staleness, of the exact
+    same class `test_redraft_engine_v1_service.py`'s own
+    `_fresh_projection_rows()` already documents and fixes for its sibling
+    tests (search that file for "environmental source_as_of date-cliff").
+    Applying the same fix here: rewrite every row's `source_as_of` to a date
+    that is always fresh relative to whenever this test actually runs
+    (`today - 1 day`), write that to a temp CSV under `tmp_path`, and bind
+    the receipt's `source_sha256` to THAT rewritten file's real hash (a
+    receipt's `source_sha256` must match the exact bytes being installed --
+    `_validate_approval_receipt` rejects a mismatch) instead of the original
+    bundled file's now-irrelevant hash. This never touches the real
+    committed CSV or its real receipt -- only this test's own hermetic
+    tmp_path copy."""
+    rows: list[dict[str, str]]
+    with _BUNDLED_SNAPSHOT_CSV.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = reader.fieldnames
+        rows = list(reader)
+    fresh_date = (datetime.now(UTC).date() - timedelta(days=1)).isoformat()
+    for row in rows:
+        row["source_as_of"] = fresh_date
+
+    fresh_csv_path = tmp_path / "fresh_test_snapshot.csv"
+    with fresh_csv_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
     receipt_path = tmp_path / "fresh_test_receipt.json"
     receipt_path.write_text(
         json.dumps(
@@ -37,18 +77,16 @@ def _install_fresh_test_snapshot(tmp_path: Path) -> None:
                 "authority": "NWR_DATA_GOVERNANCE",
                 "approval_status": "APPROVED_FOR_REDRAFT_V1",
                 "season": 2026,
-                "source_sha256": (
-                    "e483caaedc236140bcdfeccdd759bf8726a4b231bbaf3e9fdc461873d3921c25"
-                ),
+                "source_sha256": hashlib.sha256(fresh_csv_path.read_bytes()).hexdigest(),
                 "source_id": "NWR_REDRAFT_2026_VETERAN_PLUS_ROOKIE_COMBINED_V1",
                 "approved_by": "test fixture",
-                "approved_at_utc": "2026-09-06T00:00:00+00:00",
+                "approved_at_utc": datetime.now(UTC).isoformat(),
                 "valid_until": "2099-01-01",
             }
         ),
         encoding="utf-8",
     )
-    install_projection_snapshot(tmp_path, 2026, _BUNDLED_SNAPSHOT_CSV, receipt_path)
+    install_projection_snapshot(tmp_path, 2026, fresh_csv_path, receipt_path)
 
 
 def _roster(k: int, dst: int) -> dict:

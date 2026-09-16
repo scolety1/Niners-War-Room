@@ -959,3 +959,385 @@ backend/Python files changed.
    stale-form-until-resubmit UX note, the pre-existing K/DST practical-mode
    freshness-window test failures, native Tauri packaging) remains open
    and unchanged by this pass.
+
+---
+
+## Worker 5 — Section 3D closure + Redraft walkthrough coverage begins (2026-09-16)
+
+**Branch/worktree:** same as Workers 1-4,
+`upgrade/nwr-prospective-outcomes-v1-20260914` at
+`C:\NWR\prospective-outcomes-v1`. Started at HEAD `fa955d81` (Worker 4's
+commit; clean). Did not push, did not touch `main`, did not force anything.
+Frontend (127.0.0.1:1422, real `vite preview` static build) and backend
+(127.0.0.1:18742) were NOT restarted -- confirmed still up throughout (LIVE
+OBSERVATION: real 200s from `/api/v1/redraft/*` inside an authenticated
+browser session, see below).
+
+### IMPORTANT correction to prior workers' assumption: the running
+### frontend/backend serve OLD code, confirmed LIVE, not just inferred
+
+Workers 1-4 each correctly reasoned (INFERENCE) that their own pass's
+changes would not be live without a restart. This pass got a real
+authenticated Chrome session against the actual running app (Workers 1/3
+could not) and confirms it directly: the header badge / Data Health page's
+"7 rookies remain blocked" text (LIVE OBSERVATION, screenshot-verified)
+still reads the single OLD blanket phrase ("...conflict with the current
+factual registry; no values were imputed") for all 7 names, NOT Worker 1's
+corrected per-reason breakdown from `_blocked_seed_reason_breakdown`. This
+means the running frontend build (a static `vite preview` bundle, not a
+hot-reloading dev server) and backend process both predate Worker 1's very
+first commit this cycle -- EVERY frontend/backend change from Workers 1-5
+(including this pass's own Part A/B work) is invisible in the live app
+until a real restart. This closes Worker 1's open item #3
+("confirm ... once the backend is next restarted") with a definitive
+"still not live, confirmed by direct observation" rather than leaving it an
+open question.
+
+### PART A.1 -- Attention Center residual cross-surface risk (Worker 3's
+### open item #2): REAL, REACHABLE race -- FIXED
+
+INSPECTED CODE: grepped every `.activateRedraftProfile(` call site in
+`desktop/apps/redraft/src/`. Found SIX total: two internal to
+`attention-center.ts`'s own sweep (`fetchLeagueAttention`'s activate, and
+the `finally`-block restore), already serialized against each other via the
+existing `attentionCenterQueue`; and FOUR entirely independent external
+call sites that had ZERO awareness of that queue --
+`RedraftApp.tsx`'s `LeagueScopedPage` (the deep-link/bookmark/route
+activation gate every `/league/:leagueKey/*` route passes through),
+`shell-identity.tsx`'s `ShellIdentity.switchLeague` (the header
+quick-switcher), `leagues.tsx`'s `LeaguesPage.activate` (Manage Leagues),
+and `profile.tsx`'s `ProfilePage.activate` (the Profile page's own league
+switcher). Each of those four has its own LOCAL guard against a second
+call from ITSELF (`inFlightFor`/`switchRequestRef`/`activationInFlight`),
+but none of them guarded against a concurrent call from Attention Center's
+background sweep (or from each other) hitting the SAME backend single
+active-profile pointer at the same time. Confirmed (INSPECTED CODE,
+backend) no server-side lock exists either --
+`src/application/desktop_facade.py`'s `activate_redraft_profile` /
+`active_profile_id` has no per-request mutex. **Verdict: real, live race,
+reachable any time Attention Center's sweep is mid-flight and the owner
+follows ANY direct link/header-switch/Manage-Leagues click/Profile-page
+switch to a different league** -- not merely theoretical.
+
+**Fix**: generalized the existing sweep-only `attentionCenterQueue` into an
+exported `serializeActiveProfileCall<T>(run: () => Promise<T>): Promise<T>`
+in `attention-center.ts` (same swallow-failures-so-one-rejection-never-jams
+-the-queue design as before). `runAttentionCenterAggregation` now routes
+through it as before (unchanged behavior for sweep-vs-sweep). All 4
+external call sites (`RedraftApp.tsx`, `shell-identity.tsx`, `leagues.tsx`,
+`profile.tsx`) now wrap their own `client.activateRedraftProfile(...)` call
+in the same `serializeActiveProfileCall`, so no two calls from ANY
+combination of these 5 real surfaces can ever interleave against the shared
+backend pointer again. Each site's own pre-existing local guard
+(`inFlightFor`/`switchRequestRef`/etc.) is unchanged and still decides
+whether ITS caller-side response is still wanted once its turn comes up --
+this queue only decides ORDERING against the shared backend pointer.
+`profile.tsx`'s `create`/`duplicate` actions (which also implicitly
+activate a profile server-side, per their own success messages) were
+deliberately NOT wrapped this pass -- lower-frequency, one-shot form
+actions, not the "in-app navigation" class the dispatch specifically named;
+flagged below as a residual, smaller-risk gap.
+
+**Test**: new regression test in `attention-center.test.ts`
+("never interleaves a sweep with an UNRELATED direct
+activateRedraftProfile call routed through the same shared queue") --
+fires a real 3-league sweep and an unrelated `serializeActiveProfileCall`
+navigation call concurrently against a fake client with call-order
+tracking; asserts the sweep's own activate/restore sequence stays fully
+contiguous and the navigation's call is queued strictly after it, landing
+the backend pointer on the navigated-to league rather than being clobbered
+by the sweep's later restore.
+
+### PART A.2 -- Trades Analyze stale-result gap (Worker 3's open item #4):
+### FIXED
+
+Confirmed (INSPECTED CODE) Worker 3's characterization: `AnalyzeTab` is a
+single explicit "Analyze trade" button (disabled while `working`), safe
+from the FAAB-class auto-refetch race, but the result panel never marked
+itself stale when `gives`/`receives` were edited after a result was shown
+and before re-clicking Analyze. Fixed with a new pure function
+`isTradeAnalysisStale(analyzedGiveIds, analyzedReceiveIds, currentGiveIds,
+currentReceiveIds)` in `trades-explain.ts` -- order-independent set
+comparison (re-picking the same two players in a different order is not a
+real trade change). `TradeAnalysisResult.gives`/`.receives` carry NWR's own
+canonical player ids, not the raw Sleeper ids the picker tracks (the same
+id-space gap already documented in this file for Find Trades' deliberately
+-omitted "Open in Analyze" jump), so staleness compares against a snapshot
+of the exact Sleeper ids submitted at analyze-time
+(`analyzedGiveIds`/`analyzedReceiveIds`, new state in `TradesPage`, updated
+only on a SUCCESSFUL analysis) rather than against the response's own
+echoed ids. Wired into `AnalyzeTab` as an "Updating…"-style
+`alert-strip alert-strip--pending` banner ("This trade has changed...
+Analyze trade again to refresh it."), same convention Worker 3 established
+for Find Trades' mode-staleness banner.
+
+**Tests**: 7 new cases in `trades-explain.test.ts` for
+`isTradeAnalysisStale` (never-stale-before-first-analysis, exact match,
+order-independence, added give, removed receive, swapped player, clears
+after re-analyzing).
+
+### PART A.3 -- K/DST practical-mode test triage: FIXTURE STALENESS,
+### FIXED (not a product bug)
+
+TRIAGED (INSPECTED CODE + ACTUAL TEST RESULT), not merely re-flagged.
+Reproduced the 3 failures Worker 1 found
+(`test_redraft_profile_practical_mode_toggle.py`): all fail inside
+`_install_fresh_test_snapshot`, which installs the real bundled
+`GOVERNED_COMBINED_608_PROJECTION_SNAPSHOT.csv` (from the
+`nwr_redraft_2026_rookie_projection_candidate_v1_20260809` dir) under a
+receipt with `valid_until=2099-01-01`. Read the CSV directly: its own
+`source_as_of=2026-08-08` (ACTUAL). `install_projection_snapshot`'s
+`_source_as_of_reason` (`redraft_engine_v1_service.py`) enforces a SEPARATE
+30-day freshness gate computed against real wall-clock
+`datetime.now(UTC).date()` -- confirmed correct, no off-by-one/timezone bug
+(INSPECTED CODE) -- independent of the receipt's own `valid_until`. As of
+today (2026-09-16), 2026-08-08 is 39 days old, so every one of these 3
+tests now fails purely on calendar drift, unrelated to anything any worker
+changed. **Verdict: fixture staleness, not a product bug, not a design
+flaw** -- the 30-day gate is the real, intentional "no stale projections
+without an explicit draft-day authorization" governance rule working
+exactly as designed. Found the EXACT same problem already solved for a
+sibling test file: `test_redraft_engine_v1_service.py`'s
+`_fresh_projection_rows()` (search that file for "environmental
+source_as_of date-cliff") rewrites `source_as_of` to `today - 1 day` at
+test-run time instead of hardcoding a real date.
+
+**Fix**: applied the identical, already-repo-blessed pattern to
+`_install_fresh_test_snapshot`: read the real bundled CSV's 608 rows,
+rewrite every row's `source_as_of` to `datetime.now(UTC).date() -
+timedelta(days=1)`, write the rewritten CSV to a temp file under
+`tmp_path`, and bind the receipt's `source_sha256` to THAT rewritten file's
+real hash (a receipt's hash must match the exact bytes installed --
+confirmed by reading `_validate_approval_receipt`) instead of the original
+bundled file's now-irrelevant hash. Never touches the real committed CSV or
+its real receipt -- only this test's own hermetic tmp_path copy. All 5
+tests in the file now pass (`python -m pytest
+tests/test_redraft_profile_practical_mode_toggle.py -q` -> `5 passed`),
+and this fixture is now durably immune to the same calendar-drift failure
+recurring every ~30 days.
+
+**Regression check**: `tests/test_redraft_engine_v1_service.py` has its own
+3 pre-existing failures + 13 errors, confirmed via `git stash` to be
+BYTE-IDENTICAL before/after this pass's changes (unrelated to this fix,
+not investigated further -- out of this pass's scope, flagged below).
+`tests/test_redraft_page_v1.py`, `test_desktop_facade_architecture_wiring.py`,
+`test_desktop_http_api.py`: 50 passed, 0 failed.
+`test_desktop_application_api.py`: 4 failed / 46 passed, confirmed
+BYTE-IDENTICAL to Worker 2's own documented baseline for this worktree (not
+the separate Draft Upgrade HQ 5-failure baseline from memory -- a
+different worktree).
+
+### PART B -- Redraft tool-by-tool walkthrough (route inventory + coverage
+### begun)
+
+**Route inventory** (INSPECTED CODE, grepped `RedraftApp.tsx`'s
+`<Route>` list in full): real distinct Redraft pages behind
+`/league/:leagueKey/*` are WeeklyHomePage(home), LineupPage(lineup),
+ImproveTeamPage(waivers/improve), LeagueWorkspacePage(my-roster/league/
+opponent-rosters, tabs Overview/My Roster/Teams/Scoring/Settings/Sync),
+TradesPage(trade-analysis/trades/trade-finder, tabs Analyze/Find),
+FreeAgentsPage(free-agents), DraftRoomV2Page(draft), PlayersPage(rankings/
+players/tiers/compare/adp, tabs Rankings/Tiers/Compare/Market),
+CheatSheetPage(cheat-sheet), ProfilePage(profile, also non-league-scoped),
+WeeklyToolsPage(weekly-tools), DataHealthPage(data-health),
+DecisionHistoryPage(decision-history); plus non-league-scoped
+LeaguesPage(/leagues, Manage Leagues) and AttentionCenterPage
+(/attention-center).
+
+Got a REAL authenticated Chrome session against the running app (something
+Workers 1/3 explicitly could not do) -- active league is the real,
+already-imported, read-only Fantasy Gamers Sleeper league (10-team PPR
+1QB, PRE_DRAFT lifecycle). All findings below marked LIVE OBSERVATION were
+a real browser session against the real running backend (confirmed via
+`read_network_requests` showing real 200s from `/api/v1/redraft/*`), not
+inference. No draft/roster/lineup writes were attempted against this or
+any real league; no state-mutating buttons (ADP refresh/import, Ballers
+import, K/DST ECR refresh, profile edits) were clicked.
+
+- **League page** -- PASS. All 6 tabs (Overview, My Roster, Teams,
+  Scoring, Settings, Sync) verified LIVE with real, data-backed content:
+  My Roster shows the real 15-player roster with real lineup slots
+  (STARTER/Bench) and real NWR identity match status (K/DST correctly
+  UNMATCHED, matches the K/DST-always-manual finding from Worker 1);
+  Teams shows all 9 real opponent rosters; Scoring shows the real PPR
+  scoring config; Settings loads the real `ProfileEditor` form; Sync shows
+  real `LIVE`/`CURRENT` Sleeper sync status with a real last-synced
+  timestamp. Tab consistency confirmed (same header/tab-bar shape across
+  all 6).
+- **Data Health page** -- PASS. Renders correctly with real backend
+  authority cards (League sync, Rest-of-season projections, Weekly
+  projections, Market/ADP, Player status, Decision engine, League
+  Workspace snapshot), a real readiness banner ("Ready · 7 blocked players
+  visible"), real readiness checks (Player universe/Current forecast/
+  Scoring profile/Replacement model all real statuses), and a real notices
+  list. All 3 of Worker 1's data issues (Market ADP unavailable, Sleeper
+  scoring needs review, 7 rookies blocked) each have a working detail path
+  (the header badge popup and this page's own notices both show real
+  per-issue detail text) -- confirmed the corrected per-reason breakdown
+  text is NOT yet visible live (see the "running old code" finding above,
+  not a new bug). Market ADP's real recovery path (the Market/ADP control
+  center under Players > Market) was confirmed to actually exist and
+  render, not just referenced in text (see next item) -- Data Health
+  itself has no separate "fix it now" button on the card, which is
+  existing, unchanged behavior, not a Worker-5-introduced regression.
+- **Draft Room** -- PASS for the scoped "basic functionality only" check.
+  Loads correctly and shows the correct PRE_DRAFT lifecycle state for this
+  real non-drafting league ("CHOOSE YOUR DRAFT SLOT BELOW TO BEGIN", full
+  564-player board rendered, Suggestions/Cheat Sheets/Draft Board/Rankings/
+  Teams/Queue tabs all present). No draft actions were attempted (directive
+  boundary). One real, LIVE-OBSERVED finding NOT fixed this pass (in scope
+  conflicts with the hard boundary on draft-recommendation logic): the
+  page's own DecisionBundle fetch (`POST .../decision-bundle` and
+  `.../decision-bundle-v2`) both return real HTTP 500s in this pre-draft,
+  no-slot-selected state -- but the UI degrades GRACEFULLY ("DecisionBundle
+  unavailable -- The DecisionBundle request failed -- backend calculation
+  unavailable.", no crash, no console exception), which is itself correct
+  empty/error-state handling per the directive's "check loading/error/empty
+  states" ask. Root cause not investigated (would require touching
+  DecisionBundle computation, inside the hard boundary) -- flagged for the
+  next worker as a real, reproducible 500 worth a closer look, though it
+  may simply be expected given no draft slot/pick context exists yet.
+- **Players' Market/ADP tab** -- PASS. Full ADP control center renders:
+  "Active ADP source" card correctly shows "No active ADP snapshot" /
+  `UNAVAILABLE`, consistent with Data Health's own Market ADP finding
+  (this IS that issue's real, working recovery path, confirmed reachable
+  from this tab); "Import Multi-Platform ADP" (CSV/paste importer, source
+  label, parser modes, Preview/Save/Export buttons), "League Platform
+  Selection" (Auto-detected Sleeper, override dropdown, Activate button),
+  and "Ballers / UDK" import section (correctly shows "No Ballers cheat
+  sheet imported yet.") all rendered with real state. Not clicked (would
+  mutate the real Fantasy Gamers profile's stored ADP/Ballers config).
+- **Search/filter behavior (Rankings tab)** -- PASS. Live-tested: text
+  search ("mccaffrey") correctly case-insensitively substring-matches
+  across the full 564-row board (found both Christian McCaffrey #1 and
+  Luke McCaffrey #275, correctly showing "SHOWING 2 OF 2 MATCHES"
+  regardless of the separate Board Depth filter); position filter (DST)
+  correctly returns a real, honest empty state ("SHOWING 0 OF 0 MATCHES" /
+  "No rows match this view.") rather than a blank/broken table, consistent
+  with K/DST being permanently outside NWR's ranked universe by design;
+  Reset control restores defaults.
+- **Free Agents page** (not explicitly named in the directive's list, but
+  not yet mentioned by any prior worker) -- PASS, spot-checked. Real live
+  Sleeper read-only data: 721 real unrostered players, correct NWR
+  rank/season-points/replacement-value for ranked players and an honest
+  "Unranked" fallback (not a fabricated 0) for out-of-universe players
+  (K/DST, practice-squad-caliber players, etc.).
+- **Weekly Tools page** (K/DST ECR streamer; not explicitly named, not
+  yet mentioned by any prior worker) -- PASS, spot-checked (render only,
+  no refresh clicked to avoid a real external FantasyPros API call).
+  Renders correctly: "PROVIDER CONFIGURED", real FantasyPros-key-configured
+  messaging, NFL Week input, Horizon selector (This Week/Next 2/Next 3),
+  Refresh button.
+
+### Hard boundary check
+
+Did not touch `marginal_roster_utility_v2`, its weights, the governed
+valuation model, draft recommendation logic, roster legality,
+`LeagueSnapshot`/`LeagueWorkspaceContext`/lifecycle-resolver/
+`DecisionResultEnvelope`/`PlayerAvailabilityStatus` semantics. No real
+Sleeper/ESPN writes; no draft/roster/lineup actions attempted against any
+real league (the live browser walkthrough was read-only navigation plus
+one text-search and one position-filter interaction, both client-side/
+read-only). The one Python file changed (`test_redraft_profile_practical_mode_toggle.py`)
+is test-only.
+
+### Files changed this pass
+
+- `desktop/apps/redraft/src/attention-center.ts` -- generalized
+  `attentionCenterQueue` into exported `serializeActiveProfileCall`.
+- `desktop/apps/redraft/src/attention-center.test.ts` -- 1 new
+  sweep-vs-unrelated-call regression test.
+- `desktop/apps/redraft/src/RedraftApp.tsx`,
+  `desktop/apps/redraft/src/shell-identity.tsx`,
+  `desktop/apps/redraft/src/leagues.tsx`,
+  `desktop/apps/redraft/src/profile.tsx` -- each wraps its own
+  `activateRedraftProfile` call in `serializeActiveProfileCall`.
+- `desktop/apps/redraft/src/trades-explain.ts` -- added
+  `isTradeAnalysisStale`.
+- `desktop/apps/redraft/src/trades-explain.test.ts` -- 7 new tests.
+- `desktop/apps/redraft/src/trades.tsx` -- `TradesPage`/`AnalyzeTab` track
+  `analyzedGiveIds`/`analyzedReceiveIds` and render a stale banner.
+- `tests/test_redraft_profile_practical_mode_toggle.py` -- rewrote
+  `_install_fresh_test_snapshot` to use a dynamically-fresh, hermetic CSV
+  fixture instead of the real bundled file's fixed, now-stale date.
+
+### TESTS ADDED (all ACTUAL TEST RESULT, passing)
+
+- `attention-center.test.ts`: 1 new case (sweep-vs-unrelated-call
+  no-interleave). Full file: 29 passed.
+- `trades-explain.test.ts`: 7 new cases for `isTradeAnalysisStale`. Full
+  file: 45 passed.
+- `tests/test_redraft_profile_practical_mode_toggle.py`: all 5 tests now
+  pass (3 previously-failing + 2 already-passing).
+
+### FULL FRONTEND/BACKEND TEST SUITE RESULTS
+
+`cd desktop && npx vitest run`: **459 passed, 0 failed** (29 test files;
+451 baseline + 8 new). `npm run typecheck`: clean, 0 errors. The
+incidental `frontend_bench_results.json` vitest side effect (same as every
+prior worker) was reverted via `git checkout --` before committing.
+Backend: `test_redraft_profile_practical_mode_toggle.py` 5/5 passed;
+`test_redraft_page_v1.py` + `test_desktop_facade_architecture_wiring.py` +
+`test_desktop_http_api.py` 50/50 passed; `test_desktop_application_api.py`
+4 failed / 46 passed (confirmed BYTE-IDENTICAL pre-existing baseline via
+`git stash`); `test_redraft_engine_v1_service.py` 3 failed + 13 errors / 77
+passed (confirmed BYTE-IDENTICAL pre-existing via `git stash`, unrelated to
+this pass, not investigated further -- likely more of the same
+`source_as_of` calendar-drift class this pass just fixed in a sibling
+file, flagged below as a good next target). Did not run the full `tests/`
+suite (the documented ~323-pre-existing-failure baseline from memory is
+for a reason unrelated to this pass's changes).
+
+### RUNNING PROCESSES STATUS
+
+Frontend (127.0.0.1:1422) and backend (127.0.0.1:18742) were NOT
+restarted -- confirmed still up via a real authenticated browser session
+(LIVE OBSERVATION, not just an HTTP-200 probe: real navigation across 7
+pages, real data rendered from real backend responses). See the "running
+old code" finding above: this pass's own changes (and Workers 1-4's) are
+NOT yet live in this process pair and will not be until a real restart.
+
+### Open issues for next worker
+
+1. **`test_redraft_engine_v1_service.py`'s 3 failures + 13 errors** are
+   pre-existing and unrelated to this pass (confirmed via `git stash`),
+   but at least one (`test_review_only_stale_and_shallow_projection_evidence_fail_closed`)
+   looks like it could be more `source_as_of`-calendar-drift fallout --
+   worth triaging with the same method this pass used, rather than
+   re-flagging again undocumented.
+2. **Draft Room's DecisionBundle 500s** (both v1 and v2 endpoints) in this
+   real pre-draft, no-slot-selected league -- gracefully handled by the UI
+   ("DecisionBundle unavailable"), not reproduced as a crash, root cause
+   NOT investigated (would touch draft-recommendation-adjacent code, inside
+   this pass's hard boundary). Worth a closer look by a worker scoped to
+   touch that code: is this expected (no pick context yet) or a real
+   backend regression?
+3. **`profile.tsx`'s `create`/`duplicate` profile actions** still call
+   `client.createRedraftProfile`/`client.duplicateRedraftProfile` directly,
+   NOT routed through `serializeActiveProfileCall`, even though their own
+   success messages ("Profile created and activated.") confirm they also
+   mutate the shared active-profile pointer server-side. Deliberately not
+   wrapped this pass (lower-frequency, one-shot form actions, not the
+   "in-app navigation" class Worker 3's item specifically named) -- a
+   smaller residual version of the same risk class, worth closing if a
+   future worker wants full coverage.
+4. **Confirmed, not just inferred: the running frontend/backend serve code
+   from before Worker 1's first commit this cycle.** Every Python/TS change
+   from Workers 1-5 (including this pass's own Part A fixes) needs a real
+   restart before it is observable live. The next restart will also make
+   Worker 2's Sleeper player-catalog cache live for the first time -- note
+   that explicitly if/when it happens (per the dispatch's own standing
+   instruction).
+5. **Section 2 Redraft walkthrough remaining coverage**: this pass covered
+   League page, Data Health page, Draft Room (basic), Players Market/ADP
+   tab + search/filter, plus spot-checks of Free Agents and Weekly Tools.
+   Still NOT walked through by any worker: Decision History's OwnerActionCell
+   recording flow end-to-end (only reviewed for the stale-response bug
+   class, not a full functional walkthrough), Improve Team's Targets/
+   Drop-Candidates/FAAB tabs as a full functional walkthrough (only
+   reviewed for staleness/labeling), Start/Sit's swap mechanics, Cheat
+   Sheet's export/print paths, and Manage Leagues' create/import/archive
+   flows beyond the activate race just fixed. Dynasty app coverage has not
+   been started at all this cycle -- per the dispatch, next worker should
+   pick one: finish remaining Redraft walkthrough items above, or pivot to
+   starting Dynasty.

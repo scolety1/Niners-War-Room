@@ -4,6 +4,7 @@ import { Button, EmptyState, ErrorState, Icon, PageHeader } from "@nwr/ui";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { serializeActiveProfileCall } from "./attention-center";
 import { leagueFormat, leagueIdentityFormat, resolveLeagueHomeSubpath } from "./league-context";
 
 export function LeaguesPage({
@@ -26,7 +27,11 @@ export function LeaguesPage({
     setWorkingProfileId(profile.profileId);
     setError(null);
     try {
-      const next = await client.activateRedraftProfile(profile.profileId);
+      // Routed through the shared active-profile queue (attention-center.ts)
+      // so this call can never interleave with a mid-flight Attention
+      // Center sweep's own `activateRedraftProfile` calls against the same
+      // backend pointer -- see that module's comment for the full race.
+      const next = await serializeActiveProfileCall(() => client.activateRedraftProfile(profile.profileId));
       onUpdate(next);
       // NWR pre-UI architecture pass (directive section 2, invariant A):
       // this used to unconditionally navigate every opened league to

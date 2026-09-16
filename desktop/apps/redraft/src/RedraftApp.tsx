@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 
 import { AttentionCenterPage } from "./attention-center-page";
+import { serializeActiveProfileCall } from "./attention-center";
 import { assertRedraftBootstrap } from "./bootstrap-guard";
 import { DecisionHistoryPage } from "./decision-history";
 import { CheatSheetPage } from "./cheat-sheet";
@@ -432,8 +433,12 @@ function LeagueScopedPage({
     // in-flight request this component cares about, which is exactly as
     // true after a StrictMode double-invoke as it is for a real,
     // independent supersession by a newer leagueKey.
-    void client
-      .activateRedraftProfile(leagueKey)
+    // Routed through the shared active-profile queue (attention-center.ts)
+    // so a deep-link/bookmark/route activation here can never interleave
+    // with a mid-flight Attention Center sweep's own `activateRedraftProfile`
+    // calls against the same backend pointer -- see that module's comment
+    // for the full race this closes.
+    void serializeActiveProfileCall(() => client.activateRedraftProfile(leagueKey))
       .then((next) => {
         if (inFlightFor.current !== leagueKey) return;
         onUpdate(next);

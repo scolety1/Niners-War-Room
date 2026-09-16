@@ -6,6 +6,7 @@ import {
   explainTradeAnalysis,
   explainTradeFinderCandidate,
   explainTradePackageCandidate,
+  isTradeAnalysisStale,
   isTradePackageSearchStale,
   tradeFinderAnalysisLinkTarget,
   tradeVerdictFor,
@@ -414,5 +415,42 @@ describe("isTradePackageSearchStale (Find Trades mode-display race fix)", () => 
 
   it("clears staleness the instant the new mode's response actually lands", () => {
     expect(isTradePackageSearchStale(searchResult({ mode: "IMPROVE_POSITION" }), "IMPROVE_POSITION")).toBe(false);
+  });
+});
+
+/**
+ * Full Cycle V1, Worker 5 (Section 3D, Worker 3's open item #4): the
+ * Analyze tab's result panel previously never marked itself stale when the
+ * owner edited gives/receives after seeing a result and before re-clicking
+ * "Analyze trade" -- a fully-confident-looking result could sit next to an
+ * already-changed, not-yet-submitted trade selection.
+ */
+describe("isTradeAnalysisStale (Trades Analyze stale-result fix)", () => {
+  it("is never stale before any analysis has been submitted", () => {
+    expect(isTradeAnalysisStale(null, null, ["a"], ["b"])).toBe(false);
+  });
+
+  it("is not stale when the current selection exactly matches what was analyzed", () => {
+    expect(isTradeAnalysisStale(["a", "b"], ["c"], ["a", "b"], ["c"])).toBe(false);
+  });
+
+  it("is not stale merely because the picker order differs -- same set, different order is not a real trade change", () => {
+    expect(isTradeAnalysisStale(["a", "b"], ["c"], ["b", "a"], ["c"])).toBe(false);
+  });
+
+  it("flags staleness when a player was added to gives after the result was shown", () => {
+    expect(isTradeAnalysisStale(["a"], ["c"], ["a", "b"], ["c"])).toBe(true);
+  });
+
+  it("flags staleness when a player was removed from receives after the result was shown", () => {
+    expect(isTradeAnalysisStale(["a"], ["c", "d"], ["a"], ["c"])).toBe(true);
+  });
+
+  it("flags staleness when a give was swapped for a different player of the same count", () => {
+    expect(isTradeAnalysisStale(["a"], ["c"], ["z"], ["c"])).toBe(true);
+  });
+
+  it("clears staleness once the owner re-analyzes and the snapshot is updated to match", () => {
+    expect(isTradeAnalysisStale(["a", "b"], ["c"], ["a", "b"], ["c"])).toBe(false);
   });
 });

@@ -3,6 +3,7 @@ import type { RedraftBootstrap } from "@nwr/contracts";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+import { serializeActiveProfileCall } from "./attention-center";
 import { leagueFormat, resolveLeagueLifecycle } from "./league-context";
 import { summarizeShellNotices } from "./shell-notices";
 
@@ -94,7 +95,11 @@ export function ShellIdentity({
       navigate(`/league/${encodeURIComponent(profileId)}/${rest}${location.search}`, { replace: true });
     }
     try {
-      const next = await client.activateRedraftProfile(profileId);
+      // Routed through the shared active-profile queue (attention-center.ts)
+      // so this call can never interleave with a mid-flight Attention
+      // Center sweep's own `activateRedraftProfile` calls against the same
+      // backend pointer -- see that module's comment for the full race.
+      const next = await serializeActiveProfileCall(() => client.activateRedraftProfile(profileId));
       if (switchRequestRef.current === requestId) onUpdate(next);
     } catch {
       if (switchRequestRef.current === requestId) setError("League switch could not be saved. The current workspace remains active.");

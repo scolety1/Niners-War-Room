@@ -315,3 +315,36 @@ export function isTradePackageSearchStale(
 ): boolean {
   return result != null && result.mode !== requestedMode;
 }
+
+/**
+ * Full Cycle V1, Worker 5 (Section 3D, Worker 3's open item #4): the
+ * Analyze tab (`AnalyzeTab` in trades.tsx) is explicit-submit (a single
+ * "Analyze trade" button, disabled while `working`), so it is safe from the
+ * FAAB-class auto-refetch race -- but it had a real, separate small UX gap:
+ * once a result is shown, editing `gives`/`receives` (adding/removing a
+ * player on either side) leaves the fully-confident-looking prior result
+ * panel on screen completely unmarked, even though it no longer describes
+ * the trade currently built above it. Unlike `isTradePackageSearchStale`
+ * (which compares against a field the BACKEND echoes back,
+ * `TradePackageSearchResult.mode`), `TradeAnalysisResult.gives`/`.receives`
+ * carry NWR's own canonical player ids (`TradePlayerImpact.playerId`), not
+ * the raw Sleeper ids the picker UI tracks (`TradeSide.sleeperPlayerId`) --
+ * there is no direct id-space match between the two (the same
+ * canonical-vs-Sleeper-id gap already documented above for Find Trades'
+ * deliberately-omitted "Open in Analyze" jump). So staleness here compares
+ * the CURRENT picker selection against a snapshot of the exact Sleeper ids
+ * that were actually submitted for the result on screen, taken at the
+ * moment `onAnalyze` fired -- order-independent (re-picking the same two
+ * players in a different order is not a real change to the trade).
+ */
+export function isTradeAnalysisStale(
+  analyzedGiveIds: readonly string[] | null,
+  analyzedReceiveIds: readonly string[] | null,
+  currentGiveIds: readonly string[],
+  currentReceiveIds: readonly string[],
+): boolean {
+  if (analyzedGiveIds == null || analyzedReceiveIds == null) return false;
+  const sameSet = (a: readonly string[], b: readonly string[]) =>
+    a.length === b.length && [...a].sort().join("|") === [...b].sort().join("|");
+  return !sameSet(analyzedGiveIds, currentGiveIds) || !sameSet(analyzedReceiveIds, currentReceiveIds);
+}

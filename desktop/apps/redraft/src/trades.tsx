@@ -21,7 +21,7 @@ import { TradeSidePicker, type TradeSide } from "./in-season";
 import { leagueFormat } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
-import { describeTradePackageSearchError, explainTradeAnalysis, explainTradePackageCandidate, isTradePackageSearchStale } from "./trades-explain";
+import { describeTradePackageSearchError, explainTradeAnalysis, explainTradePackageCandidate, isTradeAnalysisStale, isTradePackageSearchStale } from "./trades-explain";
 import { resolveSeasonProjectionBasisCaption, useAsync } from "./weekly-shared";
 
 /**
@@ -65,6 +65,12 @@ export function TradesPage({ client, data, defaultTab }: { client: NwrApiClient;
   const [result, setResult] = useState<TradeAnalysisResult | null>(null);
   const [analysisError, setAnalysisError] = useState<NwrApiError | null>(null);
   const [working, setWorking] = useState(false);
+  // Full Cycle V1, Worker 5 (Section 3D, Worker 3's open item #4): a
+  // snapshot of exactly which Sleeper ids were submitted for the result
+  // currently on screen, taken at analyze-time -- see `isTradeAnalysisStale`
+  // in trades-explain.ts.
+  const [analyzedGiveIds, setAnalyzedGiveIds] = useState<string[] | null>(null);
+  const [analyzedReceiveIds, setAnalyzedReceiveIds] = useState<string[] | null>(null);
 
   const myRosterLoader = useCallback(() => (isSleeper ? client.redraftMyRoster() : null), [client, isSleeper]);
   const { result: myRoster } = useAsync(myRosterLoader, [isSleeper, data.activeProfileId]);
@@ -106,11 +112,18 @@ export function TradesPage({ client, data, defaultTab }: { client: NwrApiClient;
 
   const analyze = useCallback(async () => {
     if (!gives.length || !receives.length) return;
+    const giveIds = gives.map((p) => p.sleeperPlayerId);
+    const receiveIds = receives.map((p) => p.sleeperPlayerId);
     setWorking(true);
     setAnalysisError(null);
     setResult(null);
     try {
-      setResult(await client.redraftTradeAnalysis(gives.map((p) => p.sleeperPlayerId), receives.map((p) => p.sleeperPlayerId)));
+      const next = await client.redraftTradeAnalysis(giveIds, receiveIds);
+      setResult(next);
+      // Recorded only on a SUCCESSFUL analysis -- a failed call leaves any
+      // still-shown prior result's own staleness comparison untouched.
+      setAnalyzedGiveIds(giveIds);
+      setAnalyzedReceiveIds(receiveIds);
     } catch (reason) {
       setAnalysisError(reason instanceof NwrApiError ? reason : new NwrApiError("Trade analysis could not be read."));
     } finally {
@@ -144,6 +157,8 @@ export function TradesPage({ client, data, defaultTab }: { client: NwrApiClient;
 
       {tab === "analyze" ? (
         <AnalyzeTab
+          analyzedGiveIds={analyzedGiveIds}
+          analyzedReceiveIds={analyzedReceiveIds}
           error={analysisError}
           giveCandidates={giveCandidates}
           gives={gives}
@@ -185,6 +200,8 @@ function AnalyzeTab({
   onAnalyze,
   onOpenPlayer,
   seasonSourceAsOf,
+  analyzedGiveIds,
+  analyzedReceiveIds,
 }: {
   gives: TradeSide[];
   setGives: (updater: (current: TradeSide[]) => TradeSide[]) => void;
@@ -198,6 +215,8 @@ function AnalyzeTab({
   onAnalyze: () => void;
   onOpenPlayer: PlayerViewer;
   seasonSourceAsOf: string | null | undefined;
+  analyzedGiveIds: string[] | null;
+  analyzedReceiveIds: string[] | null;
 }) {
   const impactColumns: TableColumn[] = useMemo(
     () => [
@@ -232,6 +251,16 @@ function AnalyzeTab({
   );
 
   const explanation = result ? explainTradeAnalysis(result, result.gives.map((p) => p.playerName), result.receives.map((p) => p.playerName)) : null;
+  // Full Cycle V1, Worker 5 (Section 3D, Worker 3's open item #4): true
+  // exactly when the result panel below still reflects a DIFFERENT
+  // give/receive selection than the one currently built above it -- see
+  // `isTradeAnalysisStale` in trades-explain.ts.
+  const stale = isTradeAnalysisStale(
+    analyzedGiveIds,
+    analyzedReceiveIds,
+    gives.map((p) => p.sleeperPlayerId),
+    receives.map((p) => p.sleeperPlayerId),
+  );
 
   return <>
     <Panel title="Build a trade">
@@ -246,6 +275,12 @@ function AnalyzeTab({
       </div>
     </Panel>
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+    {stale && !working ? (
+      <div className="alert-strip alert-strip--pending" role="status">
+        <strong>This trade has changed.</strong>
+        <span>You've edited "I give"/"I receive" since this result was analyzed -- the panel below still reflects the PREVIOUS selection. Analyze trade again to refresh it.</span>
+      </div>
+    ) : null}
     {result && explanation ? <>
       <div className="nwr-action-grid">
         <DecisionExplain
