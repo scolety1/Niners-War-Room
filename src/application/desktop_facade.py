@@ -1803,6 +1803,35 @@ class DesktopBackendFacade:
         except OSError:
             return False
 
+    @staticmethod
+    def _blocked_seed_reason_breakdown(
+        blocked_seed_rows: Sequence[Mapping[str, str]],
+    ) -> str:
+        """Group the real, per-row `block_reason` values from
+        BLOCKED_2026_ROOKIES.csv into a human-readable breakdown.
+
+        NWR OVERNIGHT (data-issues-badge audit, 2026-09-16): every caller of
+        this data previously asserted a single blanket reason -- "position
+        conflicts with the current factual registry" -- for every blocked
+        row. The real CSV distinguishes three genuinely different reasons
+        (an actual draft-position/current-position mismatch, a current
+        roster status that is not currently-rostered such as reserve/
+        practice-squad/development, and an unresolved exact identity). Only
+        2 of the 7 real rows in the 2026-09-12 freeze are true position
+        conflicts; the other 5 were mislabeled. This groups the already-
+        parsed `reason` field (never discarded, just never surfaced)
+        instead of re-asserting the wrong blanket phrase.
+        """
+        counts: dict[str, int] = {}
+        for row in blocked_seed_rows:
+            reason = str(row.get("reason") or "").strip() or "reason not recorded"
+            counts[reason] = counts.get(reason, 0) + 1
+        parts = []
+        for reason, count in counts.items():
+            noun = "row" if count == 1 else "rows"
+            parts.append(f"{count} {noun} -- {reason}")
+        return "; ".join(parts)
+
     def redraft_bootstrap(self) -> FacadePayload:
         self._require_mode("redraft")
         presets = builtin_presets()
@@ -1933,8 +1962,9 @@ class DesktopBackendFacade:
             )
         elif blocked_seed_rows:
             warnings.append(
-                f"{len(blocked_seed_rows)} position-conflict rookies remain blocked "
-                "and excluded from rankings."
+                f"{len(blocked_seed_rows)} rookies remain blocked and excluded from "
+                "rankings by the factual player registry "
+                f"({self._blocked_seed_reason_breakdown(blocked_seed_rows)})."
             )
         health = build_health_report(selected, snapshot, ranking)
         normalized_warnings = tuple(dict.fromkeys(warnings))
@@ -2085,8 +2115,10 @@ class DesktopBackendFacade:
                         else f"{blocked_count} rookies remain blocked"
                     ),
                     "message": (
-                        f"{blocked_names} remain excluded because their draft positions "
-                        "conflict with the current factual registry; no values were imputed."
+                        f"{blocked_names} remain excluded from rankings by the factual "
+                        "player registry ("
+                        f"{self._blocked_seed_reason_breakdown(blocked_seed_rows)}"
+                        "); no values were imputed."
                     ),
                 }
             )
@@ -2176,6 +2208,9 @@ class DesktopBackendFacade:
                 "health": self._redraft_health_payload(
                     health,
                     additional_blocked=len(blocked_seed_rows),
+                    blocked_reason_breakdown=self._blocked_seed_reason_breakdown(
+                        blocked_seed_rows
+                    ),
                 ),
                 "notices": notices,
             },
@@ -7640,6 +7675,7 @@ class DesktopBackendFacade:
         health: Any,
         *,
         additional_blocked: int = 0,
+        blocked_reason_breakdown: str = "",
     ) -> dict[str, Any]:
         status = _text(health.status)
         messages = list(health.messages)
@@ -7647,8 +7683,10 @@ class DesktopBackendFacade:
             if status.startswith("READY"):
                 noun = "player" if additional_blocked == 1 else "players"
                 status = f"Ready · {additional_blocked} blocked {noun} visible"
+            reason_suffix = f" ({blocked_reason_breakdown})" if blocked_reason_breakdown else ""
             messages.append(
-                f"{additional_blocked} position-conflict rookies are excluded from rankings."
+                f"{additional_blocked} rookies are excluded from rankings by the "
+                f"factual player registry{reason_suffix}."
             )
         elif status.startswith("READY"):
             status = "Ready"
