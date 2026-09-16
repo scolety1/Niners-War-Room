@@ -2677,3 +2677,93 @@ filtered to what is still real and unresolved as of this pass:
    `WaiverAddCandidate`/`TradePlayerImpact`; the 2-point-conversion Sleeper
    scoring gap (worth a future scoped look, explicitly out-of-scope this
    cycle).
+
+## Worker 10 -- FINAL: native installer rebuild attempt (2026-09-16)
+
+**Branch/worktree:** same as Workers 1-9, `upgrade/nwr-prospective-outcomes-v1-20260914`
+at `C:\NWR\prospective-outcomes-v1`. Started at HEAD `11a3d995` (Worker 9's
+final, already-pushed commit; clean, confirmed via `git log -1` and
+`git status`). Role: rebuild the outdated native Tauri installer per the
+cycle's directive ("rebuild it once at the end if feasible, without
+retrying the blocked installation step"). No code investigation, bug-
+hunting, or feature work in scope. Did not touch, install, or launch any
+built installer/exe -- that remains structurally blocked by this session's
+sandbox permission classifier per the standing directive.
+
+### Baseline confirmed before building
+
+Pre-existing artifacts at `desktop/target/release/bundle/` (from the
+earlier, pre-9-worker-cycle task):
+- `nsis/Niners War Room — Redraft_1.0.8_x64-setup.exe` -- 357,837,602
+  bytes, 2026-09-16 14:13:55
+- `msi/Niners War Room — Redraft_1.0.8_x64_en-US.msi` -- 362,307,584
+  bytes, 2026-09-16 14:14:23
+
+Confirmed both protected dev instances alive and untouched before
+starting: Redraft (node PID 22012, python PID 16920, started 5:01 PM,
+listening on 1422/18742) and Dynasty (node PID 24900, python PID 24240,
+started 4:02 PM, listening on 1421/18741).
+
+### Build attempts -- BOTH KILLED BY THE HOST, NOT A CODE FAILURE
+
+Ran `npm run bundle:redraft` from `desktop/` (in background, redirected
+to a log file, long timeout) exactly per the dispatch. Sequence per the
+script: `check:resources` -> `sidecar:build` (PyInstaller Python backend
+exe) -> `tauri:build` (Rust/cargo release, NSIS+MSI packaging).
+
+**Attempt 1** (`check:resources` passed cleanly: "NWR Desktop resource
+allowlists are exact and privacy-bounded."; `sidecar:build`'s PyInstaller
+stage ran to completion -- log shows `Build complete! The results are
+available in: C:\NWR\prospective-outcomes-v1\.codex-tmp\pyinstaller-dist`
+-- then the wrapping `build-python-sidecar.ps1` PowerShell script was
+mid-line into its next step when the task was killed. `tauri:build`
+(the Rust/cargo stage) never started.) Host notification: *"Background
+command ... was stopped because the system is running low on memory."*
+
+**Attempt 2** (retried once, per the directive's "rebuild it once ... if
+feasible" -- this was a genuine external OOM event, not a build defect,
+so a retry was warranted): `check:resources` passed again; PyInstaller
+got only as far as `Building PKG (CArchive)
+nwr-desktop-api-x86_64-pc-windows-msvc.pkg` before being killed -- earlier
+than attempt 1, consistent with less free memory available the second
+time. `tauri:build` again never started. Same host low-memory kill.
+
+Checked host memory directly (`Get-CimInstance Win32_OperatingSystem`):
+2.65 GB free / 15.11 GB total before attempt 2, **2.08 GB free / 15.11 GB
+total** after attempt 2 (trending down, not up). Top memory consumers
+(`Get-Process | Sort-Object WS -Descending`) were multiple `chrome` and
+`claude` processes unrelated to this build and not owned/attributable to
+this worker's own task -- not something this worker has authorization or
+grounds to touch. The two protected dev-instance process pairs were NOT
+among the top consumers and were reconfirmed alive, listening on their
+correct ports (1422/18742, 1421/18741), and unmodified after both kills.
+
+Confirmed the pre-existing `nsis/` and `msi/` output files were byte-
+identical and timestamp-identical to the pre-build baseline after both
+attempts (both kills happened during the PyInstaller sidecar stage,
+strictly before `tauri:build`/NSIS/MSI packaging ever runs) -- no partial
+or corrupt installer was ever written.
+
+**Did not attempt a third retry.** Free memory was lower after attempt 2
+than before it, the `tauri:build`/cargo stage (the most memory-hungry
+part of this pipeline) was never even reached in either attempt, and a
+third attempt under worse conditions than the first two had a low
+plausible chance of reaching that stage either. This is judged genuinely
+infeasible right now under this environment's current shared memory
+pressure, not a code or build-script defect -- reporting the failure
+honestly per the dispatch's explicit instruction rather than declaring
+partial success or forcing a third attempt.
+
+**Verdict: BUILD FAILED (environment memory exhaustion, host-initiated
+kill, twice) -- not a code defect, not the documented privacy/allowlist
+risk (that check passed cleanly both times), and not the structurally-
+blocked installation step (never reached). No code fix applicable or
+made. No commit, no push.**
+
+Reconfirmed both protected dev-instance pairs alive and untouched at the
+end of this pass: Redraft (PID 22012/16920, ports 1422/18742) and Dynasty
+(PID 24900/24240, ports 1421/18741) -- unchanged from the confirmation at
+the start of this worker's pass.
+
+**Final HEAD: `11a3d995`, unchanged from this worker's start (no code
+changes made).**
