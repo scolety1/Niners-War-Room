@@ -2180,3 +2180,205 @@ governed source data"), landing on this worktree's own isolated Dynasty
 7. **Section 5 (four-league status tracking) has still not been started**
    by any worker -- the next logical pickup per the standing dispatch,
    alongside any remaining Section 4 items above.
+
+## Worker 8 -- Section 5 four-league status tracking + docstring fix
+## (2026-09-16)
+
+Branch/HEAD at start: `a549f9a4`. Redraft frontend `127.0.0.1:1422` (PID
+23004) / backend `127.0.0.1:18742` (PID 7924) confirmed still LISTENING,
+still serving PRE-CYCLE code (untouched, no restart performed, per
+standing instruction). Dynasty frontend `127.0.0.1:1421` (PID 24900) /
+backend `127.0.0.1:18741` (PID 24240) confirmed still LISTENING, no
+Dynasty backend/Python code touched.
+
+### SECTION 5 -- four-league status tracking
+
+**LEAGUE 1 -- Fantasy Gamers (Sleeper redraft, `1312983576827920384`,
+`scolety`) -- CONSOLIDATED, not re-tested.** Synthesized from Workers
+1-7's own live findings (INFERENCE from prior ACTUAL TEST RESULT/LIVE
+OBSERVATION entries, not re-verified this pass): real, already-imported,
+read-only, 10-team PPR 1QB, PRE_DRAFT lifecycle. All 6 League-page tabs,
+Data Health, Draft Room (basic lifecycle only), Market/ADP, Rankings
+search/filter, Free Agents, Weekly Tools, Start/Sit, Trades, Decision
+History, and Dynasty-side identity cross-checks have each been LIVE
+OBSERVED against this real league across Workers 6-7. Known issues
+specific to this league: (a) K/DST roster slots ("3451", "NE") are
+CORRECTLY unmatched by design (K/DST are permanently out of NWR's ranked
+model scope, not a broken identity join) -- this branch's own history
+(commit `a549f9a4`) already shipped `describe_unmatched_roster_players()`
+to surface a readable label/reason instead of a raw id list, not yet
+visible live pending the deferred Redraft restart; (b) Draft Room's
+DecisionBundle endpoints return real HTTP 500s in this league's current
+no-slot-selected PRE_DRAFT state (degrades gracefully, root cause not
+chased, in-scope-conflict with the hard boundary); (c) Start/Sit's
+"+0.5 vs. displayed 0.4pt" rounding/provenance gap (see Worker 7's open
+item, still open below) is specific to this league's real current week's
+close-call recommendation. No outstanding blocker -- this league is the
+cycle's single most exercised, most trustworthy real-data surface.
+
+**LEAGUE 2 -- "My Sleeper dynasty league" -- NOT CONFIGURED, NOT
+AVAILABLE in this environment (ACTUAL FINDING, not inferred).** Checked
+three ways: (1) this worktree's own isolated Redraft `local_exports/
+redraft_v1/profiles/` contains exactly 3 profiles -- Fantasy Gamers
+(real Sleeper), "Isolation Check Local", and "10-team 1QB Standard" (both
+`provider: "local"`) -- no dynasty-flavored or second Sleeper league
+anywhere; `local_exports/` is gitignored/worktree-local (confirmed via
+`git check-ignore`), so it also cannot have silently carried one in from
+another branch/worktree. (2) `docs/` repo-wide grep for "sleeper dynasty",
+"dynasty sleeper league", "owner...dynasty...sleeper" returns zero hits --
+no setup doc, checklist, or league-ID reference exists anywhere. (3) LIVE
+OBSERVATION against the real running Dynasty app (`127.0.0.1:1421`,
+Chrome session): the entire left nav (Home, Dynasty Rankings, Asset
+Explorer, Player Detail, Compare, Market Analysis, Rookie Review, Trade
+Decision Lab, My Board & Decisions, Scenario Playground, Draft Cockpit,
+Data Health) has no "Leagues"/"Import league"/"Connect Sleeper" surface
+anywhere -- Dynasty's active context is a generic league-SHAPE setting
+("10-team - 1QB", "Local only - protected session"), not a specific real
+league ID/roster import. INSPECTED CODE confirms this structurally: zero
+matches for "sleeper" (case-insensitive) anywhere under
+`desktop/apps/dynasty/src` or `src/application/*dynasty*`. Conclusion:
+Dynasty is architecturally a governed long-term ASSET BOARD (240 Finished
+V1 assets, owner-facing valuation/trade tooling), not a per-real-league
+roster tool the way Redraft is -- there is no existing supported import/
+snapshot path to exercise for a specific real dynasty league, because no
+such path exists in this app at all. Per the directive, no new ESPN
+integration or dynasty waiver engine was built, and no fake league data
+was fabricated to paper over this gap. This is a genuine product-scope
+finding for the owner, not a bug: if the owner has a real Sleeper dynasty
+league they want tracked, it would need to become `docs/`-level scope for
+a future cycle, not something this worktree can self-serve.
+
+**LEAGUE 3 -- KHA High Stakes (ESPN, real draft 2026-09-02) --
+COMPLETED/HISTORICAL, matches memory's "KHA done."** INSPECTED CODE/docs:
+`desktop/KHA_DRAFT_DAY_README.md` (the real draft-night launch runbook,
+16-team ESPN full-PPR, 12 rounds), `sample_data/kha_real_draft_2026/
+RECONCILIATION_LEDGER.md` (real, owner-authoritative account: "The 2026
+KHA High Stakes League draft ran on ESPN...on 2026-09-02"; 192-pick
+official recap is authoritative, NWR's own 157-pick live capture is
+authoritative only for NWR's operational behavior, including placeholder
+substitutions the operator made live for players NWR couldn't represent),
+`docs/codex/KHA_FINAL_OPERATIONAL_REPLAY_20260903.md`,
+`KHA_ANOMALY_INVESTIGATION_20260903.md`, `KHA_SHADOW_DECISION_REPLAY_
+20260903.md` (all dated 2026-09-03, post-draft forensic/replay analysis,
+not active league management). This worktree's own isolated
+`local_exports/redraft_v1/profiles/` has NO KHA profile (expected -- KHA's
+real profile lived in a different, draft-night-specific worktree;
+`local_exports/` never carries across worktrees per its `.gitignore`
+entry). No further action needed or possible from this worktree: KHA is
+closed-book, real-draft-complete, already reconciled/forensically
+analyzed, and has no in-season/ongoing NWR surface remaining to verify.
+
+**LEAGUE 4 -- 403 N 18th and friends (ESPN, `1009373442`, real draft
+2026-09-07 19:00 EDT) -- PROFILE NOT PRESENT IN THIS WORKTREE (confirmed
+worktree-specific, not carried forward; NOT independently re-verifiable
+this pass).** Per memory this was RESOLVED in an earlier cycle (real
+profile "403 N 18th and friends" created, 8-team PPR, real ESPN ADP
+276/294 matched). ACTUAL FINDING this pass: `grep -rl "1009373442|403 N
+18th" local_exports/` in this worktree returns zero matches; the only 3
+profiles present are the Fantasy Gamers/2 local-test ones documented
+under League 1/2 above. `local_exports/` is gitignored (`git check-ignore
+-v` confirmed), meaning it is genuinely worktree-local, disposable state
+that is NEVER carried across git branches/worktrees by design -- the
+memory-documented profile was real and created correctly in whichever
+worktree that prior cycle ran in, but that state structurally cannot and
+does not exist here. `docs/codex/NWR_403_N_18TH_MANUAL_SETUP_CHECKLIST_
+20260906.md` (the real manual-entry recipe) and `NWR_403_REPLAY_WITH_
+ACCEPTED_FIXES_V1_20260908.md`/`NWR_403_14TH_PICK_GAP_CLOSURE_V1_
+20260908.md` (post-draft fix docs) confirm the league's draft already
+happened (2026-09-07) and was already worked through in a prior cycle.
+No light verification (load/ADP-staleness check) was possible this pass
+because there is no profile in this worktree to load -- this is an
+environment/worktree-scoping limitation, not a regression or a sign the
+real profile itself is gone from the owner's actual setup. Flag for
+whoever next runs in the SAME worktree that originally created it, or for
+the eventual native-installer/closure pass that consolidates state.
+
+### SPARE-TIME ITEM -- Worker 6 open item #4: `explain_marginal_roster_
+### reason`'s stale docstring contradiction (FIXED)
+
+INSPECTED CODE confirmed the contradiction was real and, on closer look,
+BROADER than the one-function gap Worker 6 flagged: `shadow_numeric_
+authorities_service.py`'s module docstring claimed "Nothing in this
+module is wired into production ranking, Suggestions, or any owner-facing
+decision surface," but the module also houses `marginal_roster_utility_v2`
+-- already documented elsewhere in this cycle's own history (per memory:
+"marginal_roster_utility PROMOTED... primary live candidate-ordering
+signal") as the PRIMARY live sort signal in `decision_bundle_service.py`,
+in addition to `explain_marginal_roster_reason` (the real Improve Team
+Add/Drop explanation text). **Fix:** rewrote the module docstring to name
+both real exceptions explicitly (`marginal_roster_utility_v2` and
+`explain_marginal_roster_reason`) while confirming every OTHER function in
+the module (Team Score, Championship Equity, Pick Score, the look-ahead
+optimizer, `marginal_roster_utility` v1) remains genuinely RESEARCH_ONLY
+and unwired. Docstring-only change -- no logic, weight, or behavior
+touched. `tests/test_shadow_numeric_authorities_service.py`: 63/63 passed
+unchanged (ACTUAL TEST RESULT).
+
+### FILES CHANGED THIS PASS
+
+- `src/services/shadow_numeric_authorities_service.py` -- module docstring
+  only (see above). No function body, weight, or threshold changed.
+- `docs/codex/full_cycle_v1/LEDGER.md` -- this section.
+
+### HARD BOUNDARY CHECK
+
+Did not touch `marginal_roster_utility_v2`, its weights, the governed
+valuation model, draft recommendation logic, roster legality,
+`LeagueSnapshot`/`LeagueWorkspaceContext`/lifecycle-resolver/
+`DecisionResultEnvelope`/`PlayerAvailabilityStatus` semantics, or
+Dynasty's `governed_asset_registry_service.py` (not touched at all --
+only read/navigated live for League 2's investigation). No real Sleeper/
+ESPN writes anywhere this pass -- League 1's consolidation was pure
+ledger synthesis (no new live session against Fantasy Gamers); League 2's
+Dynasty Chrome session was read-only navigation only (Home, nav sidebar);
+Leagues 3/4 were pure file/grep investigation, no app interaction. No new
+ESPN integration or dynasty waiver engine built. No fake league data
+created for Leagues 2-4 to paper over their real absence from this
+worktree.
+
+### RUNNING PROCESSES STATUS
+
+Both unchanged from start of pass: Redraft frontend `127.0.0.1:1422`
+(PID 23004)/backend `127.0.0.1:18742` (PID 7924) LISTENING, still
+pre-cycle code, NOT restarted (deliberately deferred). Dynasty frontend
+`127.0.0.1:1421` (PID 24900)/backend `127.0.0.1:18741` (PID 24240)
+LISTENING, this cycle's code, untouched (no Dynasty backend/Python file
+was modified this pass).
+
+### OPEN ISSUES FOR NEXT WORKER
+
+1. Section 5 is now DONE -- League 1 consolidated (no new gaps beyond
+   what Workers 6-7 already found), League 2 confirmed genuinely
+   unavailable/unconfigured (a real product-scope question for the owner,
+   not a bug to fix in this cycle), League 3 confirmed complete/
+   historical with nothing further to verify, League 4's real prior-cycle
+   profile could not be re-verified from THIS worktree (worktree-scoped
+   `local_exports/`, by design) -- whoever runs closure/native-installer
+   work in the worktree that actually holds the 403 N 18th profile should
+   do the light verification (load, ADP staleness) this pass could not.
+2. Everything still open from Workers 1-7 remains open and unchanged:
+   Start/Sit's "+0.5 vs. 0.4pt" rounding/provenance gap (NOT picked up
+   this pass -- the docstring item was chosen instead; both were eligible
+   per the priority order but only one spare-time item was in scope),
+   Trades' backend-layer duplicate-id handling not independently verified,
+   Part A/Part C.2's two Redraft fixes not yet visible live pending
+   restart, Draft Room DecisionBundle 500s in pre-draft state, Cheat
+   Sheet's missing print stylesheet, Redraft's missing profile archive/
+   delete, `test_redraft_engine_v1_service.py`'s pre-existing failures not
+   triaged, native Tauri packaging, Decision History's scenario-vs-
+   observed provenance not exhaustively audited across all 104 event
+   types.
+3. **The cycle is now close to Section 7 (closure).** Per the standing
+   dispatch: final regression run (full targeted suite + confirm the same
+   baseline pre-existing failures), final browser walkthrough (ideally
+   AFTER the long-deferred Redraft restart, so this cycle's 2 accumulated
+   Redraft fixes -- `unmatchedRosterSleeperPlayers` and the Trades dedup
+   fix -- are finally visible live and can be confirmed rendering
+   correctly), commit+push (still not done -- everything this cycle has
+   been commit-only per each worker's instructions), native installer
+   rebuild, and a final structured report are what remain. The next
+   worker or two should start explicitly planning/executing closure
+   rather than picking up more open items -- there is a real, growing
+   backlog of small open items (see #2) that a closure pass should either
+   triage-and-accept-as-known-issues or explicitly hand to a follow-up
+   cycle, not keep silently deferring.

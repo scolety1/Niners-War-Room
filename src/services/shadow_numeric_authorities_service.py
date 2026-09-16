@@ -3,10 +3,19 @@ Pick Score, and a bounded look-ahead optimizer.
 
 Everything in this module is explicitly RESEARCH_ONLY -- see
 docs/codex/NUMERIC_AUTHORITIES_RESEARCH_V1.md for the prior design pass
-and docs/codex/SHADOW_NUMERIC_AUTHORITIES_V1.md for what shipped here.
-Nothing in this module is wired into production ranking, Suggestions, or
-any owner-facing decision surface. No weight here was hand-picked and
-called validated -- every number is either a direct reuse of an existing,
+and docs/codex/SHADOW_NUMERIC_AUTHORITIES_V1.md for what shipped here --
+WITH TWO NAMED, LATER-PROMOTED EXCEPTIONS: `marginal_roster_utility_v2`
+(the PRIMARY live candidate-ORDER signal in `decision_bundle_service.py`,
+per its own preregistered walk-forward promotion -- see
+docs/codex/NWR_MARGINAL_UTILITY_WALK_FORWARD_PROMOTION_V1.md) and
+`explain_marginal_roster_reason` (the real, owner-facing explanation text
+rendered on Redraft's Improve Team "Consider dropping" Add/Drop view, via
+`desktop_facade.py`'s `_decision_bundle_to_v2_json`). Every OTHER function
+in this module (Team Score, Championship Equity, Pick Score, the
+look-ahead optimizer, `marginal_roster_utility` v1) remains RESEARCH_ONLY
+and is NOT wired into production ranking, Suggestions, or any other
+owner-facing decision surface. No weight here was hand-picked and called
+validated -- every number is either a direct reuse of an existing,
 already-governed value (RedraftRankingRow.replacement_adjusted_value) or
 the output of an actual Monte Carlo simulation, with disclosed
 assumptions and a reported Monte Carlo error where applicable.
