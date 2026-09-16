@@ -1256,6 +1256,23 @@ export interface WaiversResult {
   faabContext: WaiverFaabContext;
   rosterSlotContext: WaiverRosterSlotContext;
   unmatchedRosterSleeperPlayerIds: string[];
+  /**
+   * NWR Full Cycle V1 (Worker 7): a readable label/reason per entry in
+   * `unmatchedRosterSleeperPlayerIds`, distinguishing two genuinely
+   * different situations the flat raw-id list conflates -- a real,
+   * catalog-known player/team-defense whose position (K/DST) simply has no
+   * rows in NWR's governed ranking by design ("OUT_OF_RANKED_MODEL_SCOPE",
+   * not a bug) vs. a genuinely unresolved Sleeper id ("UNKNOWN_TO_CATALOG",
+   * worth investigating). Optional for backward compatibility with any
+   * cached/older response shape; render `unmatchedRosterSleeperPlayerIds`
+   * as a fallback when absent.
+   */
+  unmatchedRosterSleeperPlayers?: Array<{
+    sleeperId: string;
+    label: string;
+    reason: string;
+    category: "OUT_OF_RANKED_MODEL_SCOPE" | "UNKNOWN_TO_CATALOG";
+  }>;
   addCandidates: WaiverAddCandidate[];
   dropCandidates: WaiverDropCandidate[];
   addDropPairings: WaiverAddDropPairing[];

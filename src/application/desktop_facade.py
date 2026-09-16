@@ -221,6 +221,7 @@ from src.services.weekly_lineup_optimizer_service import (
     optimize_weekly_lineup,
 )
 from src.services.waiver_engine_service import (
+    describe_unmatched_roster_players,
     pair_add_drop,
     rank_drop_candidates,
     rank_waiver_candidates,
@@ -3895,6 +3896,17 @@ class DesktopBackendFacade:
                 "faabContext": faab_context,
                 "rosterSlotContext": roster_slot_context,
                 "unmatchedRosterSleeperPlayerIds": list(resolved.unmatched_sleeper_player_ids),
+                "unmatchedRosterSleeperPlayers": [
+                    {
+                        "sleeperId": item.sleeper_id,
+                        "label": item.label,
+                        "reason": item.reason,
+                        "category": item.category,
+                    }
+                    for item in describe_unmatched_roster_players(
+                        resolved.unmatched_sleeper_player_ids, players,
+                    )
+                ],
                 "addCandidates": [_candidate_payload(candidate) for candidate in add_candidates],
                 "dropCandidates": [
                     {

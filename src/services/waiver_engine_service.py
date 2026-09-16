@@ -117,6 +117,86 @@ def resolve_roster_canonical_ids(
     )
 
 
+# Positions that structurally have zero rows in NWR's governed ranking, by
+# design (see docs/codex/waiver_night_v1/LEDGER.md, "K/DST are never
+# evaluated by this waiver-ranking path at all, by design, not a bug this
+# pass introduced"). A K/DST roster slot will therefore ALWAYS show up in
+# `ResolvedRoster.unmatched_sleeper_player_ids`, even when its real Sleeper
+# identity resolves cleanly -- this is a scope boundary, not an identity
+# gap.
+_OUT_OF_RANKED_MODEL_SCOPE_POSITIONS = frozenset({"K", "DST"})
+
+
+@dataclass(frozen=True)
+class UnmatchedRosterPlayer:
+    """A human-readable description of one entry in
+    `ResolvedRoster.unmatched_sleeper_player_ids`, distinguishing two
+    genuinely different situations that a flat raw-Sleeper-id list conflates:
+      * `OUT_OF_RANKED_MODEL_SCOPE` -- the real Sleeper catalog resolves a
+        real player/team-defense name, but the position (K/DST) simply has
+        no rows in NWR's governed ranking by design. Not a bug.
+      * `UNKNOWN_TO_CATALOG` -- the id has no entry in the Sleeper player
+        catalog at all, a genuinely unresolved identity worth investigating.
+    Purely additive/display: never changes which ids are matched/unmatched
+    (that remains `resolve_roster_canonical_ids`'s own, unmodified job) and
+    never affects any ranking, score, or roster-legality computation.
+    """
+
+    sleeper_id: str
+    label: str
+    reason: str
+    category: Literal["OUT_OF_RANKED_MODEL_SCOPE", "UNKNOWN_TO_CATALOG"]
+
+
+def describe_unmatched_roster_players(
+    unmatched_sleeper_ids: Sequence[str],
+    players_catalog: Mapping[str, Mapping[str, Any]],
+) -> tuple[UnmatchedRosterPlayer, ...]:
+    """Builds a readable label/reason for each already-computed unmatched
+    Sleeper roster id, using the SAME Sleeper player catalog
+    `resolve_roster_canonical_ids` was given -- no new identity system, no
+    re-matching, no change to which ids are considered unmatched."""
+
+    out: list[UnmatchedRosterPlayer] = []
+    for raw_id in unmatched_sleeper_ids:
+        sleeper_id = str(raw_id)
+        entry = players_catalog.get(sleeper_id)
+        if isinstance(entry, Mapping):
+            position = _sleeper_position(entry.get("position"))
+            team = str(entry.get("team") or "").upper().strip()
+            name = str(entry.get("full_name") or entry.get("search_full_name") or "").strip()
+            if not name and team:
+                name = f"{team} D/ST" if position == "DST" else team
+            if not name:
+                name = sleeper_id
+            label = f"{name} ({position})" if position else name
+            if position in _OUT_OF_RANKED_MODEL_SCOPE_POSITIONS:
+                out.append(
+                    UnmatchedRosterPlayer(
+                        sleeper_id=sleeper_id, label=label,
+                        reason="Outside NWR's ranked model -- K/DST are not part of the governed ranking.",
+                        category="OUT_OF_RANKED_MODEL_SCOPE",
+                    )
+                )
+            else:
+                out.append(
+                    UnmatchedRosterPlayer(
+                        sleeper_id=sleeper_id, label=label,
+                        reason="Identity could not be matched to NWR's governed ranking.",
+                        category="UNKNOWN_TO_CATALOG",
+                    )
+                )
+        else:
+            out.append(
+                UnmatchedRosterPlayer(
+                    sleeper_id=sleeper_id, label=sleeper_id,
+                    reason="Unknown Sleeper id -- no entry in the Sleeper player catalog.",
+                    category="UNKNOWN_TO_CATALOG",
+                )
+            )
+    return tuple(out)
+
+
 @dataclass(frozen=True)
 class WaiverCandidate:
     sleeper_player_id: str

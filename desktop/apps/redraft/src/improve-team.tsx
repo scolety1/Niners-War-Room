@@ -38,6 +38,7 @@ import {
   ProviderStatusLine,
   WeekControl,
   appendPlayerDetailColumn,
+  describeUnmatchedRosterPlayers,
   resolveSeasonProjectionBasisCaption,
   useAsync,
   useFreeAgents,
@@ -509,7 +510,12 @@ function AddDropTab({
         </Panel>
       ) : null}
       {selectedAdd ? <AddDropDetail add={selectedAdd} waivers={waivers} mode={mode} onClose={() => setSelectedAddId(null)} /> : null}
-      {waivers.unmatchedRosterSleeperPlayerIds.length ? <p className="copy-muted">Unresolved roster Sleeper IDs: {waivers.unmatchedRosterSleeperPlayerIds.join(", ")}</p> : null}
+      {waivers.unmatchedRosterSleeperPlayerIds.length ? (
+        <p className="copy-muted">
+          Roster slots outside this ranking:{" "}
+          {describeUnmatchedRosterPlayers(waivers.unmatchedRosterSleeperPlayerIds, waivers.unmatchedRosterSleeperPlayers).join("; ")}
+        </p>
+      ) : null}
     </> : null}
   </>;
 }

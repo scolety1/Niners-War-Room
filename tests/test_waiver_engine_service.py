@@ -14,6 +14,7 @@ from src.services.shadow_numeric_authorities_service import marginal_roster_util
 from src.services.waiver_engine_service import (
     FAAB_URGENCY_TIER,
     WaiverCandidate,
+    describe_unmatched_roster_players,
     pair_add_drop,
     rank_drop_candidates,
     rank_waiver_candidates,
@@ -407,6 +408,79 @@ def test_resolve_roster_canonical_ids_matches_and_reports_unmatched() -> None:
     assert resolved.canonical_player_ids == ("qb1", "rb1")
     assert resolved.unmatched_sleeper_player_ids == ("s3",)
     assert resolved.player_names_by_canonical_id["qb1"] == "QB One"
+
+
+# ---------------------------------------------------------------------------
+# NWR Full Cycle V1 (Worker 7): "Unresolved roster Sleeper IDs" investigation.
+#
+# Live-observed on a real Fantasy Gamers roster: "Unresolved roster Sleeper
+# IDs: 3451, NE". Investigated against the already-documented Waiver Night
+# V1 finding (docs/codex/waiver_night_v1/LEDGER.md, Work Unit 7): both are
+# real, catalog-known entries (a K and a DST) whose position simply has zero
+# rows in NWR's governed ranking BY DESIGN, not a genuine identity failure.
+# `describe_unmatched_roster_players` never changes which ids are matched --
+# it only explains the already-computed unmatched list.
+# ---------------------------------------------------------------------------
+
+
+def test_describe_unmatched_roster_players_labels_a_real_kicker_as_out_of_scope() -> None:
+    players_catalog = {
+        "3451": {"full_name": "Ka'imi Fairbairn", "position": "K", "team": "HOU"},
+    }
+    described = describe_unmatched_roster_players(["3451"], players_catalog)
+    assert len(described) == 1
+    item = described[0]
+    assert item.sleeper_id == "3451"
+    assert item.label == "Ka'imi Fairbairn (K)"
+    assert item.category == "OUT_OF_RANKED_MODEL_SCOPE"
+    assert "not a bug" not in item.reason.lower()  # honest reason text, not a meta-comment
+    assert "governed ranking" in item.reason.lower()
+
+
+def test_describe_unmatched_roster_players_labels_a_real_team_defense_as_out_of_scope() -> None:
+    players_catalog = {
+        "NE": {"position": "DEF", "team": "NE"},
+    }
+    described = describe_unmatched_roster_players(["NE"], players_catalog)
+    assert len(described) == 1
+    item = described[0]
+    assert item.sleeper_id == "NE"
+    assert item.label == "NE D/ST (DST)"
+    assert item.category == "OUT_OF_RANKED_MODEL_SCOPE"
+
+
+def test_describe_unmatched_roster_players_flags_a_genuinely_unknown_id() -> None:
+    described = describe_unmatched_roster_players(["ghost-id"], {})
+    assert len(described) == 1
+    item = described[0]
+    assert item.sleeper_id == "ghost-id"
+    assert item.label == "ghost-id"
+    assert item.category == "UNKNOWN_TO_CATALOG"
+    assert "no entry" in item.reason.lower()
+
+
+def test_describe_unmatched_roster_players_flags_a_catalog_known_non_kdst_mismatch_differently() -> None:
+    """A skill-position player with a catalog entry that still didn't match
+    any governed ranking row (e.g. a genuine identity-join gap) must be
+    labeled distinctly from the K/DST scope-boundary case -- never silently
+    lumped in with "this is fine by design."""
+
+    players_catalog = {
+        "s9": {"full_name": "Some Wideout", "position": "WR", "team": "ZZZ"},
+    }
+    described = describe_unmatched_roster_players(["s9"], players_catalog)
+    assert described[0].category == "UNKNOWN_TO_CATALOG"
+    assert described[0].label == "Some Wideout (WR)"
+
+
+def test_describe_unmatched_roster_players_preserves_order_and_empty_input() -> None:
+    assert describe_unmatched_roster_players([], {}) == ()
+    players_catalog = {
+        "3451": {"full_name": "Ka'imi Fairbairn", "position": "K", "team": "HOU"},
+        "NE": {"position": "DEF", "team": "NE"},
+    }
+    described = describe_unmatched_roster_players(["3451", "NE"], players_catalog)
+    assert [item.sleeper_id for item in described] == ["3451", "NE"]
 
 
 # ---------------------------------------------------------------------------

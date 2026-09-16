@@ -190,6 +190,30 @@ export function resolveHomeActionFreshness(
   return weeklyFreshnessNote;
 }
 
+/**
+ * NWR Full Cycle V1 (Worker 7): Waivers' `unmatchedRosterSleeperPlayerIds`
+ * previously rendered as a bare, unexplained list of raw Sleeper ids (e.g.
+ * "Unresolved roster Sleeper IDs: 3451, NE") -- confirmed live on a real
+ * league's real roster. Investigated: both entries were a real, catalog-
+ * known K and DST whose position simply has zero rows in NWR's governed
+ * ranking BY DESIGN (see docs/codex/waiver_night_v1/LEDGER.md), not a
+ * genuine identity-resolution failure -- but the raw-id list gave no way to
+ * tell that apart from a real bug. This renders the backend's now-computed
+ * `unmatchedRosterSleeperPlayers` (label + reason per id) when present, and
+ * honestly falls back to the raw id list (never fabricating a reason) for
+ * any older/cached response shape that lacks it.
+ */
+export function describeUnmatchedRosterPlayers(
+  ids: string[],
+  players?: Array<{ sleeperId: string; label: string; reason: string; category: string }> | null,
+): string[] {
+  if (!ids.length) return [];
+  if (players && players.length) {
+    return players.map((player) => `${player.label} -- ${player.reason}`);
+  }
+  return ids.map((id) => `Sleeper id ${id} -- reason unavailable`);
+}
+
 export function useFreeAgents(client: NwrApiClient, profileId: string | null) {
   const loader = () => (profileId ? client.redraftFreeAgents() : null);
   // eslint-disable-next-line react-hooks/rules-of-hooks

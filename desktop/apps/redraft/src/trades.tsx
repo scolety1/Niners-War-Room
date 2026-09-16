@@ -21,7 +21,7 @@ import { TradeSidePicker, type TradeSide } from "./in-season";
 import { leagueFormat } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
-import { describeTradePackageSearchError, explainTradeAnalysis, explainTradePackageCandidate, isTradeAnalysisStale, isTradePackageSearchStale } from "./trades-explain";
+import { addUniqueTradeSideCandidate, describeTradePackageSearchError, explainTradeAnalysis, explainTradePackageCandidate, isTradeAnalysisStale, isTradePackageSearchStale } from "./trades-explain";
 import { resolveSeasonProjectionBasisCaption, useAsync } from "./weekly-shared";
 
 /**
@@ -265,8 +265,8 @@ function AnalyzeTab({
   return <>
     <Panel title="Build a trade">
       <div className="split-view">
-        <TradeSidePicker label="I give" side={gives} candidates={giveCandidates} onAdd={(candidate) => setGives((current) => [...current, candidate])} onRemove={(id) => setGives((current) => current.filter((p) => p.sleeperPlayerId !== id))} />
-        <TradeSidePicker label="I receive" side={receives} candidates={receiveCandidates} onAdd={(candidate) => setReceives((current) => [...current, candidate])} onRemove={(id) => setReceives((current) => current.filter((p) => p.sleeperPlayerId !== id))} />
+        <TradeSidePicker label="I give" side={gives} candidates={giveCandidates} onAdd={(candidate) => setGives((current) => addUniqueTradeSideCandidate(current, candidate))} onRemove={(id) => setGives((current) => current.filter((p) => p.sleeperPlayerId !== id))} />
+        <TradeSidePicker label="I receive" side={receives} candidates={receiveCandidates} onAdd={(candidate) => setReceives((current) => addUniqueTradeSideCandidate(current, candidate))} onRemove={(id) => setReceives((current) => current.filter((p) => p.sleeperPlayerId !== id))} />
       </div>
       <div className="profile-edit-actions">
         <Button icon="activity" disabled={!gives.length || !receives.length || working} onClick={onAnalyze}>{working ? "Analyzing…" : "Analyze trade"}</Button>

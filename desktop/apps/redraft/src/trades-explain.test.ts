@@ -2,6 +2,7 @@ import { NwrApiError } from "@nwr/api-client";
 import { describe, expect, it } from "vitest";
 
 import {
+  addUniqueTradeSideCandidate,
   describeTradePackageSearchError,
   explainTradeAnalysis,
   explainTradeFinderCandidate,
@@ -452,5 +453,44 @@ describe("isTradeAnalysisStale (Trades Analyze stale-result fix)", () => {
 
   it("clears staleness once the owner re-analyzes and the snapshot is updated to match", () => {
     expect(isTradeAnalysisStale(["a", "b"], ["c"], ["a", "b"], ["c"])).toBe(false);
+  });
+});
+
+/**
+ * NWR Full Cycle V1 (Worker 7): real, reproducible bug found live against
+ * the real Fantasy Gamers league -- searching "Jonathan Taylor" in the "I
+ * give" box and selecting the suggestion a second time added a second,
+ * separate "Jonathan Taylor" chip (the already-selected chip did not
+ * suppress it from the dropdown), and `analyze()` then submitted the same
+ * Sleeper id twice in `giveIds`. Root cause: `TradeSidePicker`'s `onAdd`
+ * handler appended unconditionally, unlike the sibling query-param prefill
+ * effect in the same files which already dedupes.
+ */
+describe("addUniqueTradeSideCandidate (Trades duplicate-asset-selection fix)", () => {
+  it("adds a genuinely new candidate", () => {
+    const current = [{ sleeperPlayerId: "a", name: "Player A" }];
+    const next = addUniqueTradeSideCandidate(current, { sleeperPlayerId: "b", name: "Player B" });
+    expect(next).toEqual([
+      { sleeperPlayerId: "a", name: "Player A" },
+      { sleeperPlayerId: "b", name: "Player B" },
+    ]);
+  });
+
+  it("rejects a candidate whose Sleeper id is already selected on this side -- the real reproduced bug", () => {
+    const current = [{ sleeperPlayerId: "6813", name: "Jonathan Taylor (RB)" }];
+    const next = addUniqueTradeSideCandidate(current, { sleeperPlayerId: "6813", name: "Jonathan Taylor (RB)" });
+    expect(next).toBe(current); // same reference: no new array, no duplicate chip
+    expect(next).toHaveLength(1);
+  });
+
+  it("rejects a duplicate even when the candidate's display name differs from the already-selected entry's (e.g. a URL-param add followed by a search-box add of the same id)", () => {
+    const current = [{ sleeperPlayerId: "6813", name: "Jonathan Taylor" }];
+    const next = addUniqueTradeSideCandidate(current, { sleeperPlayerId: "6813", name: "Jonathan Taylor (RB)" });
+    expect(next).toHaveLength(1);
+    expect(next[0]?.name).toBe("Jonathan Taylor"); // first-added label wins, never silently overwritten
+  });
+
+  it("starts from an empty side without error", () => {
+    expect(addUniqueTradeSideCandidate([], { sleeperPlayerId: "a", name: "Player A" })).toEqual([{ sleeperPlayerId: "a", name: "Player A" }]);
   });
 });

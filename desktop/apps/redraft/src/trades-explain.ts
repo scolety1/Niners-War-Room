@@ -39,6 +39,33 @@ export interface TradeVerdict {
  * mirrors `home-action-explain.ts`'s own why-text verbatim rather than
  * importing across page files.
  */
+/**
+ * NWR Full Cycle V1 (Worker 7): real, reproducible bug found live against
+ * the real Fantasy Gamers league -- `TradeSidePicker`'s `onAdd` handler in
+ * both `trades.tsx` (AnalyzeTab) and `in-season.tsx` (the legacy unrouted
+ * TradeAnalysisPage) appended the selected candidate unconditionally
+ * (`[...current, candidate]`), with no duplicate check, unlike the
+ * sibling query-param prefill effect in the SAME files which already
+ * dedupes (`current.some(...) ? current : [...current, ...]`). Live
+ * reproduction: searching "Jonathan Taylor" in the "I give" box and
+ * selecting the suggestion a second time (its own already-selected chip
+ * did not remove it from the dropdown) added a second, separate
+ * "Jonathan Taylor" chip; `analyze()` then submitted `giveIds` with the
+ * same Sleeper id twice. A structurally identical minimal shape --
+ * a candidate whose own Sleeper id already matches an existing entry --
+ * is now rejected the same way the prefill effect already rejects it, on
+ * EITHER side, matching the caller's own precedent rather than inventing a
+ * new pattern.
+ */
+export interface TradeSideCandidate {
+  sleeperPlayerId: string;
+  name: string;
+}
+
+export function addUniqueTradeSideCandidate<T extends TradeSideCandidate>(current: T[], candidate: T): T[] {
+  return current.some((player) => player.sleeperPlayerId === candidate.sleeperPlayerId) ? current : [...current, candidate];
+}
+
 export function tradeVerdictFor(result: TradeAnalysisResult): TradeVerdict {
   const netUtility = result.netMarginalUtility;
   const rosValue = result.rosValueDelta;

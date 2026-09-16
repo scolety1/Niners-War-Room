@@ -6,6 +6,7 @@ import {
   ACTION_CATEGORY_LABEL,
   ACTION_CATEGORY_LINK,
   createStaleResponseGuard,
+  describeUnmatchedRosterPlayers,
   FAAB_URGENCY_TONE,
   formatClock,
   resolveHomeActionFreshness,
@@ -294,5 +295,49 @@ describe("resolveHomeActionFreshness", () => {
   it("falls back to the weekly note for WAIVER/TRADE only when the season admission date is itself unavailable, rather than showing a blank caption", () => {
     expect(resolveHomeActionFreshness("WAIVER", weeklyNote, null)).toBe(weeklyNote);
     expect(resolveHomeActionFreshness("TRADE", weeklyNote, undefined)).toBe(weeklyNote);
+  });
+});
+
+/**
+ * NWR Full Cycle V1 (Worker 7): "Unresolved roster Sleeper IDs: 3451, NE"
+ * investigation -- both real entries turned out to be a real Sleeper K and
+ * DST whose position has zero rows in NWR's governed ranking by design, not
+ * a genuine identity failure. This renders the backend's new per-id label/
+ * reason when present, and honestly degrades (no fabricated reason) for any
+ * older/cached response that only carries the raw id list.
+ */
+describe("describeUnmatchedRosterPlayers", () => {
+  it("returns an empty list when nothing is unmatched", () => {
+    expect(describeUnmatchedRosterPlayers([], [])).toEqual([]);
+    expect(describeUnmatchedRosterPlayers([], undefined)).toEqual([]);
+  });
+
+  it("renders label + reason from the backend-supplied detail when present", () => {
+    const described = describeUnmatchedRosterPlayers(
+      ["3451", "NE"],
+      [
+        { sleeperId: "3451", label: "Ka'imi Fairbairn (K)", reason: "Outside NWR's ranked model -- K/DST are not part of the governed ranking.", category: "OUT_OF_RANKED_MODEL_SCOPE" },
+        { sleeperId: "NE", label: "NE D/ST (DST)", reason: "Outside NWR's ranked model -- K/DST are not part of the governed ranking.", category: "OUT_OF_RANKED_MODEL_SCOPE" },
+      ],
+    );
+    expect(described).toEqual([
+      "Ka'imi Fairbairn (K) -- Outside NWR's ranked model -- K/DST are not part of the governed ranking.",
+      "NE D/ST (DST) -- Outside NWR's ranked model -- K/DST are not part of the governed ranking.",
+    ]);
+  });
+
+  it("honestly falls back to a raw-id line (no fabricated reason) when the detail field is absent", () => {
+    expect(describeUnmatchedRosterPlayers(["3451", "NE"], undefined)).toEqual([
+      "Sleeper id 3451 -- reason unavailable",
+      "Sleeper id NE -- reason unavailable",
+    ]);
+  });
+
+  it("falls back per-id when the detail array is present but shorter than the id list (defensive, should not happen in practice)", () => {
+    const described = describeUnmatchedRosterPlayers(["3451", "NE"], []);
+    expect(described).toEqual([
+      "Sleeper id 3451 -- reason unavailable",
+      "Sleeper id NE -- reason unavailable",
+    ]);
   });
 });

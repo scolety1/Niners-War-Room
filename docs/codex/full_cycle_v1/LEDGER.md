@@ -1787,3 +1787,396 @@ target since all 3 are real, safe, local-only (non-Sleeper) writes.
 7. Per the dispatch: next up after Dynasty coverage is Section 4 (deep
    decision-behavior verification across both apps) and Section 5
    (four-league status tracking) -- neither started this pass.
+
+---
+
+## Worker 7 -- "Unresolved roster Sleeper IDs" identity investigation +
+## Dynasty write-cycle closure + Section 4 decision-behavior verification
+## begins (2026-09-16)
+
+**Branch/worktree:** same as Workers 1-6,
+`upgrade/nwr-prospective-outcomes-v1-20260914` at
+`C:\NWR\prospective-outcomes-v1`. Started at HEAD `ab7ff05a` (Worker 6's
+commit; clean). Did not push, did not touch `main`, did not force anything.
+Redraft frontend (127.0.0.1:1422, PID 23004) and backend (127.0.0.1:18742,
+PID 7924) and Dynasty frontend (127.0.0.1:1421, PID 24900) and backend
+(127.0.0.1:18741, PID 24240) were NOT restarted -- confirmed still LISTENING
+at the end via `netstat` (LIVE OBSERVATION, plus extensive real Chrome
+navigation across both apps throughout this pass). This pass's own changes
+are therefore NOT yet live in either process pair, same standing note every
+prior worker has left. Redraft's frontend/backend still serve PRE-CYCLE
+code (predates even Worker 1); this pass's own frontend changes (like every
+prior worker's) will only be observable after a real restart.
+
+### PART A -- "Unresolved roster Sleeper IDs: 3451, NE" investigation
+### (INSPECTED CODE + ACTUAL TEST RESULT; root cause was ALREADY DOCUMENTED
+### by a prior session, not previously fixed)
+
+Grepped "Unresolved roster Sleeper IDs" across the repo. Source:
+`waivers.unmatchedRosterSleeperPlayerIds` (`desktop/apps/redraft/src/
+improve-team.tsx:512`, `in-season.tsx:698`), fed from `desktop_facade.py`'s
+`redraft_waivers` -> `resolve_roster_canonical_ids`
+(`src/services/waiver_engine_service.py`).
+
+**Root cause (confirmed, not re-guessed):** already investigated and
+documented by an earlier session
+(`docs/codex/waiver_night_v1/LEDGER.md`, "Work Unit 7" / lines 447-456 and
+658-672): `3451` is the real Sleeper id for the owner's actual kicker
+(Ka'imi Fairbairn, HOU) and `NE` is the real Sleeper id for the owner's
+actual DST (New England). Both resolve cleanly against the real Sleeper
+player catalog -- `resolve_roster_canonical_ids` already computes a real
+name/position/team for each (confirmed by reading the function,
+`waiver_engine_service.py` lines 91-110: it builds `name`/`position`/`team`
+from the catalog BEFORE the identity-join lookup, including a DST-specific
+`"{team} D/ST"` fallback name) -- but K/DST have ZERO rows in NWR's
+governed ranking BY DESIGN (the same scope boundary already established for
+`practical_mode`), so the identity-join against `ranking_rows` can never
+succeed for them. **Verdict: NOT a broken identity-resolution bug.** Both
+"3451" and "NE" are real, resolvable Sleeper ids; the gap is a documented
+ranking-scope boundary, not a mapping failure. However: the ALREADY-COMPUTED
+name/position/team was being discarded the instant a match failed --
+`resolve_roster_canonical_ids` only ever appended the raw `sleeper_id` to
+`unmatched`, throwing away the readable identity it had just built. This is
+exactly the kind of "real data computed then discarded before reaching the
+owner" bug this cycle has repeatedly found and fixed (Worker 1's blocked-
+rookie reasons, Worker 6's raw-id-in-explanation-text bug) -- so the raw-id
+list gave the owner no way to tell "this is fine by design" apart from "this
+looks like a real bug," which is itself a real, fixable UX/trust gap.
+
+**Fix (additive, does not touch canonical identity-resolution core logic
+-- read the hard-boundary note in the dispatch first, then confirmed by
+inspection this function is NOT `marginal_roster_utility_v2`/roster-legality
+-critical, only a display/join helper reused by Waivers, Trades, and
+Opponent-Roster reads):** added `describe_unmatched_roster_players()` (new,
+pure, in `waiver_engine_service.py`, right after `resolve_roster_
+canonical_ids` -- NEVER modifies that function or which ids are
+matched/unmatched) that re-derives a label + reason per unmatched id from
+the SAME catalog lookup, distinguishing two real, different cases:
+`OUT_OF_RANKED_MODEL_SCOPE` (a real catalog-known K/DST -- "Outside NWR's
+ranked model -- K/DST are not part of the governed ranking.") vs.
+`UNKNOWN_TO_CATALOG` (no catalog entry, or a catalog-known non-K/DST player
+that still failed to join -- a genuinely different, worth-investigating
+case, never silently lumped in with the K/DST scope boundary). Wired into
+`desktop_facade.py`'s `redraft_waivers` payload as a new, additive
+`unmatchedRosterSleeperPlayers` field (the old `unmatchedRosterSleeperPlayerIds`
+list is UNCHANGED, still present, for backward compatibility). Contract
+(`desktop/packages/contracts/src/index.ts`) gained the new field as
+optional. Frontend: new pure `describeUnmatchedRosterPlayers(ids, players)`
+in `weekly-shared.tsx` (renders the backend detail when present; honestly
+falls back to a "reason unavailable" per-id line, never fabricating a
+reason, for any older/cached response shape) wired into both real render
+sites (`improve-team.tsx`, `in-season.tsx`), replacing the old bare
+`"Unresolved roster Sleeper IDs: 3451, NE"` line with e.g. "Roster slots
+outside this ranking: Ka'imi Fairbairn (K) -- Outside NWR's ranked model --
+K/DST are not part of the governed ranking.; NE D/ST (DST) -- ...". Not
+verified live (Redraft frontend/backend unrestarted, same standing
+constraint every prior worker has documented) -- verified by direct
+inspection plus the tests below.
+
+**Tests added:** `tests/test_waiver_engine_service.py` -- 5 new cases
+(real kicker labeled `OUT_OF_RANKED_MODEL_SCOPE` with the exact real
+`3451`/Ka'imi Fairbairn fixture; real DST labeled `OUT_OF_RANKED_MODEL_SCOPE`
+with the `"NE D/ST"` fallback name; a genuinely unknown id flagged
+`UNKNOWN_TO_CATALOG`; a catalog-known NON-K/DST mismatch also flagged
+`UNKNOWN_TO_CATALOG`, never conflated with the K/DST case; empty-input and
+order-preservation). `weekly-shared.test.ts` -- 4 new cases for
+`describeUnmatchedRosterPlayers` (empty input; backend-detail rendering;
+honest fallback when the detail field is absent; honest fallback when the
+detail array is present but shorter than the id list).
+
+### PART B -- Dynasty's 3 remaining write-cycle tests (all LIVE OBSERVATION,
+### real Chrome session against http://127.0.0.1:1421, isolated local
+### Dynasty state, no Sleeper writes)
+
+All 3 exercised end-to-end with a real interaction PLUS a real full page
+reload (`F5`) to prove server-side persistence, not just in-memory React
+state.
+
+1. **My Board & Decisions -- PASS.** Selected the pre-populated governed
+   asset (Puka Nacua), checked the real "Watchlist" owner-label checkbox,
+   typed a real personal-context note, clicked "Save to My Board" ->
+   "Personal Board entry saved locally." Scrolled to the "1 SAVED Personal
+   Board entries" list, confirmed the real entry ("Puka Nacua · Current
+   Player"). Reloaded the page (`F5`): entry still present, same count.
+   Cross-surface confirmation: the Scenario Playground page's own
+   "WATCHLIST" tile (below) independently read back "1" after this save,
+   confirming the tag is a real, shared, server-persisted state, not a
+   page-local mock.
+2. **Scenario Playground -- PASS.** On the Dynasty Planning Console
+   (`#/planning`, "Roster architecture" module for the same Puka Nacua
+   asset context): checked 2 real checklist items ("Capture the decision
+   window", "Save evidence needed before action"), typed a real owner note,
+   clicked "Save module" -> "Roster architecture saved to the Personal
+   Workspace." Reloaded the page (`F5`): checkboxes, note text, and a real
+   "Last saved 9/16/2026, 4:36:10 PM" timestamp all persisted; the
+   "SAVED SCENARIOS" tile incremented 0 -> 1. Cross-surface confirmation:
+   Dynasty's Home page's own "OPEN DECISIONS" card picked up "1 saved
+   scenarios" after this save.
+3. **Draft Cockpit -- PASS.** On the real on-clock comparison feature
+   ("Choose two governed contexts"): changed the "Rookie target" dropdown
+   from the default (#1 Jeremiyah Love) to a different real rookie (#8
+   Carnell Tate) via `form_input` on the real `<select>` -- the page's own
+   preview label reactively updated ("Carnell Tate vs Puka Nacua"). Clicked
+   "Compare contexts", which navigated into the full Compare Players tool
+   pre-seeded with both real assets (`#/compare?assets=rookie:TAT143045,
+   current:9493`), then clicked "Compare now" and got a real per-horizon
+   research verdict ("Short-Term Today: research leans Puka Nacua (rank gap
+   39)", "Medium-Term Outlook", "Long-Term / 5Y" -- each independently
+   computed, correctly labeled "RESEARCH ONLY" / "frozen ceiling signal; not
+   a calibrated production probability", never conflated with Finished V1
+   authority). This is the real, disclosed boundary of Draft Cockpit's own
+   "on-clock decision focus" feature -- it hands off into Compare rather
+   than computing its own separate verdict, and does so correctly and
+   honestly (no live-pick-write implied, matching Worker 6's own prior
+   finding about this page's self-disclosed boundary).
+
+### PART C -- Section 4 deep decision-behavior verification (real apps,
+### real data; not exhaustive -- see Open Issues for what was skipped)
+
+**1. Start/Sit (Redraft, real Fantasy Gamers league, LIVE OBSERVATION) --
+lineup legality VERIFIED, explanation text spot-checked.** Real league
+Settings tab confirms roster_positions QB=1, RB=2, TE=1, FLEX=1, DST=1,
+BENCH=6 (WR count was off-screen but inferable as 2 from the lineup itself).
+The real displayed starting lineup (QB Trevor Lawrence, RB Jonathan
+Taylor, RB De'Von Achane, WR Chris Olave, WR Zay Flowers, TE Kyle Pitts, K
+Ka'imi Fairbairn, DST NE D/ST, FLEX Travis Etienne(RB)) exactly matches
+that composition with 9 distinct players, no player appearing twice, and a
+legally-eligible player (RB) in the FLEX slot. The recommended-change card
+("Start Trevor Lawrence over Caleb Williams", LOW CONFIDENCE -- CLOSE CALL,
++0.5 projected points) names real players matching the real displayed
+lineup/bench and the correct direction; ONE minor, NOT-chased-further
+discrepancy noted: the two displayed point values (Trevor Lawrence 17.7 in
+the starting-lineup card, Caleb Williams 17.3 in the bench table) differ by
+0.4, not the stated "+0.5" -- plausibly a pre-rounding-vs-post-rounding
+provenance gap between two different display call sites rather than a
+computation bug, but not independently confirmed either way; flagged for a
+future worker rather than fixed blind.
+
+**2. Trades (Redraft, real Fantasy Gamers league, LIVE OBSERVATION) --
+ownership verified, arithmetic internally consistent, model-value vs.
+acceptance-likelihood NOT conflated (confirmed by re-grep, matches Worker
+3/5's own prior finding), REAL BUG FOUND AND FIXED (duplicate-asset
+selection).** Ownership: "give" side populated via My Roster's real
+"Add to Trade Analysis" link (Jonathan Taylor, confirmed `MATCHED`
+identity, real IND RB starter) and "receive" side via Opponent Rosters'
+real link (Derrick Henry, confirmed real BAL RB starter on "Ben Luvs My
+Johnson"'s roster) -- both correctly scoped to their real owning roster;
+cross-side duplication (the same player selectable on both give AND
+receive) is structurally impossible because `giveCandidates`/
+`receiveCandidates` are built from disjoint pools (own roster vs. opponent
+rosters) -- confirmed live (searching "Jonathan Taylor" in the receive box
+produced zero suggestions). Arithmetic: "THIS WEEK Starting lineup value
+1033.6 -> 952.8 (-80.8)" and "REST OF SEASON Net marginal utility -80.8 --
+ROS value delta -80.8" agree with each other exactly. Acceptance-language
+check: re-grepped `trades.tsx`/`trades-explain.ts` for
+accept/likely/probability -- confirmed (matches Worker 3/5's own earlier
+documentation) the code explicitly disclaims any acceptance-probability
+model in comments, and the real "TRADE ACCEPTANCE" detail panel (Decision
+History) labels a genuinely separate field ("Acceptance status: Unknown")
+distinctly from the model's own value verdict ("net utility -80.8") -- no
+conflation found anywhere touched this pass.
+
+**REAL BUG (duplicate-asset, same side): found live, fixed.** Searching
+"Jonathan Taylor" in the "I give" box after he was already selected still
+showed him in the autocomplete dropdown (his existing chip did not suppress
+the suggestion); clicking it added a SECOND, separate "Jonathan Taylor"
+chip on the give side, and `analyze()` (`trades.tsx` line ~115,
+`giveIds = gives.map(...)`, no dedup) then submitted the same Sleeper id
+TWICE in the request. Root cause: `TradeSidePicker`'s `onAdd` handler in
+BOTH `trades.tsx` (the live, routed AnalyzeTab) and `in-season.tsx` (the
+legacy, unrouted unused-but-still-real `TradeAnalysisPage`) appended
+unconditionally (`[...current, candidate]`), unlike the SIBLING
+query-param prefill effect in the SAME two files, which already dedupes
+(`current.some(...) ? current : [...current, ...]`). **Fix:** new pure
+`addUniqueTradeSideCandidate(current, candidate)` in `trades-explain.ts`
+(same dedup check the prefill effect already used), wired into both
+`onAdd` call sites in both files. A duplicate add is now a silent no-op
+(same array reference returned, no new chip, no double-submitted id) --
+matches the existing, already-correct precedent rather than inventing a
+new UX pattern (e.g. a rejection toast); not independently verified whether
+the BACKEND itself would have double-counted the duplicate (the live
+before-fix reproduction's own analysis result showed internally-consistent,
+NOT obviously-doubled numbers, suggesting the backend likely treats the
+roster-removal set idempotently -- not confirmed by reading the backend
+trade-analysis service this pass, flagged below).
+
+**Tests added:** `trades-explain.test.ts` -- 4 new cases for
+`addUniqueTradeSideCandidate` (adds a genuinely new candidate; rejects an
+exact-id duplicate -- same array reference, no new entry, the real
+reproduced bug; rejects a duplicate even when the second add's display name
+differs from the first, confirming the first-added label always wins and is
+never silently overwritten; starts from an empty side without error).
+
+**3. Dynasty identity/value consistency (LIVE OBSERVATION) -- VERIFIED,
+no inconsistency found.** Picked Puka Nacua and cross-checked 3 tools:
+Dynasty Rankings (#1, WR1, NWR Score 83.05, Age 25.1, LAR), Player Detail
+(`#/players/current:9493` -- #1, WR1, Score 83.05, Age 25.1, "CURRENT
+PLAYER - LAR"), and Compare's own asset picker (same canonical id
+`current:9493`, same #1 rank badge, and the comparison matrix's own
+"AGE 25.1 - WR LIFECYCLE CONTEXT" / "...acua" row). All three agree
+exactly -- same canonical id, same rank, same score, same age, no silently-
+different numbers for "the same thing." Jonathan Taylor cross-checked
+identically as a second data point (#4 in both Rankings and Compare's
+picker, Age 27.4 in both Rankings and the Compare matrix).
+
+**4. Decision History dedup + provenance (Redraft, real Fantasy Gamers
+league, LIVE OBSERVATION) -- VERIFIED, no duplication found.** The real
+ledger showed "104 recorded events" (this session's own earlier Trades/
+Start-Sit navigation had itself appended real new rows, e.g. "1-for-1
+package (net utility -80.8)" from this pass's own duplicate-trade repro --
+confirmed the ledger records REAL owner-facing recommendation events, not a
+mock). Expanded the top row's "View outcome detail" (revealing a real
+"EVALUATION" section -- Evaluation status, Outcome window, Issues -- and a
+separate "TRADE ACCEPTANCE" section -- Acceptance status: Unknown, Owner
+action (raw): Not recorded, Recommended gives/receives by raw id -- clearly
+distinct fields, not blended into one score), collapsed and re-expanded it
+a second time, then did a real full page reload (`F5`): "104 recorded
+events" stayed exactly 104 throughout, same top row, same timestamp -- no
+duplicate trace or count increment from merely viewing/reloading. Spot-
+checked only (not exhaustive across every decision type) -- see Open Issues.
+
+### TESTS ADDED (all ACTUAL TEST RESULT, passing)
+
+- `tests/test_waiver_engine_service.py`: 5 new cases for
+  `describe_unmatched_roster_players`. Full file: 34 passed (was 29).
+- `desktop/apps/redraft/src/weekly-shared.test.ts`: 4 new cases for
+  `describeUnmatchedRosterPlayers`.
+- `desktop/apps/redraft/src/trades-explain.test.ts`: 4 new cases for
+  `addUniqueTradeSideCandidate`.
+
+### FULL FRONTEND/BACKEND TEST SUITE RESULTS
+
+`cd desktop && npx vitest run`: **474 passed, 0 failed** (29 test files;
+466 baseline + 8 new). `npm run typecheck` (`tsc -b apps/dynasty/tsconfig.json
+apps/redraft/tsconfig.json`): clean, 0 errors -- covers both apps. The same
+incidental `frontend_bench_results.json` vitest-run side effect every prior
+worker has hit was reverted via `git checkout --` before committing (twice
+this pass, after two separate full-suite runs).
+Backend: `tests/test_waiver_engine_service.py` 34/34 passed;
+`tests/test_redraft_waivers_unmatched_identity_rationale_fix.py`,
+`tests/test_redraft_waivers_ir_reserve_drop_exclusion_fix.py`,
+`tests/test_redraft_waivers_faab_context_fix.py`,
+`tests/test_desktop_facade_architecture_wiring.py`,
+`tests/test_desktop_http_api.py`, `tests/test_shadow_numeric_authorities_
+service.py`, `tests/test_redraft_page_v1.py`: 164/164 passed combined.
+`tests/test_desktop_application_api.py`: 4 failed / 46 passed, confirmed to
+be the SAME pre-existing baseline every prior worker this cycle has
+documented (same 4 test names -- `app`-import-boundary assertion and 3
+others -- not re-diffed via `git stash` this pass since none of this pass's
+changed files are anywhere near that test's subject matter, `desktop_
+facade.py` composition/`app.py`, and the failure count/names match Worker
+2's/5's/6's own already-verified-byte-identical baseline). Did not run the
+full `tests/` suite (documented ~323-pre-existing-failure baseline,
+unrelated per memory).
+
+### RUNNING PROCESSES STATUS
+
+- **Redraft**: frontend `127.0.0.1:1422` (PID 23004) and backend
+  `127.0.0.1:18742` (PID 7924) -- confirmed still LISTENING at the end
+  (`netstat`), plus extensive real Chrome navigation throughout Part A/C
+  (My Roster, League Settings, Start/Sit, Trades/Analyze, Opponent Rosters,
+  Decision History). This pass's own Redraft changes are NOT yet live in
+  this process pair (unrestarted, same standing note every prior worker has
+  left -- the frontend/backend still serve code predating even Worker 1).
+- **Dynasty**: frontend `127.0.0.1:1421` (PID 24900) and backend
+  `127.0.0.1:18741` (PID 24240) -- confirmed still LISTENING at the end
+  (`netstat`); no Dynasty backend/Python code was touched this pass, so no
+  restart was needed or performed. Real write-cycle interactions in Part B
+  (My Board save, Scenario Playground save, Draft Cockpit compare) all
+  landed live against this same running process pair.
+
+### FILES CHANGED THIS PASS
+
+- `src/services/waiver_engine_service.py` -- added
+  `_OUT_OF_RANKED_MODEL_SCOPE_POSITIONS`, `UnmatchedRosterPlayer`,
+  `describe_unmatched_roster_players`. `resolve_roster_canonical_ids`
+  itself UNCHANGED.
+- `src/application/desktop_facade.py` -- `redraft_waivers` gained the new
+  additive `unmatchedRosterSleeperPlayers` field alongside the unchanged
+  `unmatchedRosterSleeperPlayerIds`.
+- `desktop/packages/contracts/src/index.ts` -- `WaiversResult` gained the
+  new optional `unmatchedRosterSleeperPlayers` field.
+- `desktop/apps/redraft/src/weekly-shared.tsx` -- added
+  `describeUnmatchedRosterPlayers`.
+- `desktop/apps/redraft/src/weekly-shared.test.ts` -- 4 new tests.
+- `desktop/apps/redraft/src/improve-team.tsx`,
+  `desktop/apps/redraft/src/in-season.tsx` -- both real render sites wired
+  to the new helper (Add/Drop "Unresolved roster Sleeper IDs" line ->
+  "Roster slots outside this ranking: ...").
+- `desktop/apps/redraft/src/trades-explain.ts` -- added
+  `TradeSideCandidate`, `addUniqueTradeSideCandidate`.
+- `desktop/apps/redraft/src/trades-explain.test.ts` -- 4 new tests.
+- `desktop/apps/redraft/src/trades.tsx`, `desktop/apps/redraft/src/
+  in-season.tsx` -- both `TradeSidePicker` `onAdd` call sites (give AND
+  receive, both files) wired to the new dedup helper.
+- `tests/test_waiver_engine_service.py` -- 5 new tests.
+- `docs/codex/full_cycle_v1/LEDGER.md` -- this section.
+
+### HARD BOUNDARY CHECK
+
+Did not touch `marginal_roster_utility_v2`, its weights, the governed
+valuation model, draft recommendation logic, roster legality core rules,
+`LeagueSnapshot`/`LeagueWorkspaceContext`/lifecycle-resolver/
+`DecisionResultEnvelope`/`PlayerAvailabilityStatus` semantics, or Dynasty's
+`governed_asset_registry_service.py` (not touched at all this pass -- no
+Dynasty backend/Python file was modified). `resolve_roster_canonical_ids`
+itself (the actual identity-join/matching function) is BYTE-FOR-BYTE
+UNCHANGED -- confirmed by the existing, unmodified
+`test_resolve_roster_canonical_ids_matches_and_reports_unmatched` test
+continuing to pass unchanged; the Part A fix only adds a NEW function that
+reads the already-computed unmatched list and the same catalog, never
+altering which ids are matched/unmatched or any ranking/score/threshold.
+The Part C.2 Trades fix only changes whether a UI action is allowed to
+create a duplicate-id list entry in local React state before submission --
+no backend trade-math file was touched. No real Sleeper/ESPN writes
+anywhere this pass. Dynasty's Part B writes were all real, but explicitly
+local-only/owner-overlay-only per the app's own on-screen framing ("LOCAL
+WORKSPACE / OWNER OVERLAY ONLY", "Changes remain local and never alter
+governed source data"), landing on this worktree's own isolated Dynasty
+`local_exports/`, never the owner's real AppData.
+
+### OPEN ISSUES FOR NEXT WORKER
+
+1. **Start/Sit's "+0.5 projected points" vs. the two displayed point
+   values' own 0.4 difference** (Trevor Lawrence 17.7, Caleb Williams
+   17.3) -- a minor, NOT-chased-further discrepancy, plausibly a rounding/
+   provenance gap between two different display call sites; worth a closer
+   look by a future worker with access to the underlying unrounded values.
+2. **Trades' duplicate-asset fix was verified at the FRONTEND layer only**
+   (the React state no longer accepts a duplicate id, so the backend can no
+   longer BE sent one via this UI) -- whether `redraft_trade_analysis`'s
+   own backend service would have handled a duplicate id gracefully or
+   produced a subtly-wrong value if reached some other way (e.g. a future
+   API consumer bypassing this UI) was not independently investigated this
+   pass; the live before-fix reproduction's own numbers looked internally
+   consistent (not obviously doubled), but this was not confirmed by
+   reading the backend service itself.
+3. **Part A's fix (`unmatchedRosterSleeperPlayers`) and Part C.2's Trades
+   fix are both NOT yet visible live** -- same standing constraint every
+   prior worker has documented; confirm both render correctly once the
+   Redraft frontend/backend are next restarted.
+4. **Start/Sit and Trades were spot-checked, not exhaustively audited**
+   across every possible state (e.g. Start/Sit's swap mechanics beyond the
+   one real close-call card shown this week; Trades' Find Trades tab
+   duplicate-handling was not separately re-tested, though it shares the
+   exact same now-fixed `TradeSidePicker`/`addUniqueTradeSideCandidate`
+   path for its own single-select `targetPlayer` picker, so a duplicate
+   there is structurally a no-op by construction, not independently
+   live-verified).
+5. **Decision History's scenario-vs-observed provenance distinction** was
+   confirmed present and legible (EVALUATION vs. TRADE ACCEPTANCE panels)
+   but not exhaustively audited across every one of the 104 real recorded
+   event types (Trade analysis, Start/Sit, FAAB bid, Waiver add) -- only
+   the Trade analysis row's detail panel was actually expanded and
+   inspected this pass.
+6. Everything still open from Workers 1-6's own ledger sections (Draft Room
+   not exhaustively audited beyond basic lifecycle, `profile.tsx` create/
+   duplicate actions still unwrapped by `serializeActiveProfileCall`,
+   `test_redraft_engine_v1_service.py`'s pre-existing failures not yet
+   triaged, Draft Room's DecisionBundle 500s in pre-draft state, Cheat
+   Sheet's missing print stylesheet, Redraft's missing profile archive/
+   delete, `explain_marginal_roster_reason`'s docstring-vs-reality gap,
+   native Tauri packaging) remains open and unchanged by this pass.
+7. **Section 5 (four-league status tracking) has still not been started**
+   by any worker -- the next logical pickup per the standing dispatch,
+   alongside any remaining Section 4 items above.

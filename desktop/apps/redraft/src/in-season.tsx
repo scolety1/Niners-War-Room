@@ -29,7 +29,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { DecisionExplain } from "./decision-explain";
 import { explainHomeAction } from "./home-action-explain";
 import { explainLineupSwap, findResultingSlot } from "./lineup-explain";
-import { tradeFinderAnalysisLinkTarget } from "./trades-explain";
+import { addUniqueTradeSideCandidate, tradeFinderAnalysisLinkTarget } from "./trades-explain";
 import { leagueFormat, resolveLeagueLifecycle } from "./league-context";
 import {
   describeOwnerBracketEntry,
@@ -49,6 +49,7 @@ import {
   RefreshProjectionsButton,
   WeekControl,
   appendPlayerDetailColumn,
+  describeUnmatchedRosterPlayers,
   formatClock,
   resolveHomeActionFreshness,
   resolveWeekDisplay,
@@ -695,7 +696,12 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
       {view === "Add/Drop pairings" ? <Panel title="Suggested add/drop pairings" eyebrow={`${pairingRows.length} shown`}><DataTable columns={pairingColumns} rows={pairingRows as unknown as Array<Record<string, unknown>>} rowKey={(row) => (row as unknown as (typeof pairingRows)[number]).add.canonicalPlayerId} /></Panel> : null}
       {view === "Consider dropping" ? <Panel title="Weakest current roster players" eyebrow={`${dropRows.length} shown, weakest first`}><DataTable columns={dropColumns} rows={dropRows as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.canonicalPlayerId)} /></Panel> : null}
       {selectedAdd ? <AddDropDetail add={selectedAdd} waivers={result} mode={mode} onClose={() => setSelectedAddId(null)} /> : null}
-      {result.unmatchedRosterSleeperPlayerIds.length ? <p className="copy-muted">Unresolved roster Sleeper IDs: {result.unmatchedRosterSleeperPlayerIds.join(", ")}</p> : null}
+      {result.unmatchedRosterSleeperPlayerIds.length ? (
+        <p className="copy-muted">
+          Roster slots outside this ranking:{" "}
+          {describeUnmatchedRosterPlayers(result.unmatchedRosterSleeperPlayerIds, result.unmatchedRosterSleeperPlayers).join("; ")}
+        </p>
+      ) : null}
     </> : null}
   </>;
 }
@@ -941,8 +947,8 @@ export function TradeAnalysisPage({ client, data }: { client: NwrApiClient; data
     {isSleeper ? <>
       <Panel title="Build a trade">
         <div className="split-view">
-          <TradeSidePicker label="I give" side={gives} candidates={giveCandidates} onAdd={(candidate) => setGives((current) => [...current, candidate])} onRemove={(id) => setGives((current) => current.filter((p) => p.sleeperPlayerId !== id))} />
-          <TradeSidePicker label="I receive" side={receives} candidates={receiveCandidates} onAdd={(candidate) => setReceives((current) => [...current, candidate])} onRemove={(id) => setReceives((current) => current.filter((p) => p.sleeperPlayerId !== id))} />
+          <TradeSidePicker label="I give" side={gives} candidates={giveCandidates} onAdd={(candidate) => setGives((current) => addUniqueTradeSideCandidate(current, candidate))} onRemove={(id) => setGives((current) => current.filter((p) => p.sleeperPlayerId !== id))} />
+          <TradeSidePicker label="I receive" side={receives} candidates={receiveCandidates} onAdd={(candidate) => setReceives((current) => addUniqueTradeSideCandidate(current, candidate))} onRemove={(id) => setReceives((current) => current.filter((p) => p.sleeperPlayerId !== id))} />
         </div>
         <div className="profile-edit-actions">
           <Button icon="activity" disabled={!gives.length || !receives.length || working} onClick={() => void analyze()}>{working ? "Analyzing…" : "Analyze trade"}</Button>
