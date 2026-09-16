@@ -157,6 +157,70 @@ export function ownerActionOptionsForDecisionType(decisionType: string): string[
   return [OWNER_ACTION_FOLLOWED_IT, OWNER_ACTION_DID_SOMETHING_ELSE, OWNER_ACTION_DIDNT_ACT];
 }
 
+/**
+ * NWR Full Cycle V1 (Worker 6): the pure state machine behind History's
+ * `OwnerActionCell` -- extracted out of the component so the exact bug a
+ * real live-browser walkthrough found is provable without rendering React.
+ *
+ * REAL BUG THIS REPLACES: the original component tracked `editing` /
+ * `submitting` / `error` as three independent `useState` calls, and its
+ * success path only called `setEditing(false)` -- never
+ * `setSubmitting(false)`. Reproduced live: click "Followed it" (records
+ * fine), then "Change", then a second option -- the second click's
+ * `submitting` flag is left permanently `true` (the success path never
+ * cleared it), which is invisible while the row is back in display mode
+ * (that branch never reads `submitting`) but permanently disables every
+ * option button AND shows a stuck "Recording…" label the NEXT time
+ * "Change" is clicked on that same row -- confirmed via a patched
+ * `window.fetch` that a second real network request never even fires,
+ * and confirmed via a full page reload that the second action was never
+ * actually persisted. Recoverable only by a full page reload.
+ *
+ * This reducer's own `RECORD_SUCCEEDED` case is the fix: it always
+ * resets both `editing` and `submitting` together, so the bug class
+ * (any transition forgetting to clear `submitting`) cannot recur without
+ * a test in `decision-history-format.test.ts` failing.
+ */
+export interface OwnerActionCellState {
+  editing: boolean;
+  submitting: boolean;
+  error: string | null;
+}
+
+export type OwnerActionCellEvent =
+  | { type: "CHANGE_CLICKED" }
+  | { type: "CANCEL_CLICKED" }
+  | { type: "RECORD_STARTED" }
+  | { type: "RECORD_SUCCEEDED" }
+  | { type: "RECORD_FAILED"; message: string };
+
+export const INITIAL_OWNER_ACTION_CELL_STATE: OwnerActionCellState = {
+  editing: false,
+  submitting: false,
+  error: null,
+};
+
+export function ownerActionCellReducer(
+  state: OwnerActionCellState,
+  event: OwnerActionCellEvent,
+): OwnerActionCellState {
+  switch (event.type) {
+    case "CHANGE_CLICKED":
+      return { editing: true, submitting: false, error: null };
+    case "CANCEL_CLICKED":
+      return { editing: false, submitting: false, error: null };
+    case "RECORD_STARTED":
+      return { ...state, submitting: true, error: null };
+    case "RECORD_SUCCEEDED":
+      // The exact fix: both flags reset together, always.
+      return { editing: false, submitting: false, error: null };
+    case "RECORD_FAILED":
+      return { ...state, submitting: false, error: event.message };
+    default:
+      return state;
+  }
+}
+
 /** Honest, plain-language cell for "Outcome status" -- this pass records
  * no real outcome for anything yet (see the module doc on
  * in_season_decision_trace_service.py's `record_outcome`), so the default

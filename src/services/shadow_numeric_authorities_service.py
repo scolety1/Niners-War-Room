@@ -49,6 +49,13 @@ class RosterPlayer:
     position: str
     # Player Score proxy: replacement_adjusted_value, 0.0 for unmodeled (K/DST etc.) assets
     value: float
+    # NWR Full Cycle V1 (Worker 6): the asset pool (`_asset_pool`) already
+    # carries `player_name` for every entry -- this field just threads it
+    # through so owner-facing explanation text (see `explain_marginal_
+    # roster_reason` below) can name a displaced player instead of printing
+    # their raw internal player_id. Display-only; never read by any
+    # value/ranking computation in this file.
+    name: str = ""
 
 
 def _roster_players(
@@ -65,6 +72,7 @@ def _roster_players(
                 player_id=player_id,
                 position=str(asset.get("position") or ""),
                 value=float(value) if value is not None else 0.0,
+                name=str(asset.get("player_name") or ""),
             )
         )
     return players
@@ -271,10 +279,20 @@ def explain_marginal_roster_reason(
             f"+{round(candidate.value, 1)} bench value)."
         )
     elif displaces is not None:
+        # NWR Full Cycle V1 (Worker 6): a real live-browser walkthrough of
+        # Improve Team's Add/Drop "Consider dropping" view found this
+        # sentence printing the displaced player's raw internal
+        # player_id (e.g. "benches 00-0039918") instead of their name --
+        # confirmed live, not a hypothetical. `displaces.name` is already
+        # threaded through from the same asset-pool entry `displaces.value`
+        # comes from; falls back to the id only for the (currently
+        # unreached in practice) case of a pool entry with a genuinely
+        # blank name, so this never fabricates a name that isn't there.
+        displaced_label = displaces.name or displaces.player_id
         summary = (
             f"Upgrades your starting {candidate.position} "
             f"(+{round(after_value - before_value, 1)} starting-lineup value) but benches "
-            f"{displaces.player_id} ({round(displaces.value, 1)} value) and consumes one "
+            f"{displaced_label} ({round(displaces.value, 1)} value) and consumes one "
             f"bench slot ({bench_slots_after} bench slots remain)."
         )
     else:

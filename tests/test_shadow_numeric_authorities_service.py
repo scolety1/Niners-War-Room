@@ -309,6 +309,54 @@ def test_explain_marginal_roster_reason_names_the_displaced_starter_on_a_real_up
     assert reason2.starter_value_delta > 0
 
 
+def test_explain_marginal_roster_reason_names_the_displaced_player_not_their_raw_id() -> None:
+    """NWR Full Cycle V1 (Worker 6): a real live-browser walkthrough of
+    Improve Team's Add/Drop "Consider dropping" view found this exact
+    sentence printing the displaced player's raw internal player_id (e.g.
+    "benches 00-0039918") instead of their name -- confirmed live against
+    the real running app, not a hypothetical. `displaces_player_id` (the
+    structured field asserted above) is unchanged; only the human-readable
+    `summary` string's word choice is fixed."""
+    ranking = _ranking()
+    profile = replace(
+        ranking.profile,
+        roster=RosterSettings(qb=1, rb=0, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=3),
+    )
+    reason = explain_marginal_roster_reason("QB-0", ["QB-1"], profile, ranking, _manual_assets())
+    assert reason.displaces_player_id == "QB-1"
+    # The fixture's own player_name convention is f"{position} {index}" --
+    # see _ranking() above -- so the displaced QB-1's real name is "QB 1".
+    assert "QB 1" in reason.summary
+    assert "QB-1" not in reason.summary, (
+        "summary must name the displaced player, not print their raw internal player_id"
+    )
+
+
+def test_explain_marginal_roster_reason_falls_back_to_the_raw_id_if_a_pool_entry_has_no_name() -> None:
+    """Honesty guard: if an asset pool entry genuinely has no player_name
+    (should not happen in practice -- `_asset_pool` always sets it from
+    `row.player_name` -- but this function must never fabricate a name),
+    the summary falls back to the raw player_id rather than a blank or an
+    invented value."""
+    ranking = _ranking()
+    profile = replace(
+        ranking.profile,
+        roster=RosterSettings(qb=1, rb=0, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=3),
+    )
+    manual_assets = [
+        {
+            "player_id": "MANUAL-QB",
+            "player_name": "",
+            "position": "QB",
+            "team": "TST",
+            "replacement_adjusted_value": 50.0,
+        },
+    ]
+    reason = explain_marginal_roster_reason("QB-0", ["MANUAL-QB"], profile, ranking, manual_assets)
+    assert reason.displaces_player_id == "MANUAL-QB"
+    assert "MANUAL-QB" in reason.summary
+
+
 def test_explain_marginal_roster_reason_fills_an_open_slot_without_displacing_anyone() -> None:
     ranking = _ranking()
     profile = replace(

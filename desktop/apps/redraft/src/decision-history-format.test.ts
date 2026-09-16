@@ -32,10 +32,12 @@ import {
   hasEvaluationDetail,
   hasOutcomeDetail,
   hasSufficientSampleForRollup,
+  INITIAL_OWNER_ACTION_CELL_STATE,
   MIN_SAMPLE_SIZE_FOR_PER_CLASS_ROLLUP,
   OWNER_ACTION_DID_SOMETHING_ELSE,
   OWNER_ACTION_DIDNT_ACT,
   OWNER_ACTION_FOLLOWED_IT,
+  ownerActionCellReducer,
   ownerActionOptionsForDecisionType,
   sortDecisionTraceEventsDesc,
   statusLabel,
@@ -200,6 +202,85 @@ describe("ownerActionOptionsForDecisionType", () => {
     expect(ownerActionOptionsForDecisionType("SOMETHING_NEW")).toEqual(
       ownerActionOptionsForDecisionType("WAIVER"),
     );
+  });
+});
+
+describe("ownerActionCellReducer (NWR Full Cycle V1, Worker 6 -- real stuck-'Recording…' bug fix)", () => {
+  it("starts in a clean, non-editing, non-submitting state", () => {
+    expect(INITIAL_OWNER_ACTION_CELL_STATE).toEqual({ editing: false, submitting: false, error: null });
+  });
+
+  it("CHANGE_CLICKED enters editing and clears any stale submitting/error", () => {
+    const dirty = { editing: false, submitting: true, error: "old error" };
+    expect(ownerActionCellReducer(dirty, { type: "CHANGE_CLICKED" })).toEqual({
+      editing: true,
+      submitting: false,
+      error: null,
+    });
+  });
+
+  it("RECORD_STARTED flips submitting without touching editing", () => {
+    const state = { editing: true, submitting: false, error: null };
+    expect(ownerActionCellReducer(state, { type: "RECORD_STARTED" })).toEqual({
+      editing: true,
+      submitting: true,
+      error: null,
+    });
+  });
+
+  it("RECORD_SUCCEEDED resets BOTH editing and submitting together -- the exact fix", () => {
+    // This is the precise state a real live-browser walkthrough found the
+    // component stuck in: mid-submit (submitting=true) after a "Change"
+    // click (editing=true).
+    const midSubmit = { editing: true, submitting: true, error: null };
+    expect(ownerActionCellReducer(midSubmit, { type: "RECORD_SUCCEEDED" })).toEqual({
+      editing: false,
+      submitting: false,
+      error: null,
+    });
+  });
+
+  it("a second real 'Change' -> record cycle never inherits a stuck submitting flag", () => {
+    // Full reproduction of the live bug's exact click sequence, purely
+    // through the reducer: Change -> record (success) -> Change again ->
+    // record a DIFFERENT option (success). Before the fix, the second
+    // record's option buttons would already show `submitting: true`
+    // (permanently disabled) the moment "Change" was clicked the second
+    // time, because the first record's success never cleared it.
+    let state = INITIAL_OWNER_ACTION_CELL_STATE;
+    state = ownerActionCellReducer(state, { type: "CHANGE_CLICKED" });
+    state = ownerActionCellReducer(state, { type: "RECORD_STARTED" });
+    state = ownerActionCellReducer(state, { type: "RECORD_SUCCEEDED" });
+    expect(state.submitting).toBe(false);
+
+    // Second cycle -- must start clean, not stuck.
+    state = ownerActionCellReducer(state, { type: "CHANGE_CLICKED" });
+    expect(state.submitting).toBe(false);
+    expect(state.editing).toBe(true);
+    const optionButtonsDisabled = state.submitting;
+    expect(optionButtonsDisabled).toBe(false);
+
+    state = ownerActionCellReducer(state, { type: "RECORD_STARTED" });
+    state = ownerActionCellReducer(state, { type: "RECORD_SUCCEEDED" });
+    expect(state).toEqual({ editing: false, submitting: false, error: null });
+  });
+
+  it("RECORD_FAILED clears submitting and surfaces the message, keeping editing open for a retry", () => {
+    const state = { editing: true, submitting: true, error: null };
+    expect(ownerActionCellReducer(state, { type: "RECORD_FAILED", message: "network down" })).toEqual({
+      editing: true,
+      submitting: false,
+      error: "network down",
+    });
+  });
+
+  it("CANCEL_CLICKED always returns to a clean, non-editing state", () => {
+    const state = { editing: true, submitting: false, error: "stale error" };
+    expect(ownerActionCellReducer(state, { type: "CANCEL_CLICKED" })).toEqual({
+      editing: false,
+      submitting: false,
+      error: null,
+    });
   });
 });
 

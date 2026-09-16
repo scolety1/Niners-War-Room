@@ -1341,3 +1341,449 @@ NOT yet live in this process pair and will not be until a real restart.
    been started at all this cycle -- per the dispatch, next worker should
    pick one: finish remaining Redraft walkthrough items above, or pivot to
    starting Dynasty.
+
+---
+
+## Worker 6 — Remaining Redraft walkthrough closure + Dynasty app startup and coverage begins (2026-09-16)
+
+**Branch/worktree:** same as Workers 1-5, `upgrade/nwr-prospective-outcomes-v1-20260914`
+at `C:\NWR\prospective-outcomes-v1`. Started at HEAD `7bec3ee8` (Worker 5's
+commit; clean). Did not push, did not touch `main`, did not force anything.
+Redraft frontend (127.0.0.1:1422, PID 23004) and backend (127.0.0.1:18742,
+PID 7924) were NOT restarted -- confirmed still up throughout (LIVE
+OBSERVATION via a real authenticated Chrome session and a direct
+`bootstrap` HTTP probe at the end). This pass's own frontend/backend
+changes are therefore NOT yet live in that process pair either, same
+standing note every prior worker has left.
+
+### PART A -- remaining Redraft walkthrough items (LIVE OBSERVATION against
+### the real running Fantasy Gamers league, read-only Sleeper, no writes)
+
+1. **Decision History's OwnerActionCell full functional walkthrough --
+   REAL BUG FOUND AND FIXED.** Exercised the exact real click sequence a
+   real owner would use: "Followed it" on a row (worked, recorded
+   correctly, confirmed via a real GET re-fetch), then "Change", then a
+   DIFFERENT option on the SAME row. That second action got permanently
+   stuck showing "Recording…" with every button disabled, no error, for
+   over 20 seconds (past the client's own 20s request timeout) -- and a
+   patched `window.fetch` proved the second click never even issued a
+   network request. A full page reload was required to recover, and the
+   change was silently lost (confirmed via a direct GET replay: the row
+   still showed the FIRST action, not the second). Root cause (INSPECTED
+   CODE): `OwnerActionCell`'s `record()` success path called
+   `setEditing(false)` but never `setSubmitting(false)` -- the stuck
+   `submitting=true` was invisible in display mode (which never reads it)
+   but became live-disabling the next time "Change" was clicked on that
+   row. **Fix**: replaced the three independent `useState` calls with one
+   pure reducer, `ownerActionCellReducer` (new, in
+   `decision-history-format.ts`, matching this cycle's established
+   pure-function-extraction precedent), whose `RECORD_SUCCEEDED` case
+   always resets both `editing` and `submitting` together. 7 new tests in
+   `decision-history-format.test.ts` reproduce the exact stuck-state
+   scenario against the reducer directly. Verdict: **PASS after fix**
+   (was BLOCKED/broken before).
+2. **Improve Team's Targets/Drop-Candidates/FAAB tabs, full functional
+   walkthrough -- PASS, with one real bug found and fixed in Add/Drop's
+   "Consider dropping" view.** Targets: mode toggle (REST_OF_SEASON /
+   THIS_WEEK) genuinely recomputes and shows a real, different THIS-WEEK
+   starter-impact line, not just a relabel -- confirmed live. Add/Drop:
+   "Available to add" / "Add/Drop pairings" / "Consider dropping" sub-views
+   all render real, distinct data; found and fixed a real bug (see below).
+   FAAB: real live Sleeper FAAB budget ($100 total, 13 weeks remaining,
+   $7.7/week -- arithmetic checked and correct), real per-candidate bid
+   ranges. Verdict: **PASS** (Targets/FAAB as-is; Add/Drop after the fix).
+3. **Start/Sit swap mechanics -- PASS, with an important scope
+   clarification.** Confirmed by code inspection (`in-season.tsx`) and live
+   behavior: this page is READ-ONLY BY DESIGN ("Recommendation-only: NWR
+   never writes a lineup to Sleeper") -- there is no interactive "apply
+   this swap" control anywhere, only a real recommended-change card (`Start
+   Trevor Lawrence over Caleb Williams`, LOW CONFIDENCE -- CLOSE CALL, real
+   +0.5 projected-points delta) and per-player "View" links. Exercised the
+   one real interactive mechanic that exists -- clicking "View [Player]" on
+   the recommended swap -- which correctly opened a real Player Drawer
+   tagged "OPENED FROM START / SIT" with real status/provenance detail.
+   There is no write-capable swap mechanic to exercise further (a real
+   Sleeper lineup write is explicitly out of scope per the hard boundary
+   and the app's own design), so this is the full, real boundary of "swap
+   mechanics" for this tool, not a shortfall in this pass's testing.
+4. **Cheat Sheet export/print paths -- LIMITED.** "Export CSV" is real and
+   correctly wired (INSPECTED CODE: `exportCsv` in `cheat-sheet.tsx` builds
+   a real client-side CSV Blob and triggers a download); NOT clicked live
+   this pass to avoid an unauthorized file write to the browser's Downloads
+   folder without the user's own explicit in-chat permission (a boundary
+   from this session's own safety rules, distinct from anything scoped by
+   the dispatch). **Print: a real, disclosed gap, not fixed this pass** --
+   the page's own description promises a "printable current-season board"
+   but no dedicated print button or `@media print` stylesheet exists
+   anywhere in the app (grepped `desktop/apps/redraft/src/*.css` and
+   `desktop/packages/ui/src/*.css` -- zero matches); the only path to print
+   is the browser's own untailored Ctrl+P, which would print the full app
+   chrome (nav, sidebar, header) as-is. Building real print CSS is a
+   larger, cross-page design task, not the kind of "small, clearly-scoped
+   reproducible defect" this pass is chartered to fix -- flagged for a
+   future worker or the owner directly.
+5. **Manage Leagues create/import/archive flows -- PASS for Create;
+   Archive/Delete confirmed NOT TO EXIST (not a bug -- a real, disclosed
+   missing feature); Import not re-exercised live.** "Create & activate"
+   (Profile page's Fast Setup) was actually exercised end-to-end: created a
+   real new local "10-team 1QB Standard" throwaway profile, confirmed it
+   became the active profile ("Profile created and activated."), then
+   switched back to Fantasy Gamers and confirmed via a direct backend HTTP
+   probe (`GET /api/v1/bootstrap` -> `activeProfile.leagueName ==
+   "Fantasy Gamers"`) that the shared backend's active-profile pointer was
+   correctly restored before ending this pass -- the one leftover artifact
+   is the harmless extra local test profile itself (isolated worktree
+   state only, no owner AppData touched, and Redraft has no delete/archive
+   affordance to clean it up with regardless). "Import & activate" was NOT
+   re-exercised live this pass (it would create yet another profile and/or
+   contact a real Sleeper league; already covered by a prior session per
+   memory, `nwr-data-import-ux-fix-v1`) -- code path confirmed present and
+   reachable, not independently re-verified. **Archive**: grepped
+   `profile.tsx`/`leagues.tsx` (frontend) and `desktop_facade.py` (backend)
+   for `archive`/`delete`/`remove.*profile` -- zero matches anywhere. There
+   is no way to archive or delete a Redraft profile in this app today, on
+   either side of the stack. This is a genuine, disclosed missing feature
+   (not a defect to patch in a "small, clearly-scoped fix" pass), flagged
+   for the owner/a future worker as its own scoped feature request if
+   wanted.
+
+### PART A -- other findings (not part of the 5 named items, noted for
+### completeness)
+
+- Improve Team's Add/Drop "Consider dropping" view surfaces
+  `explain_marginal_roster_reason`'s real explanation text
+  (`shadow_numeric_authorities_service.py`), and that module's own header
+  docstring claims "Nothing in this module is wired into production...any
+  owner-facing decision surface" -- LIVE OBSERVATION directly contradicts
+  that docstring for this one function (real text rendered on the real
+  running app). Not investigated further or corrected this pass (out of
+  scope; flagged for whoever next touches that module's documentation).
+- `local_exports/redraft_v1/sleeper_imports/941b99ade350410391b1b67c0890af79`'s
+  Add/Drop table shows `Unresolved roster Sleeper IDs: 3451, NE` at the
+  bottom -- a real, pre-existing player-identity-resolution gap on 2 real
+  roster slots, observed live, NOT investigated or fixed this pass
+  (identity-resolution internals are a bigger surface than this pass's
+  scope; flagged for a future worker).
+
+### PART A -- REAL BUG FOUND AND FIXED (Add/Drop "Consider dropping")
+
+`explain_marginal_roster_reason`'s (`shadow_numeric_authorities_service.py`)
+human-readable summary for a starter-upgrade-that-displaces-someone
+printed the displaced player's raw internal `player_id` verbatim -- e.g.
+"Upgrades your starting QB (+20.0 starting-lineup value) but benches
+**00-0039918** (107.6 value)..." -- confirmed live on the real running app
+(`Trevor Lawrence`/`Zay Flowers`/`Travis Etienne`/`Chris Olave`/`De'Von
+Achane`/`Jonathan Taylor` rows all showed a raw GSIS id instead of the
+benched player's name). Root cause: `RosterPlayer` never carried a `name`
+field even though the asset pool it's built from (`_asset_pool`,
+`redraft_draft_room_v1_service.py`) already has `player_name` for every
+entry. **Fix**: added `RosterPlayer.name` (display-only, never read by any
+value/ranking computation), populated from the same pool entry
+`displaces.value` already comes from, and the summary sentence now
+interpolates `displaces.name or displaces.player_id` (falls back to the
+raw id only if a pool entry genuinely has no name, so nothing is
+fabricated). Does NOT touch `displaces_player_id` (the structured field,
+still the raw id, unchanged), any weight, any score, or the governed
+valuation model itself -- purely which string a human-readable sentence
+uses to name a player. 2 new tests in
+`tests/test_shadow_numeric_authorities_service.py` (names the displaced
+player instead of the id; honest fallback to the id when a pool entry has
+no name).
+
+### PART B -- Dynasty app startup
+
+**How started**: `desktop/scripts/nwr_release_gate_smoke.ps1 -Mode dynasty
+-KeepRunning` (the repo's own existing Dynasty-aware release-gate script --
+confirmed it already supports `-Mode dynasty` before using it, per the
+dispatch's suggestion to check `desktop/scripts/` first). This is the same
+"build the replacement, don't touch the shared runtime" isolation pattern
+Redraft's own fallback-web-app testing has used all cycle: a real
+production `vite build` + `vite preview` frontend plus the real Python
+`scripts/run_nwr_desktop_api.py --mode dynasty --repo-root
+C:\NWR\prospective-outcomes-v1` backend, both pointed at THIS WORKTREE's
+own `local_exports/` (confirmed real, not a symlink, same check Worker 1
+ran for Redraft) -- the owner's real
+`AppData\Local\com.ninerswarroom.redraft` was never touched, and Dynasty
+has no separate real owner install to protect anyway (never used before
+this cycle).
+
+- **Ports/PIDs (LIVE OBSERVATION, `netstat`)**: frontend
+  `http://127.0.0.1:1421/` (listening PID `24900`), backend
+  `http://127.0.0.1:18741/` (listening PID `24240`). Note: the script's own
+  own reported PIDs (`26524`/`22572`) are the intermediate `cmd.exe`
+  wrapper processes `Start-Process` tracked, not the actual listening
+  python.exe/node.exe -- a real, disclosed Windows process-tree quirk the
+  script's own comments already document; the PIDs actually LISTENING on
+  the two ports (confirmed via `netstat -ano`) are the ones given above.
+- **Auth**: the non-Tauri `vite preview` fallback resolves the same fixed
+  local dev token every Redraft bridge-smoke run already uses
+  (`nwr-desktop-development-token-only-000000000000`) -- confirmed by
+  reading `resolveRuntime`/`browserRuntime` in
+  `desktop/packages/api-client/src/index.ts`; no separate secret needed.
+- **Still running**: confirmed at the end of this pass via `netstat`
+  showing both ports LISTENING. Left running (`-KeepRunning`) so the owner
+  or the next worker can continue testing without a rebuild -- per the
+  dispatch's own instruction to say so explicitly if this is the case.
+- **Packaging gate** (incidental, from the same script run): `npm run
+  check:resources` PASSED for Dynasty (unlike Redraft's own known,
+  pre-existing, unrelated governance-receipt privacy-guard failure), and a
+  plain `cargo check` in `desktop/apps/dynasty/src-tauri` also PASSED --
+  the Rust/Tauri toolchain compiles cleanly for Dynasty. Native
+  `tauri:build` was NOT attempted (slow, not asked for this pass).
+
+### PART B -- Dynasty valuation core identified (equally off-limits, NOT
+### touched)
+
+`src/services/governed_asset_registry_service.py` -- `CURRENT_BOARD_SHA256`
+-gated, read-only loader for
+`local_exports/model_v4/current_value/latest/full_player_board_value_review_rows.csv`
+(the "Finished V1" governed board every Dynasty page's rank/score ultimately
+traces back to, via `DesktopBackendFacade._build_owner_snapshot` ->
+`load_governed_asset_registry`), plus the analogous rookie-board and
+blocked-rookie-list hash gates (`ROOKIE_BOARD_SHA256`,
+`BLOCKED_ROOKIES_SHA256`) in the same file. This is Dynasty's direct
+structural analog to Redraft's `marginal_roster_utility_v2` -- a
+content-hash-pinned, governance-admitted valuation source that every
+consuming page (Home, Rankings, Asset Explorer, Player Detail, Compare,
+Market Analysis, Rookie Review, Trade Decision Lab, Draft Cockpit) reads
+from but never recomputes. Treated as equally off-limits this pass: only
+read/inspected, never modified, and the one real bug fixed in Part A
+(`shadow_numeric_authorities_service.py`, Redraft-side) was independently
+confirmed to touch a DIFFERENT file with no relationship to this registry.
+
+### PART B -- Dynasty tool-by-tool walkthrough (LIVE OBSERVATION, real
+### interactions, real governed data -- not mere page-loads)
+
+All 12 named tools were reached this pass.
+
+- **Home** -- PASS. Real governed-board summary (240 Finished V1 assets),
+  real YELLOW STALE authority badge, real rookie-class completeness
+  stats (80 assets: 73 scored / 7 manual review / 0 missing-or-duplicated),
+  a real "Highest-leverage market gaps" worklist with real player rows.
+- **Dynasty Rankings** -- PASS. 240 ranked players, real NWR
+  score/rank/market-gap/confidence/risk columns. Position filter (RB)
+  verified functionally correct via `aria-pressed` state plus a fresh,
+  separate DOM read after the click (all 50 visible rows became real RB
+  players) -- an earlier same-script synchronous read right after `.click()`
+  falsely looked unfiltered due to React's async re-render, not a real bug
+  (a methodology note, not a product finding).
+- **Asset Explorer** -- PASS. 379 governed assets (current players +
+  rookies + picks), real Asset Type / Evidence filters, and real row-click
+  navigation into Player Detail confirmed (`#/players/current%3A9493`).
+- **Player Detail** -- PASS. Real per-player card (Puka Nacua: NWR Rank #1,
+  Score 83.05, Age 25.1, Confidence "Usable...") plus a real
+  jump-to-player search list.
+- **Compare** -- PASS. Selected 2 real players (Puka Nacua, Jaxon
+  Smith-Njigba -- pre-populated top-2 selection, both genuinely toggleable),
+  clicked "Compare now", got a real source-separated decision matrix
+  (Position/Authority/Board Context/Age/Tier/Outcome
+  Support/Stability/Ceiling/Roster Window/Review Flags/Draft Capital rows,
+  correctly populated per player, not a placeholder).
+- **Market Analysis** -- PASS. Real disagreement radar (111 Potential Buy /
+  34 NWR Higher / 19 Aligned / 68 Market Higher), explicit real staleness
+  math disclosed in plain language ("Market evidence is 61 days old
+  (upstream date 2026-07-17)").
+- **Rookie Review** -- PASS. Real 80-asset board with real per-prospect
+  evidence columns (college production, athletic context, research
+  neighborhood, confidence, warnings).
+- **Trade Decision Lab** -- PASS, full real interaction. Selected a real
+  outgoing asset (Puka Nacua) and a real incoming asset (Jaxon
+  Smith-Njigba) on their independent give/receive pickers (confirmed via
+  each button's real `className: "selected"` state, not just plain-text
+  guessing -- an earlier plain-text read was ambiguous since both pickers
+  list the same full catalog and only differ by which row is flagged
+  "OTHER SIDE" vs. actually `selected`), clicked "Evaluate trade", got a
+  real 10-dimension analysis (Youth/career window, Upside/uncertainty,
+  Team-window fit, etc.) with real per-side counts and a real "What could
+  change the call" section naming the actual selected players. No
+  transaction was executed (page's own banner: "NO TRANSACTION
+  EXECUTION" -- confirmed honest).
+- **My Board & Decisions** -- PASS (page load + core UI confirmed real:
+  "LOCAL WORKSPACE / OWNER OVERLAY ONLY" framing, real asset picker). NOT
+  fully write-cycle-tested (did not actually set a Watch/Target/Avoid tag
+  and confirm persistence) -- time-boxed out of this pass; a real, local,
+  non-Sleeper write, so safe for a future worker to complete.
+- **Scenario Playground** -- PASS (page load + core UI confirmed real; this
+  tool lives combined with the Dynasty Planning Console at `#/planning` --
+  "SCENARIO PLAYGROUND · NO HIDDEN VALUE" section with a real governed-asset
+  picker, plus 6 graduated manual-planning modules: Roster architecture,
+  Future pick ledger, Keeper/Drop/Trade deadlines, Season calendar). NOT
+  fully write-cycle-tested (did not save a scenario) -- same time-boxing
+  note as My Board.
+- **Draft Cockpit** -- PASS (page load + core UI confirmed real: 80
+  draftable rookies, real "CHOOSE TWO GOVERNED CONTEXTS" on-clock picker).
+  Correctly, honestly self-describes its own real boundary: "Live pick
+  writes remain in the existing Streamlit runtime; this page never implies
+  a pick was recorded" -- confirmed this is real, disclosed scope, not a
+  missing feature.
+- **Data Health** -- PASS. Real governed-source freshness page ("Source as
+  of 2026-07-17 · Yellow Stale", Dynasty Rows 240/240 Exact, Market Matches
+  239 Yellow Stale, Rookie Rows 80/7 manual review), real runtime-boundary
+  disclosure (local-only transport, no cloud dependency, provider calls
+  disabled). "Reload local snapshot" button exercised live -- re-rendered
+  the same correct state, no error.
+
+### PART B -- bugs found/fixed
+
+None found in Dynasty itself this pass (the one real bug fixed this pass,
+`explain_marginal_roster_reason`'s raw-id display, is Redraft-side, filed
+under Part A above since that's where it was found live). The stale-
+response-race and unclear-data-age-labeling bug classes this cycle already
+fixed in Redraft were specifically checked for in Dynasty and NOT found:
+every Dynasty page's own freshness/staleness labeling (Data Health, Market
+Analysis, Home's "YELLOW STALE" badge) already explicitly discloses its own
+source date and staleness in plain language, and no reproducible
+stale-overwrite race was found in the two most input-driven surfaces
+tested (Rankings' filters, Trade Lab's two-sided asset pickers).
+
+### TESTS ADDED (all ACTUAL TEST RESULT, passing)
+
+- `desktop/apps/redraft/src/decision-history-format.test.ts`: 7 new cases
+  for `ownerActionCellReducer` (initial state, CHANGE_CLICKED clears stale
+  submitting/error, RECORD_STARTED, RECORD_SUCCEEDED resets both flags --
+  the exact fix, a full 2-cycle Change->record->Change->record
+  reproduction proving no stuck state carries over, RECORD_FAILED,
+  CANCEL_CLICKED). Full file: 63 passed (was 56).
+- `tests/test_shadow_numeric_authorities_service.py`: 2 new cases for
+  `explain_marginal_roster_reason` (names the displaced player instead of
+  the raw id; honest fallback to the id when a pool entry has no name).
+  Full file: 63 passed (was 61).
+
+### FULL FRONTEND/BACKEND TEST SUITE RESULTS
+
+`cd desktop && npx vitest run`: **466 passed, 0 failed** (29 test files;
+459 baseline + 7 new). `npm run typecheck` (`tsc -b apps/dynasty/tsconfig.json
+apps/redraft/tsconfig.json`): clean, 0 errors -- covers BOTH apps' TS,
+confirming this pass's Redraft-only frontend changes didn't regress
+Dynasty's frontend type surface either. The same incidental
+`frontend_bench_results.json` vitest-run side effect every prior worker has
+hit was reverted via `git checkout --` before committing.
+Backend: `tests/test_shadow_numeric_authorities_service.py` 63/63 passed;
+5 more directly-related shadow/QB-pathology/outcome-evaluation/identity-
+boundary files (98 tests) all passed, confirming no regression outside the
+one function touched. `tests/test_desktop_application_api.py`: 4 failed /
+46 passed, confirmed to be the SAME pre-existing baseline every prior
+worker this cycle has documented (not re-diffed via `git stash` this pass
+since zero files this pass touches are anywhere near that test file's
+subject matter -- `desktop_facade.py`/`app.py` composition -- and the exact
+same 4 test names/failure reasons match Worker 2's and Worker 5's own
+already-verified-byte-identical baseline). Did not run the full `tests/`
+suite (documented ~323-pre-existing-failure baseline, unrelated).
+
+### RUNNING PROCESSES STATUS
+
+- **Redraft**: frontend `127.0.0.1:1422` (PID 23004) and backend
+  `127.0.0.1:18742` (PID 7924) -- confirmed still up at the end (LIVE
+  OBSERVATION: real browser navigation throughout Part A, plus a final
+  direct `GET /api/v1/bootstrap` probe confirming `activeProfile.leagueName
+  == "Fantasy Gamers"`, i.e. the active-profile pointer this pass's own
+  Create-flow test temporarily changed was correctly restored). This
+  pass's own Redraft changes are NOT yet live in this process pair
+  (unrestarted, same standing note every prior worker has left).
+- **Dynasty**: frontend `127.0.0.1:1421` (PID 24900) and backend
+  `127.0.0.1:18741` (PID 24240) -- NEW this pass, started via
+  `nwr_release_gate_smoke.ps1 -Mode dynasty -KeepRunning`, confirmed still
+  LISTENING at the end via `netstat`. Left running for the owner/next
+  worker to continue testing without a rebuild.
+
+### FILES CHANGED THIS PASS
+
+- `desktop/apps/redraft/src/decision-history-format.ts` -- added
+  `OwnerActionCellState`/`OwnerActionCellEvent`/
+  `INITIAL_OWNER_ACTION_CELL_STATE`/`ownerActionCellReducer`.
+- `desktop/apps/redraft/src/decision-history-format.test.ts` -- 7 new
+  tests for the reducer.
+- `desktop/apps/redraft/src/decision-history.tsx` -- `OwnerActionCell`
+  rewired from 3 independent `useState` calls to the new reducer.
+- `src/services/shadow_numeric_authorities_service.py` -- `RosterPlayer`
+  gained a display-only `name` field; `explain_marginal_roster_reason`'s
+  displaced-starter summary sentence now names the player instead of
+  printing their raw `player_id`.
+- `tests/test_shadow_numeric_authorities_service.py` -- 2 new tests.
+- `docs/codex/full_cycle_v1/LEDGER.md` -- this section.
+
+### HARD BOUNDARY CHECK
+
+Did not touch `marginal_roster_utility_v2`, its weights, the governed
+valuation model, draft recommendation logic, roster legality,
+`LeagueSnapshot`/`LeagueWorkspaceContext`/lifecycle-resolver/
+`DecisionResultEnvelope`/`PlayerAvailabilityStatus` semantics (Redraft), or
+Dynasty's analogous `governed_asset_registry_service.py`/
+`CURRENT_BOARD_SHA256`-gated valuation core (identified and read-only
+inspected, never modified). The one Redraft-side fix
+(`shadow_numeric_authorities_service.py`) changes only which string a
+human-readable explanation sentence uses to NAME an already-selected
+player -- `displaces_player_id` (the structured field every consumer
+actually keys off of) and every weight/value/threshold in that file are
+byte-for-byte unchanged; confirmed by the existing
+`test_explain_marginal_roster_reason_names_the_displaced_starter_on_a_real_upgrade`
+test (unmodified, still asserts `displaces_player_id == "QB-1"`) continuing
+to pass unchanged. No real Sleeper/ESPN writes anywhere in either app this
+pass. The one real Redraft-side local mutation (a throwaway "Create &
+activate" test profile) was to THIS WORKTREE's own isolated
+`local_exports/`, not the owner's real AppData, and the shared backend's
+active-profile pointer was restored to Fantasy Gamers before ending this
+pass.
+
+### REDRAFT COVERAGE STATUS
+
+**Complete** for the 5 items this pass was dispatched to close (Decision
+History OwnerActionCell, Improve Team Targets/Add-Drop/FAAB, Start/Sit
+swap mechanics, Cheat Sheet export/print, Manage Leagues
+create/import/archive) -- all 5 walked through live with real interactions,
+not just page-loads. Two real, disclosed, NOT-fixed-this-pass gaps remain
+inside that scope (Cheat Sheet has no print stylesheet; Redraft has no
+profile archive/delete anywhere) -- both are missing-feature findings, not
+defects, and both are explicitly flagged above rather than silently
+left out.
+
+### DYNASTY COVERAGE STATUS
+
+All 12 named tools reached and exercised at some real level this pass
+(Home, Dynasty Rankings, Asset Explorer, Player Detail, Compare, Market
+Analysis, Rookie Review, Trade Decision Lab, My Board & Decisions, Scenario
+Playground, Draft Cockpit, Data Health). 9 of the 12 got a FULL real
+interaction cycle (filter/select/submit/read-a-real-computed-result), not
+just a page-load: Dynasty Rankings (filter), Asset Explorer (row-click
+navigation), Player Detail, Compare (2-player select + evaluate), Market
+Analysis, Rookie Review, Trade Decision Lab (2-sided select + evaluate),
+Data Health (reload action), Home. 3 (My Board & Decisions, Scenario
+Playground, Draft Cockpit) got a real page-load + core-UI confirmation but
+NOT a full write-cycle test (setting a Watch tag, saving a planning module,
+or exercising an on-clock rookie/current-player comparison end-to-end) --
+time-boxed out of this pass, flagged as the most useful next Dynasty
+target since all 3 are real, safe, local-only (non-Sleeper) writes.
+
+### OPEN ISSUES FOR NEXT WORKER
+
+1. **Dynasty's My Board & Decisions, Scenario Playground, and Draft
+   Cockpit** did not get a full write-cycle test this pass (see above) --
+   the natural next Dynasty target, all 3 are safe local-only writes.
+2. **Cheat Sheet has no print stylesheet** (`@media print` does not exist
+   anywhere in the app) despite the page's own copy promising a "printable"
+   board -- a real, disclosed gap; either build real print CSS (a
+   cross-page design task, out of this pass's "small fix" scope) or update
+   the page's own copy to stop promising it.
+3. **Redraft has no profile archive/delete anywhere** (frontend or
+   backend) -- confirmed by grep, not a defect but a genuine missing
+   feature; flagged for the owner to decide if it's wanted.
+4. **`explain_marginal_roster_reason` is live in production despite its own
+   module's docstring claiming otherwise** (`shadow_numeric_authorities_service.py`)
+   -- a real, confirmed-live discrepancy between the file's own header
+   comment and its actual reach; worth a documentation fix by whoever next
+   touches that module (not attempted this pass -- out of scope for a
+   walkthrough-and-bugfix pass).
+5. **`Unresolved roster Sleeper IDs: 3451, NE`** shown live on Improve
+   Team's Add/Drop tab for the real Fantasy Gamers roster -- a real,
+   pre-existing player-identity-resolution gap on 2 real roster slots, not
+   investigated or fixed this pass.
+6. Everything still open from Workers 1-5's own ledger sections (Draft
+   Room not exhaustively audited beyond basic lifecycle, Attention Center's
+   `profile.tsx` create/duplicate actions still unwrapped by
+   `serializeActiveProfileCall`, `test_redraft_engine_v1_service.py`'s
+   pre-existing failures not yet triaged, Draft Room's DecisionBundle 500s
+   in pre-draft state, native Tauri packaging) remains open and unchanged
+   by this pass.
+7. Per the dispatch: next up after Dynasty coverage is Section 4 (deep
+   decision-behavior verification across both apps) and Section 5
+   (four-league status tracking) -- neither started this pass.

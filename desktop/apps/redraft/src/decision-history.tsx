@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useReducer } from "react";
 
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
 import type { DecisionClassSummary, DecisionTraceHistoryEvent, RedraftBootstrap } from "@nwr/contracts";
@@ -26,6 +26,8 @@ import {
   formatOutcome,
   formatOwnerAction,
   hasOutcomeDetail,
+  INITIAL_OWNER_ACTION_CELL_STATE,
+  ownerActionCellReducer,
   ownerActionOptionsForDecisionType,
   summarizeRecommendation,
 } from "./decision-history-format";
@@ -64,21 +66,31 @@ function OwnerActionCell({
   event: DecisionTraceHistoryEvent;
   onRecorded: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // NWR Full Cycle V1 (Worker 6): a real live-browser walkthrough found
+  // this cell's owner-action "Change" flow could get permanently stuck
+  // ("Recording…", every button disabled, no error, no recovery short of
+  // a full page reload) -- root cause was the old 3-independent-`useState`
+  // version's success path resetting `editing` but never `submitting`.
+  // Replaced with `ownerActionCellReducer` (decision-history-format.ts),
+  // a single pure state machine whose `RECORD_SUCCEEDED` case always
+  // resets both together -- see that function's doc for the full
+  // reproduction and `decision-history-format.test.ts` for the regression
+  // coverage.
+  const [state, dispatch] = useReducer(ownerActionCellReducer, INITIAL_OWNER_ACTION_CELL_STATE);
+  const { editing, submitting, error } = state;
   const options = ownerActionOptionsForDecisionType(event.decisionType);
 
   const record = async (action: string) => {
-    setSubmitting(true);
-    setError(null);
+    dispatch({ type: "RECORD_STARTED" });
     try {
       await client.redraftRecordDecisionTraceOwnerAction(event.traceId, action);
-      setEditing(false);
+      dispatch({ type: "RECORD_SUCCEEDED" });
       onRecorded();
     } catch (reason) {
-      setError(reason instanceof NwrApiError ? reason.message : "Could not record this action.");
-      setSubmitting(false);
+      dispatch({
+        type: "RECORD_FAILED",
+        message: reason instanceof NwrApiError ? reason.message : "Could not record this action.",
+      });
     }
   };
 
@@ -86,7 +98,11 @@ function OwnerActionCell({
     return (
       <div className="decision-history__owner-action">
         <span>{formatOwnerAction(event)}</span>
-        <Button className="decision-history__owner-action-change" onClick={() => setEditing(true)} variant="ghost">
+        <Button
+          className="decision-history__owner-action-change"
+          onClick={() => dispatch({ type: "CHANGE_CLICKED" })}
+          variant="ghost"
+        >
           Change
         </Button>
         {error ? <small className="copy-muted">{error}</small> : null}
@@ -102,7 +118,7 @@ function OwnerActionCell({
         </Button>
       ))}
       {event.ownerAction ? (
-        <Button disabled={submitting} onClick={() => setEditing(false)} variant="ghost">
+        <Button disabled={submitting} onClick={() => dispatch({ type: "CANCEL_CLICKED" })} variant="ghost">
           Cancel
         </Button>
       ) : null}
