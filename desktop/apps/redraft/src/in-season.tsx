@@ -50,6 +50,7 @@ import {
   WeekControl,
   appendPlayerDetailColumn,
   formatClock,
+  resolveWeekDisplay,
   statusTone,
   useAsync,
   useLeagueWorkspaceContext,
@@ -131,6 +132,13 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
     [client, profileId, week],
   );
   const { result: actions, error: actionsError, working: actionsWorking } = useAsync(actionsLoader, [profileId, week]);
+  // Week-display race fix (shared upgrade B, 2026-09-16): the title/"Week"
+  // chip below render `weekDisplay.displayWeek` -- the SAME resolved
+  // `actions` response the action cards/lineup/free-agent panels already
+  // come from -- never the raw `week` input state directly, so the header
+  // can never claim a week the body isn't actually showing yet. See
+  // `resolveWeekDisplay` in weekly-shared.tsx for the full rationale.
+  const weekDisplay = resolveWeekDisplay(week, actions?.week ?? null);
   const lineup = actions?.lineup ?? null;
   const freeAgents = actions?.freeAgents ?? null;
   const freeAgentsWorking = actionsWorking;
@@ -165,7 +173,7 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
   return <>
     <PageHeader
       eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"}
-      title={`${activeName} · Week ${week}`}
+      title={`${activeName} · Week ${weekDisplay.displayWeek}`}
       description="What needs your attention this week -- not a stats dashboard. Matchup, record, and standings below reflect only what Sleeper directly reports; nothing here is simulated or predicted."
       status={<StatusBadge tone={data.status.tone} label={data.health.status || "Review"} />}
       actions={<div className="profile-edit-actions">
@@ -186,7 +194,7 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
           `LeagueWorkspaceContext.matchup`/`.standings`, both nullable). */}
       <section className="nwr-this-week" aria-label="This week">
         <div className="nwr-this-week__item"><span>League</span><strong>{activeName}</strong></div>
-        <div className="nwr-this-week__item"><span>Week</span><strong>{week}</strong></div>
+        <div className="nwr-this-week__item"><span>Week</span><strong>{weekDisplay.displayWeek}</strong></div>
         {lifecycle ? <div className="nwr-this-week__item"><span>Stage</span><strong>{LIFECYCLE_STAGE_LABEL[lifecycle] ?? lifecycle}</strong></div> : null}
         {/* The matchup/score below are always for the provider's real
             current week (`context.matchup.week`), independent of the
@@ -226,7 +234,18 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
 
       <h2 className="nwr-text-section-heading" style={{ margin: "0 0 8px" }}>NWR Actions</h2>
       {actionsError ? <ErrorState message={actionsError.message} recovery={actionsError.recoveryAction} /> : null}
-      {actionsWorking ? <p className="draft-feedback">Reading live data…</p> : null}
+      {/* Week-display race fix: `weekDisplay.isStale` is a structural check
+          (resolved response's own week vs. the currently requested week),
+          not a `working`-flag guess -- true exactly when the actions/
+          lineup/free-agent panels below still show a PRIOR week's data
+          while a newer week's fetch is in flight, so it stays correct even
+          across StrictMode double-invokes or overlapping requests. */}
+      {weekDisplay.isStale ? (
+        <div className="alert-strip alert-strip--pending" role="status">
+          <strong>Updating…</strong>
+          <span>Reading live data for Week {week} -- Actions, Projected lineup, and Top free agents below are still Week {weekDisplay.displayWeek}'s.</span>
+        </div>
+      ) : actionsWorking ? <p className="draft-feedback">Reading live data…</p> : null}
       {actions && shownActions.length === 0 ? (
         <div className="nwr-home-settled">
           <div>
@@ -310,6 +329,12 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
   const [week, setWeek] = useState(1);
   const loader = useCallback(() => (isSleeper ? client.redraftWeeklyLineup(week) : null), [client, isSleeper, week]);
   const { result, error, working, reload } = useAsync(loader, [isSleeper, week, data.activeProfileId]);
+  // Week-display race fix (shared upgrade B, 2026-09-16): same bug class
+  // and fix as WeeklyHomePage above -- see `resolveWeekDisplay` in
+  // weekly-shared.tsx. The title used to render the raw `week` input
+  // while the starters/swaps/bench below still showed the PREVIOUS
+  // week's resolved `result` until the new fetch landed.
+  const weekDisplay = resolveWeekDisplay(week, result?.week ?? null);
   // NWR pre-UI architecture CLOSURE pass (directive section 5): the same
   // global Player Detail primitive Waivers uses below -- see
   // player-detail-context.tsx.
@@ -335,13 +360,23 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
   return <>
     <PageHeader
       eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"}
-      title={`Start / Sit — THIS WEEK (Week ${week})`}
+      title={`Start / Sit — THIS WEEK (Week ${weekDisplay.displayWeek})`}
       description="NWR's recommended legal lineup for this week only -- never confused with rest-of-season rankings. Recommendation-only: NWR never writes a lineup to Sleeper."
       status={result ? <StatusBadge tone={result.providerHealth.freshness === "STALE" ? "review" : "safe"} label={`${result.matched} matched · ${result.unmatched} unmatched`} /> : undefined}
       actions={<div className="profile-edit-actions"><WeekControl week={week} onChange={setWeek} /><RefreshProjectionsButton onRefresh={reload} working={working} /></div>}
     />
     {!isSleeper ? <EmptyState title="Sleeper league required" message="Start/Sit needs a live Sleeper roster and the real weekly-projection source." /> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+    {/* Week-display race fix: structural check against `result.week` itself
+        (see WeeklyHomePage above), not a `working`-flag guess -- true
+        exactly when the starters/swaps/bench below still reflect a PRIOR
+        week while a newer week's fetch is in flight. */}
+    {weekDisplay.isStale ? (
+      <div className="alert-strip alert-strip--pending" role="status">
+        <strong>Updating…</strong>
+        <span>Reading Week {week}'s lineup -- the recommendations and starters below are still Week {weekDisplay.displayWeek}'s.</span>
+      </div>
+    ) : null}
     {result ? <>
       <ProviderStatusLine health={result.providerHealth} />
       {result.swaps.length ? (

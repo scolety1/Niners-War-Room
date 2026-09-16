@@ -456,3 +456,268 @@ performance/plumbing feeding into those consumers, exactly as scoped.
    high-frequency action rather than an occasional explicit one.
 3. Shared upgrade B (stale-response race class across all async tools) is
    the next scoped workstream per the dispatch — not started this pass.
+
+---
+
+## Worker 3 — Shared upgrade B: stale-response/label-drift audit across the Redraft frontend (2026-09-16)
+
+**Branch/worktree:** same as Workers 1-2,
+`upgrade/nwr-prospective-outcomes-v1-20260914` at
+`C:\NWR\prospective-outcomes-v1`. Started at HEAD `63f39ac5` (Worker 2's
+commit; clean). Did not push, did not touch `main`, did not restart the
+running frontend (127.0.0.1:1422) or backend (127.0.0.1:18742) -- both
+confirmed still up at the end of this pass (LIVE OBSERVATION: `GET /` ->
+200; `GET /api/v1/bootstrap` -> 401 `AUTHENTICATION_REQUIRED`, same
+contract-shaped response every prior worker documented, not a crash).
+
+### Task
+
+Audit every other async tool/surface for the SAME bug class Worker/prior
+session found and fixed in FAAB (`resolveFaabDisplay`, a single-resolved-
+response-derived display, proven via `@ts-expect-error`): a visible
+label/provenance following current React INPUT state while the data next
+to it still comes from a stale resolved response. `useAsync` +
+`createStaleResponseGuard` (weekly-shared.tsx) is the existing shared
+ordering-safety mechanism.
+
+### Methodology note
+
+Every finding below is INSPECTED CODE plus, where noted, ACTUAL TEST
+RESULT (`npx vitest run`, `npm run typecheck`, both from
+`C:\NWR\prospective-outcomes-v1\desktop`) -- no LIVE Chrome session was
+used this pass (the running backend's auth token was not available to this
+worker's session, and per the dispatch a restart was to be avoided unless
+needed; it was not needed since every finding was reachable and provable
+by direct code inspection + unit test, matching how Worker 2 already
+verified its own new cache logic without touching the shared process).
+
+### PASS (already safe, with evidence) -- no changes needed
+
+- **`createStaleResponseGuard`/`useAsync` (weekly-shared.tsx) itself**:
+  already has thorough adversarial-ordering test coverage
+  (`weekly-shared.test.ts`, 4 cases: stale-resolves-late, non-stale,
+  rapid multi-switch, same-profile reload) proving requirement 3 (an
+  older in-flight response can never overwrite a newer one) holds for
+  every consumer of this shared hook.
+- **Manage Leagues / league switcher (highest-priority item)**:
+  `leagues.tsx` (`LeaguesPage.activate`) uses a `useRef` in-flight guard
+  plus a disabled-while-working button, and navigates only with the
+  FRESH bootstrap the activation call itself returned. `shell-identity.tsx`
+  (`ShellIdentity.switchLeague`, the header quick-switcher) already has a
+  documented, previously-fixed per-call request-id guard
+  (`switchRequestRef`) for exactly the "owner follows a different route
+  mid-switch" race. `RedraftApp.tsx`'s `LeagueScopedPage` -- the ONE gate
+  every `/league/:leagueKey/*` route passes through -- activates an
+  inactive target profile before rendering anything, and renders its
+  children under `<div key={leagueKey}>`, which forces a full REMOUNT of
+  the entire page subtree (and therefore every in-flight fetch's cleanup)
+  on every league switch. Net effect: a previous league's roster/budget/
+  recommendations structurally cannot survive a switch into another
+  league on any routed page. Already hardened; no changes made.
+- **Attention Center** (`attention-center.ts`/`attention-center-page.tsx`):
+  already has a 3-layer defense (sequential per-league reads inside one
+  sweep with an unconditional `finally`-restore of the originally-active
+  profile; a page-level `generation`/`inFlight` ref guard; a MODULE-LEVEL
+  serialization queue so two sweeps can never interleave their
+  `activateRedraftProfile` calls) plus dedicated regression tests
+  (`attention-center.test.ts`, not modified this pass). Read in full;
+  found no gap. One residual, NOT reproduced or fixed this pass: a
+  background sweep and an unrelated in-app league navigation both call
+  the same shared single-active-profile backend pointer -- see Open
+  Issues.
+- **Cheat Sheet** (`cheat-sheet.tsx`): has NO independent async fetch at
+  all -- every field it renders is a pure derivation from the single
+  `data: RedraftBootstrap` prop, which the app replaces atomically on
+  every refresh/switch. Safe by construction; the FAAB bug class requires
+  two independently-timed data sources to exist in the first place.
+- **Decision History** (`decision-history.tsx`): `DecisionHistoryPage`
+  and `ClassSummaryPanel` are single-fetch, no-filter `useAsync` readers
+  (title/eyebrow read straight off the resolved `result`, e.g.
+  `result.leagueName`/`result.totalCount`, never a separate input state)
+  -- no selector/filter exists that could desync label from data. Also
+  fully remounted on league switch via `LeagueScopedPage`'s `key`.
+  `OwnerActionCell`'s per-row recording state is row-local, gated by its
+  own `disabled={submitting}`, keyed by `traceId` -- reviewed, no gap
+  found.
+- **Draft Room (spot-checked, not exhaustive)**: the whole page is force-
+  remounted on league switch via `key={data.activeProfileId}` at the
+  route level (`RedraftApp.tsx`), eliminating the highest-risk case
+  structurally. Its own internal DecisionBundle/RAV fetches
+  (`draft-room-v2.tsx` ~L1263-1352) all use the same `let cancelled =
+  false` / cleanup-sets-it-true pattern `createStaleResponseGuard`
+  formalizes (functionally identical, just inlined). Specifically
+  checked the position-filter change path (the closest analog to FAAB's
+  own input-vs-data risk): `SuggestionsTab` does NOT keep showing a stale
+  table during a position-filter-triggered refetch -- it replaces the
+  table with a "Computing…" `EmptyState` whenever `loading` is true
+  (L2577), so there is no window where a label and stale data could both
+  be on screen at once. NOT exhaustively audited (Compare tab, Board tab,
+  and the rest of this 4200-line file were not individually reviewed --
+  see Open Issues).
+- **Market Data / ADP** (`adp-providers.tsx`): confirmed (grep) this file
+  uses no `useAsync` at all -- every fetch is an explicit owner-triggered
+  import/preview action with its own local `working` state, not an
+  auto-refetch-on-selector-change surface, so the FAAB race precondition
+  (an input change silently triggering a new fetch behind an unchanged
+  label) doesn't apply here. Not deeply audited beyond confirming this
+  shape.
+
+### FIXED -- real instances of the same bug class found and fixed
+
+1. **Weekly Home week-display race** (`in-season.tsx`,
+   `WeeklyHomePage`): the page title (`"${activeName} · Week ${week}"`)
+   and the "Week" chip in the THIS WEEK strip both read the raw
+   `week` INPUT state (`manualWeekOverride ?? providerWeek ?? 1`), while
+   the actions/lineup/free-agent panels below stayed on the PREVIOUS
+   `useAsync` response (`actions`) until the new week's fetch resolved.
+   Concretely reproducible by inspection: the SAME page's own
+   `ProviderStatusLine` (inside the "Projected lineup" panel) already
+   correctly reads its week off the resolved response
+   (`health.week`), so during the pending gap after a week change the
+   page could show two DIFFERENT week numbers to the owner at once (title
+   says the new week; `ProviderStatusLine` still says the old one).
+   **Fix**: added `resolveWeekDisplay(requestedWeek, resolvedWeek)` to
+   `weekly-shared.tsx` (same structural, single-object-derivation pattern
+   as `resolveFaabDisplay`) -- the contract's `WeeklyHomeActionsResult`
+   already carries its own `week` field, confirmed by reading
+   `contracts/src/index.ts`. Title/chip now render
+   `weekDisplay.displayWeek` (the RESOLVED response's own week when one
+   exists, never the raw input), and an explicit "Updating…" banner
+   (structural check: `actions != null && actions.week !== week`, not a
+   `working`-flag guess) now marks the pending window instead of leaving
+   it unmarked.
+2. **Start/Sit week-display race** (`in-season.tsx`, `LineupPage`): same
+   bug, same fix. The title (`"Start / Sit — THIS WEEK (Week
+   ${week})"`) read the raw input while `result` (starters/swaps/bench)
+   stayed on the prior week. `WeeklyLineupResult.week` (confirmed present
+   on the contract) is the resolved-response source of truth; title now
+   uses `resolveWeekDisplay(week, result?.week ?? null)`, plus a new
+   "Updating…" banner (this page previously had NO pending indicator of
+   any kind for a week change).
+3. **Find Trades mode-display race** (`trades.tsx`, `FindTradesTab`):
+   `useAsync` auto-refetches whenever the search mode segmented control
+   (FIND_WIN_WIN / TARGET_PLAYER / IMPROVE_POSITION) changes, but the
+   candidate cards kept rendering the PREVIOUS mode's `result` -- a
+   completely different kind of search -- unmarked, until the new mode's
+   fetch resolved. `TradePackageSearchResult.mode` (confirmed present on
+   the contract) echoes back which mode was actually searched. **Fix**:
+   added `isTradePackageSearchStale(result, requestedMode)` to
+   `trades-explain.ts` (structural check against the response's own
+   `mode`) and wired an "Updating…" banner into `FindTradesTab` when
+   `stale` is true.
+4. **Compare "Roster Fit" false-negative pending bug** (`pages.tsx`,
+   `CompareContent`) -- a different SHAPE of the same underlying class
+   (a definitive claim rendered from data that hadn't arrived yet, not a
+   stale-response overwrite): switching Compare into "Roster Fit" mode
+   (or switching either compared player) resets `myRoster`/`waivers` to
+   `null` while the new fetch is in flight. The pre-existing
+   `rosterFitFor` fell through BOTH `myRoster?.roster.find` and
+   `waivers?.addCandidates.find` whenever either was still `null` and
+   confidently rendered **"Not a current free agent on this league"** --
+   a FALSE claim, not an honest "still reading" state, for as long as
+   either read was pending (or had failed). **Fix**: extracted and fixed
+   as an exported pure function `resolveRosterFit(myRoster, waivers,
+   playerId)` in `pages.tsx` -- a `null` resolved response is now treated
+   as "unknown, still reading" (`"Reading your roster…"` /
+   `"Reading free-agent availability…"`), never as evidence of absence;
+   only a genuinely-resolved, non-null response for BOTH reads can now
+   produce the "not a free agent" verdict.
+
+### TESTS ADDED (all ACTUAL TEST RESULT, passing)
+
+- `weekly-shared.test.ts`: 4 new cases for `resolveWeekDisplay` (first
+  load, settled match, the exact pending-race window, clears once the
+  new response lands).
+- `trades-explain.test.ts`: 4 new cases for `isTradePackageSearchStale`
+  (never stale before any response, matching mode, the exact pending-race
+  window, clears on landing).
+- `pages.test.ts`: 5 new cases for `resolveRosterFit` (both pending, only
+  waivers pending, on-roster short-circuits before waivers resolves, the
+  definitive "not a free agent" verdict only once both resolve, a real
+  waiver-add-candidate verdict).
+- No `@ts-expect-error` compile-time test was added this pass (FAAB's own
+  precedent) -- none of these 3 fixes have a parameter shape that would
+  let a caller accidentally pass mismatched label/data sources and still
+  compile (`resolveWeekDisplay`/`isTradePackageSearchStale` take the
+  requested value and the resolved response's own field directly;
+  `resolveRosterFit` takes the two resolved responses directly) -- the
+  ordinary `expect(...).toBe(...)` coverage above already exercises the
+  exact race condition each function exists to prevent.
+
+### Regression scope check (ACTUAL TEST RESULT)
+
+`cd desktop && npx vitest run`: **443 passed, 0 failed** (29 test files,
+full frontend suite, not a targeted subset). `npm run typecheck` (`tsc -b
+apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`): clean, 0 errors.
+A benchmark artifact
+(`docs/codex/prospective_outcomes_v1/multi_league_scale_v1/frontend_bench_results.json`)
+was incidentally rewritten by running the full suite (a benchmark test's
+own side effect, unrelated to this pass's changes) and was reverted via
+`git checkout --` before committing -- not part of this pass's diff.
+
+### Files changed this pass
+
+- `desktop/apps/redraft/src/weekly-shared.tsx` -- added
+  `resolveWeekDisplay`.
+- `desktop/apps/redraft/src/weekly-shared.test.ts` -- 4 new tests.
+- `desktop/apps/redraft/src/in-season.tsx` -- `WeeklyHomePage` and
+  `LineupPage` both wired to `resolveWeekDisplay`; added "Updating…"
+  banners.
+- `desktop/apps/redraft/src/trades-explain.ts` -- added
+  `isTradePackageSearchStale`.
+- `desktop/apps/redraft/src/trades-explain.test.ts` -- 4 new tests.
+- `desktop/apps/redraft/src/trades.tsx` -- `FindTradesTab` wired to
+  `isTradePackageSearchStale`; added "Updating…" banner.
+- `desktop/apps/redraft/src/pages.tsx` -- extracted/exported
+  `resolveRosterFit`; `CompareContent` now calls it instead of its old
+  inline (buggy) version.
+- `desktop/apps/redraft/src/pages.test.ts` -- 5 new tests.
+
+### Hard boundary check
+
+Did not touch `marginal_roster_utility_v2`, its weights, the governed
+valuation model, draft recommendation logic, roster legality,
+`LeagueSnapshot`/`LeagueWorkspaceContext`/lifecycle-resolver/
+`DecisionResultEnvelope`/`PlayerAvailabilityStatus` semantics. Every fix
+in this pass changes ONLY whether the DISPLAYED label/pending-state
+correctly corresponds to the request/response that produced the data next
+to it -- no recommendation, score, or ranking value was changed anywhere.
+
+### Open issues for next worker
+
+1. **Draft Room was only spot-checked, not exhaustively audited** (4220
+   lines) -- the Compare tab, Board tab, and the rest of
+   `draft-room-v2.tsx` beyond the DecisionBundle/RAV fetch effects and
+   the Suggestions position-filter path were not individually reviewed.
+2. **Attention Center residual cross-surface risk (not reproduced, not
+   fixed)**: Attention Center's background per-league sweep temporarily
+   activates OTHER leagues on the shared single-active-profile backend
+   pointer, one at a time, before restoring the original. If the owner
+   navigates to a different league-scoped page (e.g. via a direct link,
+   not through Attention Center itself) WHILE that sweep is mid-flight,
+   that navigation's own `LeagueScopedPage` activation call and the
+   sweep's own `activateRedraftProfile` calls both target the same
+   backend pointer outside of Attention Center's own module-level
+   serialization queue (that queue only serializes AttentionCenter-vs-
+   AttentionCenter calls, not AttentionCenter-vs-everything-else). Not
+   reproduced live this pass; flagged for a future worker with browser
+   access to actually exercise it.
+3. **Players/Market tab (`adp-providers.tsx`) was only confirmed to have
+   no `useAsync` usage (grep), not line-by-line audited** for its own
+   explicit-action async handlers (import/preview/apply flows) --
+   plausible lower risk given the explicit-submit shape, but not proven
+   safe the same rigorous way the fixed surfaces were.
+4. Trades' `AnalyzeTab` (the ANALYZE tab, not FIND TRADES) was reviewed
+   and judged safe-by-construction (a single explicit "Analyze trade"
+   button, disabled while `working`, so no overlapping-request race is
+   reachable via the UI) but the `result` panel intentionally does NOT
+   clear itself when the owner edits `gives`/`receives` after seeing a
+   result and before re-clicking Analyze -- an old result can sit next to
+   an already-edited (not-yet-submitted) player selection. Judged
+   acceptable explicit-submit-form UX (same shape as a calculator), not
+   the FAAB auto-refetch race class, and NOT fixed this pass -- worth a
+   second opinion if the owner reports confusion here.
+5. Section 3C (data-age/recommendation-basis labeling, tracing the
+   season-projection source behind Harrison/Tracy) and Section 3D
+   (completing small broken interactions found along the way) are next,
+   per the dispatch.

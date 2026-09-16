@@ -21,7 +21,7 @@ import { TradeSidePicker, type TradeSide } from "./in-season";
 import { leagueFormat } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
-import { describeTradePackageSearchError, explainTradeAnalysis, explainTradePackageCandidate } from "./trades-explain";
+import { describeTradePackageSearchError, explainTradeAnalysis, explainTradePackageCandidate, isTradePackageSearchStale } from "./trades-explain";
 import { useAsync } from "./weekly-shared";
 
 /**
@@ -345,6 +345,12 @@ function FindTradesTab({
   const { result, error, working, reload } = useAsync(loader, [isSleeper, mode, targetPlayer?.sleeperPlayerId, position, data.activeProfileId]);
 
   const softenedError = error ? describeTradePackageSearchError(error) : null;
+  // Find-trades mode-display race fix (shared upgrade B, 2026-09-16): a
+  // structural check against the resolved response's own `mode` field --
+  // see `isTradePackageSearchStale` in trades-explain.ts. True exactly
+  // when the candidate cards below are still the PREVIOUS mode's search
+  // results while a newer mode's fetch is in flight.
+  const stale = isTradePackageSearchStale(result, mode);
 
   return <>
     <SegmentedControl label="Search mode" options={PACKAGE_SEARCH_MODES.map((item) => item.key)} value={mode} onChange={(value) => setMode(value as TradePackageSearchMode)} />
@@ -376,6 +382,12 @@ function FindTradesTab({
 
     {softenedError ? <ErrorState message={softenedError.message} recovery={softenedError.recovery} /> : null}
     {working && !result ? <p className="draft-feedback">Searching every live opponent roster for a real package…</p> : null}
+    {stale ? (
+      <div className="alert-strip alert-strip--pending" role="status">
+        <strong>Updating…</strong>
+        <span>Searching "{PACKAGE_SEARCH_MODES.find((item) => item.key === mode)?.label}" -- the candidates below are still from the previous search mode.</span>
+      </div>
+    ) : null}
 
     {result && !error ? (
       <p className="copy-muted">

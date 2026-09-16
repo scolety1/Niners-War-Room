@@ -6,10 +6,11 @@ import {
   explainTradeAnalysis,
   explainTradeFinderCandidate,
   explainTradePackageCandidate,
+  isTradePackageSearchStale,
   tradeFinderAnalysisLinkTarget,
   tradeVerdictFor,
 } from "./trades-explain";
-import type { TradeAnalysisResult, TradeFinderCandidate, TradePackageCandidate, TradePackageEvaluation, TradePlayerImpact } from "@nwr/contracts";
+import type { TradeAnalysisResult, TradeFinderCandidate, TradePackageCandidate, TradePackageEvaluation, TradePackageSearchResult, TradePlayerImpact } from "@nwr/contracts";
 
 function playerImpact(overrides: Partial<TradePlayerImpact> = {}): TradePlayerImpact {
   return {
@@ -369,5 +370,49 @@ describe("describeTradePackageSearchError", () => {
     const softened = describeTradePackageSearchError(error);
     expect(softened.message).toBe(error.message);
     expect(softened.recovery).toBe(error.recoveryAction);
+  });
+});
+
+/**
+ * Find-trades mode-display race fix (shared upgrade B, 2026-09-16) -- same
+ * bug class as the FAAB LIVE/SCENARIO race and the Weekly Home/Start-Sit
+ * week race. Real, reproduced-by-inspection bug: `FindTradesTab` refetches
+ * via `useAsync` on every search-mode change, but previously kept
+ * rendering the PREVIOUS mode's candidate cards, unmarked, until the new
+ * mode's fetch resolved.
+ */
+describe("isTradePackageSearchStale (Find Trades mode-display race fix)", () => {
+  function searchResult(overrides: Partial<TradePackageSearchResult> = {}): TradePackageSearchResult {
+    return {
+      leagueId: "league-1",
+      mode: "FIND_WIN_WIN",
+      candidates: [],
+      packagesEvaluated: 4,
+      opponentsSearched: 2,
+      truncated: false,
+      writeBehavior: "NO_SLEEPER_WRITES",
+      ...overrides,
+    };
+  }
+
+  it("is never stale before any response has resolved", () => {
+    expect(isTradePackageSearchStale(null, "FIND_WIN_WIN")).toBe(false);
+  });
+
+  it("is not stale when the resolved response's mode matches the currently requested mode", () => {
+    expect(isTradePackageSearchStale(searchResult({ mode: "TARGET_PLAYER" }), "TARGET_PLAYER")).toBe(false);
+  });
+
+  it("flags staleness structurally when the owner has switched search mode but the resolved response is still the OLD mode -- the exact pending-race window", () => {
+    // Owner was viewing FIND_WIN_WIN results, then switched the segmented
+    // control to IMPROVE_POSITION; that fetch has not resolved yet, so
+    // `result` here is still the real FIND_WIN_WIN response -- rendering
+    // its candidates under the new mode's selection without a stale
+    // marker would misrepresent what search actually produced them.
+    expect(isTradePackageSearchStale(searchResult({ mode: "FIND_WIN_WIN" }), "IMPROVE_POSITION")).toBe(true);
+  });
+
+  it("clears staleness the instant the new mode's response actually lands", () => {
+    expect(isTradePackageSearchStale(searchResult({ mode: "IMPROVE_POSITION" }), "IMPROVE_POSITION")).toBe(false);
   });
 });

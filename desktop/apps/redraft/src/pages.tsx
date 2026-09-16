@@ -1,5 +1,5 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { KdstStreamerResult, RedraftBootstrap, RedraftExternalIntelligence, RedraftExternalIntelligenceEntry, RedraftOpponentRostersResult, RedraftRanking } from "@nwr/contracts";
+import type { KdstStreamerResult, RedraftBootstrap, RedraftExternalIntelligence, RedraftExternalIntelligenceEntry, RedraftMyRosterResult, RedraftOpponentRostersResult, RedraftRanking, WaiversResult } from "@nwr/contracts";
 import {
   Button,
   DataTable,
@@ -288,6 +288,42 @@ export function TiersPage({ data }: { data: RedraftBootstrap }) {
 const COMPARE_MODES = ["Rest of Season", "This Week", "Roster Fit", "Trade"] as const;
 type CompareMode = (typeof COMPARE_MODES)[number];
 
+/**
+ * Roster Fit pending-state bug fix (shared upgrade B, 2026-09-16): real
+ * bug found by inspection during the async-correctness audit, same class
+ * as the week/mode-display races found elsewhere this pass but a
+ * different shape -- not a stale PRIOR response overwriting a newer one,
+ * but a false DEFINITIVE claim rendered from data that simply hadn't
+ * arrived yet. Switching Compare into "Roster Fit" mode (or switching
+ * either compared player) resets `myRoster`/`waivers` to `null` while the
+ * new fetch is in flight (`useAsync`'s own dependency-change behavior);
+ * the previous inline version of this logic fell all the way through
+ * BOTH `myRoster?.roster.find` and `waivers?.addCandidates.find` whenever
+ * either side was still `null` and confidently rendered "Not a current
+ * free agent on this league" -- a false negative, not an honest "still
+ * reading" state, for as long as either read was pending (or had
+ * failed). Fixed by treating a `null` resolved response as "unknown,
+ * still reading" rather than as evidence of absence -- only a
+ * genuinely-resolved, non-null response for BOTH reads can produce the
+ * "not a free agent" verdict. Exported (pulled out of the `CompareContent`
+ * closure) so this exact pending-vs-resolved distinction is directly
+ * unit-testable, the same way `resolveFaabDisplay`/`resolveWeekDisplay`
+ * are for their own surfaces.
+ */
+export function resolveRosterFit(
+  myRoster: RedraftMyRosterResult | null,
+  waivers: WaiversResult | null,
+  playerId: string,
+): { label: string; detail: string } {
+  if (!myRoster) return { label: "Reading your roster…", detail: "Waiting on your live Sleeper roster read." };
+  const onRoster = myRoster.roster.find((row) => row.canonicalPlayerId === playerId);
+  if (onRoster) return { label: "Already on your roster", detail: onRoster.starter ? "Currently starting" : "Currently benched" };
+  if (!waivers) return { label: "Reading free-agent availability…", detail: "Waiting on your live Sleeper waiver read." };
+  const candidate = waivers.addCandidates.find((row) => row.canonicalPlayerId === playerId);
+  if (candidate) return { label: candidate.becomesStarter ? "Would become a starter if added" : "Available, bench-only fit", detail: `Marginal utility ${formatNumber(candidate.marginalUtility ?? 0, 1)}` };
+  return { label: "Not a current free agent on this league", detail: "Rostered by an opponent, or not identity-matched" };
+}
+
 // NWR UI expansion pass (2026-09-12, Players surface): split out from its
 // own `PageHeader`, same reasoning as `RankingsContent`/`TiersContent`
 // above. `ComparePage` below is kept as an unrouted legacy fallback.
@@ -327,13 +363,7 @@ export function CompareContent({ client, data }: { client: NwrApiClient; data: R
   const { result: myRoster } = useAsync(myRosterLoader, [isSleeper, mode, data.activeProfileId]);
 
   const weeklyRowFor = (playerId: string) => weekly?.rows.find((row) => row.canonicalPlayerId === playerId) ?? null;
-  const rosterFitFor = (playerId: string) => {
-    const onRoster = myRoster?.roster.find((row) => row.canonicalPlayerId === playerId);
-    if (onRoster) return { label: "Already on your roster", detail: onRoster.starter ? "Currently starting" : "Currently benched" };
-    const candidate = waivers?.addCandidates.find((row) => row.canonicalPlayerId === playerId);
-    if (candidate) return { label: candidate.becomesStarter ? "Would become a starter if added" : "Available, bench-only fit", detail: `Marginal utility ${formatNumber(candidate.marginalUtility ?? 0, 1)}` };
-    return { label: "Not a current free agent on this league", detail: "Rostered by an opponent, or not identity-matched" };
-  };
+  const rosterFitFor = (playerId: string) => resolveRosterFit(myRoster, waivers, playerId);
 
   return <>
     <Panel title="Choose two players" eyebrow="Admitted ranking universe">

@@ -8,6 +8,7 @@ import {
   createStaleResponseGuard,
   FAAB_URGENCY_TONE,
   formatClock,
+  resolveWeekDisplay,
   statusTone,
 } from "./weekly-shared";
 
@@ -174,6 +175,49 @@ describe("createStaleResponseGuard (active-profile stale-response adversary)", (
     await firstReload.promise;
 
     expect(applied).toEqual([2]);
+  });
+});
+
+/**
+ * Week-display race fix (shared upgrade B, 2026-09-16) -- same bug class
+ * as the FAAB LIVE/SCENARIO race (`resolveFaabDisplay`,
+ * improve-team-explain.ts), applied to Weekly Home and Start/Sit. Real,
+ * reproduced-by-inspection bug: both pages previously rendered the raw
+ * input `week` (from `WeekControl`'s local state) in the page title/"Week"
+ * chip, while the action cards/lineup/bench below kept rendering the
+ * PREVIOUS `useAsync` response until the new week's fetch resolved --
+ *`ProviderStatusLine` on the same page already correctly showed its own
+ * week off the resolved response's `providerHealth.week`, so the two
+ * labels on one page could disagree mid-transition. Fixed the same way as
+ * FAAB: derive the displayed week from the SAME resolved response that
+ * supplies the data, never from the separate input state directly.
+ */
+describe("resolveWeekDisplay (Weekly Home / Start-Sit week-display race fix)", () => {
+  it("shows the requested week when no response has resolved yet (first load)", () => {
+    expect(resolveWeekDisplay(3, null)).toEqual({ displayWeek: 3, isStale: false });
+    expect(resolveWeekDisplay(3, undefined)).toEqual({ displayWeek: 3, isStale: false });
+  });
+
+  it("shows the resolved response's own week, not the input, once a response exists", () => {
+    // The ordinary, settled case: requested and resolved agree.
+    expect(resolveWeekDisplay(5, 5)).toEqual({ displayWeek: 5, isStale: false });
+  });
+
+  it("flags staleness structurally when the owner has requested a NEW week but the resolved response is still the OLD one -- the exact pending-race window", () => {
+    // Owner was on week 2 (resolved), then moved WeekControl to week 3;
+    // the week-3 fetch has not resolved yet, so `result`/`actions` here is
+    // still real week-2 data. The displayed week must be the DATA's week
+    // (2, matching the body still on screen), not the input (3) -- and the
+    // mismatch must be flagged so the page can show an explicit pending
+    // indicator instead of silently claiming week 3.
+    const display = resolveWeekDisplay(3, 2);
+    expect(display.displayWeek).toBe(2);
+    expect(display.isStale).toBe(true);
+  });
+
+  it("clears staleness the instant the new week's response actually lands", () => {
+    const display = resolveWeekDisplay(3, 3);
+    expect(display).toEqual({ displayWeek: 3, isStale: false });
   });
 });
 

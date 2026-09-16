@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import type { RedraftMyRosterPlayer, RedraftMyRosterResult, WaiverAddCandidate, WaiversResult } from "@nwr/contracts";
+
 import {
   dataHealthStatusLabel,
   dataHealthTone,
@@ -9,6 +11,7 @@ import {
   noRankingsExplanation,
   type PickSearchAsset,
   rankingSearchRows,
+  resolveRosterFit,
 } from "./pages";
 
 // The exact 23 real KHA 2026 draft picks the live NWR capture misrecorded
@@ -290,5 +293,105 @@ describe("dataHealthStatusLabel (P0-1 regression: undefined DataHealthCategory.s
 
   it("never fabricates a confident tone for a missing status -- falls to the existing 'blocked' branch", () => {
     expect(dataHealthTone(undefined as unknown as string)).toBe("blocked");
+  });
+});
+
+/**
+ * Roster Fit pending-state bug fix (shared upgrade B, 2026-09-16). Real bug
+ * found by inspection: Compare's "Roster Fit" mode previously derived its
+ * verdict straight from `myRoster?.roster.find(...)` /
+ * `waivers?.addCandidates.find(...)`, both of which are `null` while
+ * `useAsync` has a fetch in flight (e.g. right after switching into Roster
+ * Fit mode, or switching either compared player) -- falling all the way
+ * through to a confident "Not a current free agent on this league" for a
+ * player whose real status simply hasn't loaded yet. `resolveRosterFit`
+ * fixes this by treating a `null` resolved response as "still reading",
+ * never as evidence of absence.
+ */
+describe("resolveRosterFit (Compare Roster Fit pending-state bug fix)", () => {
+  function rosterPlayer(overrides: Partial<RedraftMyRosterPlayer> = {}): RedraftMyRosterPlayer {
+    return {
+      sleeperPlayerId: "sleeper-1",
+      canonicalPlayerId: "00-canonical-1",
+      playerName: "Roster Player",
+      position: "WR",
+      team: "SF",
+      starter: true,
+      identityStatus: "MATCHED",
+      ...overrides,
+    };
+  }
+  function myRosterResult(overrides: Partial<RedraftMyRosterResult> = {}): RedraftMyRosterResult {
+    return { leagueId: "league-1", roster: [], rankingWarning: "", writeBehavior: "NO_SLEEPER_WRITES", ...overrides };
+  }
+  function addCandidate(overrides: Partial<WaiverAddCandidate> = {}): WaiverAddCandidate {
+    return {
+      sleeperPlayerId: "sleeper-2",
+      canonicalPlayerId: "00-canonical-2",
+      playerName: "Free Agent Player",
+      position: "RB",
+      team: "SF",
+      rosReplacementValue: 5,
+      rosOverallRank: 50,
+      weeklyProjectedPoints: 8,
+      marginalUtility: 3.2,
+      becomesStarter: true,
+      marginalUtilityExplanation: "",
+      identityStatus: "MATCHED",
+      faabBidLowDollars: null,
+      faabBidHighDollars: null,
+      faabUrgency: null,
+      faabRationale: null,
+      playerAvailabilityStatus: null,
+      ...overrides,
+    };
+  }
+  // Deliberately minimal -- `resolveRosterFit` only ever reads
+  // `addCandidates` off a `WaiversResult`, so the fixture only supplies
+  // that (cast, rather than filling in every unrelated required field).
+  function waiversResult(overrides: Partial<WaiversResult> = {}): WaiversResult {
+    return {
+      addCandidates: [],
+      dropCandidates: [],
+      addDropPairings: [],
+      ...overrides,
+    } as unknown as WaiversResult;
+  }
+
+  it("reads 'still reading' honestly when BOTH reads are pending -- never a false 'not a free agent' claim", () => {
+    expect(resolveRosterFit(null, null, "00-canonical-2")).toEqual({
+      label: "Reading your roster…",
+      detail: "Waiting on your live Sleeper roster read.",
+    });
+  });
+
+  it("still reads 'still reading' (for the waivers half) when the roster resolved but waivers is still pending, and the player isn't on the roster", () => {
+    const result = resolveRosterFit(myRosterResult({ roster: [rosterPlayer({ canonicalPlayerId: "someone-else" })] }), null, "00-canonical-2");
+    expect(result.label).toBe("Reading free-agent availability…");
+  });
+
+  it("correctly reports 'already on your roster' the moment myRoster resolves, without waiting on waivers", () => {
+    const result = resolveRosterFit(
+      myRosterResult({ roster: [rosterPlayer({ canonicalPlayerId: "00-canonical-2", starter: false })] }),
+      null,
+      "00-canonical-2",
+    );
+    expect(result.label).toBe("Already on your roster");
+    expect(result.detail).toBe("Currently benched");
+  });
+
+  it("only renders the definitive 'not a current free agent' verdict once BOTH reads have genuinely resolved and found nothing", () => {
+    const result = resolveRosterFit(myRosterResult({ roster: [] }), waiversResult({ addCandidates: [] }), "00-canonical-2");
+    expect(result.label).toBe("Not a current free agent on this league");
+  });
+
+  it("reports a real waiver-add candidate once both reads resolve", () => {
+    const result = resolveRosterFit(
+      myRosterResult({ roster: [] }),
+      waiversResult({ addCandidates: [addCandidate({ canonicalPlayerId: "00-canonical-2", becomesStarter: true, marginalUtility: 4.5 })] }),
+      "00-canonical-2",
+    );
+    expect(result.label).toBe("Would become a starter if added");
+    expect(result.detail).toBe("Marginal utility 4.5");
   });
 });

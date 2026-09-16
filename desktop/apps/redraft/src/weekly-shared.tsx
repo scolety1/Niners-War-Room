@@ -90,6 +90,41 @@ export function useAsync<T>(
   return { result, error, working, reload: () => setAttempt((value) => value + 1) };
 }
 
+/**
+ * Week-display race fix (2026-09-16, shared upgrade B), same bug class and
+ * same structural remedy as the FAAB LIVE/SCENARIO fix
+ * (`resolveFaabDisplay` in improve-team-explain.ts): a week-scoped page's
+ * `WeekControl` updates local input state (`requestedWeek`) synchronously,
+ * but the matching `useAsync` response -- whose OWN `week` field is the
+ * only honest record of what week the currently-rendered data actually is
+ * -- only lands after a real round trip. Weekly Home and Start/Sit both
+ * previously put the raw input week straight into the page title/"Week"
+ * chip while the body below (still the PREVIOUS response) kept rendering
+ * that prior week's actions/lineup -- reproducible live by changing the
+ * week: the title advances immediately, but `ProviderStatusLine` (which
+ * already correctly reads its own week off the resolved
+ * `WeeklyProjectionProviderHealth.week`) kept showing the OLD week for as
+ * long as the new fetch was in flight, so the SAME page could show two
+ * different week numbers to the owner at once.
+ *
+ * `resolveWeekDisplay`'s only inputs are the requested week and the
+ * resolved response's own week -- it has no branch that can silently
+ * relabel one response's data with a different response's week. `Display`
+ * is what every week-labeled chip/title on the page should render;
+ * `isStale` is true only when a resolved response exists but is for a
+ * different week than what is currently requested (a structural check
+ * against the response itself, not a timing/`working`-flag guess), and
+ * should drive an explicit "Updating…" indicator rather than silently
+ * leaving stale data unmarked.
+ */
+export function resolveWeekDisplay(
+  requestedWeek: number,
+  resolvedWeek: number | null | undefined,
+): { displayWeek: number; isStale: boolean } {
+  if (resolvedWeek == null) return { displayWeek: requestedWeek, isStale: false };
+  return { displayWeek: resolvedWeek, isStale: resolvedWeek !== requestedWeek };
+}
+
 export function useFreeAgents(client: NwrApiClient, profileId: string | null) {
   const loader = () => (profileId ? client.redraftFreeAgents() : null);
   // eslint-disable-next-line react-hooks/rules-of-hooks

@@ -1,5 +1,12 @@
 import type { NwrApiError } from "@nwr/api-client";
-import type { TradeAnalysisResult, TradeFinderCandidate, TradePackageCandidate, TradePackageEvaluation } from "@nwr/contracts";
+import type {
+  TradeAnalysisResult,
+  TradeFinderCandidate,
+  TradePackageCandidate,
+  TradePackageEvaluation,
+  TradePackageSearchMode,
+  TradePackageSearchResult,
+} from "@nwr/contracts";
 
 import type { DecisionExplainTone } from "./decision-explain";
 
@@ -284,4 +291,27 @@ const TRADE_PACKAGE_SEARCH_ERROR_COPY: Record<string, SoftenedTradePackageSearch
 
 export function describeTradePackageSearchError(error: NwrApiError): SoftenedTradePackageSearchError {
   return TRADE_PACKAGE_SEARCH_ERROR_COPY[error.code] ?? { message: error.message, recovery: error.recoveryAction };
+}
+
+/**
+ * Find-trades mode-display race fix (shared upgrade B, 2026-09-16): same
+ * bug class as the FAAB LIVE/SCENARIO race (`resolveFaabDisplay`,
+ * improve-team-explain.ts) and the Weekly Home/Start-Sit week race
+ * (`resolveWeekDisplay`, weekly-shared.tsx). `FindTradesTab` (trades.tsx)
+ * auto-refetches via `useAsync` whenever the owner changes search mode
+ * (FIND_WIN_WIN / TARGET_PLAYER / IMPROVE_POSITION) -- the segmented
+ * control updates immediately, but the candidate cards below keep
+ * rendering the PREVIOUS mode's `result` (a completely different kind of
+ * search, over a different set of packages) until the new mode's fetch
+ * resolves, with nothing distinguishing that gap from a genuinely current
+ * result. The backend echoes back which mode it actually searched
+ * (`TradePackageSearchResult.mode`) -- the one authoritative record of what
+ * the displayed candidates represent -- so staleness is a structural
+ * comparison against that field, never a `working`-flag guess.
+ */
+export function isTradePackageSearchStale(
+  result: Pick<TradePackageSearchResult, "mode"> | null,
+  requestedMode: TradePackageSearchMode,
+): boolean {
+  return result != null && result.mode !== requestedMode;
 }
