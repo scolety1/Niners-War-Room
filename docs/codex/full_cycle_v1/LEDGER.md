@@ -2382,3 +2382,298 @@ was modified this pass).
    backlog of small open items (see #2) that a closure pass should either
    triage-and-accept-as-known-issues or explicitly hand to a follow-up
    cycle, not keep silently deferring.
+
+---
+
+## Worker 9 -- CLOSURE: final regression, Redraft restart, live verification,
+## push (2026-09-16)
+
+**Branch/worktree:** same as Workers 1-8, `upgrade/nwr-prospective-outcomes-v1-20260914`
+at `C:\NWR\prospective-outcomes-v1`. Started at HEAD `250d2404` (Worker 8's
+commit; clean). Role: close the 9-worker cycle out -- final regression,
+restart Redraft with all 8 commits' code live (the standing gap every prior
+worker had documented and deferred), real browser verification, then the
+cycle's FIRST push.
+
+### STEP 1 -- Final regression (ACTUAL TEST RESULT)
+
+- **Frontend**: `cd desktop && npx vitest run` -> **474 passed, 0 failed**
+  (29 test files) -- matches Worker 7's cumulative baseline exactly (Worker
+  8 added no frontend tests, confirmed). `npm run typecheck` (`tsc -b
+  apps/dynasty/tsconfig.json apps/redraft/tsconfig.json`) -> clean, 0
+  errors. The same incidental `frontend_bench_results.json` vitest-run side
+  effect every prior worker hit was reverted via `git checkout --` before
+  anything else.
+- **Backend, targeted suites** (grepped the ledger for every file name any
+  worker this cycle actually touched or ran, plus the dispatch's own named
+  list): `test_waiver_engine_service.py`, `test_sleeper_player_catalog_cache.py`,
+  `test_shadow_numeric_authorities_service.py`,
+  `test_redraft_profile_practical_mode_toggle.py`,
+  `test_weekly_home_sleeper_fetch_caching.py`,
+  `test_desktop_application_api.py`, `test_desktop_facade_architecture_wiring.py`,
+  `test_desktop_http_api.py`, `test_redraft_page_v1.py`,
+  `test_redraft_waivers_unmatched_identity_rationale_fix.py`,
+  `test_redraft_waivers_ir_reserve_drop_exclusion_fix.py`,
+  `test_redraft_waivers_faab_context_fix.py`,
+  `test_sleeper_redraft_owner_service.py`, `test_routine_refresh_service.py`
+  -> **5 failed, 242 passed** (14 files). All 5 failures confirmed BY NAME
+  to be the exact same pre-existing baseline every prior worker (2, 5, 7, 8)
+  already documented: `test_desktop_application_api.py`'s
+  `test_dynasty_facade_composes_real_governed_workflows`,
+  `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`,
+  `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`,
+  `test_facade_has_no_streamlit_or_app_component_dependency` (4 failed / 46
+  passed in that file alone, matching the documented "4 failed / 46 passed"
+  baseline exactly), plus `test_routine_refresh_service.py`'s
+  `test_routine_refresh_success_builds_candidate_pack` (1 pre-existing,
+  already documented by Worker 2 as byte-identical before/after its own
+  pass). No `git stash` re-diff was needed -- the working tree was already
+  clean at HEAD `250d2404` for this whole run, so this IS the exact,
+  unambiguous state of these tests at the commit being shipped; the
+  failure NAMES and COUNTS matching every prior worker's own independently-
+  verified baseline is itself the confirmation of "nothing new broke."
+  Did not run the full untargeted `tests/` suite (documented
+  ~323-pre-existing-failure baseline, unrelated per memory) -- no reason to
+  doubt the targeted result.
+
+**Verdict: cumulative regression is clean. No new failures anywhere.**
+
+### STEP 2 -- Redraft restart (ACTUAL, LIVE OBSERVATION)
+
+Confirmed via `Get-Process -Id 23004,7924` that the pre-cycle frontend
+(node.exe, started 2026-09-16 12:42 PM) and backend (python.exe, started
+2026-09-16 2:19 PM) were still the same two processes every worker since
+Worker 1 had been leaving untouched. Per the dispatch, this is a disposable
+isolated test instance (not the owner's real AppData) with no in-progress
+work at risk -- confirmed no uncommitted changes anywhere (`git status`
+clean) before touching anything.
+
+Stopped both cleanly with `Stop-Process -Force` on the exact confirmed
+PIDs (23004, 7924) -- re-verified both ports (1422, 18742) free and both
+PIDs gone before proceeding (not blind-killed: identity of each PID was
+confirmed via `Get-Process` first, matching this session's own standing
+safety practice).
+
+Restarted using the exact repo-documented command from the dispatch/memory
+(`nwr-prospective-outcomes-v1.md`):
+```
+.\desktop\scripts\nwr_release_gate_smoke.ps1 -Mode redraft -KeepRunning `
+  -SleeperLeagueId 1312983576827920384 -SleeperUsername scolety
+```
+This is the same script every Dynasty startup this cycle (Worker 6) and
+every prior redraft release-gate check has used -- read the script in full
+first (it does NOT itself stop any pre-existing process on its target
+ports, which is why the old PIDs had to be stopped manually first, exactly
+as the dispatch anticipated).
+
+**Result: full pass, no findings, no errors.** `check:resources` PASSED
+(the Redraft-app privacy-guard failure documented in the script's own
+KNOWN ISSUES header as a *pre-existing, expected* failure did NOT occur
+this run -- worth noting, though not chased further since packaging isn't
+this pass's remit). `cargo check` PASSED. Production `vite build` succeeded
+(578ms). Real backend came up and answered `/api/v1/bootstrap` with a real
+200 within the health-poll loop. A REAL read-only Sleeper import against
+league `1312983576827920384` (`scolety`) ran through the app's own
+`/api/v1/redraft/sleeper/import` endpoint; a before/after byte-comparison
+of `league`/`rosters`/`users` fetched directly from `api.sleeper.app`
+came back **IDENTICAL -- 0 writes confirmed** (script's own automated
+check, not an inference). Every surface-smoke call returned real 200s:
+`league_workspace_context`, `my_roster`, `opponent_rosters`, `data_health`,
+`player_availability_status`, `weekly_lineup_week1`, `waivers`,
+`free_agents`, `trade_finder`, and -- notably -- `weekly_home_actions_week1`
+(this endpoint is documented in the SAME script's own header as a KNOWN,
+expected 500 for a Sleeper-imported profile with an active roster; it
+returned a real 200 this run, worth flagging as a possible incidental fix
+from this cycle's own facade changes, NOT independently investigated
+further -- see Open Issues). Zero findings emitted by the script (an empty
+`findings` array means none of `check:resources`/`cargo check`/
+`weekly_home_actions` triggered `Add-Finding`).
+
+**New PIDs (confirmed via `Get-NetTCPConnection`/`Get-Process`, not just
+the script's own possibly-wrapper-process PID, per Worker 6's precedent
+that Windows `Start-Process` PIDs can be intermediate `cmd.exe` wrappers):**
+- Redraft frontend: `node.exe`, PID **22012**, listening on `127.0.0.1:1422`
+  (real `vite preview` of the current-HEAD production build).
+- Redraft backend: `python.exe`, PID **16920**, listening on
+  `127.0.0.1:18742` (`scripts/run_nwr_desktop_api.py --mode redraft
+  --repo-root C:\NWR\prospective-outcomes-v1`, current HEAD `250d2404`'s
+  code).
+- Dynasty frontend/backend (`127.0.0.1:1421` PID 24900 / `127.0.0.1:18741`
+  PID 24240) confirmed UNTOUCHED throughout -- neither process was stopped,
+  restarted, or had any request sent to it this pass.
+
+**This is the first time in the entire 9-worker cycle that any worker's
+Redraft-side commits are actually live in a running process**, closing the
+standing "not yet live" note every one of Workers 1-8 left in their own
+sections.
+
+### STEP 3 -- Real browser verification (LIVE OBSERVATION, Chrome MCP against
+### the freshly-restarted `http://127.0.0.1:1422`, real Fantasy Gamers league,
+### read-only)
+
+All 5 dispatch-named checks performed against the real, just-restarted app:
+
+**(a) Improve Team Add/Drop unmatched-roster explanation -- CONFIRMED LIVE.**
+Navigated to `#/league/941b99.../waivers?tab=add-drop`, clicked the
+"Consider dropping"-adjacent view (Add/Drop). Bottom of the "Available to
+add" table now reads: *"Roster slots outside this ranking: Ka'imi
+Fairbairn (K) -- Outside NWR's ranked model -- K/DST are not part of the
+governed ranking.; NE D/ST (DST) -- Outside NWR's ranked model -- K/DST are
+not part of the governed ranking."* -- this is Worker 7's
+`describeUnmatchedRosterPlayers`/`describe_unmatched_roster_players` fix,
+NOT the old raw `"Unresolved roster Sleeper IDs: 3451, NE"` line. Confirmed
+by direct `get_page_text` extraction, not a screenshot guess.
+
+**(b) Weekly Home/Start-Sit week-display -- sanity-checked, no stale-week
+issue observed.** Loaded both `#/home` and `#/lineup` fresh (single load
+each, per the dispatch's own "quick sanity check, not a full re-audit"
+scope -- no week-switch interaction was exercised). Start/Sit's real
+recommended-change card ("Start Trevor Lawrence over Caleb Williams", LOW
+CONFIDENCE -- CLOSE CALL, +0.5 projected points) showed `DATA: SLEEPER ·
+updated Sep 16, 5:01 PM` -- matching the new backend's actual startup
+time-of-day, confirming this is genuinely fresh post-restart data, not a
+stale cached response. No double/mismatched week number observed on either
+page. Not an exhaustive re-audit of Worker 3's `resolveWeekDisplay` fix
+under an actual week-change race (would require a live week transition,
+not available on demand).
+
+**(c) Data Health blocked-rookie per-row reasons -- CONFIRMED LIVE, closes
+the standing open item from Worker 1 through 8.** The header badge popup
+(clicked from the draft page, persisted across navigation) now reads:
+*"7 rookies remain blocked -- Max Bredeson, Riley Nowakowski, Joe Royer,
+Emmanuel Henderson Jr., Lewis Bond, Anthony Smith, Jam Miller remain
+excluded from rankings by the factual player registry (2 rows -- draft
+position conflicts with current factual registry position; 4 rows --
+current factual roster status is not a currently-rostered status; 1 row --
+exact current GSIS identity unresolved); no values were imputed."* This is
+Worker 1's `_blocked_seed_reason_breakdown` fix, exactly as designed --
+NOT the old blanket "position conflicts with the current factual registry"
+phrase for all 7 that Worker 5 confirmed was still live pre-restart. This
+is the first real confirmation, across the whole cycle, that this fix
+actually renders correctly for the owner.
+
+**(d) Console -- no new errors.** Checked `read_console_messages` with
+`onlyErrors: true` after a fresh page load on Draft Room, Data Health,
+Improve Team/Add-Drop, Weekly Home, and Start/Sit -- zero errors/exceptions
+on every page.
+
+**(e) Zero accidental Sleeper writes -- confirmed the established way.**
+The restart itself (Step 2) already performed the project's own
+established zero-writes proof: a real before/after byte-comparison of
+`league`/`rosters`/`users` fetched directly from `api.sleeper.app`,
+independent of the app's own claims, came back byte-identical. No
+additional live-browser write action was attempted or needed beyond that
+(no draft/roster/lineup/ADP-import buttons were clicked this pass).
+
+**Bonus (not one of the 5 named checks, but incidentally observed and
+worth recording): Worker 4's Weekly Home freshness-basis fix is ALSO now
+confirmed live** -- the real WAIVER action card ("Consider adding Tyrone
+Tracy (marginal utility 9.7)") shows `DATA: NWR season ranking · admitted
+2026-09-08`, not a same-day Sleeper timestamp, matching
+`resolveHomeActionFreshness`'s intended WAIVER/TRADE routing exactly.
+
+### STEP 4 -- Final commits this pass
+
+**None needed.** This was a pure verification pass; no bugs, regressions,
+or gaps requiring a code change were found. The one incidental observation
+worth a future worker's attention (weekly-home-actions no longer 500s for
+this profile, contradicting the smoke script's own documented KNOWN ISSUE)
+is recorded as an open item below, not chased into a fix this pass (root
+cause not investigated; could be a real incidental fix from this cycle's
+own facade changes, or a data-state difference from when that KNOWN ISSUE
+was originally documented -- not conflated with a confirmed finding
+either way).
+
+### STEP 5 -- Push
+
+`git push origin upgrade/nwr-prospective-outcomes-v1-20260914` --
+confirmed the remote `refs/heads/upgrade/nwr-prospective-outcomes-v1-20260914`
+now points at the same SHA as local HEAD after push. No force-push used.
+`main` was never touched. This is the cycle's FIRST push -- all 8 prior
+workers' commits (`a5c3bcf6` through `250d2404`) plus this worker's own
+ledger-update commit are now on origin.
+
+### FILES CHANGED THIS PASS
+
+- `docs/codex/full_cycle_v1/LEDGER.md` -- this section (the only file
+  change this pass; Steps 1-3 were pure regression/verification with zero
+  code changes).
+
+### HARD BOUNDARY CHECK
+
+Did not touch `marginal_roster_utility_v2`, its weights, the governed
+valuation model, draft recommendation logic, roster legality,
+`LeagueSnapshot`/`LeagueWorkspaceContext`/lifecycle-resolver/
+`DecisionResultEnvelope`/`PlayerAvailabilityStatus` semantics, or Dynasty's
+`governed_asset_registry_service.py`. Dynasty's running processes
+(127.0.0.1:1421/18741) were never stopped, restarted, or sent any request
+this pass. No real Sleeper/ESPN writes -- the one real Sleeper contact this
+pass made (the restart's own re-import) was proven zero-write by direct
+before/after byte comparison against the real Sleeper API, independent of
+the app's own internal claims.
+
+### RUNNING PROCESSES STATUS (end of pass)
+
+- **Redraft**: frontend `node.exe` PID **22012** on `127.0.0.1:1422`;
+  backend `python.exe` PID **16920** on `127.0.0.1:18742`. Both serving
+  current HEAD `250d2404`'s code (this cycle's full 9-commit set). Left
+  running (`-KeepRunning`) for the owner/next worker.
+- **Dynasty**: frontend PID 24900 on `127.0.0.1:1421`; backend PID 24240 on
+  `127.0.0.1:18741`. Confirmed untouched throughout this pass (no restart,
+  no requests sent).
+
+### OPEN ISSUES FOR NEXT WORKER (installer rebuild + final owner-facing
+### report)
+
+Consolidated from every worker's own open-items list across the cycle,
+filtered to what is still real and unresolved as of this pass:
+
+1. **Native Tauri installer rebuild is still outstanding.** `check:resources`
+   and `cargo check` both PASSED this pass for Redraft (worth noting: the
+   script's own header documents the Redraft `check:resources` privacy-guard
+   failure as an *expected* pre-existing issue, and it did not reproduce
+   this run -- not chased further, flag for the installer-rebuild worker to
+   confirm one way or the other with a real `-AttemptNativeBuild` run). A
+   full native `tauri:build` was never attempted this cycle (this worker
+   included) -- next worker's explicit job per the dispatch.
+2. **Final structured owner-facing report** consolidating all 9 workers'
+   findings is still needed (this worker's job was closure/push, not that
+   report).
+3. **`weekly_home_actions` returned 200, not the documented 500**, for the
+   real Fantasy Gamers profile this run -- contradicts the release-gate
+   script's own KNOWN ISSUES header (which describes a reproduced
+   `AttributeError` when `redraft_kdst_streamer(...).data["positions"]` is
+   a list, not a dict). NOT independently re-investigated this pass (could
+   be an incidental fix from this cycle's facade changes touching the same
+   file, or a difference in this profile's current data/roster state vs.
+   when that issue was first documented). Worth a deliberate look before
+   claiming it as a fixed bug either way.
+4. **Draft Room's DecisionBundle 500s** in the real pre-draft, no-slot-
+   selected league state were reconfirmed still present this pass (visible
+   live: "DecisionBundle unavailable -- The DecisionBundle request failed
+   -- backend calculation unavailable." on the Draft Room page) -- gracefully
+   handled by the UI, root cause not chased (inside the hard boundary per
+   Worker 5's original note).
+5. **Section 5 League 4 (403 N 18th and friends)** still needs its light
+   verification (load, ADP staleness) from whichever worktree actually
+   holds that real profile -- not this one (Worker 8's finding, unchanged;
+   this worktree's `local_exports/` is gitignored/worktree-local and never
+   carried the profile).
+6. **Start/Sit's "+0.5 vs. displayed 0.4pt" rounding/provenance gap**
+   (Worker 7's open item) -- reconfirmed still present and unchanged this
+   pass (same real card, same numbers, now observed live post-restart
+   rather than pre-restart).
+7. Everything else still open from Workers 1-8's own sections and not
+   superseded above remains open and unchanged by this pass: `profile.tsx`
+   create/duplicate actions still unwrapped by `serializeActiveProfileCall`;
+   `test_redraft_engine_v1_service.py`'s pre-existing failures (3 failed +
+   13 errors) not yet triaged (not re-run this pass -- outside this pass's
+   targeted suite list since no worker's commits this cycle touched that
+   file); Cheat Sheet's missing print stylesheet; Redraft's missing profile
+   archive/delete; Trades' backend-layer duplicate-id handling not
+   independently verified; Decision History's scenario-vs-observed
+   provenance not exhaustively audited across all 104 real event types;
+   per-player season `sourceAsOf` not threaded into
+   `WaiverAddCandidate`/`TradePlayerImpact`; the 2-point-conversion Sleeper
+   scoring gap (worth a future scoped look, explicitly out-of-scope this
+   cycle).
