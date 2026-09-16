@@ -44,6 +44,7 @@ from typing import Any
 import pytest
 
 import src.application.desktop_facade as desktop_facade_module
+import src.services.sleeper_player_catalog_cache as sleeper_player_catalog_cache
 from src.application.desktop_facade import DesktopBackendFacade
 from src.services.redraft_engine_v1_service import load_profile, save_profile
 from src.services.sleeper_import_service import SleeperHttpClient
@@ -55,9 +56,14 @@ def test_sleeper_get_json_is_a_pure_pass_through_when_the_cache_is_inactive(
     tmp_path: Path,
 ) -> None:
     """Outside of `redraft_weekly_home_actions`, `_sleeper_fetch_cache_local.
-    cache` is `None` -- `_sleeper_get_json` must behave EXACTLY like calling
-    `client.get_json` directly: one real call per invocation, no
-    memoization, byte-identical to the pre-change code path."""
+    cache` is `None` -- for any NON-catalog path, `_sleeper_get_json` must
+    behave EXACTLY like calling `client.get_json` directly: one real call
+    per invocation, no memoization, byte-identical to the pre-change code
+    path. (The `players/nfl` catalog path is the deliberate exception added
+    in shared upgrade A, NWR full-cycle V1 -- see
+    `test_sleeper_player_catalog_cache.py` for its own dedicated coverage,
+    and the second assertion block below for confirmation this test's
+    non-catalog claim still holds.)"""
 
     facade = DesktopBackendFacade(
         repo_root=REPO_ROOT, mode="redraft", redraft_root=tmp_path / "redraft-store"
@@ -72,12 +78,12 @@ def test_sleeper_get_json_is_a_pure_pass_through_when_the_cache_is_inactive(
             return {"path": path, "call_number": len(calls)}
 
     client = _CountingClient()
-    first = facade._sleeper_get_json(client, "players/nfl")
-    second = facade._sleeper_get_json(client, "players/nfl")
+    first = facade._sleeper_get_json(client, "league/9999/rosters")
+    second = facade._sleeper_get_json(client, "league/9999/rosters")
 
-    assert calls == ["players/nfl", "players/nfl"]  # fetched twice, never cached
-    assert first == {"path": "players/nfl", "call_number": 1}
-    assert second == {"path": "players/nfl", "call_number": 2}
+    assert calls == ["league/9999/rosters", "league/9999/rosters"]  # fetched twice, never cached
+    assert first == {"path": "league/9999/rosters", "call_number": 1}
+    assert second == {"path": "league/9999/rosters", "call_number": 2}
 
 
 def test_sleeper_get_json_dedupes_within_an_active_cache_scope(tmp_path: Path) -> None:
@@ -89,6 +95,9 @@ def test_sleeper_get_json_dedupes_within_an_active_cache_scope(tmp_path: Path) -
     facade = DesktopBackendFacade(
         repo_root=REPO_ROOT, mode="redraft", redraft_root=tmp_path / "redraft-store"
     )
+    # Isolate from the process-wide player-catalog cache so this test's
+    # "players/nfl" call is a real, observable fetch through `client`.
+    sleeper_player_catalog_cache._default_cache.invalidate()
 
     calls: list[str] = []
 
@@ -254,6 +263,10 @@ def test_weekly_home_actions_fetches_rosters_and_players_exactly_once(
     monkeypatch.setattr(
         desktop_facade_module.SleeperHttpClient, "get_json", _fake_get_json_counting(call_log)
     )
+    # Isolate this test from the process-wide player-catalog cache (shared
+    # upgrade A, NWR full-cycle V1) -- otherwise an earlier test's real
+    # fetch could still be warm and silently change this test's counts.
+    sleeper_player_catalog_cache._default_cache.invalidate()
 
     result = facade.redraft_weekly_home_actions(week=1).data
 
@@ -271,12 +284,16 @@ def test_weekly_home_actions_fetches_rosters_and_players_exactly_once(
     # same as before this change (nothing to dedupe against).
     assert users_calls == ["league/9999/users"]
 
-    # The cache scope is torn down after the call returns -- proven by
-    # observing a standalone sub-call fetch fresh again right after.
+    # The per-request THREAD-LOCAL cache scope is torn down after the call
+    # returns -- proven by observing a standalone sub-call fetch ROSTERS
+    # fresh again right after (rosters are deliberately never cached
+    # cross-request). The player CATALOG, however, is now deliberately
+    # reused across this separate standalone call via the cross-request
+    # catalog cache -- zero further network fetches for it, not one.
     call_log.clear()
     facade.redraft_free_agents()
     assert call_log.count("league/9999/rosters") == 1
-    assert call_log.count("players/nfl") == 1
+    assert call_log.count("players/nfl") == 0
 
     # The real response is still well-formed and reflects the real fixture
     # roster/free-agent data -- caching changed nothing about the content,
@@ -287,24 +304,36 @@ def test_weekly_home_actions_fetches_rosters_and_players_exactly_once(
     assert "Christian McCaffrey" in free_agent_names
 
 
-def test_standalone_sub_calls_outside_weekly_home_still_fetch_fresh_every_time(
+def test_standalone_sub_calls_outside_weekly_home_still_fetch_rosters_fresh_every_time(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Every one of the five sub-methods, called on its own (the normal,
     everyday way a real owner opens Waivers or Trade Finder directly, NOT
-    via Weekly Home), must be completely unaffected by this change -- a
-    fresh, real fetch every single call, exactly as before."""
+    via Weekly Home), must still fetch ROSTER/USER data fresh every single
+    call -- that part of this thread-local, per-request mechanism is
+    completely unaffected by the cross-request player-CATALOG cache added
+    in `sleeper_player_catalog_cache.py` (shared upgrade A, NWR full-cycle
+    V1). The catalog itself is now deliberately allowed to be reused across
+    these separate standalone calls -- see
+    `test_sleeper_player_catalog_cache.py` for that mechanism's own direct
+    coverage; this file only needs to prove the split didn't leak into
+    roster/user freshness."""
 
     facade, _profile_id = _facade_with_sleeper_league(tmp_path)
     call_log: list[str] = []
     monkeypatch.setattr(
         desktop_facade_module.SleeperHttpClient, "get_json", _fake_get_json_counting(call_log)
     )
+    sleeper_player_catalog_cache._default_cache.invalidate()
 
     facade.redraft_free_agents()
     facade.redraft_free_agents()
     facade.redraft_trade_finder()
 
     assert call_log.count("league/9999/rosters") == 3  # once per call, never deduped
-    assert call_log.count("players/nfl") == 3
+    # Real cross-request de-duplication: all three standalone calls ask for
+    # the SAME player catalog within the cache's TTL window, so only the
+    # FIRST one performs a real network fetch -- this is the exact broader
+    # problem this pass fixes (previously this would have read `== 3`).
+    assert call_log.count("players/nfl") == 1
     assert call_log.count("league/9999/users") == 1

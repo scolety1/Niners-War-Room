@@ -213,6 +213,15 @@ def resync_sleeper_redraft_profile(
         redraft_root=redraft_root,
         client=http,
     )
+    # NOTE (shared upgrade A, NWR full-cycle V1): this explicit, owner-
+    # triggered resync action is deliberately LEFT OUT of the cross-request
+    # player-catalog cache added to `DesktopBackendFacade._sleeper_get_json`
+    # -- a resync is a rare, explicit "pull current state from Sleeper"
+    # action (not part of the repeated-many-times-per-session hot path that
+    # cache targets), and it is passed a caller-supplied `client` (real or
+    # fake, per-call) whose response this function must always honor
+    # directly rather than silently reusing a different call's cached
+    # catalog.
     players = _object(http.get_json("players/nfl"), "players")
     rosters = _objects(
         http.get_json(f"league/{profile.provider_league_id}/rosters"), "rosters"

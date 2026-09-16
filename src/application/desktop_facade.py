@@ -276,6 +276,7 @@ from src.services.rookie_veteran_dynasty_bridge_service import (
     load_redraft_bridge_context,
 )
 from src.services.sleeper_import_service import SleeperHttpClient
+from src.services.sleeper_player_catalog_cache import get_sleeper_player_catalog
 from src.services.sleeper_league_context_service import (
     build_playoff_context,
     build_standings_context,
@@ -2355,7 +2356,7 @@ class DesktopBackendFacade:
                     status=409,
                 )
             assets = manual_kdst_assets_from_sleeper_players(
-                SleeperHttpClient().get_json("players/nfl")
+                self._sleeper_get_json(SleeperHttpClient(), "players/nfl")
             )
             # RELEASE-BLOCKER FIX: Sleeper's own `active`/`team` fields can be
             # stale (live-confirmed: a real cut kicker still reported
@@ -2871,7 +2872,7 @@ class DesktopBackendFacade:
             sleeper = SleeperHttpClient()
             rosters = sleeper.get_json(f"league/{league_id}/rosters")
             users = sleeper.get_json(f"league/{league_id}/users")
-            players = sleeper.get_json("players/nfl")
+            players = self._sleeper_get_json(sleeper, "players/nfl")
             opponents = sleeper_opponent_rosters(
                 rosters=rosters,
                 users=users,
@@ -2943,7 +2944,7 @@ class DesktopBackendFacade:
         try:
             sleeper = SleeperHttpClient()
             rosters = sleeper.get_json(f"league/{league_id}/rosters")
-            players = sleeper.get_json("players/nfl")
+            players = self._sleeper_get_json(sleeper, "players/nfl")
         except (OSError, ValueError) as exc:
             raise FacadeError(
                 "REDRAFT_MY_ROSTER_READ_FAILED",
@@ -3042,7 +3043,7 @@ class DesktopBackendFacade:
                 redraft_root=self.redraft_root,
                 force_refresh=force_refresh,
             )
-            players = sleeper.get_json("players/nfl")
+            players = self._sleeper_get_json(sleeper, "players/nfl")
             result = build_weekly_projection_rows(
                 raw_projections=raw_projections,
                 players=players,
@@ -3974,7 +3975,7 @@ class DesktopBackendFacade:
         try:
             sleeper = SleeperHttpClient()
             rosters = sleeper.get_json(f"league/{league_id}/rosters")
-            players = sleeper.get_json("players/nfl")
+            players = self._sleeper_get_json(sleeper, "players/nfl")
         except (OSError, ValueError) as exc:
             raise FacadeError(
                 "TRADE_ANALYSIS_READ_FAILED",
@@ -4422,7 +4423,7 @@ class DesktopBackendFacade:
             sleeper = SleeperHttpClient()
             rosters = sleeper.get_json(f"league/{league_id}/rosters")
             users = sleeper.get_json(f"league/{league_id}/users")
-            players = sleeper.get_json("players/nfl")
+            players = self._sleeper_get_json(sleeper, "players/nfl")
         except (OSError, ValueError) as exc:
             raise FacadeError(
                 "TRADE_PACKAGE_SEARCH_READ_FAILED",
@@ -6601,7 +6602,7 @@ class DesktopBackendFacade:
         try:
             client = SleeperHttpClient()
             picks = load_sleeper_draft_picks(draft_id=draft_id, client=client)
-            players = client.get_json("players/nfl")
+            players = self._sleeper_get_json(client, "players/nfl")
             if not isinstance(players, dict):
                 raise SleeperRedraftImportError("Sleeper player catalog response is malformed.")
             summary = sync_read_only_sleeper_picks(
@@ -6897,14 +6898,34 @@ class DesktopBackendFacade:
         }
 
     def _sleeper_get_json(self, client: SleeperHttpClient, path: str) -> Any:
-        """Pass-through to `client.get_json(path)`, EXCEPT when a caller
-        higher up the SAME thread's call stack (only
-        `redraft_weekly_home_actions` today) has opted a per-request cache
-        in via `_sleeper_fetch_cache_local`. Pure caching of an otherwise
-        byte-identical GET response within one real-time request window --
-        never changes what is returned, only how many times the same real
-        network fetch happens. See the `_sleeper_fetch_cache_local`
-        attribute comment in `__init__` for the full rationale."""
+        """Pass-through to `client.get_json(path)`, with two independent,
+        deliberately DIFFERENT-scoped caching layers layered on top:
+
+        1. The player CATALOG path (`players/nfl`) specifically is routed
+           through `sleeper_player_catalog_cache.get_sleeper_player_catalog`
+           -- a bounded, cross-request, cross-thread cache (shared_upgrade
+           A, NWR full-cycle V1). The catalog changes far less often than
+           roster/ownership data, so it is safe and correct to serve it
+           from a short-TTL cache spanning MULTIPLE separate HTTP requests.
+        2. Every OTHER path (rosters, users, traded_picks, drafts --
+           genuinely live-changing league/ownership/transaction data) still
+           only uses the pre-existing thread-local, opt-in, PER-REQUEST
+           cache below (only turned on for the duration of
+           `redraft_weekly_home_actions`'s five sub-calls). It is
+           deliberately NEVER promoted to cross-request scope: a roster can
+           change at any moment (waiver claim, trade, lineup lock), and
+           silently reusing yesterday's -- or even 10 seconds ago's --
+           roster across separate requests would be a real correctness bug,
+           not a performance win. See the `_sleeper_fetch_cache_local`
+           attribute comment in `__init__` for that mechanism's own
+           rationale.
+
+        This split is the exact "critical scoping requirement" from the
+        catalog-caching pass: a stale catalog entry can share a bounded TTL
+        cache, but a stale roster/ownership/transaction/FAAB read cannot."""
+
+        if path == "players/nfl":
+            return get_sleeper_player_catalog(client).players
 
         cache = getattr(self._sleeper_fetch_cache_local, "cache", None)
         if cache is None:

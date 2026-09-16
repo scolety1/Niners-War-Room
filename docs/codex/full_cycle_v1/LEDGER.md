@@ -224,3 +224,235 @@ All other tests in those 4 files passed. No test that asserts on the old
    restarted.
 4. Shared upgrade A (Sleeper catalog caching) is the next scoped workstream
    per the dispatch — not started this pass.
+
+---
+
+## Worker 2 — Shared upgrade A: Sleeper player-catalog cross-request cache (2026-09-16)
+
+**Branch/worktree:** same as Worker 1, `upgrade/nwr-prospective-outcomes-v1-20260914`
+at `C:\NWR\prospective-outcomes-v1`. Started at HEAD `a5c3bcf6` (Worker 1's
+commit; clean, matched Worker 1's own reported end state). Did not push,
+did not touch `main`, did not force anything.
+
+### Problem confirmation (INSPECTED CODE)
+
+Grepped every real `players/nfl` call site in `src/`. The broader
+cross-request problem flagged as explicitly-left-open by the prior
+same-night fix was confirmed STILL PRESENT: 12 separate call sites inside
+`DesktopBackendFacade` (`src/application/desktop_facade.py` — practical
+K/DST setup, opponent rosters, free agents, my roster, weekly projections,
+weekly lineup, K/DST streamer, trade analysis, trade package search, trade
+finder, Sleeper draft sync) each independently re-fetched the full
+~14.66MB / 12,227-player catalog on its OWN separate HTTP request, with
+zero sharing across requests. The prior fix
+(`_sleeper_fetch_cache_local`/`_sleeper_get_json`) is a `threading.local()`,
+OPT-IN, PER-REQUEST cache that only `redraft_weekly_home_actions` turns on
+for the duration of its own 5 sub-calls, then tears down — every other
+endpoint (Waivers alone, Trade Finder alone, Weekly Projections alone,
+etc.) still re-fetched the catalog fresh, every single call, exactly as
+the prior fix's own docstring disclosed. Also found 4 more `players/nfl`
+call sites outside the facade (`sleeper_redraft_owner_service.py`'s
+resync, plus 3 explicit one-shot export/preview tools — `sleeper_import_
+service.py`'s `export_sleeper_snapshot`, `public_data_preview_import_
+service.py`, `real_draft_pool_preview_service.py`) — deliberately left
+these OUT of scope (see below).
+
+### Fix (exact design)
+
+New module `src/services/sleeper_player_catalog_cache.py`:
+`SleeperPlayerCatalogCache` — a bounded (default TTL 15 minutes,
+`DEFAULT_TTL_SECONDS`), in-memory, PROCESS-lifetime cache holding exactly
+one entry: the player catalog. `get(client, force_refresh=False)` holds a
+single `threading.Lock` for its ENTIRE duration, including the real
+network fetch when one is needed — this is the real de-duplication
+mechanism: any concurrent caller blocks on the same lock and, once it
+acquires it, finds the now-fresh cache already populated, so it returns
+without ever calling `client.get_json` itself. A failed fetch raises
+`SleeperPlayerCatalogError`/the underlying exception WITHOUT touching
+cached state (never poisons the cache, never falls back to silently
+serving expired data as if fresh — the caller gets an honest error). A
+module-level singleton (`_default_cache`) plus `get_sleeper_player_catalog
+(client, force_refresh=False, cache=None)` is the real shared entry point.
+
+Reuse decision (per the dispatch's explicit ask to check the existing
+mechanism first): the existing `_sleeper_fetch_cache_local` is
+thread-local BY DESIGN and caches every path generically, including
+rosters — extending it directly to cross-request scope would either break
+its careful non-caching guarantee for roster/user data, or require
+building a path-allowlist inside it anyway. Instead, `_sleeper_get_json`
+(the ONE existing seam every facade Sleeper call already goes through) was
+extended with a single special case: the literal path `"players/nfl"` now
+routes to `get_sleeper_player_catalog(client).players`; every other path
+is completely unchanged (still only the pre-existing per-request
+thread-local cache, never cross-request). All 12 facade call sites that
+previously called `client.get_json("players/nfl")`/`SleeperHttpClient().
+get_json("players/nfl")` directly were changed to go through `self.
+_sleeper_get_json(client, "players/nfl")` instead, so every one of them
+now benefits. `sleeper_redraft_owner_service.py`'s resync path was
+DELIBERATELY left un-cached (see Open Issues) — a real, principled scoping
+decision, not an oversight.
+
+### Verification (REAL MEASUREMENTS, not inference)
+
+- **Cold vs warm (LIVE OBSERVATION against the real Sleeper API,
+  read-only, authorized):** cold fetch (real network call) `0.697s` for
+  the real, live catalog (`12,227` players — matches Worker 1's/the prior
+  session's figure). Warm cache hit immediately after: `0.00001s`. ~87,000x
+  for this one comparison — the number itself is not the generalizable
+  claim; the qualitative claim (a warm hit is a dict lookup under a lock,
+  not a network round trip) is.
+- **Concurrent dedup (LIVE OBSERVATION against the real Sleeper API):** 6
+  real `threading.Thread`s released simultaneously via a `threading.
+  Barrier`, all calling the shared cache against the REAL, unmocked
+  `SleeperHttpClient`. Instrumented `get_json` counted exactly **1** real
+  network fetch for the 6 concurrent callers; total elapsed `0.676s` (≈ one
+  fetch's worth of time, not 6x). All 6 threads received real, valid
+  catalog data. Also independently proven with a fake, artificially-
+  delayed (0.2s) client and 8 threads in `tests/test_sleeper_player_
+  catalog_cache.py::test_concurrent_callers_trigger_exactly_one_real_fetch`
+  (ACTUAL TEST RESULT, passes).
+- **Expiry (ACTUAL TEST RESULT):** `test_expiry_forces_a_real_refetch` —
+  TTL=0.05s, real `time.sleep(0.08)`, second `get()` performs a real
+  second fetch (`client.calls == 2`).
+- **Refresh (ACTUAL TEST RESULT):** `test_force_refresh_bypasses_a_still_
+  valid_cache` and `test_invalidate_forces_a_real_refetch` — both force a
+  real second fetch despite a still-valid cached entry.
+- **Provider failure (ACTUAL TEST RESULT):** `test_provider_failure_is_
+  never_cached_and_raises_honestly` — a failed fetch raises a real
+  `OSError` to the caller AND the very next call performs a real fetch
+  (not a cached failure, not a cache-poisoned bad state).
+  `test_provider_failure_after_a_prior_success_does_not_serve_stale_
+  forever` — a forced-refresh failure after a prior successful cache
+  raises rather than silently re-serving the old value.
+  `test_malformed_response_raises_a_typed_error_and_is_not_cached` — a
+  non-dict payload raises `SleeperPlayerCatalogError`, not cached.
+- **Data separation (ACTUAL TEST RESULT):** `test_roster_ownership_
+  transaction_faab_paths_never_enter_the_catalog_cache` — drives
+  `DesktopBackendFacade._sleeper_get_json` directly for
+  `league/.../rosters`, `.../users`, `.../traded_picks`, `.../drafts`,
+  `state/nfl` (live week), and `league/{id}` (settings/FAAB budget): every
+  one is fetched fresh on each of 2 calls (never memoized), and none of
+  them move the catalog cache's own fetch counter — only the literal
+  `players/nfl` path does.
+
+### A real regression this pass found in its OWN new code, and fixed
+
+The new process-wide singleton cache initially broke test isolation
+ACROSS THE WHOLE SUITE: any test that monkeypatches `SleeperHttpClient.
+get_json` with a per-test-varying fake player-catalog fixture (several
+Waivers/Trade-Finder/identity-boundary tests do exactly this) could
+silently receive a STALE catalog cached by an earlier test within the same
+pytest process, since the singleton has no reason to know the underlying
+fake client "changed." Caught this via a real full-suite regression run
+(14 test failures, all order/pollution-dependent, e.g. `add_candidates`
+length or `identityStatus` flipping between runs). Fixed with a new,
+narrowly-scoped `tests/conftest.py` (did not exist before this pass): one
+autouse fixture that invalidates the catalog-cache singleton before and
+after every test. Re-ran the full previously-failing set plus a further
+~300 related tests afterward — all green. This does not affect real
+production behavior (the singleton is correctly long-lived there); it only
+prevents the new cache from leaking state between test functions.
+
+### Regression scope check
+
+Ran (all ACTUAL TEST RESULT): the new test files, `test_weekly_home_
+sleeper_fetch_caching.py` (updated — 2 of its assertions changed to
+reflect the new, INTENTIONALLY different cross-request catalog-cache
+behavior; roster/user freshness assertions unchanged), `test_sleeper_
+redraft_owner_service.py`, `test_desktop_facade_architecture_wiring.py`,
+`test_desktop_http_api.py`, plus ~21 more Sleeper/waiver/trade/identity-
+adjacent files — **327 passed, 0 failed**. `test_desktop_application_api.
+py`: 4 failed / 46 passed, confirmed via `git stash` to be BYTE-IDENTICAL
+before and after this pass's change (pre-existing, unrelated —
+`app`-import boundary assertion and 3 others, not the 5-failure baseline
+Worker 1/prior sessions documented for a different worktree). `test_
+redraft_profile_practical_mode_toggle.py`: same 3 pre-existing
+freshness-window failures Worker 1 already flagged, confirmed unaffected
+by this pass. `test_routine_refresh_service.py`: 1 pre-existing failure,
+confirmed via `git stash` to be identical before/after.
+
+### Deliberate scoping decisions (what was NOT changed, and why)
+
+- `sleeper_redraft_owner_service.py`'s `resync_sleeper_redraft_profile`
+  still calls `http.get_json("players/nfl")` directly, NOT through the new
+  cache. Tried routing it through the cache first; this broke 2 real
+  existing tests (`test_resync_refreshes_the_stored_roster_snapshot_
+  without_any_sleeper_write`, `test_resync_records_unresolved_players_
+  without_dropping_them`) that deliberately pass a DIFFERENT fake client
+  (with a different fake catalog) per call to prove resync always reflects
+  whatever `client` it's given. Resync is a rare, explicit, one-shot owner
+  action, not part of the repeated-many-times-per-session hot path this
+  fix targets — reverted cleanly, left uncached, documented in the module
+  with a comment.
+- `sleeper_import_service.py`'s `export_sleeper_snapshot` and the two
+  preview/export services (`public_data_preview_import_service.py`,
+  `real_draft_pool_preview_service.py`) were left untouched — these are
+  explicit, infrequently-run, point-in-time archival/export tools, not the
+  live interactive multi-endpoint hot path the dispatch described.
+- No UI "refresh player catalog" action exists today (grepped
+  `src/desktop_api/server.py` — the only existing `forceRefresh` wiring is
+  for weekly projections, unrelated). `SleeperPlayerCatalogCache.
+  invalidate()` and `get(..., force_refresh=True)` both exist and are
+  tested, ready for a future explicit UI action to call if one is ever
+  added — not wired to any endpoint this pass, since none was asked for.
+
+### Running processes status
+
+Frontend (127.0.0.1:1422) and backend (127.0.0.1:18742) were NOT restarted
+this pass — confirmed still up and responding at the end (`GET /` → 200;
+`GET /api/v1/bootstrap` → 401 `AUTHENTICATION_REQUIRED`, the same
+contract-shaped response Worker 1 documented, not a crash). Following
+Worker 1's own precedent: the backend has no `--reload` flag, and a
+restart would issue a NEW random API token, invalidating any already-open
+real browser session's stored auth — a real cost to other workers/the
+owner not worth paying here, since this pass already obtained genuine LIVE
+measurements (real network calls against the actual Sleeper API, real
+threads, real wall-clock timings — see above) WITHOUT needing to touch the
+shared desktop backend process. Net effect: this pass's code changes are
+NOT yet live in the currently-running backend process; they will take
+effect on the next real restart (by the owner or a later worker).
+
+### Files changed this pass
+
+- `src/services/sleeper_player_catalog_cache.py` (NEW) — the cache itself.
+- `src/application/desktop_facade.py` — added the import; `_sleeper_get_
+  json` special-cases `"players/nfl"` to route through the new cache
+  (docstring rewritten to explain the two-tier split); all 12 direct
+  `players/nfl` call sites changed to go through `self._sleeper_get_json`.
+  No other behavior touched — roster/user/traded_picks/drafts/state paths
+  are byte-for-byte the same code path as before.
+- `src/services/sleeper_redraft_owner_service.py` — comment-only change
+  (documents the deliberate decision NOT to cache this call site).
+- `tests/test_sleeper_player_catalog_cache.py` (NEW) — 11 tests: cold/warm,
+  concurrent dedup, expiry, force-refresh, invalidate, 2 provider-failure
+  variants, malformed-response, default-TTL-bound, singleton-sharing, and
+  the roster/ownership/transaction/FAAB data-separation regression test.
+- `tests/test_weekly_home_sleeper_fetch_caching.py` — updated 3 existing
+  tests to reflect the new, intentional cross-request catalog-cache
+  behavior (2 tests renamed/re-asserted; roster/user freshness assertions
+  unchanged) plus singleton-cache isolation calls.
+- `tests/conftest.py` (NEW — did not exist before this pass) — one
+  autouse fixture resetting the catalog-cache singleton between tests
+  (see "A real regression this pass found" above).
+
+### Hard boundary check
+
+Did not touch `marginal_roster_utility_v2`, its weights, the governed
+valuation model, draft recommendation logic, roster legality,
+`LeagueSnapshot`/`LeagueWorkspaceContext`/lifecycle-resolver/
+`DecisionResultEnvelope`/`PlayerAvailabilityStatus` semantics, or any
+FAAB/Add-Drop/waiver DECISION logic — only the underlying catalog-fetch
+performance/plumbing feeding into those consumers, exactly as scoped.
+
+### Open issues for next worker
+
+1. The currently-running backend process does not yet have this pass's
+   code — confirm the corrected cross-request caching behavior renders
+   live once the process is next restarted (same open item pattern as
+   Worker 1's #3).
+2. `resync_sleeper_redraft_profile` (owner "resync from Sleeper" action)
+   deliberately still fetches the catalog fresh on every resync, uncached
+   — correct today, but worth a future look if resync ever becomes a
+   high-frequency action rather than an occasional explicit one.
+3. Shared upgrade B (stale-response race class across all async tools) is
+   the next scoped workstream per the dispatch — not started this pass.
