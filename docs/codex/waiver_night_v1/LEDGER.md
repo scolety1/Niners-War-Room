@@ -2725,3 +2725,223 @@ separation work).
    (this pass)" section and the closing checkpoint doc
    (`WAIVER_FIX_CYCLE_V1_CHECKPOINT.md`) remains open and unrelated to
    this pass's fix -- not re-summarized field-by-field here.
+
+## Worker (this pass) -- Test-Failure-Count Reconciliation + Handoff Wording
+## Correction (docs-only, closes out the branch for push)
+
+Start HEAD `572dccdf` (the LIVE/SCENARIO FAAB display-race fix, above --
+already committed, not yet pushed). Directive: reconcile the closing
+checkpoint's disclosed, unresolved discrepancy (a full untargeted
+`pytest tests/` run showed 332 failed/4803 passed/72 skipped/13 errors,
+higher than repo memory's documented ~323-pre-existing-failure baseline,
+suspected but not proven to be an xdist/parallel-methodology artifact) by
+comparing the actual SET of failing/erroring test node IDs against an
+isolated worktree of the cycle's own start commit, under an identical,
+fixed pytest configuration -- not by comparing totals again.
+
+### Method (fixed, identical both runs)
+
+`python -m pytest tests/ -n 16 --dist=load --timeout=120
+--timeout-method=thread -q -p no:cacheprovider --basetemp=<short-path>
+--junitxml=<path>` -- 16 fixed xdist workers (not `auto`), a hard 120s
+per-test timeout, no rerun/flaky plugin installed (confirmed via
+`pip list`), cache provider disabled. Both runs used this exact
+invocation, same real Python 3.14.6 interpreter/site-packages (this repo
+has no per-worktree venv -- `requirements.txt`/`pyproject.toml` are
+byte-identical between the two commits, confirmed by `diff`, so "current
+dependency set" and "cycle-start dependency set" are the same real
+installed packages by construction, not merely pinned to match).
+
+- **HEAD**: this worktree (`C:\NWR\prospective-outcomes-v1`), commit
+  `572dccdf`, in place.
+- **Baseline**: a genuinely separate `git worktree add
+  C:/NWR/_reconcile_baseline_0517ada8 0517ada82a9b2b7fef1b64b66c13892d4440b2bb`
+  (detached HEAD at the cycle's own start commit) -- never checked out in
+  this worktree, removed via `git worktree remove --force` at the end of
+  this pass.
+- **Fixture parity**: this repo's `local_exports/` (2.3M, gitignored) is
+  real per-worktree state several tests read. Copied byte-for-byte from
+  this worktree into the baseline worktree BEFORE its run, so both runs
+  read identical fixture data -- not left as an uncontrolled variable.
+  `/data/` (also gitignored) does not exist in either worktree;
+  `config/` is git-tracked, identical by construction.
+
+### A real, self-inflicted methodology artifact found and eliminated
+### (not the cycle's fault, not a code bug)
+
+The FIRST attempt at this reconciliation (`--basetemp` pointed at a path
+nested deep under this session's own scratch directory) produced 640
+failed/27 errors at HEAD -- nearly double the checkpoint's own 332/13.
+Traced directly, not hand-waved: (1) several dozen of those were
+`WinError 206: The filename or extension is too long` --
+Windows' MAX_PATH limit, tripped by xdist's own
+`<basetemp>/popen-gwNN/<test-name>/...` nesting under an already-long
+scratch path; (2) four were a genuine, reproducible STRING-MATCHING
+collision in `_classification()`/`_source_family()`
+(`src/services/nwr_outcome_historical_row_factory.py`, lines 383-402),
+which substring-searches the FULL `str(path)` (not just the filename) for
+`FORBIDDEN_SOURCE_TOKENS` -- my chosen basetemp name `_pytest_tmp_head`
+concatenated with xdist's own `popen-gw15` directory segment to spell
+`...headpopen...`, which contains the literal forbidden substring `adp`,
+falsely classifying two synthetic test fixtures as `"blocked"` instead of
+`"unknown"`/`"allowed"`. Verified by direct reproduction with a small
+Python snippet against the real token list, not inferred. Both causes are
+100% attributable to THIS PASS's own first-choice `--basetemp` value, not
+to the checkpoint worker's prior run, not to this cycle's actual code
+changes, and not a latent bug in `nwr_outcome_historical_row_factory.py`
+under any normal (non-adversarial-path) usage. Re-ran with short,
+collision-free basetemp paths (`C:/pt1`, `C:/pt2`, verified in advance
+against every `FORBIDDEN_SOURCE_TOKENS`/`DISPLAY_ONLY_TOKENS`/
+`ALLOWED_SOURCE_HINTS` token combined with `popen-gwNN`) and the count
+immediately dropped back to **332 failed, 4803 passed, 72 skipped, 13
+errors** at HEAD -- an EXACT match to the checkpoint's own documented
+number, confirming the checkpoint worker's original run was not itself
+contaminated this same way.
+
+### Clean, identity-level reconciliation result
+
+- **HEAD** (clean basetemp `C:/pt1`): 332 failed, 4803 passed, 72 skipped,
+  13 errors, 5220 collected (349 total not-passed node IDs, matching
+  332+13 exactly).
+- **Baseline** (clean basetemp `C:/pt2`): 333 failed, 4771 passed, 72
+  skipped, 13 errors, 5189 collected (346 not-passed node IDs; 31 fewer
+  tests collected than HEAD, consistent with the real new tests this
+  cycle's 4 prior fix-workers added -- not itself a discrepancy).
+- **Set diff by exact node ID** (`FAILED`/`ERROR` lines from each run's
+  own "short test summary info" section, not junit XML reconstruction):
+  - **345 IDs fail/error in BOTH** -- genuinely pre-existing, unrelated to
+    this cycle. Grepped this list for `waiver|faab|redraft_waivers|
+    decision_trace|prospective_outcome|sleeper`: **zero matches** -- this
+    cycle's own scope is entirely clean in both runs. Spot-checked names:
+    the same 13 `test_redraft_engine_v1_service.py` fixture errors
+    (`"Projection snapshot has no rankable player rows"`, file+service
+    both confirmed untouched across the whole cycle by `git diff --stat`),
+    the same `test_desktop_application_api.py` 4-failure baseline, and a
+    large majority of literal `FileNotFoundError`s for missing
+    `local_exports/data_packs/...` files -- all exactly the causes repo
+    memory and the prior checkpoint already attributed this gap to.
+  - **HEAD ONLY (genuinely new at HEAD): 0.** Zero. After eliminating this
+    pass's own basetemp artifact, there is no test that fails at `572dccdf`
+    and passes at `0517ada8`.
+  - **BASE ONLY (fails at baseline, not at HEAD): 1** --
+    `tests/test_nwr_pure_experiment_service.py::
+    test_build_git_provenance_against_the_real_worktree_returns_real_values`.
+    Traced to its exact, fully-understood mechanism, not left as "probably
+    methodology": `build_git_provenance()`
+    (`src/services/nwr_pure_experiment_service.py:113-133`) sets
+    `app_branch` to the real `git branch --show-current` output, falling
+    back to the literal string `"UNKNOWN"` only when that command returns
+    empty -- which is exactly what happens on a DETACHED-HEAD checkout.
+    `git worktree add <path> <sha>` (this pass's own required baseline
+    isolation method, per the directive) checks out that commit in
+    detached-HEAD state by construction -- it is not on any real branch.
+    The test asserts `app_branch != "UNKNOWN"` "against the real
+    worktree," which is only ever true on an actual branch checkout (this
+    worktree, `upgrade/nwr-prospective-outcomes-v1-20260914`). This is a
+    **structural, deterministic consequence of the isolated-worktree
+    reconciliation method itself** (mandated by this pass's own
+    directive), not a code defect, not something this cycle broke, and
+    not something to "fix" -- the function's own docstring states
+    `"UNKNOWN"` is the intentional, non-fabricated fallback for exactly
+    this case. (A second candidate from an earlier, basetemp-contaminated
+    run of this same baseline -- a Windows-shortcut-installer test that
+    resolves a "Stable checkout"/canonical-commit icon path -- did NOT
+    recur in this clean, final pair of runs; it passed in both. Not
+    included in the final BASE-ONLY count; most likely resource-contention
+    flakiness from that specific PowerShell-subprocess-under-16-way-load
+    test, not re-investigated further since it no longer reproduces.)
+
+### Discrepancy explained: YES, with mechanism, not "probably methodology"
+
+The checkpoint's own disclosed 332 vs ~323 gap is a SEPARATE, older,
+general-suite property -- present at BOTH commits almost identically
+(332 at HEAD, 333 at baseline, a 1-test difference fully explained above)
+-- not something this cycle's actual code changes caused. This pass's own
+job (identity-level regression detection between the cycle's start and
+end) is answered with certainty: **zero genuine regressions**. No code
+fix was needed or applied under Task 1 -- the only real defect surfaced
+was in this pass's OWN tooling choice (a colliding `--basetemp` string),
+corrected by choosing a different, verified-collision-free path, not by
+touching any production file.
+
+### Handoff wording correction (Task 2)
+
+`WAIVER_FIX_CYCLE_V1_CHECKPOINT.md`, item 1 of "What this cycle did, in
+order," gained one explicit scope-boundary paragraph immediately after
+the existing Harrison/Tracy summary: it now states directly that
+explaining Harrison's `0.0` ARITHMETIC does not validate NWR's underlying
+PROJECTION QUALITY (the investigation doc's own disclosed, still-open
+projection-freshness question) and does not mean POSITIVE FAAB dollar
+amounts are calibrated against any real market/auction outcome (Section
+2's separate, pre-existing calibration-limitation disclosure). On close
+re-reading of the full checkpoint doc, `LEDGER.md`, and
+`HARRISON_TRACY_INVESTIGATION_V1.md` end to end, no place was found where
+this distinction was actually blurred or a broader validation claim was
+implied -- every prior worker's own wording already kept "Harrison's zero
+is explained" separate from "projections are good" and "FAAB dollars are
+calibrated" (the investigation doc explicitly flags projection freshness
+as an unresolved, separate question in its own "HARRISON ROOT CAUSE"
+section; the calibration-limitation disclosure was added independently by
+a different worker for a different reason). This edit is a precision
+strengthening, added because the directive asked for it to be checked and
+corrected if found -- not a correction of an actual error found in the
+prior wording.
+
+### Tests (this pass)
+
+- Full untargeted `pytest tests/`, clean config, at HEAD: **332 failed,
+  4803 passed, 72 skipped, 13 errors** -- exact match to the checkpoint's
+  own documented number, confirming no regression from either this pass's
+  docs-only change or anything since.
+- No targeted regression slice re-run was needed beyond the full run
+  above (this pass touched zero `src/`/`desktop/` files -- see below).
+- `npm run typecheck`/`npx vitest run`: not re-run this pass (no frontend
+  files touched; the full backend run above is the only test surface this
+  pass's own change could affect, and it touches zero backend files
+  either).
+
+### Backend/model files changed this pass
+
+**None.** This pass is docs-only:
+`docs/codex/waiver_night_v1/WAIVER_FIX_CYCLE_V1_CHECKPOINT.md` (the one
+scope-boundary paragraph above) and this ledger entry. `git diff -U0`
+grepped for every hard-boundary term across the FULL cycle range
+(`0517ada8..HEAD`, `src/` and `desktop/` only): every match is either a
+read-only call/import of `marginal_roster_utility_v2` or a code comment
+(see "Full-range fix integrity" below); `shadow_numeric_authorities_
+service.py` and `redraft_roster_legality_service.py`: both `git diff
+--stat` empty across the entire range.
+
+### Full-range fix integrity check (0517ada8..HEAD)
+
+Re-confirmed by direct grep of current source, not just re-reading this
+ledger: `team_code_alias_service.py`'s `normalize_team_code`/
+`TEAM_CODE_ALIASES` present; `fantasypros_kdst_consensus_service.py`'s
+`_strip_generational_suffix` present; `desktop_facade.py`'s reserve/IR
+exclusion and `faabContext`/`budgetMode` fields present;
+`waiver_engine_service.py`'s nonpositive-utility gate and
+`SAME_CONTEXT_MARGINAL_COMPARISON` context label present;
+`improve-team-explain.ts`'s `resolveFaabDisplay` present. All 7
+waiver-night fixes + the 4 fix-cycle fixes + this session's LIVE/SCENARIO
+display-race fix: **intact**.
+
+### Cleanup
+
+`git worktree remove --force C:/NWR/_reconcile_baseline_0517ada8`;
+temporary basetemp directories (`C:/pt1`, `C:/pt2`, and the earlier
+contaminated `C:/NWR/_pytest_tmp_head`/`_pytest_tmp_base`) deleted. Two
+incidental non-hermetic-test side effects were produced and reverted
+before committing, same established practice as every prior worker's own
+noted `frontend_bench_results.json` revert: running the full backend
+suite in THIS worktree regenerated 5 `docs/model_v4/*.md` audit docs with
+zeroed-out row counts (a known non-hermetic doc-writing test side effect,
+unrelated to this pass's own change) -- reverted with `git checkout --`
+before staging anything.
+
+### Open issues
+
+Everything already listed as open at the end of the prior "Worker (this
+pass)" section and the closing checkpoint doc
+(`WAIVER_FIX_CYCLE_V1_CHECKPOINT.md`) remains open, unrelated to this
+pass. Nothing new opened by this pass beyond the now-closed test-count
+discrepancy itself.

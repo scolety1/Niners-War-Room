@@ -28,6 +28,18 @@ already-pushed 6-worker Waiver Night V1).
    Tyrone Tracy's "low weekly points but top waiver priority" was confirmed
    internally consistent (the waiver engine is always ROS-driven in both
    modes; THIS_WEEK only adds a display/tie-break number).
+   **Scope boundary, stated explicitly so it is never conflated with the
+   above:** this only explains Harrison's specific zero-valuation
+   ARITHMETIC (why the number is `0.0`, mechanically). It is NOT a claim
+   that NWR's underlying PROJECTION QUALITY is validated (the investigation
+   doc's own "one open, explicitly-disclosed, separate question" --
+   whether his `125.8`-point projection is still a reasonable current
+   estimate -- was left genuinely open, not answered), and it is NOT a
+   claim that POSITIVE FAAB dollar amounts are calibrated against any real
+   market/auction outcome (see Section 2's own calibration-limitation
+   disclosure below, added independently of this investigation). Both
+   remain separate, genuinely unvalidated questions this whole fix cycle
+   never claimed to answer.
 2. **FAAB nonpositive gate** (`0c28a8aa`) -- `suggest_faab_bids()` could
    suggest a positive dollar bid for a zero/negative-utility candidate
    (nonzero floor in the pricing formula). Fixed with a gate/floor branch
