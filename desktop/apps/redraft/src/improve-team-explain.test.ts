@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { explainStreamerPlay, explainWaiverTarget } from "./improve-team-explain";
-import type { KdstStreamerRow, WaiverAddCandidate, WaiverAddDropPairing, WaiverDropCandidate } from "@nwr/contracts";
+import { explainStreamerPlay, explainWaiverTarget, resolveFaabDisplay } from "./improve-team-explain";
+import type { KdstStreamerRow, WaiverAddCandidate, WaiverAddDropPairing, WaiverDropCandidate, WaiverFaabContext } from "@nwr/contracts";
 
 function add(overrides: Partial<WaiverAddCandidate> = {}): WaiverAddCandidate {
   return {
@@ -184,5 +184,86 @@ describe("explainStreamerPlay", () => {
   it("humanizes ROSTERED_ELSEWHERE the same way", () => {
     const explanation = explainStreamerPlay(streamerRow({ rosterStatus: "ROSTERED_ELSEWHERE", recommendation: "ROSTERED_ELSEWHERE" }), null);
     expect(explanation.thisWeekImpact).toBe("ROSTERED ELSEWHERE · Week 3");
+  });
+});
+
+function faabContext(overrides: Partial<WaiverFaabContext> = {}): WaiverFaabContext {
+  return {
+    isFaabLeague: true,
+    budgetMode: "LIVE",
+    totalBudgetDollars: 100,
+    remainingBudgetDollars: 100,
+    weeksRemaining: 14,
+    weeksRemainingSource: "LIVE",
+    waiverPosition: 10,
+    source: "SLEEPER_LIVE",
+    scenario: null,
+    ...overrides,
+  };
+}
+
+/**
+ * LIVE/SCENARIO race fix (2026-09-16, real bug reproduced live and via
+ * code inspection): the FAAB tab's "LIVE"/"SCENARIO" label used to be
+ * computed from `budgetScenario`, current React input state owned by
+ * `ImproveTeamPage`, while the numbers/recommendations next to it always
+ * came from `waivers.faabContext` -- the last-resolved `useAsync`
+ * response. Because the input state updates synchronously on click/edit
+ * but the matching response only lands after a real network round trip,
+ * the label could visibly disagree with the data it was labeling for the
+ * length of that round trip (e.g. an "SCENARIO" badge shown over numbers
+ * that were still last request's LIVE response).
+ *
+ * `resolveFaabDisplay`'s signature is the fix's structural guarantee: it
+ * takes ONLY `WaiverFaabContext` (a field living on the SAME resolved
+ * response object supplying the numbers/bid list) -- there is no
+ * parameter through which any current-input-state flag (like
+ * `budgetScenario`) could leak into the label. It is not possible to call
+ * this function with "the input's mode" instead of "the response's mode"
+ * by construction, not just by runtime discipline.
+ */
+describe("resolveFaabDisplay (LIVE/SCENARIO race fix -- label derived only from the response)", () => {
+  it("reads LIVE from a real live budgetMode, independent of any input-state concept", () => {
+    const display = resolveFaabDisplay(faabContext({ budgetMode: "LIVE" }));
+    expect(display.isScenario).toBe(false);
+    expect(display.metricTone).toBe("gold");
+    expect(display.weeksTone).toBe("violet");
+    expect(display.eyebrow).toContain("LIVE");
+    expect(display.alertHeadline).toBeNull();
+    expect(display.alertBody).toBeNull();
+  });
+
+  it("reads SCENARIO from a real scenario budgetMode, and echoes the RESPONSE's own scenario numbers -- never a separately-supplied input value", () => {
+    const display = resolveFaabDisplay(
+      faabContext({
+        budgetMode: "SCENARIO",
+        remainingBudgetDollars: 42,
+        totalBudgetDollars: 60,
+        weeksRemaining: 5,
+        weeksRemainingSource: "SCENARIO_INPUT",
+        scenario: { remainingBudgetDollars: 42, totalBudgetDollars: 60, weeksRemaining: 5 },
+      }),
+    );
+    expect(display.isScenario).toBe(true);
+    expect(display.metricTone).toBe("crimson");
+    expect(display.weeksTone).toBe("crimson");
+    expect(display.eyebrow).toContain("SCENARIO");
+    expect(display.alertHeadline).toBe("SCENARIO -- not your real live budget");
+    expect(display.alertBody).toBe(
+      "You're viewing a hypothetical: what if your budget were $42 of $60, 5 weeks remaining? Bid ranges below are computed from these numbers, not your real Sleeper budget.",
+    );
+  });
+
+  it("never fabricates scenario alert text when budgetMode says SCENARIO but the response carries no scenario echo (a real degrade-honestly edge, not assumed impossible)", () => {
+    const display = resolveFaabDisplay(faabContext({ budgetMode: "SCENARIO", scenario: null }));
+    expect(display.isScenario).toBe(true);
+    expect(display.alertHeadline).toBe("SCENARIO -- not your real live budget");
+    expect(display.alertBody).toBeNull();
+  });
+
+  it("the function has no parameter for current-input state at all -- TypeScript itself would reject a second argument", () => {
+    // @ts-expect-error -- resolveFaabDisplay(faabContext, someInputStateFlag) must not compile.
+    resolveFaabDisplay(faabContext(), true);
+    expect(resolveFaabDisplay.length).toBe(1);
   });
 });

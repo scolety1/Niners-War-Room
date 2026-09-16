@@ -1,4 +1,4 @@
-import type { KdstStreamerRow, WaiverAddCandidate, WaiverAddDropPairing } from "@nwr/contracts";
+import type { KdstStreamerRow, WaiverAddCandidate, WaiverAddDropPairing, WaiverFaabContext } from "@nwr/contracts";
 
 import type { DecisionExplainConfidence, DecisionExplainTone } from "./decision-explain";
 
@@ -89,6 +89,62 @@ export function explainWaiverTarget(
     // one from a raw utility magnitude.
     tone: "recommended",
     confidence: null,
+  };
+}
+
+/**
+ * LIVE/SCENARIO race fix (2026-09-16): the FAAB tab's "LIVE"/"SCENARIO"
+ * label was previously derived from `budgetScenario`, a piece of CURRENT
+ * React input state owned by `ImproveTeamPage`, while the budget numbers
+ * and bid recommendations sitting next to it were always read from
+ * `waivers.faabContext` -- the last-RESOLVED `useAsync` response. Because
+ * a scenario edit/mode switch/profile switch updates `budgetScenario`
+ * synchronously but the matching response only lands after a real network
+ * round trip, the label could visibly race ahead of (or fall behind) the
+ * data it was labeling -- e.g. an "SCENARIO" badge rendered over numbers
+ * that were still the previous LIVE response, or vice versa.
+ *
+ * The fix: this function's ONLY input is `WaiverFaabContext`, the field
+ * living on the SAME resolved `WaiversResult` object the numbers and
+ * `addCandidates`/bid list already come from. It has no parameter for any
+ * current-input-state flag, so it is structurally impossible for its
+ * output to describe a different response than the one supplying the
+ * numbers next to it -- the type signature itself is the guarantee, not
+ * just a runtime check. `budgetScenario` (the owner's in-progress
+ * what-if-scenario form) legitimately stays local React state in
+ * `improve-team.tsx` -- it drives which request to send next and whether
+ * the edit form is shown, never the label/tone of already-displayed data.
+ */
+export interface WaiverFaabDisplay {
+  /** Whether the CURRENTLY DISPLAYED numbers/recommendations were priced
+   * under a SCENARIO or a LIVE read -- read only from the resolved
+   * response's own `budgetMode`, never from any current-input flag. */
+  isScenario: boolean;
+  metricTone: "crimson" | "gold";
+  weeksTone: "crimson" | "violet";
+  eyebrow: string;
+  /** Non-null only when `isScenario` -- the exact numbers this response's
+   * bid ranges were actually computed from (echoed back by the backend),
+   * not whatever the owner's edit form currently shows (which may already
+   * differ if they kept typing after the request was sent). */
+  alertHeadline: string | null;
+  alertBody: string | null;
+}
+
+export function resolveFaabDisplay(faabContext: WaiverFaabContext): WaiverFaabDisplay {
+  const isScenario = faabContext.budgetMode === "SCENARIO";
+  const scenario = faabContext.scenario;
+  return {
+    isScenario,
+    metricTone: isScenario ? "crimson" : "gold",
+    weeksTone: isScenario ? "crimson" : "violet",
+    eyebrow: isScenario
+      ? "SCENARIO -- your own hypothetical inputs, not read from Sleeper"
+      : "LIVE -- read this request from your real Sleeper league",
+    alertHeadline: isScenario ? "SCENARIO -- not your real live budget" : null,
+    alertBody: isScenario && scenario
+      ? `You're viewing a hypothetical: what if your budget were $${scenario.remainingBudgetDollars} of $${scenario.totalBudgetDollars}, ${scenario.weeksRemaining} weeks remaining? Bid ranges below are computed from these numbers, not your real Sleeper budget.`
+      : null,
   };
 }
 

@@ -26,7 +26,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { DecisionExplain } from "./decision-explain";
-import { explainStreamerPlay, explainWaiverTarget } from "./improve-team-explain";
+import { explainStreamerPlay, explainWaiverTarget, resolveFaabDisplay } from "./improve-team-explain";
 import { AddDropDetail } from "./in-season";
 import { leagueFormat } from "./league-context";
 import { STREAMER_HORIZON_OPTIONS, STREAMER_HORIZON_WEEKS, type StreamerHorizon } from "./pages";
@@ -266,8 +266,10 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
         budgetScenario={budgetScenario}
         error={waiversError}
         onOpenPlayer={openPlayerDetail}
+        reload={reloadWaivers}
         setBudgetScenario={setBudgetScenario}
         waivers={waivers}
+        working={waiversWorking}
       />
     ) : null}
 
@@ -518,12 +520,16 @@ function FaabTab({
   budgetScenario,
   setBudgetScenario,
   onOpenPlayer,
+  working,
+  reload,
 }: {
   waivers: WaiversResult | null;
   error: NwrApiError | null;
   budgetScenario: FaabBudgetScenario | null;
   setBudgetScenario: (value: FaabBudgetScenario | null) => void;
   onOpenPlayer: PlayerViewer;
+  working: boolean;
+  reload: () => void;
 }) {
   // NWR Waiver Night V1 (FAAB nonpositive-bid fix): a candidate can now
   // carry a real, non-fabricated $0 estimate (unmatched identity, or a
@@ -543,7 +549,16 @@ function FaabTab({
   );
 
   const faabContext = waivers?.faabContext ?? null;
-  const inScenario = budgetScenario !== null;
+  // `editingScenario` is legitimate current-INPUT state: it only decides
+  // whether the what-if EDIT FORM is shown and which request to send next.
+  // It must never drive the label/tone of already-displayed numbers -- see
+  // `display` below, the LIVE/SCENARIO race fix (2026-09-16).
+  const editingScenario = budgetScenario !== null;
+  // A newer request (scenario edit, mode/week/profile switch, manual
+  // reload) is in flight while we still have a previous response on
+  // screen -- show a real pending indicator rather than either freezing
+  // silently or relabeling the old data with the new input's mode.
+  const isPending = working && waivers !== null;
 
   if (!waivers) {
     return <>
@@ -599,6 +614,20 @@ function FaabTab({
     ? faabContext.remainingBudgetDollars / (faabContext.weeksRemaining as number)
     : faabContext.remainingBudgetDollars;
 
+  // `display` is derived ONLY from `faabContext` (the same resolved
+  // response object the metric numbers and bid candidates below already
+  // come from) -- never from `budgetScenario`/`editingScenario`. This is
+  // the structural guarantee that the label can never point at a
+  // different response than the data it sits next to (LIVE/SCENARIO race
+  // fix, 2026-09-16).
+  const display = resolveFaabDisplay(faabContext);
+  // The owner's editing form and the resolved response can legitimately
+  // disagree while a request is in flight (e.g. they just clicked "Plan a
+  // what-if scenario" or "Return to live budget", or edited a value) --
+  // that disagreement is exactly when the pending indicator below needs to
+  // say something more specific than a generic "refreshing".
+  const awaitingModeSwitch = isPending && editingScenario !== display.isScenario;
+
   const beginScenario = () => {
     setBudgetScenario({
       remainingBudgetDollars: faabContext.remainingBudgetDollars ?? 100,
@@ -612,13 +641,24 @@ function FaabTab({
   };
 
   return <>
-    {inScenario ? (
+    {/* LIVE/SCENARIO race fix: every field below (`display.*`) reads ONLY
+        `faabContext`, the response object driving the metric numbers and
+        bid candidates too -- never `budgetScenario`/`editingScenario`
+        directly, so the badge/tone/eyebrow can never point at a different
+        response than the data it labels. */}
+    {display.alertHeadline ? (
       <div className="alert-strip">
-        <strong>SCENARIO -- not your real live budget</strong>
+        <strong>{display.alertHeadline}</strong>
+        <span>{display.alertBody}</span>
+      </div>
+    ) : null}
+    {isPending ? (
+      <div className="alert-strip alert-strip--pending" role="status">
+        <strong>Updating…</strong>
         <span>
-          You're viewing a hypothetical: what if your budget were ${budgetScenario!.remainingBudgetDollars} of
-          ${budgetScenario!.totalBudgetDollars}, {budgetScenario!.weeksRemaining} weeks remaining? Bid ranges below
-          are computed from these numbers, not your real Sleeper budget.
+          {awaitingModeSwitch
+            ? `Your ${editingScenario ? "scenario" : "return-to-live-budget"} request is in flight -- the numbers and recommendations below are still your last confirmed ${display.isScenario ? "SCENARIO" : "LIVE"} read until it resolves.`
+            : "Refreshing your FAAB read -- the numbers and recommendations below are still your last confirmed read until it resolves."}
         </span>
       </div>
     ) : null}
@@ -628,7 +668,7 @@ function FaabTab({
         label="Remaining budget"
         value={faabContext.remainingBudgetDollars != null ? `$${faabContext.remainingBudgetDollars}` : "—"}
         detail={faabContext.totalBudgetDollars != null ? `of $${faabContext.totalBudgetDollars} total` : "unavailable"}
-        tone={inScenario ? "crimson" : "gold"}
+        tone={display.metricTone}
       />
       <MetricCard
         icon="target"
@@ -641,7 +681,7 @@ function FaabTab({
               ? "scenario input"
               : "no live schedule signal -- a non-live default"
         }
-        tone={inScenario ? "crimson" : "violet"}
+        tone={display.weeksTone}
       />
       <MetricCard
         icon="board"
@@ -653,13 +693,9 @@ function FaabTab({
     </div>
     <Panel
       title="FAAB settings"
-      eyebrow={
-        inScenario
-          ? "SCENARIO -- your own hypothetical inputs, not read from Sleeper"
-          : "LIVE -- read this request from your real Sleeper league"
-      }
+      eyebrow={display.eyebrow}
     >
-      {inScenario ? (
+      {editingScenario ? (
         <>
           <div className="profile-edit-actions">
             <label className="form-field"><span>Remaining budget ($)</span><input type="number" min={0} value={budgetScenario!.remainingBudgetDollars} onChange={(event) => updateScenario({ remainingBudgetDollars: Math.max(0, Number(event.target.value) || 0) })} /></label>
@@ -681,7 +717,14 @@ function FaabTab({
         Bid ranges are a real, contextual heuristic estimate -- not calibrated against actual auction results. Treat them as relative guidance, not a guaranteed price.
       </p>
     </Panel>
-    {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+    {error ? <>
+      <ErrorState message={error.message} recovery={error.recoveryAction} onRetry={reload} />
+      {waivers ? (
+        <p className="copy-muted faab-stale-note">
+          The refresh above failed -- what's shown below is your last successful {display.isScenario ? "SCENARIO" : "LIVE"} FAAB read, not confirmed current. Retry to check for an update.
+        </p>
+      ) : null}
+    </> : null}
     {waivers && bidCandidates.length === 0 ? (
       <EmptyState title="No positive-bid recommendation" message="No current add candidate carries a positive real FAAB estimate right now -- every candidate is either an unmatched identity or a real modeled marginal utility of zero or less. FAAB guidance also needs a live Sleeper league with waivers still open." />
     ) : null}

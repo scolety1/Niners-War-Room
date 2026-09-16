@@ -2535,3 +2535,193 @@ the new open-slot case with zero further change.
    investigation open items, the profile-switch leak check still only
    INSPECTED CODE not live-tested) remain open and unrelated to this pass's
    fix, no change here.
+
+## Worker (this pass) -- LIVE/SCENARIO FAAB display race fix (frontend only)
+
+Start HEAD `68b5ab1f` (Waiver Fix Cycle V1 closing checkpoint, above -- pure
+docs, no production code). Directive: reproduce and fix a claimed real
+UI-staleness bug -- "the FAAB LIVE/SCENARIO label follows current input
+state while `useAsync` retains the previous response" -- and NOT
+merge/push (a later worker handles final verification/push).
+
+### Bug reproduced: YES, confirmed by INSPECTED CODE, then confirmed live
+
+`desktop/apps/redraft/src/improve-team.tsx`'s `FaabTab` computed its
+LIVE/SCENARIO badge, metric-card tones, and Panel eyebrow from
+`inScenario = budgetScenario !== null` -- `budgetScenario` is
+`ImproveTeamPage`'s own React input state, flipped SYNCHRONOUSLY the
+instant the owner clicks "Plan a what-if scenario" / edits a scenario
+value / clicks "Return to live budget". The actual dollar figures,
+`weeksRemaining`, and every bid-candidate recommendation shown next to
+that label all came from `waivers.faabContext` -- the last-RESOLVED
+`useAsync` response (backed by this project's existing
+`createStaleResponseGuard`, `weekly-shared.tsx`, which correctly
+guarantees only the RIGHT eventual response ever lands, but does nothing
+about what label the UI shows *while waiting* for it). Confirmed the
+contract already carries the correct ground truth for this
+(`WaiverFaabContext.budgetMode: "LIVE" | "SCENARIO"`, set server-side in
+`desktop_facade.py`'s `redraft_waivers`, Waiver Fix Cycle V1 Section 3) --
+the frontend was simply never reading it for the label, reading
+`budgetScenario` instead.
+
+**Live reproduction** (real backend + real Fantasy Gamers Sleeper league,
+`vite preview` build, `desktop/scripts/nwr_release_gate_smoke.ps1
+-KeepRunning`, `mcp__claude-in-chrome`): patched `window.fetch` in the live
+page (test-harness only, never committed) to artificially delay/fail only
+`POST .../redraft/waivers` responses, then drove all 5 directive scenarios
+against the PRE-fix code via `git stash`: clicking "Plan a what-if
+scenario" with a 6s delay showed the SCENARIO badge/crimson tone
+IMMEDIATELY (same render as the click) while the metric cards still showed
+the real live $100/$100/13-week numbers underneath it, mislabeled -- the
+exact desync the directive named. Re-confirmed the reverse direction
+("Return to live budget") and rapid-edit case the same way before
+restoring the fix (`git stash pop`).
+
+### Fix
+
+`resolveFaabDisplay(faabContext: WaiverFaabContext): WaiverFaabDisplay`,
+new pure function in `improve-team-explain.ts` (the existing "pure
+grammar derivation" module for this workspace). Its ONLY parameter is
+`WaiverFaabContext` -- the field living on the SAME resolved `WaiversResult`
+object already supplying the metric numbers and bid-candidate list -- so
+it is structurally impossible (not just disciplined) for its output to
+describe a different response than the data it labels; a dedicated test
+asserts a second argument fails to compile (`@ts-expect-error`).
+`FaabTab` now derives `isScenario`/tone/eyebrow/alert-strip text
+EXCLUSIVELY from `resolveFaabDisplay(faabContext)`; `budgetScenario`
+(renamed `editingScenario` at its one remaining use) now drives ONLY
+whether the what-if EDIT FORM is shown and what the NEXT request will
+send -- never the label on already-displayed data.
+
+**Pending indicator**: `FaabTab` now also receives `working` (the
+existing `waiversWorking` from `useAsync`, already piped to
+`TargetsTab`/`AddDropTab`, just not previously to `FaabTab`) and `reload`
+(`reloadWaivers`). Whenever a request is in flight while a previous
+response is still on screen (`working && waivers !== null`), a real
+"Updating…" banner appears ABOVE the still-correctly-labeled previous
+data, naming which transition is pending
+(scenario / return-to-live-budget / a plain refresh) -- directive option
+(a), never a silent freeze and never a premature relabel.
+
+**Failed-request state**: `ErrorState` now gets `onRetry={reload}` (was
+previously not wired, so a failed FAAB refresh had no actual retry
+action, only the generic recovery text). When an error coexists with
+still-displayed prior data, a new explicit note appears: "The refresh
+above failed -- what's shown below is your last successful
+LIVE/SCENARIO FAAB read, not confirmed current. Retry to check for an
+update." -- never silently stale-and-unlabeled.
+
+### Test scenario results (all 5, unit test AND real live browser)
+
+1. **SCENARIO<->LIVE transition**: unit-level via `resolveFaabDisplay`
+   (4 new tests, `improve-team-explain.test.ts`); live -- see
+   reproduction above, then re-verified on the FIXED code: clicking
+   "Plan a what-if scenario" during a real artificial 6s delay showed the
+   pending banner with the OLD (LIVE, gold-toned, real $100/$100/13)
+   numbers still correctly labeled LIVE, then flipped atomically to the
+   red SCENARIO badge + matching numbers once the response actually
+   landed. Screenshots captured both the mid-flight and settled states.
+2. **Rapid scenario edits**: live -- dispatched two React-controlled
+   input edits ($77 then $22, 500ms apart) against an artificial 4s
+   delay; mid-flight the UI correctly kept showing the last CONFIRMED
+   response ($55, from a prior step) with the pending banner, never the
+   superseded $77 edit; settled state showed exactly $22 (the latest
+   edit) -- $77 never appeared anywhere on screen, confirming
+   `createStaleResponseGuard` (unchanged, reused) discards it correctly
+   and the display layer never shows an intermediate stale value either.
+3. **Profile switches**: INSPECTED CODE + one live-verified structural
+   equivalence, NOT a literal two-Sleeper-profile live switch -- this
+   environment has only one real Sleeper profile (Fantasy Gamers),
+   unchanged fact from every prior worker's own disclosed limitation in
+   this same ledger. Code-level: `data.activeProfileId` is already in
+   `useAsync`'s dep array (drives the same guarded refetch + now the same
+   `isPending` banner this pass added) and the existing
+   `lastScenarioProfileRef` effect already resets `budgetScenario` to
+   `null` synchronously on profile change -- mechanically identical to
+   the live-tested "Return to live budget" case above (same-tick
+   input-state flip, response catches up later, label stays correctly
+   tied to the old response with a pending indicator throughout). Open
+   item for a future worker if/when a second real Sleeper profile becomes
+   available.
+4. **Slow responses**: live, see reproduction/fix above -- real pending
+   indicator confirmed both directions plus mid-edit.
+5. **Failed requests**: live -- armed a single simulated `fetch` failure,
+   clicked "Plan a what-if scenario": `ErrorState` ("Command center
+   unavailable") appeared with a working "Retry" button, the metric cards
+   stayed on the last-confirmed real LIVE $100/$100/13 numbers (never
+   silently swapped to a guessed SCENARIO state), and the new stale-data
+   note appeared underneath. Clicked Retry (with the fetch patch
+   disarmed) -- recovered cleanly to the real SCENARIO response, error
+   cleared, zero console messages throughout (`read_console_messages`,
+   pattern `.`, no filter).
+
+### Real browser verification
+
+Confirmed actually performed, not simulated: real `npm run build` (both
+apps, clean, same pre-existing >500kB chunk-size advisory, not new), real
+backend + `vite preview` launched via
+`desktop/scripts/nwr_release_gate_smoke.ps1 -KeepRunning
+-SleeperLeagueId 1312983576827920384 -SleeperUsername scolety` (real
+before/after Sleeper rosters/users byte-diff: IDENTICAL, 0 writes,
+independently confirmed by the script itself), real `mcp__claude-in-chrome`
+session against `http://127.0.0.1:1422/#/league/
+941b99ade350410391b1b67c0890af79/improve?tab=faab`, real screenshots at
+every step above. `window.fetch` patching (delay/fail injection) was a
+live test-harness technique only, executed via `javascript_tool` in the
+page's own console -- never committed, never touched any source file.
+Both spawned processes (backend, vite preview) were killed at the end
+(`Stop-Process`); the `local_exports/release_gate/<timestamp>/` artifact
+this run produced is git-ignored, not part of any commit; the vitest
+timing-noise regeneration of
+`docs/codex/prospective_outcomes_v1/multi_league_scale_v1/
+frontend_bench_results.json` was reverted with `git checkout --` before
+committing (same as every prior worker's own note).
+
+### Tests
+
+- **New**: 4 tests in `improve-team-explain.test.ts`
+  (`resolveFaabDisplay` -- LIVE, SCENARIO with a real scenario echo,
+  SCENARIO with a missing scenario echo degrading honestly instead of
+  fabricating alert text, and a compile-time `@ts-expect-error` proving
+  the function has no parameter a current-input-state flag could ever be
+  passed through).
+- `npx vitest run apps/redraft/src/improve-team-explain.test.ts
+  apps/redraft/src/weekly-shared.test.ts`: **34 passed**.
+- Full monorepo `npx vitest run` (from `desktop/`): **430 passed** (up
+  from the documented 426 baseline by exactly the 4 new tests; 0 failed).
+- `npm run typecheck` (`tsc -b`, both apps): clean, 0 errors (confirms the
+  `@ts-expect-error` line is a REAL type error being suppressed, not a
+  no-op -- `tsc` would otherwise flag an unused `@ts-expect-error`
+  directive).
+- No Python files touched this pass -- `tests/test_desktop_application_api.py`
+  and the backend regression slice are unaffected by construction; not
+  re-run (nothing in `src/` changed).
+
+### Backend/model files changed this pass
+
+**None.** `git diff -U0` grepped for every hard-boundary term
+(`marginal_roster_utility_v2`, `LeagueSnapshot`, `LeagueWorkspaceContext`,
+`lifecycle_resolver`, `DecisionResultEnvelope`, `PlayerAvailabilityStatus`):
+**zero matches**. This pass touched exactly 3 files, all frontend,
+all inside `desktop/apps/redraft/src/`: `improve-team.tsx`,
+`improve-team-explain.ts`, `improve-team-explain.test.ts`. The FAAB
+pricing formula (`suggest_faab_bids` / `waiver_engine_service.py`), the
+`redraft_waivers` facade call site, `marginal_roster_utility_v2`, and
+draft recommendation code are all completely untouched -- this is a
+display-layer fix only, over data the backend already computes and
+returns correctly (Waiver Fix Cycle V1's own already-closed LIVE/SCENARIO
+separation work).
+
+### Open issues for the next worker
+
+1. **Not merged, deployed, or pushed** -- per this pass's own directive, a
+   later worker handles final test-suite reconciliation and the push.
+2. **Profile-switch scenario (#3 above) is still not literally
+   live-tested with two real Sleeper profiles** -- same disclosed
+   environment limitation every prior worker in this ledger already
+   carried forward; only one real Sleeper league (Fantasy Gamers) exists
+   here.
+3. Everything already listed as open at the end of the prior "Worker
+   (this pass)" section and the closing checkpoint doc
+   (`WAIVER_FIX_CYCLE_V1_CHECKPOINT.md`) remains open and unrelated to
+   this pass's fix -- not re-summarized field-by-field here.
