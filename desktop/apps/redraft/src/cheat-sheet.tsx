@@ -55,6 +55,18 @@ export function marketStatusText(data: RedraftBootstrap): string {
   return `Market: ${provider} · ${date}`;
 }
 
+// Full Cycle V1, Worker 4 (Section 3C): same compact status-line
+// convention as `ballersStatusText`/`marketStatusText` above, for the
+// column those two omit -- NWR's own "Projected Points"/"Replacement
+// Value" columns, which are a governed FULL-SEASON model snapshot (not
+// reduced for games already played), refreshed only through a new
+// owner-approved admission -- see `resolveSeasonProjectionBasisCaption`
+// (weekly-shared.tsx) for the longer-form explanation used on the
+// REST_OF_SEASON-consuming surfaces (Waivers/FAAB/Compare).
+export function nwrSeasonStatusText(data: RedraftBootstrap): string {
+  return data.status.sourceAsOf ? `NWR: full-season model, admitted ${data.status.sourceAsOf}` : "NWR: admission date unavailable";
+}
+
 // NWR CHEAT SHEET -- COMBINED NWR + MARKET + BALLERS VIEW (2026-09-08,
 // directive sections 4-6): the Combined table's compact "Ballers Rank" /
 // "Ballers Tier" cells stay narrow on purpose (section 9, "the owner
@@ -218,7 +230,7 @@ export function CheatSheetPage({
         </strong>
         <div className="cheat-sheet-compact-header__row">
           <p className="boundary-note">
-            {ballersStatusText(data)} · {marketStatusText(data)} ·{" "}
+            {nwrSeasonStatusText(data)} · {ballersStatusText(data)} · {marketStatusText(data)} ·{" "}
             <a href="#/adp">Manage in Market Data / ADP</a>
           </p>
           <Button variant="secondary" icon="board" onClick={exportCsv}>Export CSV</Button>

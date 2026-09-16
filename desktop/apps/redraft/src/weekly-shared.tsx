@@ -125,6 +125,71 @@ export function resolveWeekDisplay(
   return { displayWeek: resolvedWeek, isStale: resolvedWeek !== requestedWeek };
 }
 
+/**
+ * Full Cycle V1, Worker 4 (Section 3C, data-age/basis labeling): NWR's
+ * season-level values (Proj pts / Value over replacement / REST OF SEASON
+ * marginal utility -- everything `generate_rankings()` produces, consumed
+ * unchanged by Rankings, Cheat Sheet, Compare, Waivers/Add-Drop/FAAB, and
+ * Trades) all come from ONE governed projection snapshot, admitted once
+ * (`data.status.sourceAsOf`, already computed server-side and already shown
+ * on the Data Health page) and refreshed only through a new owner-approved
+ * governance admission -- never automatically reduced week to week as the
+ * real season progresses and games are actually played. Traced directly:
+ * `redraft_engine_v1_service.py::score_projection` sums a full stat line
+ * (`receptions`, `receiving_yards`, etc.) built from a `games` figure
+ * projected for the WHOLE season (see `redraft_2026_projection_model_
+ * service.py`'s per-game-rate * games construction) -- the value is a full
+ * 2026 SEASON total, not a games-remaining-adjusted figure, and no call
+ * site in this codebase recomputes or decays it in-season. This is
+ * internally CONSISTENT (every consumer reads the exact same computed
+ * value, never a second independently-derived "remaining season" number),
+ * but the plain `sourceAsOf` date alone doesn't say so -- this caption
+ * states the actual basis so the owner isn't left to assume a `REST_OF_
+ * SEASON`-labeled number has already been discounted for weeks played.
+ * Weekly per-week numbers (`weeklyProjectedPoints`, Start/Sit, Weekly Home)
+ * are a genuinely separate, live, week-scoped source and are NOT described
+ * by this caption -- see `ProviderStatusLine`/`resolveWeekDisplay` for that
+ * one's own honesty captions.
+ */
+export function resolveSeasonProjectionBasisCaption(
+  sourceAsOf: string | null | undefined,
+): string {
+  return sourceAsOf
+    ? `Season-level values (projected points, value over replacement, REST OF SEASON marginal utility) reflect NWR's full 2026 season model, admitted ${sourceAsOf} -- not reduced for games already played this season. Separate from any single week's live projection.`
+    : "Season-level values reflect NWR's governed season model; admission date unavailable.";
+}
+
+/**
+ * Weekly Home's "NWR Actions" list (`WeeklyHomeAction`) mixes categories
+ * with genuinely DIFFERENT provenance bases: START_SIT / START_SIT_CLOSE_
+ * CALL come from the real live weekly lineup optimizer (`weekly`
+ * `providerHealth`'s own freshness note is the correct, honest label for
+ * those), but WAIVER and TRADE cards are built from `redraft_waivers(mode=
+ * "REST_OF_SEASON")` / `redraft_trade_finder()` -- both driven by the SAME
+ * season-level governed ranking `resolveSeasonProjectionBasisCaption`
+ * describes above, not by the weekly provider at all. Before this fix,
+ * every action card on this page (regardless of category) was labeled with
+ * the SAME weekly `providerHealth`-derived freshness note, which put a
+ * "Sleeper · updated <time-today>" label on a WAIVER/TRADE recommendation
+ * that is actually driven by the season snapshot (admitted `sourceAsOf`,
+ * potentially days/weeks old) -- a real, reproducible display-basis
+ * mismatch, not a computed-value bug (the underlying WAIVER/TRADE
+ * recommendation values themselves were never wrong, only their freshness
+ * caption was borrowed from an unrelated data source).
+ */
+export function resolveHomeActionFreshness(
+  category: "START_SIT" | "START_SIT_CLOSE_CALL" | "WAIVER" | "TRADE" | "STREAMER",
+  weeklyFreshnessNote: string | null,
+  seasonSourceAsOf: string | null | undefined,
+): string | null {
+  if (category === "WAIVER" || category === "TRADE") {
+    return seasonSourceAsOf
+      ? `NWR season ranking · admitted ${seasonSourceAsOf}`
+      : weeklyFreshnessNote;
+  }
+  return weeklyFreshnessNote;
+}
+
 export function useFreeAgents(client: NwrApiClient, profileId: string | null) {
   const loader = () => (profileId ? client.redraftFreeAgents() : null);
   // eslint-disable-next-line react-hooks/rules-of-hooks

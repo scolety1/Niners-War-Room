@@ -1,7 +1,7 @@
 import type { RedraftBootstrap, RedraftRanking } from "@nwr/contracts";
 import { describe, expect, it } from "vitest";
 
-import { buildCheatSheetCsv } from "./cheat-sheet";
+import { buildCheatSheetCsv, nwrSeasonStatusText } from "./cheat-sheet";
 
 describe("buildCheatSheetCsv", () => {
   it("exports the exact active Redraft profile and admitted rows", () => {
@@ -41,5 +41,24 @@ describe("buildCheatSheetCsv", () => {
 
   it("fails closed when no league is active", () => {
     expect(buildCheatSheetCsv({ activeProfile: null } as RedraftBootstrap, [])).toBe("");
+  });
+});
+
+/**
+ * Full Cycle V1, Worker 4 (Section 3C): same compact status-line
+ * convention/coverage shape this file already uses for Ballers/Market --
+ * `nwrSeasonStatusText` surfaces the same `data.status.sourceAsOf` the
+ * Data Health hero already shows, on the Cheat Sheet header where it was
+ * previously absent.
+ */
+describe("nwrSeasonStatusText", () => {
+  it("names the real admission date when one is known", () => {
+    const data = { status: { sourceAsOf: "2026-09-08" } } as RedraftBootstrap;
+    expect(nwrSeasonStatusText(data)).toBe("NWR: full-season model, admitted 2026-09-08");
+  });
+
+  it("degrades honestly (no fabricated date) when the admission date is missing", () => {
+    const data = { status: { sourceAsOf: "" } } as RedraftBootstrap;
+    expect(nwrSeasonStatusText(data)).toBe("NWR: admission date unavailable");
   });
 });

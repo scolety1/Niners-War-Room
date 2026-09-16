@@ -23,7 +23,7 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { draftFormat, leagueFormat } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
-import { appendPlayerDetailColumn, FREE_AGENT_COLUMNS, useAsync, useFreeAgents } from "./weekly-shared";
+import { appendPlayerDetailColumn, FREE_AGENT_COLUMNS, resolveSeasonProjectionBasisCaption, useAsync, useFreeAgents } from "./weekly-shared";
 
 const POSITION_OPTIONS = ["ALL", "QB", "RB", "WR", "TE", "K", "DST"];
 const DRAFT_ROOM_POSITION_OPTIONS = ["ALL", "FLEX", "QB", "RB", "WR", "TE", "K", "DST"];
@@ -244,7 +244,15 @@ export function RankingsContent({ data }: { data: RedraftBootstrap }) {
   if (data.rankings.length === 0) {
     return <Panel title="Current-season board" eyebrow="0 ranked players"><NoGovernedRankings data={data} /></Panel>;
   }
-  return <Panel title="Current-season board" eyebrow={`Showing ${rows.length} of ${filteredRows.length} matches`}><div className="toolbar"><SearchInput value={query} onChange={setQuery} /><SegmentedControl label="Position" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Team" value={team} onChange={setTeam} options={teams.map((value) => ({ value, label: value === "ALL" ? "All teams" : value }))} /><SelectField label="Availability" value={availability} onChange={setAvailability} options={["Available", "Drafted", "All"].map((value) => ({ value, label: value }))} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /><Button icon="undo" onClick={reset} variant="ghost">Reset</Button></div><DataTable columns={columns} resetKey={tableResetKey} rows={rows} rowKey={(row) => String(row.playerId)} /></Panel>;
+  return <Panel title="Current-season board" eyebrow={`Showing ${rows.length} of ${filteredRows.length} matches`}><div className="toolbar"><SearchInput value={query} onChange={setQuery} /><SegmentedControl label="Position" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Team" value={team} onChange={setTeam} options={teams.map((value) => ({ value, label: value === "ALL" ? "All teams" : value }))} /><SelectField label="Availability" value={availability} onChange={setAvailability} options={["Available", "Drafted", "All"].map((value) => ({ value, label: value }))} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /><Button icon="undo" onClick={reset} variant="ghost">Reset</Button></div>
+    {/* Full Cycle V1, Worker 4 (Section 3C): "Proj pts"/"Value over
+        replacement" below are the SAME season-level values every other
+        REST_OF_SEASON-consuming surface (Waivers/FAAB/Compare) reads --
+        see `resolveSeasonProjectionBasisCaption`. The "Source as of" column
+        already on this table (non-compact) carries the same date;
+        this caption states what that date actually means. */}
+    <p className="copy-muted">{resolveSeasonProjectionBasisCaption(data.status.sourceAsOf)}</p>
+    <DataTable columns={columns} resetKey={tableResetKey} rows={rows} rowKey={(row) => String(row.playerId)} /></Panel>;
 }
 
 export function RankingsPage({ data }: { data: RedraftBootstrap }) {
@@ -373,6 +381,13 @@ export function CompareContent({ client, data }: { client: NwrApiClient; data: R
         {mode === "This Week" ? <label className="form-field"><span>NFL week</span><input min={1} max={18} type="number" value={week} onChange={(event) => setWeek(Number(event.target.value))} /></label> : null}
       </div>
       {!isSleeper && mode !== "Rest of Season" ? <p className="copy-muted">This mode requires an active Sleeper league.</p> : null}
+      {/* Full Cycle V1, Worker 4 (Section 3C): "Rest of Season" here reads
+          the SAME season-level `projectedPoints`/`replacementAdjustedValue`
+          Rankings/Cheat Sheet label "Season points"/"Proj pts" -- one
+          shared caption states the real basis so the two labels aren't
+          read as two different underlying numbers. See
+          `resolveSeasonProjectionBasisCaption`. */}
+      {mode === "Rest of Season" ? <p className="copy-muted">{resolveSeasonProjectionBasisCaption(data.status.sourceAsOf)}</p> : null}
     </Panel>
     {a && b ? <CompareCards players={[a, b]} onViewPlayer={(player) => openPlayerDetail({ playerId: player.playerId, playerName: player.playerName, position: player.position, team: player.team })} /> : <EmptyState title="Two players required" message="Governed rankings must contain at least two players." />}
     {a && b && mode === "This Week" && isSleeper ? <Panel title="This week" eyebrow={weekly ? `Week ${weekly.week}` : "Reading…"}>

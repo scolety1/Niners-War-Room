@@ -38,6 +38,7 @@ import {
   ProviderStatusLine,
   WeekControl,
   appendPlayerDetailColumn,
+  resolveSeasonProjectionBasisCaption,
   useAsync,
   useFreeAgents,
 } from "./weekly-shared";
@@ -236,6 +237,7 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
         position={position}
         positions={positions}
         reload={reloadWaivers}
+        seasonSourceAsOf={data.status.sourceAsOf}
         setMode={setMode}
         setPosition={setPosition}
         setWeek={setWeek}
@@ -267,6 +269,7 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
         error={waiversError}
         onOpenPlayer={openPlayerDetail}
         reload={reloadWaivers}
+        seasonSourceAsOf={data.status.sourceAsOf}
         setBudgetScenario={setBudgetScenario}
         waivers={waivers}
         working={waiversWorking}
@@ -323,6 +326,7 @@ function TargetsTab({
   addRows,
   onOpenAddDrop,
   onOpenPlayer,
+  seasonSourceAsOf,
 }: {
   mode: "THIS_WEEK" | "REST_OF_SEASON";
   setMode: (mode: "THIS_WEEK" | "REST_OF_SEASON") => void;
@@ -338,6 +342,7 @@ function TargetsTab({
   addRows: WaiverAddCandidate[];
   onOpenAddDrop: (canonicalPlayerId: string) => void;
   onOpenPlayer: PlayerViewer;
+  seasonSourceAsOf: string | null | undefined;
 }) {
   const capped = addRows.slice(0, TARGETS_DISPLAY_CAP);
   return <>
@@ -357,6 +362,10 @@ function TargetsTab({
         ? "THIS WEEK shows the same real marginal-roster-utility ranking as REST OF SEASON, plus this week's real projected points and starter impact -- weekly points only break near-ties, they don't re-sort the list."
         : "Ranked by real marginal roster utility (rest-of-season oriented). Switch to THIS WEEK to also see real weekly projections and starter impact for the same ranking."}
     </p>
+    {/* Full Cycle V1, Worker 4 (Section 3C): the marginal utility driving
+        BOTH modes above is itself built from NWR's season-level governed
+        ranking -- see `resolveSeasonProjectionBasisCaption`. */}
+    <p className="copy-muted">{resolveSeasonProjectionBasisCaption(seasonSourceAsOf)}</p>
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {waivers?.rankingWarning ? <div className="alert-strip"><strong>Ranking unavailable</strong><span>{waivers.rankingWarning}</span></div> : null}
     {mode === "THIS_WEEK" ? <ProviderStatusLine health={waivers?.weeklyProviderHealth ?? null} /> : null}
@@ -522,6 +531,7 @@ function FaabTab({
   onOpenPlayer,
   working,
   reload,
+  seasonSourceAsOf,
 }: {
   waivers: WaiversResult | null;
   error: NwrApiError | null;
@@ -530,6 +540,7 @@ function FaabTab({
   onOpenPlayer: PlayerViewer;
   working: boolean;
   reload: () => void;
+  seasonSourceAsOf: string | null | undefined;
 }) {
   // NWR Waiver Night V1 (FAAB nonpositive-bid fix): a candidate can now
   // carry a real, non-fabricated $0 estimate (unmatched identity, or a
@@ -716,6 +727,10 @@ function FaabTab({
       <p className="form-hint" title="Bid ranges are a relative, percentile-of-pool heuristic (who is worth more than whom, and roughly how much more) -- they are not calibrated against real FAAB auction outcomes in this or any league. A $0 result never appears here: it means either an unmatched identity or a real modeled value of zero/negative, never a positive recommendation.">
         Bid ranges are a real, contextual heuristic estimate -- not calibrated against actual auction results. Treat them as relative guidance, not a guaranteed price.
       </p>
+      {/* Full Cycle V1, Worker 4 (Section 3C): bid ranges rank candidates by
+          the same season-level marginal utility Targets/Add-Drop use -- see
+          `resolveSeasonProjectionBasisCaption`. */}
+      <p className="copy-muted">{resolveSeasonProjectionBasisCaption(seasonSourceAsOf)}</p>
     </Panel>
     {error ? <>
       <ErrorState message={error.message} recovery={error.recoveryAction} onRetry={reload} />

@@ -50,6 +50,7 @@ import {
   WeekControl,
   appendPlayerDetailColumn,
   formatClock,
+  resolveHomeActionFreshness,
   resolveWeekDisplay,
   statusTone,
   useAsync,
@@ -260,6 +261,16 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
             const explanation = explainHomeAction(action);
             const link = ACTION_CATEGORY_LINK[action.category];
             const tone = explanation.confidence === "LOW" ? "warning" : "recommended";
+            // Full Cycle V1, Worker 4 (Section 3C): WAIVER/TRADE cards are
+            // built from the season-level governed ranking
+            // (`redraft_waivers`/`redraft_trade_finder`), not the weekly
+            // Sleeper provider `freshnessNote` above was previously applied
+            // to unconditionally -- see `resolveHomeActionFreshness`.
+            const actionFreshness = resolveHomeActionFreshness(
+              action.category,
+              freshnessNote,
+              data.status.sourceAsOf,
+            );
             return (
               <DecisionExplain
                 key={`${action.category}-${index}`}
@@ -269,7 +280,7 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
                 secondaryWhy={explanation.secondaryWhy}
                 alternative={explanation.alternative}
                 impact={explanation.expectedImpact}
-                freshness={freshnessNote}
+                freshness={actionFreshness}
                 confidence={explanation.confidence ?? null}
                 tone={tone}
                 actions={link ? <Link to={link}>Open</Link> : null}

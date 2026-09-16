@@ -22,7 +22,7 @@ import { leagueFormat } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
 import { describeTradePackageSearchError, explainTradeAnalysis, explainTradePackageCandidate, isTradePackageSearchStale } from "./trades-explain";
-import { useAsync } from "./weekly-shared";
+import { resolveSeasonProjectionBasisCaption, useAsync } from "./weekly-shared";
 
 /**
  * NWR UI expansion pass (2026-09-12, Trades surface): ONE coherent owner
@@ -152,6 +152,7 @@ export function TradesPage({ client, data, defaultTab }: { client: NwrApiClient;
           receiveCandidates={receiveCandidates}
           receives={receives}
           result={result}
+          seasonSourceAsOf={data.status.sourceAsOf}
           setGives={setGives}
           setReceives={setReceives}
           working={working}
@@ -183,6 +184,7 @@ function AnalyzeTab({
   working,
   onAnalyze,
   onOpenPlayer,
+  seasonSourceAsOf,
 }: {
   gives: TradeSide[];
   setGives: (updater: (current: TradeSide[]) => TradeSide[]) => void;
@@ -195,6 +197,7 @@ function AnalyzeTab({
   working: boolean;
   onAnalyze: () => void;
   onOpenPlayer: PlayerViewer;
+  seasonSourceAsOf: string | null | undefined;
 }) {
   const impactColumns: TableColumn[] = useMemo(
     () => [
@@ -257,6 +260,12 @@ function AnalyzeTab({
           tone={explanation.tone}
         />
       </div>
+      {/* Full Cycle V1, Worker 4 (Section 3C): the "ROS value"/marginal
+          utility fields below are the SAME season-level governed ranking
+          Rankings/Waivers/Compare read -- Trades previously carried no
+          basis/freshness label at all. See
+          `resolveSeasonProjectionBasisCaption`. */}
+      <p className="copy-muted">{resolveSeasonProjectionBasisCaption(seasonSourceAsOf)}</p>
       <div className="metric-grid">
         <MetricCard label="Bench contingency value" value={`${formatNumber(result.benchContingencyValueBefore, 1)} → ${formatNumber(result.benchContingencyValueAfter, 1)}`} detail="Depth remaining if a starter goes down" icon="layers" tone="violet" />
         <MetricCard label="Starter holes" value={`${result.starterHolesBefore.length} → ${result.starterHolesAfter.length}`} detail={result.starterHolesAfter.join(", ") || "None after trade"} icon="alert" tone="crimson" />
@@ -355,6 +364,11 @@ function FindTradesTab({
   return <>
     <SegmentedControl label="Search mode" options={PACKAGE_SEARCH_MODES.map((item) => item.key)} value={mode} onChange={(value) => setMode(value as TradePackageSearchMode)} />
     <p className="copy-muted">{PACKAGE_SEARCH_MODES.find((item) => item.key === mode)?.label}</p>
+    {/* Full Cycle V1, Worker 4 (Section 3C): every candidate package below
+        is evaluated from the SAME season-level governed ranking Rankings/
+        Waivers/Compare read -- Trades previously carried no basis/freshness
+        label at all. See `resolveSeasonProjectionBasisCaption`. */}
+    <p className="copy-muted">{resolveSeasonProjectionBasisCaption(data.status.sourceAsOf)}</p>
 
     {mode === "TARGET_PLAYER" ? (
       <Panel title="Who do you want to target?">

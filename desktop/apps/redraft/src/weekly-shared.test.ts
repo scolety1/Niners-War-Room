@@ -8,6 +8,8 @@ import {
   createStaleResponseGuard,
   FAAB_URGENCY_TONE,
   formatClock,
+  resolveHomeActionFreshness,
+  resolveSeasonProjectionBasisCaption,
   resolveWeekDisplay,
   statusTone,
 } from "./weekly-shared";
@@ -231,5 +233,66 @@ describe("formatClock", () => {
   });
   it("formats a real ISO timestamp without throwing", () => {
     expect(formatClock("2026-09-10T18:30:00Z")).not.toBe("unavailable");
+  });
+});
+
+/**
+ * Full Cycle V1, Worker 4 (Section 3C): the season-level projection basis
+ * caption. Data-age/basis labeling only -- no engine value, ranking, or
+ * `marginal_roster_utility_v2` computation is touched by either function
+ * under test here.
+ */
+describe("resolveSeasonProjectionBasisCaption", () => {
+  it("names the real admission date when one is known", () => {
+    const caption = resolveSeasonProjectionBasisCaption("2026-09-08");
+    expect(caption).toContain("2026-09-08");
+    expect(caption).toContain("not reduced for games already played");
+  });
+
+  it("degrades honestly (no fabricated date) when the admission date is missing", () => {
+    expect(resolveSeasonProjectionBasisCaption(null)).toBe(
+      "Season-level values reflect NWR's governed season model; admission date unavailable.",
+    );
+    expect(resolveSeasonProjectionBasisCaption(undefined)).toBe(
+      "Season-level values reflect NWR's governed season model; admission date unavailable.",
+    );
+    expect(resolveSeasonProjectionBasisCaption("")).toBe(
+      "Season-level values reflect NWR's governed season model; admission date unavailable.",
+    );
+  });
+});
+
+/**
+ * Weekly Home's "NWR Actions" list previously labeled every action card
+ * (including WAIVER/TRADE, which are season-ranking-driven, not weekly-
+ * provider-driven) with the SAME weekly-provider freshness note -- a real
+ * basis mismatch this function fixes by routing WAIVER/TRADE to the season
+ * caption instead.
+ */
+describe("resolveHomeActionFreshness", () => {
+  const weeklyNote = "Sleeper · updated Sep 16, 3:00 PM";
+  const seasonDate = "2026-09-08";
+
+  it("keeps the weekly provider note for START_SIT and START_SIT_CLOSE_CALL (genuinely weekly-sourced)", () => {
+    expect(resolveHomeActionFreshness("START_SIT", weeklyNote, seasonDate)).toBe(weeklyNote);
+    expect(resolveHomeActionFreshness("START_SIT_CLOSE_CALL", weeklyNote, seasonDate)).toBe(weeklyNote);
+  });
+
+  it("keeps the weekly provider note for STREAMER (its own separate FantasyPros ECR source, unchanged by this fix)", () => {
+    expect(resolveHomeActionFreshness("STREAMER", weeklyNote, seasonDate)).toBe(weeklyNote);
+  });
+
+  it("routes WAIVER and TRADE to the season admission date instead of the weekly note -- the real basis mismatch this fixes", () => {
+    expect(resolveHomeActionFreshness("WAIVER", weeklyNote, seasonDate)).toBe(
+      "NWR season ranking · admitted 2026-09-08",
+    );
+    expect(resolveHomeActionFreshness("TRADE", weeklyNote, seasonDate)).toBe(
+      "NWR season ranking · admitted 2026-09-08",
+    );
+  });
+
+  it("falls back to the weekly note for WAIVER/TRADE only when the season admission date is itself unavailable, rather than showing a blank caption", () => {
+    expect(resolveHomeActionFreshness("WAIVER", weeklyNote, null)).toBe(weeklyNote);
+    expect(resolveHomeActionFreshness("TRADE", weeklyNote, undefined)).toBe(weeklyNote);
   });
 });

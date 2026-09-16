@@ -721,3 +721,241 @@ to it -- no recommendation, score, or ranking value was changed anywhere.
    season-projection source behind Harrison/Tracy) and Section 3D
    (completing small broken interactions found along the way) are next,
    per the dispatch.
+
+---
+
+## Worker 4 — Section 3C: season-projection provenance trace + data-age/basis labeling (2026-09-16)
+
+**Branch/worktree:** same as Workers 1-3,
+`upgrade/nwr-prospective-outcomes-v1-20260914` at
+`C:\NWR\prospective-outcomes-v1`. Started at HEAD `186a2b9a` (Worker 3's
+commit; clean). Did not push, did not touch `main`. Frontend
+(127.0.0.1:1422) and backend (127.0.0.1:18742) were NOT restarted or
+touched -- confirmed still up at the end (LIVE OBSERVATION: `GET /` -> 200;
+`GET /api/v1/bootstrap` -> 401 `AUTHENTICATION_REQUIRED`, same
+contract-shaped response every prior worker documented). Zero backend/
+Python files were changed this pass -- every change is frontend-only
+(`desktop/apps/redraft/src/*`).
+
+### Part 1 -- projection-source trace (INSPECTED CODE)
+
+Read `docs/codex/waiver_night_v1/HARRISON_TRACY_INVESTIGATION_V1.md` and
+`WAIVER_FIX_CYCLE_V1_CHECKPOINT.md` in full first, per the dispatch --
+Harrison's arithmetic finding (replacement-level-by-construction, 0.0 is
+correct) was NOT re-opened or re-litigated.
+
+Traced the season-level projection's own origin and refresh mechanism,
+which that investigation had explicitly left open:
+
+- **Origin**: `docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/
+  GOVERNED_COMBINED_564_PROJECTION_SNAPSHOT.csv` (491 veteran + 73 rookie
+  rows), admitted `source_as_of=2026-09-08` via the real
+  `install_projection_snapshot()` governance mechanism (`docs/codex/
+  NWR_PROSPECTIVE_2026_FREEZE_V7_20260908.md`). Harrison's own row:
+  `source_id=NWR_REDRAFT_2026_STATUS_FILTERED_PRIOR_SEASON_PERSISTENCE_V1`,
+  `provenance="nflverse seasonal stats t-1 + current nflverse GSIS
+  registry"`, `games=12.0` -- a full-season stat line built from PRIOR
+  SEASON (t-1) rates projected across an estimated full season of games,
+  not a mid-season recomputation.
+- **Scoring**: `redraft_engine_v1_service.py::score_projection` sums the
+  row's raw stat fields (receptions, receiving_yards, etc.) into one
+  season total. `redraft_2026_projection_model_service.py` (the model that
+  built these rows) computes each stat as `per_game_rate * projected
+  games` -- a FULL-SEASON total by construction. Grepped the entire
+  `src/` for any in-season decay/reduction (`games_remaining`,
+  `weeks_remaining` applied to `projected_points`, `/ games` on this
+  specific value): **none exists**. No call site anywhere recomputes or
+  reduces this value as real season weeks pass.
+- **Refresh mechanism**: manual only -- a new owner-approved governance
+  admission (`install_projection_snapshot()`), gated by `MAX_PROJECTION_
+  AGE_DAYS` (30-day staleness check). Never automatic, never per-week.
+- **FULL-SEASON vs REMAINING-SEASON determination**: **this is a
+  FULL-SEASON projection, built pre-draft/pre-season, not reduced for
+  games already played.** Confirmed both by the CSV's own provenance
+  string and by the projection-model's per-game-rate * full-season-games
+  construction.
+- **Consistency across consumers**: every real consumer (Rankings, Cheat
+  Sheet, Compare "Rest of Season", Waivers `REST_OF_SEASON` mode, FAAB,
+  Trades) reads the exact SAME computed `replacement_adjusted_value`/
+  `projected_points` from the ONE `generate_rankings()` call for a given
+  profile -- confirmed by direct grep/read, no second independently-
+  computed "remaining season" number exists anywhere in this codebase.
+  **Computationally this is consistent** (no call site silently
+  reinterprets or re-derives the number differently from another). The
+  real gap found is a LABELING one, not an arithmetic one (see below).
+  Also confirmed the codebase already keeps season-level `sourceAsOf`
+  (`RedraftRanking.sourceAsOf`, bootstrap `status.sourceAsOf`) and
+  weekly-level `sourceAsOf` (`WeeklyLineupResult.sourceAsOf`,
+  `WeeklyProjectionsResult.sourceAsOf`) as genuinely SEPARATE typed
+  fields -- the two horizons are not conflated in the data model itself.
+
+### Part 1 -- consistency bug found (display-layer, not arithmetic)
+
+Traced `redraft_weekly_home_actions` (`desktop_facade.py`, Weekly Home's
+"NWR Actions" list): WAIVER and TRADE action cards are built from
+`redraft_waivers(mode="REST_OF_SEASON")` / `redraft_trade_finder()` --
+both driven entirely by the season-level governed ranking above. START_SIT
+/ START_SIT_CLOSE_CALL cards are built from the real live weekly lineup
+optimizer. The frontend (`in-season.tsx`, `WeeklyHomePage`) rendered
+**every** action card's `freshness` caption from the SAME
+`freshnessNote` (derived from `lineup.providerHealth`, the WEEKLY Sleeper
+provider) regardless of category -- so a WAIVER/TRADE recommendation
+(actually driven by the season snapshot, admitted `2026-09-08`,
+potentially days/weeks old) was labeled with a same-day "Sleeper ·
+updated <time>" freshness caption that has nothing to do with the data
+actually backing it. This is the concrete, reproducible instance of "one
+surface treats a season-basis number as if it shared the weekly
+provider's freshness" the dispatch asked to check for. **No computed
+value was ever wrong** -- only the freshness label borrowed an unrelated
+source. Not a Harrison-class arithmetic bug; a display-basis mismatch.
+
+**Fix** (`weekly-shared.tsx`): added `resolveHomeActionFreshness(category,
+weeklyFreshnessNote, seasonSourceAsOf)`, a pure function that routes
+WAIVER/TRADE categories to a `"NWR season ranking · admitted <date>"`
+caption (falling back to the weekly note only if the season date is
+itself unavailable) and leaves START_SIT/START_SIT_CLOSE_CALL/STREAMER on
+the existing weekly note unchanged. Wired into `WeeklyHomePage`'s action
+card map in `in-season.tsx`. 5 new tests in `weekly-shared.test.ts`.
+
+### Part 2 -- data-age/basis labeling surfaced (all using ALREADY-COMPUTED
+### backend provenance, no invented data, no backend changes)
+
+Checked every surface the dispatch named (Start/Sit, Trades, Players/
+Rankings, Cheat Sheet, Weekly Home) for whether backend-carried
+provenance was already threaded through but not shown:
+
+- **Start/Sit** (`LineupPage`): already well-labeled (own
+  `providerHealth`/`freshnessNote`, `ProviderStatusLine`, an explicit
+  "never confused with rest-of-season rankings" page description,
+  confirmed `WeeklyLineupResult` is a genuinely separate weekly-sourced
+  contract). No gap found -- not modified.
+- **Weekly Home**: fixed the WAIVER/TRADE freshness-basis mismatch above.
+- **Players/Rankings** (`pages.tsx`, `RankingsContent`): the ranking table
+  already has a "Source as of" column (non-compact) but no caption
+  explaining what that season-level number actually represents. Added a
+  `resolveSeasonProjectionBasisCaption(data.status.sourceAsOf)` line above
+  the table.
+- **Compare** (`pages.tsx`, `CompareContent`): the "Rest of Season" mode
+  reads the identical value Rankings calls "Season points"/"Proj pts" --
+  two different labels for one unchanging number, with no caption
+  connecting them. Added the same basis caption under the Mode toggle
+  when `mode === "Rest of Season"`.
+- **Cheat Sheet** (`cheat-sheet.tsx`): had `ballersStatusText`/
+  `marketStatusText` compact status lines already but nothing for NWR's
+  own season model. Added `nwrSeasonStatusText(data)` (same convention,
+  reads `data.status.sourceAsOf`) into the existing compact header row.
+- **Trades** (`trades.tsx`): had ZERO freshness/basis labeling anywhere
+  (confirmed by grep before this pass -- no `sourceAsOf`/`providerHealth`/
+  `freshness` references at all), despite `TradePlayerImpact.
+  rosReplacementValue`/`marginalUtility` being driven by the same season
+  ranking. Added the basis caption to both the Analyze tab's result panel
+  and the Find Trades tab (using `data.status.sourceAsOf`, already
+  bootstrap-level and already shown on the Data Health page -- no new
+  backend field, no per-player plumbing needed since the whole snapshot
+  shares one admission date).
+- **Improve Team / Waivers-FAAB-Add-Drop** (`improve-team.tsx`, not
+  explicitly named by the dispatch but the primary REST_OF_SEASON
+  consumer): the existing "THIS_WEEK honesty" caption explained mode
+  ranking-consistency but not projection basis. Extended Targets and FAAB
+  tabs with the same `resolveSeasonProjectionBasisCaption`.
+
+All of the above reuse ONE new pure function,
+`resolveSeasonProjectionBasisCaption(sourceAsOf)` (`weekly-shared.tsx`),
+following the same "small pure function, not scattered inline JSX"
+precedent as `resolveFaabDisplay`/`resolveWeekDisplay`. It reads only
+`data.status.sourceAsOf` -- an ALREADY-COMPUTED bootstrap field (verified
+by inspection: `desktop_facade.py`'s `redraft_bootstrap()` sets
+`source_as_of = _text(getattr(snapshot, "source_as_of", ""))`, the same
+value `generate_rankings()`'s output rows all share, since one admission
+covers the whole snapshot) that was already displayed on the Data Health
+page but not on any of these five other surfaces. No backend file was
+touched; no new provenance was invented; per-player `sourceAsOf` plumbing
+into `WaiverAddCandidate`/`TradePlayerImpact` (which genuinely IS dropped
+at `sleeper_free_agent_pool`/`rank_waiver_candidates`, confirmed by
+reading those functions) was considered and explicitly NOT done this pass
+-- the single shared admission date already answers the "what basis is
+this" question without a bigger contract change; flagged below if a
+future worker wants true per-player granularity (e.g. after a future
+snapshot migration mid-season with mixed dates).
+
+### TESTS ADDED (all ACTUAL TEST RESULT, passing)
+
+- `weekly-shared.test.ts`: 2 new cases for `resolveSeasonProjectionBasisCaption`
+  (real date named; honest degrade with no fabricated date for `null`/
+  `undefined`/`""`), 5 new cases for `resolveHomeActionFreshness`
+  (weekly-sourced categories keep the weekly note; WAIVER/TRADE route to
+  the season caption; WAIVER/TRADE fall back to the weekly note only when
+  the season date is itself unavailable).
+- `cheat-sheet.test.ts`: 2 new cases for `nwrSeasonStatusText` (real date;
+  honest degrade).
+
+### Regression scope check (ACTUAL TEST RESULT)
+
+`cd desktop && npx vitest run`: **451 passed, 0 failed** (29 test files;
+443 baseline + 8 new). `npm run typecheck` (`tsc -b apps/dynasty/tsconfig.json
+apps/redraft/tsconfig.json`): clean, 0 errors. The same incidental
+`frontend_bench_results.json` vitest-run side effect every prior worker
+has hit was reverted via `git checkout --` before committing. No backend
+tests were run this pass since zero Python files changed (confirmed via
+`git status`).
+
+### Files changed this pass
+
+- `desktop/apps/redraft/src/weekly-shared.tsx` -- added
+  `resolveSeasonProjectionBasisCaption`, `resolveHomeActionFreshness`.
+- `desktop/apps/redraft/src/weekly-shared.test.ts` -- 7 new tests.
+- `desktop/apps/redraft/src/in-season.tsx` -- `WeeklyHomePage` action
+  cards wired to `resolveHomeActionFreshness`.
+- `desktop/apps/redraft/src/pages.tsx` -- Rankings table and Compare's
+  "Rest of Season" mode both wired to the new caption.
+- `desktop/apps/redraft/src/cheat-sheet.tsx` -- added `nwrSeasonStatusText`,
+  wired into the compact header row.
+- `desktop/apps/redraft/src/cheat-sheet.test.ts` -- 2 new tests.
+- `desktop/apps/redraft/src/improve-team.tsx` -- Targets and FAAB tabs
+  both gained a `seasonSourceAsOf` prop and the new caption.
+- `desktop/apps/redraft/src/trades.tsx` -- Analyze tab and Find Trades tab
+  both gained the new caption (Analyze via a new `seasonSourceAsOf` prop).
+
+### Hard boundary check
+
+Did not touch `marginal_roster_utility_v2`, its weights, the governed
+valuation model, draft recommendation logic, roster legality,
+`LeagueSnapshot`/`LeagueWorkspaceContext`/lifecycle-resolver/
+`DecisionResultEnvelope`/`PlayerAvailabilityStatus` semantics -- all of
+those were only read (to confirm what they already carry), never
+restructured. Did not re-open or touch Harrison's already-settled
+arithmetic finding. Did not replace or invent any projection data -- every
+caption reads an already-computed field (`data.status.sourceAsOf`) that
+was already displayed elsewhere in the app (the Data Health page). Zero
+backend/Python files changed.
+
+### Open issues for next worker
+
+1. **Per-player season `sourceAsOf` is still not threaded into
+   `WaiverAddCandidate`/`TradePlayerImpact`** -- confirmed by reading
+   `sleeper_free_agent_pool` (`fantasypros_kdst_consensus_service.py`) and
+   `rank_waiver_candidates` (`waiver_engine_service.py`): both read a
+   `ranking` row that DOES carry `sourceAsOf` but neither copies it
+   through to the candidate/payload. Not fixed this pass because the
+   single shared bootstrap-level `data.status.sourceAsOf` already answers
+   the practical question (one snapshot, one admission date, covers every
+   row) -- worth revisiting only if a future snapshot ever mixes rows from
+   different admission dates.
+2. **DecisionResultEnvelope.generatedAtUtc** (already backend-carried on
+   `TradeAnalysisResult`/`TradeFinderResult`/`TradePackageSearchResult`,
+   confirmed present in the contract) is still unused by the frontend --
+   it records when the DECISION was computed, not the projection's own
+   basis, so it's a different (also real, also currently invisible) kind
+   of freshness signal from what this pass surfaced. Considered, not
+   wired this pass to keep the diff focused on the projection-basis
+   question the dispatch actually asked about.
+3. Section 3D (completing small broken/incomplete interactions found
+   during the Workers 1-3 walkthrough) and the Section 2 tool-by-tool
+   walkthrough coverage inventory (routes/tools not yet covered) are next,
+   per the dispatch -- neither started this pass.
+4. Everything still open from Workers 1-3's own ledger sections (Draft
+   Room not exhaustively audited, Attention Center residual cross-surface
+   risk, Players/Market tab not line-by-line audited, Trades AnalyzeTab's
+   stale-form-until-resubmit UX note, the pre-existing K/DST practical-mode
+   freshness-window test failures, native Tauri packaging) remains open
+   and unchanged by this pass.
