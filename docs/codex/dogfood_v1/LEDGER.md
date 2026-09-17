@@ -744,3 +744,265 @@ this worker did.)
    scripted double-click.
 4. Untracked smoke-run log files from Worker 2 (`*_smoke_std{out,err}*.log`)
    are still present in the worktree root, still harmless scratch output.
+
+## Worker 4 — Part 4 (first half): Weekly Home, Start/Sit, Improve Team, Trades, Players, League tabs, Attention Center (2026-09-17)
+
+### Scope and method
+
+Owner's directive: exercise real meaningful interactions (not page loads) across
+Weekly Home, Start/Sit, every Improve Team tab, Trades, Players/Compare/Market,
+League tabs, and Attention Center, using the now-available real leagues
+(Fantasy Gamers = Sleeper 10-team, KHA = ESPN 16-team, 403 N 18th = ESPN
+8-team). History/Manage Leagues/Data Health/Draft Room/Cheat Sheet/Dynasty are
+explicitly left for Worker 5, not touched here except incidentally (Draft Room
+was visited once, unavoidably, because the league chooser's "Open workspace"
+routes Fantasy Gamers there — see Bug/Gap note below).
+
+Processes at start: all 4 confirmed already healthy via `netstat` — same PIDs
+Worker 3 left running (Redraft backend 20368/18742, frontend 17016/1422;
+Dynasty backend 12852/18741, frontend 5288/1421). No restart needed. Confirmed
+unchanged (same PIDs) at end of this pass too.
+
+All testing done live via Chrome MCP against the real running Redraft
+frontend/backend. No Sleeper writes were made anywhere — every action taken
+was a read (search, filter, sort, compare, trade *analysis*, attention-center
+sweep, cross-league ownership search) or a local/read-only external fetch
+(Fantasy Football Calculator ADP refresh, a public consensus-ADP read, not a
+Sleeper endpoint). No lineup was submitted, no waiver claimed, no trade
+proposed/accepted, matching the app's own on-page disclosures ("NWR never
+writes a lineup to Sleeper" / "NWR never proposes or accepts a trade on
+Sleeper"). The frontend tab's own network log showed zero `sleeper` requests
+(Sleeper reads happen server-side in the backend, not from the browser tab, so
+this is corroborating rather than exhaustive proof, consistent with the app's
+architecture).
+
+### 1. Weekly Home — LIVE OBSERVATION
+
+- **Fantasy Gamers**: PASS. Navigated directly to
+  `/#/league/941b99ade350410391b1b67c0890af79/home` (see Bug/Gap note — the
+  chooser's own "Open workspace" link does not land here for this league).
+  Real content: "Fantasy Gamers · Week 2", real Sleeper standings table (10
+  real team names, W/L/PF), real matchup card (opponent "shittin and tuten",
+  score 0.0-0.0, record 1-0 #1 of 10), real waiver suggestion (Tyrone Tracy,
+  marginal utility 9.7, with full v2-challenger reasoning text). Not
+  empty/placeholder.
+- **KHA / 403 N 18th**: LIMITED, real reason — both show "Sleeper league
+  required — Weekly in-season tools (Start/Sit, Waivers, Trade, streamers)
+  require an active Sleeper-imported league. Choose or import one." This is a
+  genuine, correctly-labeled, non-fabricated empty state (both are ESPN,
+  one-time-imported, no live Sleeper roster source), not a bug.
+
+### 2. Start/Sit — ACTUAL TEST RESULT (real edit exercised)
+
+- **Fantasy Gamers**: PASS. Real recommendation shown ("Start Trevor Lawrence
+  over Caleb Williams — LOW CONFIDENCE — CLOSE CALL, +0.5 projected points").
+  Changed the NFL WEEK input from 1 to 2 (a real scenario edit): the
+  recommendation set changed to a different, real player/margin ("Start
+  Michael Pittman over Travis Etienne, +0.7"), confirming the page reacts to
+  the edit rather than showing static content.
+- **KHA (the owner's genuine unavailable-data edge case)**: LIMITED, real and
+  correctly-behaved — "Sleeper league required — Start/Sit needs a live
+  Sleeper roster and the real weekly-projection source." No crash, no
+  fabricated lineup, no silent fallback to stale/wrong data. This is exactly
+  the owner's framed edge case (post-draft ESPN league whose real-world 2026
+  games this app has no live weekly-projection/roster path for): the app
+  correctly refuses rather than guessing.
+
+### 3. Improve Team — every tab — ACTUAL TEST RESULT (real edits exercised)
+
+All 5 tabs tested for Fantasy Gamers with real edits; Targets spot-checked
+against KHA for the unavailable-data case.
+
+- **Targets**: PASS. Real ranked list (25 targets). Toggled MODE
+  REST_OF_SEASON → THIS_WEEK: content changed to include a real "THIS WEEK"
+  starter-impact line ("Would not become a starter this week..."). Changed
+  POSITION filter ALL → RB: top target re-ranked to a real RB-only
+  recommendation (Tyrone Tracy). Both edits produced correctly different,
+  real content.
+- **Add/Drop**: PASS. Position filter (RB) correctly carried over from
+  Targets tab (real cross-tab state). Toggled VIEW "Available to add" →
+  "Consider dropping": real weakest-roster-player ranking appeared (Kenny
+  Gainwell lowest, with real marginal-utility reasoning), plus a real,
+  honest K/DST disclosure ("K/DST are not part of the governed ranking").
+- **FAAB**: PASS. Real bid recommendation with real dollar range and percentile
+  language (Dalton Schultz, $24-39, 83rd percentile of the real free-agent
+  pool).
+- **Streamers**: PASS, exercised the external-API edit path. Default state is
+  empty ("No streamer read yet — Refresh K/DST ECR above"), correctly not
+  fabricating data before the user asks. Clicked "Refresh K/DST ECR (This
+  Week)": real FantasyPros consensus data returned (Jacksonville Jaguars #1
+  DST for Week 1, Chargers #2 alternative).
+- **All Free Agents**: PASS. Real 727-row unrostered-player pool with real
+  ranks/points/replacement-value columns.
+- **KHA spot-check (Targets tab)**: LIMITED, real and correctly-labeled —
+  "Sleeper league required — Improve Team needs a live Sleeper roster and the
+  governed NWR ranking." Same honest-refusal pattern as Start/Sit.
+
+### 4. Trades — ACTUAL TEST RESULT (real player selection + real ownership check)
+
+- **Fantasy Gamers, Analyze**: PASS. Built a real trade (I give: Kenny
+  Gainwell from my own roster; I receive: searched "James Cook", which
+  correctly resolved to "James Cook (RB) — Show Me Your TDs" showing real
+  opponent ownership in the search dropdown itself before selection).
+  Clicked Analyze: real before/after impact returned (starting lineup value
+  1033.6 -> 1081.9, net marginal utility +21.8, bench/position-effect
+  breakdown, an honest disclosed gap: "Championship Equity is not evaluated —
+  this repo has no live standings store").
+- **Fantasy Gamers, Find Trades**: PASS. Real auto-generated proposal (1-for-2
+  vs. Bill's Sleepers: send Marvin Harrison Jr. for Jayden Reed + TreVeyon
+  Henderson) with real "why it helps you" / "why it may fit them" reasoning
+  and the same before/after structure.
+- **KHA**: LIMITED, real and correctly-labeled — "Sleeper league required —
+  Trades needs your live Sleeper roster and every live opponent roster."
+- Incidentally confirmed real per-league ownership data via the Trades page's
+  "Browse opponent rosters" link (routes to the League > Teams tab): all 10
+  Fantasy Gamers teams' real rosters (names, starters/bench, real players)
+  rendered correctly, and James Cook's roster location there
+  (Show Me Your TDs) matched the Trades search result exactly — cross-surface
+  data-consistency check, passed.
+
+### 5. Players (Rankings/Compare/Market) — ACTUAL TEST RESULT (real search, filters, comparison)
+
+- **Rankings**: PASS. Real 564-player board. Typed "Kittle" into search:
+  correctly filtered to "1 of 1 matches" (George Kittle, #91, TE13, real
+  proj/VOR/evidence columns).
+- **Compare**: PASS, full end-to-end exercise. Default comparison (#1
+  McCaffrey vs #2 Nacua) showed a real "NWR Redraft Lean" verdict. Changed
+  Player B to George Kittle (#91 TE13): both player cards and the lean
+  verdict recalculated correctly. Toggled MODE Rest of Season -> Roster Fit:
+  content changed to real roster-context numbers (Kittle's starter gap
+  flipped to -16.2 vs. McCaffrey's +224.7, reflecting each player's real fit
+  on this specific roster).
+- **Market**: PASS, real external-data edit exercised (see Bugs/Findings —
+  this doubled as the persistence check). Initial state was honestly empty
+  ("No active ADP snapshot — UNAVAILABLE"). Clicked "Refresh FFC ADP": a real
+  live read from Fantasy Football Calculator returned (71/78 players matched,
+  source dated 2026-09-10 to 2026-09-17, FRESH), and the top-bar "data
+  issues" counter correctly dropped from 3 to 2 as a direct, real side
+  effect.
+- **KHA cross-check**: PASS. Rankings board correctly shows a different
+  "Available" filtered count (413 of 564, vs. Fantasy Gamers' own filtered
+  set) reflecting KHA's own real, different set of drafted players — real
+  per-league data isolation confirmed, not a shared/bleeding board.
+
+### 6. League tabs (Overview/My Roster/Teams/Scoring/Settings/Sync) — LIVE OBSERVATION, 3-league cross-check
+
+Directive's suggested cross-check (16 vs 10 vs 8 teams) run directly:
+
+- **Fantasy Gamers Overview**: 10-Team PPR, Platform Sleeper, 15 rostered
+  players, Current week 2, Sync health LIVE.
+- **KHA Overview**: 16-Team PPR, Platform Local, "My roster: Not tracked for
+  a Local/ESPN profile", Current week "Not available", Sync health "NOT
+  APPLICABLE".
+- **403 N 18th Overview**: 8-Team PPR, same Local/ESPN-profile disclosures.
+- All three team counts (10/16/8) rendered correctly and distinctly — real
+  cross-league differentiation confirmed, not a shared/stale value.
+- **403 N 18th Teams tab**: LIMITED, real and correctly-labeled — "Sleeper
+  league required — ESPN and local profiles have no live opponent-roster
+  source."
+- **403 N 18th My Roster tab**: a well-designed partial-availability state,
+  worth calling out as a good pattern rather than a gap — it does NOT just
+  say unavailable; it discloses "NWR's last known roster for this league is
+  from draft results as of 2026-09-08T02:50:29+00:00; it does not reflect
+  any waiver, trade, or free-agent move since" with a link to open Draft Room
+  (My Team) for that last-known state. Honest, not fabricated, not a dead
+  end.
+
+### 7. Attention Center — ACTUAL TEST RESULT (real sweep + real cross-league search edit)
+
+- Triggered a real sweep by navigating to `/#/attention-center` fresh (also
+  the automatic on-mount sweep). Took ~10.1s wall-clock for all 5 saved
+  profiles (10-team 1QB Standard, KHA, 403 N 18th, Fantasy Gamers, Isolation
+  Check Local) — consistent with Worker 3's documented 2-5.6s-per-sweep
+  finding, scaled for profile count.
+- Real, non-fabricated issues surfaced per league: Fantasy Gamers correctly
+  showed "2 rostered players could not be matched to an NWR identity" plus a
+  real actionable note ("Jared Goff (#41 overall) is available as a free
+  agent") alongside real week/record/rank/deadline data (2, 1-0, #1 of 10,
+  "Playoffs start Week 15"); KHA/403N18th/local-test profiles correctly
+  showed "MARKET ADP: UNAVAILABLE" (matching the real "no ADP snapshot"
+  state observed directly on their own Market tabs — cross-surface
+  consistency, not a fabricated Attention Center-only claim).
+- **Real edit exercised**: typed "James Cook" into the cross-league ownership
+  search. Real per-league results returned: AVAILABLE in the two local/test
+  leagues, "ROSTERED BY YOU" in KHA, "ROSTERED BY AN OPPONENT" in 403 N 18th,
+  and "ROSTERED BY AN OPPONENT — Show Me Your TDs" in Fantasy Gamers — the
+  last of which matches the exact team identified independently via the
+  Trades page and the League > Teams roster browse in section 4, a genuine
+  cross-tool data-consistency confirmation, not a lucky coincidence.
+
+### Bugs/Gaps found (not code bugs requiring a fix in this pass)
+
+1. **Re-confirms Worker 2/3's already-documented, already-disclosed frontend
+   Sleeper-live-status gap** (not new, not fixed here — out of this worker's
+   scope per the open issue list): clicking Fantasy Gamers' "Open workspace"
+   from the league chooser still lands on Draft Room (draft setup screen),
+   not Weekly Home, even though the league is genuinely `IN_SEASON`
+   (`leagues.tsx`'s `activate()` calls `resolveLeagueHomeSubpath` without a
+   `confirmedLifecycle` argument, so it falls back to the local
+   no-draft-board heuristic → `PRE_DRAFT` → `draft`). Worked around by
+   navigating directly to `/#/league/{id}/home` and the other league-scoped
+   routes for all testing in this pass, per Worker 2's documented follow-up
+   (thread a confirmed lifecycle value through `leagues.tsx`'s `activate()`).
+   Flagging again here only because it was directly re-observed live during
+   this pass's Weekly Home testing, not because it's new.
+2. No other genuine, reproducible bug was found in the 7 tool areas covered.
+   Every "unavailable" state observed (Start/Sit, Improve Team, Trades,
+   Teams, My Roster for the two ESPN leagues; Market ADP before the refresh)
+   was honestly labeled with a real, specific reason and a real remediation
+   path where one exists (e.g., "Open Draft Room (My Team)"), never a blank
+   page, crash, or fabricated placeholder value. This is a genuinely clean
+   result, not a gap in testing effort — see the exact edits/toggles
+   exercised in each section above.
+
+### Persistence check
+
+Real edit: refreshed Fantasy Gamers' Market/ADP source from Fantasy Football
+Calculator (Players > Market tab), which changed "Current source" from "No
+active ADP snapshot" to "Fantasy Football Calculator ADP" and reduced the
+top-bar data-issues count from 3 to 2. Navigated away (to `/#/leagues`), back
+to the same league's Players page, then did a **hard reload (F5)** — the
+strongest form of this check, not just an in-SPA navigation. After reload:
+Market tab still showed "Fantasy Football Calculator ADP · FRESH · 71/78
+matched", and the top-bar data-issues counter still read 2 (not reverted to
+3). Confirmed real backend-persisted state, not a client-side-only cache.
+
+### Tests added
+
+None. No code was changed this pass — no genuine, reproducible bug was found
+within this worker's scope that required a fix (see Bugs/Gaps above; the one
+gap identified is Worker 2/3's already-tracked, already-scoped frontend
+lifecycle-routing follow-up, not a new finding).
+
+### Files changed
+
+- `docs/codex/dogfood_v1/LEDGER.md` (this entry only)
+
+### Running processes status at end
+
+Unchanged from start — confirmed via `netstat` before handoff: Redraft
+backend PID 20368 (18742) / frontend PID 17016 (1422); Dynasty backend PID
+12852 (18741) / frontend PID 5288 (1421). No restart was needed or performed.
+
+### Open issues for next worker
+
+1. **Worker 5's assignment**: History, Manage Leagues, Data Health, Draft
+   Room, Cheat Sheet, existing Dynasty tools — none of these were exercised
+   in this pass (Draft Room was only visited incidentally via the
+   still-open chooser-routing gap in item 1 below, not tested for its own
+   sake).
+2. The frontend Sleeper-live-status / chooser-routing gap (Worker 2/3,
+   re-confirmed live again in this pass — see Bugs/Gaps #1) is still open
+   and still not this pass's fix. It's a real, if minor, piece of friction
+   worth closing at some point: the owner will land on Draft Room instead of
+   Weekly Home every time they open Fantasy Gamers from the chooser.
+3. Untracked smoke-run log files (`*_smoke_std{out,err}*.log`,
+   `dynasty_smoke_std{out,err}.log`, `redraft_smoke_stderr2.log`,
+   `redraft_smoke_stdout2.log`) remain in the worktree root from earlier
+   workers — still harmless scratch output, not part of the repo, safe to
+   delete once servers are stopped for good.
+4. This pass did not exercise Improve Team's Add/Drop or FAAB tabs against
+   KHA/403N18th specifically (only Targets was spot-checked there) — low
+   risk given the identical "Sleeper league required" gating observed
+   consistently across every in-season tool for those two leagues, but not
+   independently re-verified tab-by-tab.
