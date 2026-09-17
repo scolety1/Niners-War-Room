@@ -1006,3 +1006,317 @@ backend PID 20368 (18742) / frontend PID 17016 (1422); Dynasty backend PID
    risk given the identical "Sleeper league required" gating observed
    consistently across every in-season tool for those two leagues, but not
    independently re-verified tab-by-tab.
+
+## Worker 5 — Part 4 (second half): History, Manage Leagues, Data Health, Draft Room, Cheat Sheet, Dynasty (2026-09-17)
+
+### Scope and method
+
+Owner's directive covered History, Manage Leagues, Data Health, Draft Room,
+Cheat Sheet, and existing Dynasty tools — exercising edits, switches, empty/
+error states, persistence after restart, and unavailable data. All testing
+done live via Chrome MCP against the real running Redraft/Dynasty frontends
+and backends. Processes at start: all 4 confirmed already healthy via
+`Get-NetTCPConnection` — same PIDs Worker 4 left running (Redraft backend
+20368/18742, frontend 17016/1422; Dynasty backend 12852/18741, frontend
+5288/1421). No restart needed at start. **Important environment note for
+Worker 6**: the Redraft frontend process (PID 17016) runs `vite preview`
+(a static build server), NOT `vite dev` — frontend source edits require
+`npm run build` in `desktop/apps/redraft` before they take effect; the
+running process itself never needs restarting (it just re-serves the
+rebuilt `dist/`). This worktree does not run Vite dev/HMR at all for the
+frontend under this cycle's process-startup convention.
+
+### 1. Decision History — ACTUAL TEST RESULT (real OwnerActionCell edits, 2)
+
+- **Fantasy Gamers**: PASS. 155 real recorded events with real provenance
+  (Sleeper league ID `1312983576827920384`, real dates/times through
+  2026-09-17, real recommendation text for FAAB/Waiver/Trade/Start-Sit/K-DST
+  streamer classes), plus real per-class outcome summaries (all correctly
+  "NOT ENOUGH DATA YET" / "OUTCOME PENDING" — no fabricated calibration,
+  matching the page's own disclosure that real season outcomes don't exist
+  yet). **Re-verified the OwnerActionCell interaction the prior cycle's
+  "stuck Recording..." bug affected**: clicked "Followed it" on the most
+  recent FAAB-bid row — recorded instantly, no stuck/spinner state, survived
+  a hard reload (F5) unchanged. Then clicked "Change" -> "Didn't act" on the
+  same row — updated instantly, survived a second hard reload unchanged.
+  Bug does NOT reproduce; the fix holds.
+- **KHA / 403 N 18th**: LIMITED, real and correctly-labeled — both show "0
+  recorded events" / "Nothing recorded yet," an honest empty state, not an
+  error.
+- **Worker 1's recovered `prospective_decision_log`/`nwr_pure_experiments`
+  data for 403 N 18th does NOT surface here — confirmed why, not a bug.**
+  INSPECTED CODE: `redraft_decision_trace_history` (desktop_facade.py:4835)
+  reads `load_decision_traces(...)` from `decision_traces/<profile_id>.jsonl`
+  (the in-season, owner-facing ledger). Only Fantasy Gamers has a file there
+  (`local_exports/redraft_v1/decision_traces/941b99ade...jsonl`, 270KB).
+  `prospective_decision_log_v1_service.py`'s own docstring confirms it is a
+  **structurally separate, draft-time-only logging lane** ("NWR Big-Draft
+  Readiness Overnight V1... every real practice or real draft pick... is
+  potential prospective evidence for this program's NEXT piece of
+  independent validation") feeding future research validation, not this
+  owner-facing History page, which is explicitly in-season-scoped (its own
+  DRAFT card says draft evaluation is deferred to
+  `marginal_roster_utility_v2`, "never scored here"). Two genuinely
+  different data lanes, correctly not conflated — not a gap, not a bug.
+
+### 2. Manage Leagues — ACTUAL TEST RESULT (real switches + create/duplicate, hard boundary respected)
+
+- **Real switching via this page's own "Open workspace" links (not the
+  header quick-switcher)**, all 3 real leagues:
+  - **KHA**: PASS. Landed on Weekly Home, IN SEASON badge, 16-Team PPR,
+    correct honest "Sleeper league required" in-season-tools message.
+  - **403 N 18th**: PASS. Landed on Weekly Home, IN SEASON badge, 8-Team
+    PPR, same correct honest message.
+  - **Fantasy Gamers**: LIMITED, a re-confirmation of the already-tracked,
+    already-disclosed routing bug (Worker 2/3/4) — lands on Draft Room
+    (PRE-DRAFT) instead of Weekly Home. Newly confirmed here: this
+    reproduces from the **Manage Leagues page's own "Open workspace" link**
+    too, not only the header quick-switcher — same root cause (the frontend
+    lifecycle heuristic has no live Sleeper status for a league drafted
+    entirely outside this app, so it can only fall back to a local
+    no-draft-board PRE_DRAFT read). Confirmed this is the SAME known gap,
+    not a new one; not fixed here per Worker 2's own assessment that closing
+    it fully needs a bigger architecture decision (live network call on the
+    hot path, or caching a confirmed lifecycle) — out of "small and clearly
+    scoped."
+- **Create/duplicate/import re-verification (Worker 3's fix)**: created one
+  real disposable local test profile ("WORKER5 DISPOSABLE TEST", preset
+  `10_TEAM_1QB_STANDARD`) via `/profile`'s Fast Setup form — created and
+  activated correctly, survived a hard reload. **Found and fixed a genuine,
+  reproducible, DIFFERENT bug** while exercising Worker 3's own
+  "Duplicate profile" fix from the League > Settings tab (`league.tsx`'s
+  `LeagueSettingsTab`) — see Bugs Found below. After the fix: duplicate now
+  correctly activates and stays on the new profile, verified via real
+  network-request logs (`POST .../duplicate` 200 with NO follow-up
+  `.../<old-id>/activate` call afterward) and a hard reload.
+- **Cleanup**: all disposable test profiles from this session (the original
+  create, plus 3 "…Copy" profiles created across the pre-fix/post-fix
+  duplicate attempts — repeated attempts were needed while diagnosing why
+  the fix wasn't taking effect, see the `vite preview` note above) were
+  deleted directly from `local_exports/redraft_v1/profiles/` +
+  `draft_boards/` (no API delete endpoint exists, same pattern Worker 3
+  used). Fantasy Gamers was reactivated as the real active league via the
+  normal UI ("Open workspace") before deleting, so `active_profile.json`
+  was never left pointing at a deleted profile. Verified via a hard reload
+  of `/#/leagues`: exactly the 5 real/pre-existing profiles remain (KHA,
+  403 N 18th, Fantasy Gamers [ACTIVE], Isolation Check Local, 10-team 1QB
+  Standard), zero leftover disposable entries.
+
+### 3. Data Health — ACTUAL TEST RESULT (2 leagues + refresh re-verification)
+
+- **Fantasy Gamers (Sleeper)**: PASS. Real, differentiated cards: "SLEEPER ·
+  League sync" OK/CURRENT, "NWR GOVERNED PROJECTION SNAPSHOT" OK/CURRENT,
+  "SLEEPER · Weekly projections" OK/**LIVE**, "Fantasy Football Calculator
+  ADP" OK/CURRENT, "CURRENT_PLAYER_STATUS_OVERRIDES_SERVICE" OK/MANUAL,
+  "IN_SEASON_DECISION_TRACE_SERVICE" OK. Top bar: "2 data issues."
+- **KHA (ESPN) and 403 N 18th (ESPN)**: PASS, and genuinely, visibly
+  different from Fantasy Gamers, not a copy-paste same-looking page: both
+  show "ESPN · League sync" = **NOT APPLICABLE / LOCAL_ONLY**, "This profile
+  is local/manually managed; no live provider sync," and "NO SOURCE ·
+  Weekly projections" = NOT APPLICABLE/UNKNOWN. Each has its own real,
+  distinct `Last update` timestamp matching its own real draft-completion
+  time (KHA 2026-09-02T04:01:25Z, 403N18th 2026-09-09T00:48:33Z). Top bar
+  issue counts differ too (KHA "3 data issues," 403N18th "2 data issues,"
+  Fantasy Gamers "2 data issues") — real per-league variation, not a shared/
+  stale value.
+- **Refresh action re-verified against KHA specifically** (not previously
+  available before this cycle's data recovery): clicked "Refresh," captured
+  real network requests — `GET /api/v1/redraft/data-health` (200),
+  `GET /api/v1/redraft/status-overrides` (200), `GET /api/v1/bootstrap`
+  (200). Real, live backend calls, not a no-op button.
+
+### 4. Draft Room — ACTUAL TEST RESULT (KHA 157 picks, 403N18th 118 picks — real completed boards, not PRE_DRAFT)
+
+Both confirmed from the Draft Room page's OWN content (a different angle
+than Worker 2's sidebar-badge/landing-route check):
+
+- **KHA**: PASS. On-clock banner reads "TEAM 3 IS ON THE CLOCK," "10.14 On
+  clock: Team 3," confirming the real 157 already-recorded picks left the
+  room correctly positioned at real pick 158 of 192 (16 teams x 12 rounds)
+  — not reset to pick 1, not stuck at PRE_DRAFT. Suggestions panel correctly
+  refuses to guess ("DecisionBundle unavailable — it is not currently the
+  owner's turn (pick 158 belongs to team 3)"). Draft Board tab (By Picks):
+  real round-by-round grid, real players in real ADP-consistent order
+  (Gibbs/Robinson/Chase/Nacua/Taylor/Smith-Njigba round 1). Draft Board (By
+  Roster): real derivable per-team rosters by slot, K/DST correctly all
+  "Empty" for every team (matches Worker 2's finding that K/DST were never
+  part of this league's real pick stream).
+- **403 N 18th**: PASS. "TEAM 7 IS ON THE CLOCK," "15.07 On clock: Team 7,"
+  matching the real 118 already-recorded picks (next real pick is 119 of
+  128 = 8 teams x 16 rounds). Draft Board (By Picks): real, distinct
+  round-1 order (Gibbs/Chase/Allen/Robinson/Smith-Njigba/Nacua) — correctly
+  different from KHA's board, confirming no cross-league bleed.
+
+### 5. Cheat Sheet — ACTUAL TEST RESULT (Fantasy Gamers, 3 real edits)
+
+PASS. 564-player sheet. Clicked the **RB position tab**: count changed to
+129, all-RB content, correct re-filter. Toggled **"Show Drafted"**: no
+visible row-count change for this specific league (correct, not a bug —
+Fantasy Gamers is a Sleeper-native league with no local NWR draft board, so
+there is nothing locally marked "drafted" to reveal/hide; this control's
+effect is real but legitimately a no-op here). Clicked the **Market ADP
+column header to sort**: table correctly re-ordered ascending by ADP
+(Bijan Robinson 1.01, Jahmyr Gibbs 1.02, Ja'Marr Chase 1.04, ... in the
+right order). Print/export were NOT tested, consistent with the
+already-disclosed "no print stylesheet" gap from the prior cycle — not
+re-claimed as working here.
+
+### 6. Dynasty tools — LIVE OBSERVATION (light re-check, not full re-audit)
+
+PASS. Home: real Owner Command Center (240 Governed board assets, 239
+Market coverage [1 unmatched], 80 Rookie Review [7 manual], 0 open
+decisions, FINISHED V1 AUTHORITY / YELLOW STALE badges). Dynasty Rankings:
+real 240-player board (Puka Nacua #1, real NWR scores/pos ranks/ages).
+Asset Explorer: real 379-asset governed registry (7 manual review), real
+read-only-registry disclosure. Zero console errors captured across all
+three pages. Did not redo the prior cycle's full write-cycle tests (not in
+scope for this light re-check).
+
+### Bug found + fixed: Manage Leagues duplicate silently reverted the active-profile pointer
+
+**Real, reproduced, root-caused, fixed.** Different from — and NOT
+superseding — Worker 3's race-condition fix (which is still correct and
+still holds); this is a second, independent bug that Worker 3's fix did not
+and could not address, found while re-exercising that exact code path.
+
+**Repro (before fix, captured via real network-request logs):** From
+League > Settings tab (`/league/{id}/league?tab=settings`), clicking
+"Duplicate profile" fired `POST .../profiles/{id}/duplicate` (200) — which
+correctly creates AND server-side-activates the new profile
+(`desktop_facade.py`'s `duplicate_redraft_profile` calls
+`set_active_profile` internally) — but was IMMEDIATELY followed by an
+unwanted `POST .../profiles/{id}/activate` (200) for the **OLD, source**
+profile ID, silently reverting the active pointer back to the original
+profile. The UI's own success message still claimed "Profile duplicated and
+activated," which was now false. Confirmed via the real `active_profile.json`
+file on disk (pointed at the old profile) and a hard reload (chooser showed
+the OLD profile as ACTIVE, the new copy present but inactive).
+
+**Root cause (INSPECTED CODE):** `LeagueSettingsTab` is rendered inside
+`LeagueScopedPage` (`RedraftApp.tsx`, route `/league/:leagueKey/league`),
+which has its own effect (added for legitimate deep-link/bookmark support)
+that re-activates whatever profile the URL's `leagueKey` names whenever it
+differs from the currently active profile. `duplicateRedraftProfile`
+activates the NEW profile server-side, but `LeagueSettingsTab` never
+navigates — the URL still names the OLD profile — so `LeagueScopedPage`
+saw a mismatch and "corrected" it by re-activating the OLD profile, a
+moment after the duplicate's own activation. This is a structurally
+different bug from Worker 3's sweep-vs-activate race (no Attention Center
+sweep involved at all); Worker 3's `serializeActiveProfileCall` wrapping
+was necessary but not sufficient here.
+
+**Fix** (`desktop/apps/redraft/src/league.tsx`, `LeagueSettingsTab`):
+added `useNavigate` and, on a successful duplicate, navigate to the new
+profile's own URL (`/league/{newProfileId}/league?tab=settings`,
+`replace: true`) so `leagueKey` stays in sync with the real active profile
+and `LeagueScopedPage`'s effect has nothing left to "correct."
+
+**Verified fixed, live, after an `npm run build` (see the `vite preview`
+environment note above — the fix did not take effect until rebuilt):**
+`POST .../duplicate` (200) with no follow-up unwanted activate call; URL
+correctly changed to the new profile's own path; sidebar/active-context
+correctly showed the new "…Copy" profile as ACTIVE; survived a hard reload.
+
+**Residual, NOT fixed here (documented, not chased further):** the
+structurally identical route `/league/:leagueKey/profile` (`ProfilePage`
+rendered inside `LeagueScopedPage`) has the same latent exposure for its
+own `create`/`duplicate`/`importSleeper` — but that URL is not reachable
+from any in-app link (the sidebar's "Manage Leagues" nav item always uses
+the unscoped `/profile`; grepped for `leagueKey}/profile` template-string
+construction anywhere in `desktop/apps/redraft/src` — zero hits), so it is
+a dormant deep-link/bookmark-only edge case, not a mainline owner flow.
+Fixing it would mean threading the same navigate-on-success pattern into
+`profile.tsx`'s shared `ProfilePage`, which is used both scoped and
+unscoped — a slightly larger, more invasive change than this pass's "small
+and clearly scoped" bar. Flagged for a future worker, not urgent.
+
+### Tests added
+
+**None added for the Manage Leagues fix specifically** — deliberate,
+documented decision, not an oversight. INSPECTED: this workspace's
+`vitest.config.ts` (`desktop/vitest.config.ts`) sets
+`environment: "node"` and `include: ["packages/**/*.test.ts",
+"apps/**/*.test.ts"]` — no jsdom/happy-dom, no `@testing-library/react` in
+either `package.json`, and the include pattern only picks up `.test.ts`
+files, never `.test.tsx`. Confirmed via `find`: **zero** `.test.tsx` files
+exist anywhere in `desktop/apps/redraft/src`. This fix lives entirely
+inside a React component's event handler (`useNavigate()` + a hook-based
+effect elsewhere in `RedraftApp.tsx`) — there is no established pattern in
+this codebase for unit-testing that kind of interaction (contrast Worker
+2's fix, which lived in a pure function in `league-context.ts` and so was
+directly testable in `league-context.test.ts`, or Worker 3's fix, whose
+race-condition logic lived in `attention-center.ts`'s pure queue and so was
+directly testable there). Writing a synthetic "does calling navigate get
+invoked" test without React Testing Library would not meaningfully exercise
+the real regression (the interaction between two separate React components'
+effects) and risks a false sense of coverage. Verified instead via live
+Chrome MCP with real network-request evidence (documented above, both
+before and after the fix) — the same standard this whole cycle has used for
+comparable React-interaction bugs where no unit-test infrastructure exists.
+Existing suites re-run clean after the change: `npx vitest run apps/redraft`
+(desktop workspace) -> 430/430 passed, 19/19 files, zero regressions;
+`npm run typecheck` (desktop workspace, `apps/dynasty` + `apps/redraft`) ->
+clean.
+
+### Cleanup
+
+An unrelated file, `docs/codex/prospective_outcomes_v1/multi_league_scale_v1/
+frontend_bench_results.json`, was regenerated as a side effect of running
+the full `apps/redraft` vitest suite (same live-timing-benchmark test
+Worker 3 already flagged); reverted via `git checkout --` before committing,
+not part of this pass's actual change. Untracked smoke-run log files from
+earlier workers (`*_smoke_std{out,err}*.log`) remain in the worktree root,
+still harmless scratch output, not part of the repo.
+
+### Final HEAD
+
+One commit on top of `66177c27` — see `git log -1` in this worktree.
+
+### Files changed
+
+- `desktop/apps/redraft/src/league.tsx`
+- `docs/codex/dogfood_v1/LEDGER.md` (this entry)
+
+### Running processes status at end
+
+Unchanged from start — confirmed via `Get-NetTCPConnection` before handoff:
+Redraft backend PID 20368 (18742) / frontend PID 17016 (1422); Dynasty
+backend PID 12852 (18741) / frontend PID 5288 (1421). No process restart
+was needed (the frontend fix required only `npm run build`, not a process
+restart, per the `vite preview` note above). Active Redraft profile at
+handoff: Fantasy Gamers (a real league, matching the pattern prior workers
+used — no disposable test profile left as the active pointer).
+
+### Open issues for next worker (Worker 6 — CLOSURE MODE)
+
+This is the last dogfooding pass. **Worker 6 should shift into closure
+mode**: final regression, restart the dev-server pair if anything requires
+it (it shouldn't, given this pass's changes are frontend-build-only), a
+real verification pass, then push, then the final structured report to the
+owner. Specific carry-forward items:
+
+1. The frontend Sleeper-live-status / chooser-routing gap for Fantasy
+   Gamers (Worker 2/3/4, re-confirmed again in this pass from a third
+   surface — Manage Leagues' own "Open workspace" link) is still open,
+   still not fixed, still correctly worked around by navigating directly to
+   `/#/league/{id}/home` for any live testing. Real, if minor, remaining
+   friction — worth closing eventually, not blocking.
+2. The residual `/league/:leagueKey/profile` deep-link exposure to the same
+   class of bug this pass fixed for the Settings tab (see "Residual, NOT
+   fixed here" above) — dormant, no in-app link reaches it, low priority.
+3. Remember the `vite preview`-not-`vite dev` environment fact (see the top
+   of this entry) if Worker 6's closure verification involves ANY frontend
+   source change — `npm run build` in `desktop/apps/redraft` (or
+   `desktop/apps/dynasty` for that app) is required before a browser reload
+   will show it; the running preview process does not hot-reload.
+4. Untracked smoke-run log files (`*_smoke_std{out,err}*.log`,
+   `dynasty_smoke_std{out,err}.log`, `redraft_smoke_stderr2.log`,
+   `redraft_smoke_stdout2.log`) are still present in the worktree root from
+   earlier workers — still harmless scratch output, safe to delete once
+   servers are stopped for good as part of closure.
+5. No other genuine, reproducible bug was found across History/Manage
+   Leagues/Data Health/Draft Room/Cheat Sheet/Dynasty this pass beyond the
+   one fixed above — every "unavailable"/empty state encountered (KHA/
+   403N18th Decision History, KHA/403N18th ESPN Data Health cards, Cheat
+   Sheet's already-disclosed no-print-stylesheet gap) was honestly labeled
+   with a real, specific, correct reason.

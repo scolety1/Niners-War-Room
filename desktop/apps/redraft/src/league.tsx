@@ -2,7 +2,7 @@ import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
 import type { DataHealthReport, LeagueWorkspaceContext, RedraftBootstrap } from "@nwr/contracts";
 import { Button, EmptyState, ErrorState, PageHeader, Panel, StatusBadge } from "@nwr/ui";
 import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { serializeActiveProfileCall } from "./attention-center";
 import { MyRosterContent } from "./in-season";
@@ -228,6 +228,7 @@ function LeagueSettingsTab({
   const [working, setWorking] = useState("");
   const [error, setError] = useState<NwrApiError | null>(null);
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     setEdit(profile ? editableProfile(profile) : null);
@@ -255,12 +256,28 @@ function LeagueSettingsTab({
       // -- same reasoning as `ProfilePage`'s own `create`/`duplicate`/
       // `importSleeper` in profile.tsx: `duplicateRedraftProfile` activates
       // its result server-side, targeting the same shared backend pointer a
-      // mid-flight Attention Center sweep can be racing against. This is a
-      // second, structurally identical unwrapped call site to the one
-      // live-reproduced in profile.tsx (dogfood_v1 cycle, Worker 3) --
-      // fixed preventively here for code-pattern parity, not independently
-      // live-reproduced from this exact surface.
-      onUpdate(await serializeActiveProfileCall(() => client.duplicateRedraftProfile(profile.profileId)));
+      // mid-flight Attention Center sweep can be racing against.
+      const next = await serializeActiveProfileCall(() => client.duplicateRedraftProfile(profile.profileId));
+      onUpdate(next);
+      // NWR dogfood_v1 cycle, Worker 5: real, reproduced bug -- this tab is
+      // rendered inside `LeagueScopedPage` (route `/league/:leagueKey/league`),
+      // which has its OWN effect that re-activates whatever profile the URL's
+      // `leagueKey` names whenever it differs from the current active profile
+      // (that effect exists for legitimate deep-link/bookmark navigation).
+      // `duplicateRedraftProfile` activates the NEW profile server-side, but
+      // this component never navigates, so the URL still named the OLD
+      // profile -- `LeagueScopedPage` saw that mismatch and silently
+      // re-activated the OLD profile right back, clobbering the duplicate's
+      // own activation a moment later (confirmed live via the network log:
+      // POST .../duplicate 200, immediately followed by an unwanted POST
+      // .../<old-id>/activate 200) even though this tab's own message still
+      // claimed "Profile duplicated and activated." Navigating to the new
+      // profile's own URL keeps `leagueKey` in sync with the real active
+      // profile, so that effect has nothing to correct.
+      const newProfileId = next.activeProfile?.profileId;
+      if (newProfileId) {
+        navigate(`/league/${newProfileId}/league?tab=settings`, { replace: true });
+      }
       setMessage("Profile duplicated and activated. Its draft board starts empty.");
     } catch (reason) {
       setError(reason instanceof NwrApiError ? reason : new NwrApiError("Profile could not be duplicated."));
