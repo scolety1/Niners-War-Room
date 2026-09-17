@@ -86,7 +86,17 @@ export function ProfilePage({
     if (!preset || !name.trim() || working) return;
     setWorking("create"); setError(null); setMessage("");
     try {
-      onUpdate(await client.createRedraftProfile(preset, name));
+      // Routed through the shared active-profile queue (attention-center.ts),
+      // same reasoning as `activate` below: `createRedraftProfile` activates
+      // the new profile server-side as part of its own request (see
+      // desktop_api/server.py's POST /api/v1/redraft/profiles handler), so
+      // it targets the exact same shared backend pointer a mid-flight
+      // Attention Center sweep's own activate/restore sequence can be
+      // racing against. Live-reproduced (dogfood_v1 cycle, Worker 3): an
+      // unwrapped create racing a sweep's unconditional restore silently
+      // lost the new profile's just-set active status back to whatever
+      // was active before the sweep started.
+      onUpdate(await serializeActiveProfileCall(() => client.createRedraftProfile(preset, name)));
       setMessage("Profile created and activated.");
     } catch (reason) { fail(reason, "Profile could not be created."); }
     finally { setWorking(""); }
@@ -108,7 +118,10 @@ export function ProfilePage({
     if (!data.activeProfile || working) return;
     setWorking("duplicate"); setError(null); setMessage("");
     try {
-      onUpdate(await client.duplicateRedraftProfile(data.activeProfile.profileId));
+      // Same shared active-profile queue as `create`/`activate` -- see
+      // `create`'s comment above for the full race this closes.
+      // `duplicateRedraftProfile` also activates its result server-side.
+      onUpdate(await serializeActiveProfileCall(() => client.duplicateRedraftProfile(data.activeProfile!.profileId)));
       setMessage("Profile duplicated and activated. Its draft board starts empty.");
     } catch (reason) { fail(reason, "Profile could not be duplicated."); }
     finally { setWorking(""); }
@@ -117,7 +130,10 @@ export function ProfilePage({
     if (!sleeperLeagueId.trim() || !sleeperUsername.trim() || working) return;
     setWorking("sleeper-import"); setError(null); setMessage("");
     try {
-      onUpdate(await client.importSleeperRedraftProfile(sleeperLeagueId.trim(), sleeperUsername.trim()));
+      // Same shared active-profile queue as `create`/`activate` -- see
+      // `create`'s comment above for the full race this closes.
+      // `importSleeperRedraftProfile` also activates its result server-side.
+      onUpdate(await serializeActiveProfileCall(() => client.importSleeperRedraftProfile(sleeperLeagueId.trim(), sleeperUsername.trim())));
       setMessage("Sleeper league imported locally. Any unsupported scoring fields are shown in the data-health notices; no Sleeper data was changed.");
     } catch (reason) { fail(reason, "Sleeper league could not be imported."); }
     finally { setWorking(""); }

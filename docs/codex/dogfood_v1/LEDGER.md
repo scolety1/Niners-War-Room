@@ -512,3 +512,235 @@ One commit on top of `7c80c8a5` — see `git log -1` in this worktree.
    the worktree root by this pass (some still open/busy from the running
    processes) — harmless scratch output, not part of the repo, safe to
    delete once the servers are stopped.
+
+## Worker 3 — Part 3: league isolation race testing, real repro found + fixed (2026-09-17)
+
+### Step 1 — code inspection
+
+Grepped every direct `client.activateRedraftProfile`/`createRedraftProfile`/
+`duplicateRedraftProfile`/`importSleeperRedraftProfile` call site in
+`desktop/apps/redraft/src/*.tsx`:
+
+**Wrapped in `serializeActiveProfileCall` (pre-existing, from the prior
+cycle):** `RedraftApp.tsx`'s route gate, `shell-identity.tsx`'s header
+quick-switcher, `leagues.tsx`'s Manage Leagues switcher, and — already fixed,
+apparently by a prior pass not separately logged — `profile.tsx`'s own
+`activate()`.
+
+**NOT wrapped (confirmed live-vulnerable):** `profile.tsx`'s `create()`
+(→ `client.createRedraftProfile`), `duplicate()` (→
+`client.duplicateRedraftProfile`), and `importSleeper()` (→
+`client.importSleeperRedraftProfile`) — each called its contract method
+directly. A **second, previously undocumented instance of the same class**
+was also found: `league.tsx`'s unified League-surface Settings tab
+(`LeagueSettingsTab`) has its **own separate** `duplicate()` that also called
+`client.duplicateRedraftProfile` directly, unwrapped — a second reimplementation
+of the same action, not previously flagged in either this cycle's or the prior
+cycle's ledger.
+
+**Confirmed server-side that all four targets change the shared active-profile
+pointer, not just return data:**
+- `src/desktop_api/server.py`'s `POST /api/v1/redraft/profiles` handler calls
+  `facade.create_redraft_profile(...)` then, in the SAME request, explicitly
+  calls `facade.activate_redraft_profile(profile_id)` before returning
+  bootstrap (line ~579).
+- `desktop_facade.py`'s `duplicate_redraft_profile` (line 5373) and
+  `import_sleeper_redraft_profile` (line 2281) each call `set_active_profile`
+  internally.
+- By contrast, `resync_sleeper_redraft_profile`/`redraft_sleeper_resync`
+  (`profile.tsx`'s `refreshSleeper` / `league.tsx`'s resync action) never
+  calls `set_active_profile` — it only refreshes the already-active profile's
+  stored data in place. Confirmed correctly OUT of scope; left unwrapped.
+  `updateRedraftProfile` (save) and `startPracticalMock` were checked the
+  same way — neither touches the pointer either, correctly left alone.
+
+**Sweep vulnerability window — INSPECTED CODE:** `attention-center.ts`'s
+`runAttentionCenterAggregationUnserialized` iterates every saved profile
+sequentially (`activate(id)` then 5 reads), then in an unconditional
+`finally` restores whichever profile was active when the sweep began. The
+sweep is NOT a periodic background poll (no `setInterval` anywhere in the
+codebase) — it runs once automatically on `AttentionCenterPage` mount
+(`useEffect` at line 175) and again on the manual "Refresh" button. On this
+worktree's real local dataset (6 saved profiles as of this pass) a full sweep
+takes **~2.0–5.6s wall-clock** (observed live, see Step 2/3), i.e. the
+real window during which an unwrapped create/duplicate/import racing the
+sweep's own activate/restore sequence can interleave.
+
+### Step 2 — create/duplicate/import race: REPRODUCED LIVE
+
+Reproduced against the real running Redraft backend (port 18742, real KHA/
+403-N-18th/Fantasy-Gamers/2 throwaway profiles all live) via a Chrome MCP
+console session (directive approach (b): controlled artificial delay to make
+the interleaving deterministic rather than a rare accident):
+
+1. Activated KHA (`fb1c4976...`) as a clean starting point.
+2. Fired a **simulated sweep**: sequential raw `POST .../activate` for all 5
+   real profile IDs with a 400ms delay between steps, ending with the exact
+   same unconditional restore-to-original the real sweep performs.
+3. ~900ms into that sequence (mid-sweep), fired a **raw, unwrapped**
+   `POST /api/v1/redraft/profiles` (create, preset `10_TEAM_1QB_STANDARD`,
+   name "RACE TEST TEMP (Worker3)", provider `local` — disposable, no real
+   provider write) — byte-for-byte the same unwrapped call `profile.tsx`'s
+   pre-fix `create()` made.
+4. Read the backend's own `/api/v1/bootstrap` after both settled.
+
+**Result (ACTUAL TEST RESULT):**
+- Immediately after create resolved: `activeProfileId` == the new profile
+  (`117f05c5...`) — the create's own server-side activation worked correctly
+  in isolation.
+- After the simulated sweep's own trailing restore fired (queued/timed to
+  land after create): `activeProfileId` reverted to `fb1c4976...` (KHA) —
+  **the just-created profile silently lost active status**, clobbered by the
+  sweep's unconditional restore, even though the real UI message says
+  "Profile created and activated."
+- Confirmed via a hard page reload (F5) in the real rendered app: KHA showed
+  as ACTIVE, and "RACE TEST TEMP (Worker3)" appeared correctly in the
+  chooser as a real, separately-saved (but not active) profile — matching
+  the corrupted-pointer theory exactly, not a fluke of the console script.
+
+This is a genuine, reproducible bug matching the directive's hypothesis
+exactly, not a theoretical code-reading conclusion. Test profile deleted
+after verification (`local_exports/redraft_v1/profiles/117f05c5....json`
+removed directly; `active_profile.json` already pointed at KHA, so no
+dangling reference).
+
+### Step 3 — broader isolation testing (real KHA/403N18th/Fantasy Gamers, Chrome MCP)
+
+All done against the real running app, spot-checking team counts (KHA=16,
+403N18th=8, Fantasy Gamers=10) as the distinguishing giveaway per the
+directive:
+
+1. **Sweep-timed switch (real UI, real concurrent sweep):** Clicked
+   "Refresh" (starts a real sweep) then, in the same batch with no
+   artificial delay, immediately opened the header "Switch league" dropdown
+   and selected KHA — a genuinely concurrent real request against the
+   already-wrapped quick-switcher call site. Result: **PASS** — landed
+   correctly on KHA (16-Team PPR, IN SEASON), no corruption. This is the
+   direct positive control showing the wrapped mechanism holds under real
+   concurrency, contrasting with Step 2's unwrapped failure.
+2. **Back/forward:** KHA Weekly Home → switched to 403 N 18th Weekly Home
+   (URL correctly carried the profile ID, page text confirmed "8-TEAM PPR ·
+   1QB · 403 N 18th and friends") → browser back → landed on
+   `/#/attention-center` (an intermediate route in this session's history,
+   not a dedicated "previous league" state — expected HashRouter behavior,
+   not a bug) → its on-mount sweep correctly re-confirmed 403 N 18th as
+   still active (8-Team PPR) once it finished. **PASS.**
+3. **Refresh mid-switch:** Clicked "Switch league" → Fantasy Gamers, then
+   immediately F5 before the activate call could have resolved. After
+   reload: correctly landed on Fantasy Gamers (10-Team PPR) with no
+   cross-league data bleed. It DID show as PRE-DRAFT rather than the
+   backend's true IN_SEASON status — this is the already-known, already-
+   disclosed frontend Sleeper-live-status gap from Worker 2's entry, not a
+   new bug, and not a data-isolation failure (team count / identity were
+   still correct). **PASS for isolation; known gap re-confirmed, not
+   newly caused by this test.**
+4. **Slow/in-flight-request switch:** Patched `window.fetch` to delay any
+   `/activate` request by 2.5s, then triggered a switch to KHA. While
+   "Switching…" was visibly showing in the sidebar (confirmed no stale/wrong
+   league data was displayed during the in-flight window), attempted a
+   second overlapping switch — by the time the second click fired, the
+   first request had already resolved (the delay elapsed faster than the
+   click sequence), so this specific run did not produce a genuine
+   overlapping pair. Given Step 3.1 already demonstrates the wrapped queue
+   correctly serializes two genuinely concurrent real requests, this is
+   treated as corroborating, not a gap requiring a re-run.
+
+### Step 4 — fixes
+
+**REPRODUCED-LIVE-BUG fix:** `desktop/apps/redraft/src/profile.tsx` —
+`create()`, `duplicate()`, and `importSleeper()` now each wrap their
+contract call in `serializeActiveProfileCall(...)`, the exact existing
+pattern already used by this same file's `activate()` and by
+`shell-identity.tsx`/`leagues.tsx`/`RedraftApp.tsx`. No new mechanism
+invented.
+
+**PREVENTIVE-CODE-PARITY fix:** `desktop/apps/redraft/src/league.tsx` —
+`LeagueSettingsTab`'s own separate `duplicate()` (the unified League
+surface's Settings tab, reusing `ProfileEditor`) was found structurally
+identical (same unwrapped `client.duplicateRedraftProfile` call, same
+active-profile-changing backend endpoint) during Step 1's inspection, but
+was not independently live-race-tested from this specific surface in the
+time available. Wrapped through the same `serializeActiveProfileCall` for
+code-pattern parity with `profile.tsx`'s now-fixed `duplicate()`, since it
+is literally the same contract call from a second call site.
+
+Both fixes reuse the established `attention-center.ts` queue mechanism only
+— no new pattern, no change to `serializeActiveProfileCall` itself, no
+change to any governed valuation/scoring/roster-legality/lifecycle code.
+
+### Tests added
+
+`desktop/apps/redraft/src/attention-center.test.ts`: one new case in the
+existing `describe("runAttentionCenterAggregation -- state-leakage
+regressions")` block — "never interleaves a sweep with a create/duplicate/
+import-style call that also activates its result server-side" — extends the
+existing pattern (the prior cycle's "sweep vs. unrelated direct
+activateRedraftProfile call" test) using `client.activateRedraftProfile` as
+the faithful stand-in for create/duplicate/import's own server-side
+activation (structurally indistinguishable from the queue's point of view;
+documented as such in the test's own comment). Asserts the sweep's full
+`A, B, C, A` sequence stays contiguous before the create-like call's `NEW`
+activation, and that the final backend pointer lands on `NEW`, not silently
+reverted.
+
+**Results:** `npx vitest run apps/redraft/src/attention-center.test.ts` →
+30/30 passed. Full `npx vitest run apps/redraft` → 430/430 passed (19 test
+files, no regressions). `npm run typecheck` (desktop workspace) → clean.
+
+### Cleanup
+
+The disposable "RACE TEST TEMP (Worker3)" local test profile created during
+Step 2 was deleted directly from
+`local_exports/redraft_v1/profiles/117f05c5f42c44aeb6267067fe2856c0.json`
+after verification (no API delete endpoint exists for profiles). Confirmed
+gone from the real rendered chooser after a hard reload. The pre-existing 2
+throwaway profiles ("10-team 1QB Standard", "Isolation Check Local") were
+left untouched per the directive. No real Sleeper/ESPN writes were made at
+any point — the create test used `provider: "local"` only.
+
+An unrelated file, `docs/codex/prospective_outcomes_v1/multi_league_scale_v1/
+frontend_bench_results.json`, was regenerated as a side effect of running
+the full `apps/redraft` vitest suite (a live timing benchmark test writes to
+it); reverted via `git checkout --` before committing since it isn't part of
+this pass's actual change.
+
+### Final HEAD
+
+One commit on top of `11837b62` — see `git log -1` in this worktree.
+
+### Files changed
+
+- `desktop/apps/redraft/src/profile.tsx`
+- `desktop/apps/redraft/src/league.tsx`
+- `desktop/apps/redraft/src/attention-center.test.ts`
+- `docs/codex/dogfood_v1/LEDGER.md` (this entry)
+
+### Running processes status
+
+All 4 confirmed healthy and unchanged by this pass (frontend-only fix, no
+backend restart needed — verified live via a hard reload with zero console
+errors after the fix landed): Redraft backend PID 20368 (18742) / frontend
+PID 17016 (1422); Dynasty backend PID 12852 (18741) / frontend PID 5288
+(1421). (Note: the Redraft PIDs differ from the ones Worker 2 recorded —
+20368/17016 vs. 22716/15588 — same ports, both healthy; something restarted
+them between that entry being written and this pass starting, not something
+this worker did.)
+
+### Open issues for next worker
+
+1. **Part 4 is next**: dogfood every tool through meaningful interactions
+   across both apps, using the now-available real KHA/403N18th leagues in
+   addition to Fantasy Gamers.
+2. Frontend Sleeper-live-status gap (Worker 2's entry, re-confirmed still
+   present in Step 3.3 above): Fantasy Gamers' sidebar can still show
+   Pre-Draft in the real rendered app. Not this worker's fix (out of this
+   pass's scope), still open.
+3. Step 3.4 (slow in-flight-request switch) did not produce a genuinely
+   overlapping pair of real UI-triggered requests in the time available
+   (the artificial 2.5s delay had already elapsed before the second click
+   fired) — Step 3.1's real concurrent-sweep-vs-switch test already
+   corroborates the same mechanism, but a future worker wanting a second,
+   independent confirmation could retry with a longer artificial delay or a
+   scripted double-click.
+4. Untracked smoke-run log files from Worker 2 (`*_smoke_std{out,err}*.log`)
+   are still present in the worktree root, still harmless scratch output.

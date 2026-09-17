@@ -4,6 +4,7 @@ import { Button, EmptyState, ErrorState, PageHeader, Panel, StatusBadge } from "
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
+import { serializeActiveProfileCall } from "./attention-center";
 import { MyRosterContent } from "./in-season";
 import { leagueFormat, leagueIdentityFormat, providerFormat, scoringFormat } from "./league-context";
 import { formatCurrentWeek, rosterCompositionRows, scoringSummaryGroups, syncHealthLabel, syncHealthTone } from "./league-summary";
@@ -250,7 +251,16 @@ function LeagueSettingsTab({
     if (working) return;
     setWorking("duplicate"); setError(null); setMessage("");
     try {
-      onUpdate(await client.duplicateRedraftProfile(profile.profileId));
+      // Routed through the shared active-profile queue (attention-center.ts)
+      // -- same reasoning as `ProfilePage`'s own `create`/`duplicate`/
+      // `importSleeper` in profile.tsx: `duplicateRedraftProfile` activates
+      // its result server-side, targeting the same shared backend pointer a
+      // mid-flight Attention Center sweep can be racing against. This is a
+      // second, structurally identical unwrapped call site to the one
+      // live-reproduced in profile.tsx (dogfood_v1 cycle, Worker 3) --
+      // fixed preventively here for code-pattern parity, not independently
+      // live-reproduced from this exact surface.
+      onUpdate(await serializeActiveProfileCall(() => client.duplicateRedraftProfile(profile.profileId)));
       setMessage("Profile duplicated and activated. Its draft board starts empty.");
     } catch (reason) {
       setError(reason instanceof NwrApiError ? reason : new NwrApiError("Profile could not be duplicated."));

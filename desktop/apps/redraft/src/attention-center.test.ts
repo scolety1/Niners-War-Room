@@ -485,4 +485,40 @@ describe("runAttentionCenterAggregation -- state-leakage regressions", () => {
     expect(navigationBootstrap.activeProfileId).toBe("Z");
     expect(getCurrentActive()).toBe("Z");
   });
+
+  it("never interleaves a sweep with a create/duplicate/import-style call that also activates its result server-side (dogfood_v1 cycle, Worker 3: reproduced live against the real running app before this fix -- see profile.tsx's create/duplicate/importSleeper and league.tsx's Settings-tab duplicate)", async () => {
+    const { client, activateCalls, getCurrentActive } = buildFakeClient(["A", "B", "C", "NEW"]);
+    // `createRedraftProfile`/`duplicateRedraftProfile`/`importSleeperRedraftProfile`
+    // each activate their result as part of the SAME backend request/response
+    // (see desktop_api/server.py's POST /api/v1/redraft/profiles handler and
+    // desktop_facade.py's duplicate_redraft_profile/import_sleeper_redraft_profile,
+    // both of which call set_active_profile). From the shared queue's point of
+    // view that is indistinguishable from a direct `activateRedraftProfile`
+    // call, so `client.activateRedraftProfile("NEW")` stands in for it here --
+    // the real, live-reproduced bug was that profile.tsx's create/duplicate/
+    // importSleeper (and league.tsx's own duplicate) called their contract
+    // methods directly, entirely outside `serializeActiveProfileCall`, so a
+    // sweep's own unconditional restore-to-original could fire AFTER the
+    // create/duplicate/import's own activation and silently clobber the
+    // brand-new profile's active status back to whatever league was active
+    // before the sweep started -- reproduced live via a raw fetch race
+    // against a simulated sweep, confirmed by re-reading the backend's own
+    // bootstrap endpoint afterward.
+    const sweep = runAttentionCenterAggregation(
+      client,
+      [profile({ profileId: "A" }), profile({ profileId: "B" }), profile({ profileId: "C" })],
+      "A",
+    );
+    const createLikeCall = serializeActiveProfileCall(() => client.activateRedraftProfile("NEW"));
+    const [sweepResult, createBootstrap] = await Promise.all([sweep, createLikeCall]);
+    expect(activateCalls).toEqual(["A", "B", "C", "A", "NEW"]);
+    expect(sweepResult.restoredBootstrap?.activeProfileId).toBe("A");
+    // The create/duplicate/import call is honored LAST (queued strictly after
+    // the sweep's own restore), so the backend pointer ends on the new
+    // profile, matching what the owner actually just created/duplicated/
+    // imported -- never silently reverted to whatever was active before the
+    // sweep began.
+    expect(createBootstrap.activeProfileId).toBe("NEW");
+    expect(getCurrentActive()).toBe("NEW");
+  });
 });
