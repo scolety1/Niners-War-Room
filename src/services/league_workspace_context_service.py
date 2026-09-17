@@ -139,13 +139,28 @@ def build_league_workspace_context(
     matchup: Mapping[str, Any] | None = None,
     standings: Mapping[str, Any] | None = None,
     playoff: Mapping[str, Any] | None = None,
+    draft_last_activity_utc: str | None = None,
 ) -> LeagueWorkspaceContext:
+    # Real, already-fetched provider-native league status (Sleeper's own
+    # `league.status`), when the caller obtained one for the playoff-context
+    # read -- see league_lifecycle_service's module docstring for why this
+    # takes priority over local draft-board activity. `playoff` is only ever
+    # a real dict built by `sleeper_league_context_service.build_playoff_context`
+    # (or None); no new I/O happens here.
+    provider_status: str | None = None
+    if playoff is not None:
+        raw_status = playoff.get("leagueStatus")
+        if isinstance(raw_status, str) and raw_status.strip():
+            provider_status = raw_status
     lifecycle_resolution = resolve_league_lifecycle(
         archived=profile.archived,
         draft_configured=draft_configured,
         drafted_count=drafted_count,
         total_draft_picks=total_draft_picks,
         current_pick=current_pick,
+        provider_status=provider_status,
+        live_sync_capable=profile.provider == "sleeper" and bool(profile.provider_league_id),
+        draft_last_activity_utc=draft_last_activity_utc,
     )
     scoring_hash = compute_scoring_profile_hash(profile)
     roster_hash = compute_roster_state_hash(roster_player_ids)

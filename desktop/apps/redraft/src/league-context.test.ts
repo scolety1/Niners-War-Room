@@ -74,6 +74,50 @@ describe("resolveLeagueLifecycle", () => {
   });
 });
 
+// 2026-09-17 fix (owner report: a league with a real completed draft
+// showed PRE_DRAFT/"Draft Board Ready"). Real repro shapes: KHA High
+// Stakes (16 teams, 12 configured rounds, 157 real recorded picks) and
+// 403 N 18th and friends (8 teams, 16 configured rounds, 118 real recorded
+// picks) -- both real, complete, one-time ESPN imports with no live
+// re-sync path in this app (provider !== "sleeper", or a Sleeper profile
+// with no providerLeagueId).
+const khaEspn = {
+  ...fantasyGamers,
+  profileId: "profile-kha",
+  leagueName: "2026 KHA High Stakes League",
+  teamCount: 16,
+  draft: { ...fantasyGamers.draft, rounds: 12 },
+  provider: "espn" as const,
+  providerLeagueId: null,
+};
+
+describe("resolveLeagueLifecycle -- real provider-evidence fixes", () => {
+  it("is IN_SEASON for a stale, non-live-syncable partial draft (real KHA shape: 157 of 192)", () => {
+    const board157 = board({ configured: true, drafted: new Array(157).fill("p"), updatedAtUtc: "2026-09-03T04:28:00Z" });
+    const now = new Date("2026-09-17T00:00:00Z");
+    expect(resolveLeagueLifecycle(khaEspn, board157, now)).toBe("IN_SEASON");
+  });
+
+  it("is IN_SEASON for a stale, non-live-syncable partial draft (real 403 N 18th shape: 118 of 128)", () => {
+    const n18th = { ...khaEspn, profileId: "profile-403", teamCount: 8, draft: { ...khaEspn.draft, rounds: 16 } };
+    const board118 = board({ configured: true, drafted: new Array(118).fill("p"), updatedAtUtc: "2026-09-08T02:50:29Z" });
+    const now = new Date("2026-09-17T00:00:00Z");
+    expect(resolveLeagueLifecycle(n18th, board118, now)).toBe("IN_SEASON");
+  });
+
+  it("stays LIVE_DRAFT for a recently-active non-live-syncable partial draft (genuinely still draft night)", () => {
+    const recentBoard = board({ configured: true, drafted: new Array(40).fill("p"), updatedAtUtc: "2026-09-07T20:00:00Z" });
+    const now = new Date("2026-09-07T22:00:00Z");
+    expect(resolveLeagueLifecycle(khaEspn, recentBoard, now)).toBe("LIVE_DRAFT");
+  });
+
+  it("does not apply the staleness fallback to a live-syncable (Sleeper) partial draft", () => {
+    const staleSleeperBoard = board({ configured: true, drafted: new Array(42).fill("p"), updatedAtUtc: "2026-09-01T00:00:00Z" });
+    const now = new Date("2026-09-17T00:00:00Z");
+    expect(resolveLeagueLifecycle(fantasyGamers, staleSleeperBoard, now)).toBe("LIVE_DRAFT");
+  });
+});
+
 describe("resolveLeagueHomeSubpath", () => {
   it("sends a pre-draft or live-draft league to the Draft workspace", () => {
     expect(resolveLeagueHomeSubpath(fantasyGamers, null)).toBe("draft");

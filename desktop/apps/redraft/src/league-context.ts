@@ -23,18 +23,42 @@ export function leagueKeyFor(profile: Pick<LeagueProfile, "profileId">): LeagueK
   return profile.profileId;
 }
 
+// No realistic single real fantasy draft session runs anywhere near this
+// long -- mirrors `STALE_DRAFT_THRESHOLD` in
+// `src/services/league_lifecycle_service.py` (2026-09-17 fix).
+const STALE_DRAFT_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+
 /**
  * Mirrors `src/services/league_lifecycle_service.py::resolve_league_lifecycle`
- * byte-for-byte in spirit (same four inputs, same branch order) so a
- * routing decision never needs an extra network round trip while staying
- * consistent with the backend authority used everywhere else (e.g.
- * `/api/v1/redraft/league-workspace-context`). Real, disclosed
- * limitation shared with the backend: no live NFL-calendar signal exists
- * in this app, so OFFSEASON is only reachable via an archived profile.
+ * in spirit so a routing decision never needs an extra network round trip
+ * while staying consistent with the backend authority used elsewhere (e.g.
+ * `/api/v1/redraft/league-workspace-context`). Real, disclosed limitation
+ * shared with the backend: no live NFL-calendar signal exists in this app,
+ * so OFFSEASON is only reachable via an archived profile.
+ *
+ * 2026-09-17 fix (owner report: a league with a real completed draft showed
+ * PRE_DRAFT/"Draft Board Ready"): this local, bootstrap-only heuristic has
+ * no access to a live provider status call (bootstrap deliberately makes no
+ * live network reads -- see `redraft_bootstrap`'s cold/warm latency
+ * contract), so it can only close the real, reproduced ESPN-import half of
+ * the bug -- a real, complete, one-time import (no live re-sync path in
+ * this app: `provider !== "sleeper"`, or a Sleeper profile with no
+ * `providerLeagueId`) can legitimately finish with fewer local picks than
+ * `teamCount * draft.rounds` (K/DST rounds are commonly resolved outside
+ * the live pick stream for `practical_mode` leagues). Once such a board has
+ * recorded at least one real pick and gone quiet longer than any realistic
+ * single draft session, it is read as the final state of a completed
+ * draft rather than stuck in LIVE_DRAFT forever. A Sleeper league drafted
+ * entirely on Sleeper itself (never inside this app's own Draft Room) needs
+ * Sleeper's own live `league.status`, which only
+ * `/api/v1/redraft/league-workspace-context` fetches today -- that half is
+ * a known, separately-tracked gap for this purely-local heuristic (see
+ * `docs/codex/dogfood_v1/LEDGER.md`), not silently hidden.
  */
 export function resolveLeagueLifecycle(
-  profile: Pick<LeagueProfile, "archived" | "teamCount" | "draft">,
+  profile: Pick<LeagueProfile, "archived" | "teamCount" | "draft" | "provider" | "providerLeagueId">,
   draftBoard: DraftBoard | null | undefined,
+  now: Date = new Date(),
 ): LeagueLifecycle {
   if (profile.archived) return "OFFSEASON";
   const draftedCount = draftBoard?.drafted?.length ?? 0;
@@ -42,6 +66,13 @@ export function resolveLeagueLifecycle(
   if (!configured || draftedCount <= 0) return "PRE_DRAFT";
   const totalDraftPicks = Math.max(0, profile.teamCount) * Math.max(0, profile.draft.rounds);
   if (totalDraftPicks > 0 && draftedCount >= totalDraftPicks) return "IN_SEASON";
+  const liveSyncCapable = profile.provider === "sleeper" && Boolean(profile.providerLeagueId);
+  if (!liveSyncCapable && draftBoard?.updatedAtUtc) {
+    const lastActivity = Date.parse(draftBoard.updatedAtUtc);
+    if (!Number.isNaN(lastActivity) && now.getTime() - lastActivity >= STALE_DRAFT_THRESHOLD_MS) {
+      return "IN_SEASON";
+    }
+  }
   return "LIVE_DRAFT";
 }
 
@@ -69,7 +100,7 @@ export function legacyRedirectTarget(
 }
 
 export function resolveLeagueHomeSubpath(
-  profile: Pick<LeagueProfile, "archived" | "teamCount" | "draft">,
+  profile: Pick<LeagueProfile, "archived" | "teamCount" | "draft" | "provider" | "providerLeagueId">,
   draftBoard: DraftBoard | null | undefined,
   confirmedLifecycle?: LeagueLifecycle,
 ): string {

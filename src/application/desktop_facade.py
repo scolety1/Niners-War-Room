@@ -4673,6 +4673,7 @@ class DesktopBackendFacade:
         draft_configured = False
         drafted_count = 0
         current_pick: int | None = None
+        draft_last_activity_utc: str | None = None
         total_draft_picks = max(0, selected.team_count) * max(0, selected.draft.rounds)
         issues: list[str] = []
         try:
@@ -4686,6 +4687,14 @@ class DesktopBackendFacade:
             draft_configured = bool(draft_board_payload.get("configured"))
             drafted_count = len(draft_board_payload.get("drafted") or [])
             current_pick = draft_board_payload.get("currentPick")
+            # Real last-recorded-pick timestamp off the draft board itself
+            # (already computed, no new I/O) -- see league_lifecycle_service's
+            # 2026-09-17 fix for why a stale, non-live-syncable draft board
+            # (e.g. a one-time ESPN import) uses this to recognize a real
+            # completed draft instead of staying stuck in LIVE_DRAFT forever.
+            raw_updated_at = draft_board_payload.get("updatedAtUtc")
+            if isinstance(raw_updated_at, str) and raw_updated_at.strip():
+                draft_last_activity_utc = raw_updated_at
         except (FacadeError, OSError, RedraftPersistenceError, RedraftValidationError) as exc:
             issues.append(f"Draft board state could not be read: {exc}")
 
@@ -4793,6 +4802,7 @@ class DesktopBackendFacade:
             drafted_count=drafted_count,
             total_draft_picks=total_draft_picks,
             current_pick=current_pick,
+            draft_last_activity_utc=draft_last_activity_utc,
             current_week=current_week,
             roster_player_ids=roster_player_ids,
             sync_status=sync_status,

@@ -93,3 +93,38 @@ def test_build_league_workspace_context_in_season_with_live_roster():
     assert context.roster_state_hash is not None
     assert context.sync_status == "LIVE"
     assert context.issues == ("Current NFL week is not automatically sourced.",)
+
+
+def test_build_league_workspace_context_real_sleeper_league_status_overrides_empty_local_draft_board():
+    # 2026-09-17 fix, real "Fantasy Gamers" repro shape: a league drafted
+    # entirely on Sleeper itself has zero local draft-board activity, but
+    # `playoff.leagueStatus` (Sleeper's own real `league.status`, already
+    # fetched by `sleeper_league_context_service.build_playoff_context` for
+    # the SAME call) says the league is really in_season -- that must win
+    # over the local "no draft activity" default instead of leaving the
+    # league permanently stuck showing PRE_DRAFT.
+    context = build_league_workspace_context(
+        profile=replace(_profile(), provider="sleeper", provider_league_id="123"),
+        draft_configured=False, drafted_count=0,
+        total_draft_picks=180, current_pick=None, current_week=2,
+        roster_player_ids=["10", "20"], sync_status="LIVE",
+        sync_as_of="2026-09-17T00:00:00+00:00",
+        playoff={"leagueStatus": "in_season", "playoffWeekStart": 15},
+    )
+    assert context.lifecycle == "IN_SEASON"
+    assert "provider" in context.lifecycle_basis.lower()
+
+
+def test_build_league_workspace_context_stale_espn_partial_draft_is_in_season():
+    # 2026-09-17 fix, real "403 N 18th and friends" repro shape: a
+    # real, complete, one-time ESPN import (no live re-sync path in this
+    # app) with fewer local picks than the full configured round count and
+    # a stale last-activity timestamp.
+    context = build_league_workspace_context(
+        profile=replace(_profile(), provider="espn", provider_league_id=None),
+        draft_configured=True, drafted_count=118,
+        total_draft_picks=128, current_pick=None, current_week=None,
+        roster_player_ids=None, sync_status="NOT_APPLICABLE", sync_as_of=None,
+        draft_last_activity_utc="2000-01-01T00:00:00+00:00",
+    )
+    assert context.lifecycle == "IN_SEASON"

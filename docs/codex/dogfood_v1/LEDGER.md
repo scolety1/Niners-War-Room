@@ -298,3 +298,217 @@ correctly does not appear in `git status`).
    the pre-recovery snapshot from this pass — safe to leave in place
    (gitignored) or prune once the recovery is confirmed good live; not
    deleted automatically by this worker.
+
+## Worker 2 — servers restarted + real lifecycle-derivation fix (2026-09-17)
+
+### Part 1 — servers restarted, chooser confirmed live
+
+Both dev-server pairs killed by the owner's PC restart were brought back up
+the same way as the prior cycle (`desktop/scripts/nwr_release_gate_smoke.ps1
+-KeepRunning`, `NWR_REDRAFT_HOME` deliberately left unset so it resolves to
+this worktree's `local_exports/redraft_v1` per Worker 1's finding):
+
+- **Redraft**: backend `http://127.0.0.1:18742` (PID 22716 as of this
+  writing), frontend `http://127.0.0.1:1422` (PID 15588). Confirmed HTTP 200
+  on both directly (`curl`), plus a full smoke pass (cargo check, vite
+  build, real read-only Sleeper before/after byte-diff — 0 writes, every
+  surface endpoint 200).
+- **Dynasty**: backend `http://127.0.0.1:18741` (PID 12852), frontend
+  `http://127.0.0.1:1421` (PID 5288). Bootstrap 200/200 cold+warm, own
+  isolated data intact (no per-league profile store, as already established
+  by Worker 1 — unaffected by anything this worker did).
+
+**LIVE (Chrome MCP) verification of the chooser** at
+`http://127.0.0.1:1422/#/leagues`: all 5 profiles render with real content —
+"2026 KHA High Stakes League" (16-Team PPR, 1QB), "403 N 18th and friends"
+(8-Team PPR, 1QB), "Fantasy Gamers" (Sleeper, 10-Team PPR, Active), plus the
+2 throwaway local profiles. Zero console errors captured across the whole
+session (chooser load, 2 league activations, a hard page reload).
+
+### Part 2 — lifecycle-derivation bug: real, and NOT fixed by data recovery alone
+
+**Tested live first, as directed.** Activated KHA and 403 N 18th via the
+real `/api/v1/redraft/profiles/{id}/activate` + `/api/v1/redraft/league-
+workspace-context` endpoints (dev token, same as the smoke script uses).
+Recovering the real draft-board data (Worker 1) *did* clear the very first
+`PRE_DRAFT` branch (`draft_configured`/`drafted_count` are no longer
+0/false) — but both leagues then resolved to **`LIVE_DRAFT`**, not
+`IN_SEASON`. Still wrong, just a different wrong state. A code fix was
+required, exactly as the owner suspected.
+
+**Root cause 1 (ESPN leagues, the directive's explicit target).**
+`desktop_facade.py`'s `redraft_league_workspace_context` computes
+`total_draft_picks = team_count * draft.rounds` and requires
+`drafted_count >= total_draft_picks` for `IN_SEASON`. Inspected the real
+recovered draft-board JSON directly:
+- KHA: 157 real picks recorded, but `team_count(16) * rounds(12) = 192`.
+  Position breakdown of the 157 real picks: **zero K, zero DST** picks
+  anywhere (`{'RB': 45, 'WR': 65, 'TE': 25, 'QB': 22}`) — K/DST were never
+  part of this league's live pick stream at all (consistent with the
+  already-known `practical_mode` K/DST-outside-the-draft pattern).
+- 403 N 18th: 118 real picks recorded vs `8 * 16 = 128` configured; K/DST
+  *do* appear here (6 of 8 teams each) but the draft still ends 10 picks
+  short of the full configured total.
+- Neither profile has any live ESPN re-sync path in this codebase at all
+  (confirmed by search: no ESPN service exists anywhere in `src/services`,
+  and `provider_league_id` is `null` for both) — these are one-time,
+  by-hand-recorded historical imports. Once a board like this goes quiet, no
+  further picks are ever coming, so an exact-count check can get stuck in
+  `LIVE_DRAFT` forever.
+
+**Root cause 2 (found beyond the explicit ask, fixed because it's the same
+root pattern and nearly free — data already fetched).** Activated Fantasy
+Gamers (real Sleeper league, genuinely mid-season: week 2, real standings,
+real matchups, real playoff bracket) via the same endpoint and found it
+**also** resolves `PRE_DRAFT`, with basis "No draft board activity has been
+recorded for this league yet." This is a real, live-reproduced instance of
+the owner's own general diagnosis ("absent history produces PRE_DRAFT") —
+Fantasy Gamers was drafted on Sleeper's own platform, never inside this
+app's Draft Room, so it has zero local draft-board rows and always will.
+`desktop_facade.py` already fetches Sleeper's real, provider-native
+`league.status` (`pre_draft`/`drafting`/`in_season`/`complete`) for the
+playoff-context read (`sleeper_league_context_service.build_playoff_context`
+-> `leagueStatus`) — it was just never plumbed into lifecycle resolution.
+
+### Fix
+
+**Backend** (`src/services/league_lifecycle_service.py`): `resolve_league_
+lifecycle` gained two additive, keyword-only, default-off parameters (every
+existing call site and test is byte-for-byte unaffected):
+- `provider_status: str | None` — when recognized
+  (`pre_draft`/`drafting`/`in_season`/`complete`), takes priority over local
+  draft-board signals immediately after the `archived` check.
+- `live_sync_capable: bool` + `draft_last_activity_utc: str | None` (+
+  injectable `now_utc` for tests) — when `live_sync_capable=False` (no live
+  re-sync path for this provider) and the draft board has gone quiet for
+  `STALE_DRAFT_THRESHOLD` (24h — no realistic single real draft session
+  runs anywhere near that long) with at least one real pick recorded,
+  resolves `IN_SEASON` instead of staying stuck in `LIVE_DRAFT`.
+
+Neither fix manufactures picks or hardcodes any league to `IN_SEASON`: a
+genuinely `PRE_DRAFT` league (no provider status, zero local picks) still
+resolves `PRE_DRAFT`; a genuinely fresh/active `LIVE_DRAFT` (recent
+activity, or a live-syncable provider) still resolves `LIVE_DRAFT` — see
+the new "recent activity stays LIVE_DRAFT" and "live-syncable stays
+unaffected by staleness" tests.
+
+Wired through `src/services/league_workspace_context_service.py`
+(`build_league_workspace_context` derives `provider_status` from the
+already-passed `playoff` mapping's `leagueStatus` field — zero new I/O) and
+`src/application/desktop_facade.py` (`redraft_league_workspace_context` now
+captures `draft_board_payload["updatedAtUtc"]` into `draft_last_activity_
+utc` and passes it through; `live_sync_capable` is computed as
+`profile.provider == "sleeper" and bool(profile.provider_league_id)`, the
+exact same condition the function already uses to decide whether to attempt
+live Sleeper reads at all).
+
+**Frontend** (`desktop/apps/redraft/src/league-context.ts`):
+`resolveLeagueLifecycle(profile, draftBoard)` — the function RedraftApp.tsx
+/ in-season.tsx / shell-identity.tsx / leagues.tsx actually use for
+routing/labels/nav (NOT the backend `/league-workspace-context` endpoint,
+which only `attention-center.ts` calls) — gained the SAME staleness
+fallback using data already present in the bootstrap payload
+(`draftBoard.updatedAtUtc`, `profile.provider`/`providerLeagueId`, no new
+network call). This fixes the ESPN half (KHA, 403 N 18th) live, in the
+actual rendered app. Added an optional `now: Date` parameter (default
+`new Date()`) purely for test injectability.
+
+**Known, disclosed, NOT fixed in this pass:** the frontend's local
+heuristic has no access to Sleeper's live `league.status` (bootstrap
+deliberately makes zero live network calls, by design, for latency —
+confirmed via the smoke script's own cold/warm bootstrap timing, ~280ms vs.
+~900ms+ for `league-workspace-context`, which does several live Sleeper
+reads). So Fantasy Gamers' sidebar in the actual running app still shows
+"Pre-Draft" today, even though the BACKEND `/league-workspace-context`
+endpoint (and therefore Attention Center, which consumes it) now correctly
+reports `IN_SEASON` for it. Closing this fully would mean either accepting
+a new live network call on the league-open/nav-render hot path, or caching
+a confirmed lifecycle value from a prior `league-workspace-context` call —
+both are real architecture decisions bigger than this bounded lifecycle-
+derivation fix; flagging for the next worker/owner rather than guessing.
+
+### Live verification (Chrome MCP, not inferred)
+
+Restarted the Redraft backend process to load the new code (killed old PID,
+same smoke-script pattern), re-ran the full smoke pass (all green), then in
+the real rendered browser:
+- Activated **KHA**: sidebar badge changed from (pre-fix) `PRE-DRAFT` to
+  **`IN SEASON`**; landed on **Weekly Home**, not Draft Room; nav
+  reordered to the in-season set (Home/Lineup/Improve Team/Trades/Players/
+  Cheat Sheet/League/Attention Center — Draft Room item gone, as designed).
+- Activated **403 N 18th and friends**: same result, **`IN SEASON`**,
+  landed on Weekly Home.
+- Hard page reload (F5) on 403 N 18th's Weekly Home: lifecycle stayed
+  `IN SEASON`, stayed on Weekly Home — refresh behavior is stable, not a
+  one-time fluke of the activation call.
+- Zero console errors across the whole session.
+- The top-bar "DRAFT BOARD READY" chip is a SEPARATE, pre-existing,
+  lifecycle-independent indicator (`data.status.ready`, the governed
+  projection-snapshot pipeline's own readiness, shown identically for every
+  league) — inspected `RedraftApp.tsx` to confirm this before assuming it
+  was part of the same bug; it is unrelated and intentionally left alone.
+
+### Tests added
+
+`tests/test_league_lifecycle_service.py`: 11 new cases (provider_status ->
+each of the 4 mapped lifecycles, an unrecognized value falling back safely,
+the real KHA/403-N-18th-shaped stale-partial-draft cases, a "recently
+active stays LIVE_DRAFT" case, a "live-syncable provider is NOT affected by
+staleness" case, and the 24h threshold boundary both sides). All pass (19/19
+in this file).
+
+`tests/test_league_workspace_context_service.py`: 2 new cases proving the
+facade-level wiring end-to-end (real Sleeper `playoff.leagueStatus` ->
+`IN_SEASON`; a stale ESPN-shaped partial draft -> `IN_SEASON`). All pass
+(10/10 in this file).
+
+`desktop/apps/redraft/src/league-context.test.ts`: 4 new cases mirroring
+the same real KHA/403-N-18th shapes, plus the "recent activity stays
+LIVE_DRAFT" and "Sleeper is unaffected by staleness" cases, for the
+frontend heuristic. All pass (26/26 in this file). `npm run typecheck`
+(desktop workspace) clean.
+
+Full command reference: `python -m pytest tests/test_league_lifecycle_
+service.py tests/test_league_workspace_context_service.py tests/test_league_
+workspace_context_sleeper_p1_1.py tests/test_desktop_facade_architecture_
+wiring.py` -> 42/42 passed. `cd desktop && npx vitest run apps/redraft/src/
+league-context.test.ts` -> 26/26 passed. `npm run typecheck` -> clean.
+
+### Final HEAD
+
+One commit on top of `7c80c8a5` — see `git log -1` in this worktree.
+
+### Files changed
+
+- `src/services/league_lifecycle_service.py`
+- `src/services/league_workspace_context_service.py`
+- `src/application/desktop_facade.py`
+- `desktop/apps/redraft/src/league-context.ts`
+- `tests/test_league_lifecycle_service.py`
+- `tests/test_league_workspace_context_service.py`
+- `desktop/apps/redraft/src/league-context.test.ts`
+- `docs/codex/dogfood_v1/LEDGER.md` (this entry)
+
+### Open issues for next worker
+
+1. **Part 3, as originally scoped**: league isolation race testing —
+   profile create/import/duplicate vs. Attention Center hypothesis. Not
+   started by this worker.
+2. Frontend Sleeper-live-status gap (see "Known, disclosed, NOT fixed"
+   above): Fantasy Gamers' sidebar still shows `Pre-Draft` in the real
+   rendered app despite the backend now being correct. A real, bounded,
+   separate follow-up: either accept a live network call on the hot path,
+   or thread a confirmed `league-workspace-context` lifecycle value through
+   `leagues.tsx`'s `activate()` / `RedraftApp.tsx`'s initial load and prefer
+   it via the existing (currently unused in the hot path)
+   `confirmedLifecycle` parameter on `resolveLeagueHomeSubpath`.
+3. Dev servers (all 4) are currently running — Redraft backend PID 22716 /
+   frontend PID 15588 (port 18742 / 1422), Dynasty backend PID 12852 /
+   frontend PID 5288 (port 18741 / 1421). Leave running for the next worker
+   unless a further backend code change requires another restart (same
+   pattern as this pass: kill the backend PID on the target port, rerun
+   `nwr_release_gate_smoke.ps1 -KeepRunning`).
+4. Untracked smoke-run log files (`*_smoke_std{out,err}*.log`) were left in
+   the worktree root by this pass (some still open/busy from the running
+   processes) — harmless scratch output, not part of the repo, safe to
+   delete once the servers are stopped.

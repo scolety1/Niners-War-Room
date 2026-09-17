@@ -1,4 +1,5 @@
-"""League lifecycle resolution (NWR pre-UI architecture pass, 2026-09-10).
+"""League lifecycle resolution (NWR pre-UI architecture pass, 2026-09-10;
+provider-evidence fix, dogfood v1 Worker 2, 2026-09-17).
 
 ONE authority for whether a league is PRE_DRAFT / LIVE_DRAFT / IN_SEASON /
 OFFSEASON. Before this module, no such concept existed anywhere in the
@@ -21,19 +22,93 @@ signal (no wrapper around Sleeper's `GET /v1/state/nfl` or equivalent
 exists anywhere in `src/services`, confirmed by search). OFFSEASON is
 therefore only reachable via an archived profile, not via calendar
 awareness -- a real gap, not silently hidden (see `DATA_AUTHORITY.md`).
+
+2026-09-17 fix (owner report: a league with a real completed draft showed
+PRE_DRAFT/"Draft Board Ready"): the original version above derived lifecycle
+ONLY from local draft-board pick counts. Two real, distinct provider-evidence
+gaps were found against real recovered league data (KHA High Stakes, 403 N
+18th and friends -- both real, complete ESPN-imported drafts; Fantasy
+Gamers -- a real Sleeper league drafted on Sleeper itself, never inside this
+app's own Draft Room):
+
+  1. A league whose real draft happened entirely on the provider's own
+     platform (e.g. Sleeper) never has ANY local draft-board activity here,
+     so it fell into the very first PRE_DRAFT branch forever, even deep
+     in-season with real standings/matchups. Sleeper's own `GET
+     /league/{id}` response already carries a real, provider-native
+     `status` field (`pre_draft` / `drafting` / `in_season` / `complete`)
+     that `desktop_facade.py` already fetches for the playoff-context read
+     (`sleeper_league_context_service.build_playoff_context`'s
+     `leagueStatus`) -- it was simply never plumbed into lifecycle
+     resolution. `provider_status` below is that real, already-fetched
+     value, now used as the authoritative signal whenever it is available
+     (it can only ever be more informed than a local pick count, since it
+     comes directly from the platform that ran the real draft).
+  2. A real, complete, one-time ESPN-imported draft can legitimately finish
+     with fewer local picks than `team_count * draft.rounds` (K/DST rounds
+     are commonly resolved outside the live pick stream for these
+     `practical_mode` leagues -- see NWR_OWNER_MOCK_QA_V1 -- and real draft
+     nights can end with a slightly asymmetric final round). This app has
+     no live re-sync path for ESPN at all (confirmed by search: no ESPN
+     service exists anywhere in `src/services`, `provider_league_id` is
+     always `null` for these profiles) -- once such a draft has recorded at
+     least one real pick and gone quiet for longer than any realistic
+     single draft session, no further picks are ever coming, so it is
+     treated as the final state of a completed draft instead of being stuck
+     in LIVE_DRAFT indefinitely. `draft_last_activity_utc` +
+     `live_sync_capable` below implement this, gated so a genuinely still-
+     live, actively-being-recorded draft (very recent activity) is
+     correctly left as LIVE_DRAFT.
+
+Neither fix manufactures picks or hardcodes any league to IN_SEASON: a
+genuinely PRE_DRAFT league (no provider status, no local picks) still
+resolves PRE_DRAFT, and a genuinely fresh/active LIVE_DRAFT still resolves
+LIVE_DRAFT.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 
 LIFECYCLE_STATES: tuple[str, ...] = ("PRE_DRAFT", "LIVE_DRAFT", "IN_SEASON", "OFFSEASON")
+
+# Sleeper's own real `league.status` values (https://docs.sleeper.com),
+# each mapped to the one LIFECYCLE_STATES entry describing the same real
+# state. Unknown/absent values simply fall through to the local
+# draft-board-derived logic below -- never a hard failure.
+_PROVIDER_STATUS_LIFECYCLE: dict[str, str] = {
+    "pre_draft": "PRE_DRAFT",
+    "drafting": "LIVE_DRAFT",
+    "in_season": "IN_SEASON",
+    "complete": "OFFSEASON",
+}
+
+# No realistic single real fantasy draft session runs anywhere near this
+# long. A provider with no live re-sync path (see module docstring, fix 2)
+# whose draft board has gone quiet for at least this long, with at least one
+# real pick already recorded, is being read as a finished historical import,
+# not an active draft.
+STALE_DRAFT_THRESHOLD = timedelta(hours=24)
 
 
 @dataclass(frozen=True)
 class LifecycleResolution:
     lifecycle: str
     basis: str
+
+
+def _staleness(last_activity_utc: str, now_utc: datetime | None) -> timedelta | None:
+    try:
+        parsed = datetime.fromisoformat(last_activity_utc.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    now = now_utc if now_utc is not None else datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    return now - parsed
 
 
 def resolve_league_lifecycle(
@@ -43,16 +118,46 @@ def resolve_league_lifecycle(
     drafted_count: int,
     total_draft_picks: int,
     current_pick: int | None,
+    provider_status: str | None = None,
+    live_sync_capable: bool = False,
+    draft_last_activity_utc: str | None = None,
+    now_utc: datetime | None = None,
 ) -> LifecycleResolution:
     """Resolve one of `LIFECYCLE_STATES` from real, already-computed draft
-    board signals. Never guesses from data this repo doesn't have (e.g. no
-    calendar/week inference) -- every branch cites the concrete signal it
-    used, returned in `basis` for the owner-facing honesty this pass
-    requires everywhere else.
+    board signals -- and, when available, real provider-native evidence that
+    is strictly more informed than a local pick count. Never guesses from
+    data this repo doesn't have (e.g. no calendar/week inference) -- every
+    branch cites the concrete signal it used, returned in `basis` for the
+    owner-facing honesty this pass requires everywhere else.
+
+    `provider_status`: a raw provider-native league status string (e.g.
+    Sleeper's `league.status`), when the caller already has one. Takes
+    priority over local draft-board signals when recognized, since it can
+    reflect a real draft that happened entirely outside this app.
+
+    `live_sync_capable`: True only when this profile's provider can still
+    receive new picks through this app going forward (Sleeper with a real
+    `provider_league_id`, as of this repo). False for a one-time historical
+    import (e.g. ESPN) with no live re-sync path.
+
+    `draft_last_activity_utc` / `now_utc`: the draft board's own real last-
+    updated timestamp, and (for tests) an injectable "now". Only consulted
+    when `live_sync_capable` is False and the exact-count completion check
+    above did not already resolve IN_SEASON.
     """
 
     if archived:
         return LifecycleResolution("OFFSEASON", "The league profile is archived.")
+
+    normalized_status = (provider_status or "").strip().lower()
+    if normalized_status in _PROVIDER_STATUS_LIFECYCLE:
+        return LifecycleResolution(
+            _PROVIDER_STATUS_LIFECYCLE[normalized_status],
+            f"The league provider reports real league status '{normalized_status}', which "
+            "takes priority over local draft-board activity (the real draft may have "
+            "happened entirely on the provider's own platform, never inside this app).",
+        )
+
     if not draft_configured or drafted_count <= 0:
         return LifecycleResolution(
             "PRE_DRAFT", "No draft board activity has been recorded for this league yet."
@@ -62,6 +167,17 @@ def resolve_league_lifecycle(
             "IN_SEASON",
             f"The draft board shows all {total_draft_picks} of {total_draft_picks} picks recorded.",
         )
+    if not live_sync_capable and draft_last_activity_utc:
+        staleness = _staleness(draft_last_activity_utc, now_utc)
+        if staleness is not None and staleness >= STALE_DRAFT_THRESHOLD:
+            return LifecycleResolution(
+                "IN_SEASON",
+                f"The draft board shows {drafted_count} of {total_draft_picks} picks recorded, "
+                "but this league's provider has no live draft-sync path in this app and no new "
+                f"pick has been recorded since {draft_last_activity_utc}; treated as the final "
+                "state of a completed draft (e.g. K/DST rounds resolved outside the live pick "
+                "stream) rather than still in progress.",
+            )
     if current_pick is not None:
         return LifecycleResolution(
             "LIVE_DRAFT",
