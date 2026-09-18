@@ -573,3 +573,346 @@ confirmed listening, untouched, not part of this pass's scope.
    after the backend service and persistence shape exist.
 
 ---
+
+## Worker 2 — Backend import + annotation service, persistence, facade wiring (2026-09-18)
+
+**Branch/worktree:** same as Worker 1, `C:\NWR\prospective-outcomes-v1`.
+Started at HEAD `678a81d2` (Worker 1's docs-only commit). Did not push, did
+not touch `main`, did not force anything. Real, live Sleeper GET calls
+made throughout (see below); zero writes to Sleeper, zero writes to the
+owner's real AppData, zero writes to the governed board CSVs, zero writes
+anywhere in `local_exports/` outside the new `dynasty_v1/` subtree
+(byte-diff-confirmed against Worker 1's own backup, see below).
+
+### Round-count ambiguity — real resolution (LIVE OBSERVATION)
+
+Re-fetched (not reused from Worker 1's scratch captures, per this pass's
+own instruction) `league/{id}/drafts` and, new this pass,
+`draft/{draft_id}/picks` for both real completed drafts. The real
+explanation, confirmed directly from live per-pick data:
+
+- `1344772856487108608` (24 rounds, 240 picks): round-1 pick is Christian
+  Watson, an established WR with `metadata.years_exp: "4"`. Across all 240
+  picks, **0% have `years_exp == "0"`** — zero real rookies. 24 rounds x
+  10 teams = 240 = exactly `len(roster_positions)` (this league's full
+  starter+bench slot count). This is the one-time **STARTUP draft**
+  (created earlier, `created: 1774981342946`).
+- `1353280212753723392` (5 rounds, 50 picks, this is `league.draft_id` /
+  matches `league.settings.draft_rounds`): round-1 pick is Jeremiyah Love,
+  a real 2026 rookie prospect, `years_exp: "0"`. **62% of all 50 picks
+  have `years_exp == "0"`** — real rookies. This is the recurring annual
+  **ROOKIE draft** (created later, `created: 1777009654754`).
+
+`_classify_draft` (in the new service) turns this real per-pick evidence
+into an honest `"startup" | "rookie" | "unknown"` label per draft (never a
+round-count-only guess): `rookie_fraction >= 0.5` → `"rookie"`;
+`rounds == len(roster_positions)` (with low rookie fraction) → `"startup"`;
+otherwise `"unknown"`. `resolve_round_count_baseline` then uses the
+uniquely-classified `"rookie"` draft's round count (5) as the baseline for
+projecting NOT-yet-drafted future seasons (2027+), explicitly excluding the
+one-time startup draft, and would fall back to the league's own
+currently-configured `settings.draft_rounds` — disclosed, not silent — if
+classification were ever ambiguous (zero or 2+ real "rookie" drafts
+found). For this league today the classified value (5) and the
+currently-configured value (5) agree; the disagreement-disclosure path is
+covered by a dedicated unit test using synthetic data since this league
+doesn't currently exercise it.
+
+### Pick-capital result — real, live-computed (LIVE OBSERVATION)
+
+`resolve_owned_pick_capital` against the real, freshly-fetched league
+state, for roster 7 (Niners, owner `1352768154031374336`):
+
+- **2026** (actual completed rookie draft, 5 rounds): **5 owned picks** —
+  kept own R2 and R5 (R1/R3/R4 traded away, matching Worker 1's finding
+  exactly), acquired roster 1's R2 and roster 2's R1 and R2 (three
+  distinct round-2 picks land on roster 7 this season — a real, correctly
+  representable multi-pick-per-round shape, not a bug).
+- **2027** (no draft yet → baseline projection, 5 rounds): **5 owned
+  picks** — no 2027 `traded_picks` record touches roster 7 at all in
+  either direction, so it owns exactly its own 5 rounds.
+- **2028** (no draft yet → baseline projection, 5 rounds): **6 owned
+  picks** — own 5 rounds plus roster 2's real traded-away 2028 R1.
+
+All matches Worker 1's own qualitative description of the real trade
+activity; this pass adds the exact, reconciled per-round accounting Worker
+1 flagged as still needing a real algorithm.
+
+### Service built
+
+New `src/services/dynasty_sleeper_league_service.py` (see its module
+docstring for the full design rationale):
+
+- `fetch_dynasty_league_snapshot(league_id, *, client=None, fetch_draft_picks=True) -> DynastyLeagueSnapshot`
+  — real GET-only fetch of `league/{id}`, `.../rosters`, `.../users`,
+  `.../traded_picks`, `.../drafts`, and (new vs. Worker 1's design)
+  `draft/{id}/picks` per draft for real-evidence classification. Reuses
+  `SleeperHttpClient` and `team_name_by_roster_id` unmodified. Stores
+  `scoring_settings`/`roster_positions` verbatim.
+- `resolve_round_count_baseline(drafts, *, configured_draft_rounds) -> RoundCountBaseline`
+  and the private `_classify_draft` — the real-evidence resolution above.
+- `resolve_owned_pick_capital(league_snapshot, *, seasons=None) -> dict[int, tuple[PickOwnership, ...]]`
+  — reconciles `traded_picks` deltas against a real-or-projected
+  per-season round count; never drops a malformed record silently (skips
+  with no crash); discloses `round_source` (`"actual_draft"` vs.
+  `"baseline_projection"`) per row.
+- `annotate_ownership(asset_rows, league_snapshot, *, my_owner_id=None) -> dict[str, dict]`
+  — pure join, keyed only by the governed board's own `asset_id` string
+  convention (`current:{sleeper_id}` direct join; `rookie:`/
+  `blocked-rookie:` always `UNRESOLVED` with a real, human-readable reason;
+  everything else, e.g. `pick:`/`future-pick:`, absent from the result,
+  never guessed). Deliberately does NOT depend on any resolved `player_id`
+  field from `owner_asset_evidence_service` — it parses the Sleeper ID
+  straight out of the `current:` asset-id prefix, which is more robust
+  since `dynasty_bootstrap`'s `rankings`/`rookies`/`assetOptions` payloads
+  are built from three different underlying frames that are not guaranteed
+  to carry an identically-resolved `player_id` column.
+- Persistence: `dynasty_league_store_root`, `save_league_profile`/
+  `load_league_profile`, `save_league_snapshot`/`load_latest_league_snapshot`,
+  and the orchestration `import_dynasty_league(league_id, root, *, client=None, my_owner_id=None, profile_id=None, seasons=None) -> DynastyLeagueImportResult`.
+
+Worker 1's persistence-location recommendation (worktree-isolated
+`local_exports/dynasty_v1/`, not the shared `C:\NWR_SHARED_DATA` workspace)
+was confirmed sound during implementation and used as designed — no
+problem found with it. One concrete decision made during implementation
+that Worker 1 left open: **`profile_id` defaults to the Sleeper
+`league_id` itself** (not a generated UUID) — simplest possible lookup
+key for "one profile per real league," matching how
+`import_dynasty_sleeper_league`/`load_dynasty_league_profile` are used
+from the facade; a future worker can add multi-profile-per-league support
+later if the owner ever wants two saved configurations of the same
+league, but nothing here blocks that (the `profile_id` override parameter
+already exists end-to-end).
+
+### Persistence — exact paths, confirmed live
+
+- `local_exports/dynasty_v1/league_profiles/<profile_id>.json` — stable
+  league config (name/season/num_teams/scoring_settings verbatim/
+  roster_positions verbatim/taxi/reserve/etc., `my_owner_id`/`my_roster_id`,
+  `created_at_utc`/`updated_at_utc`).
+- `local_exports/dynasty_v1/league_snapshots/<profile_id>/<UTC timestamp>.json`
+  — one file per import/resync (`utc_snapshot_stamp()`, same filename
+  convention Redraft's own Sleeper snapshot tooling uses), holding the full
+  fetched roster/draft/traded-pick state plus the computed pick-capital
+  table. `load_latest_league_snapshot` picks the lexicographically-last
+  (== chronologically-last) file.
+- Both written via the same atomic-write convention Redraft's
+  `redraft_engine_v1_service._atomic_json` established (temp file +
+  `os.replace`, `indent=2, sort_keys=True`) — the CONVENTION was reused,
+  not Redraft's code (a fresh, small `_atomic_json` lives in the new
+  module, per the dispatch's explicit instruction).
+- **Real, live import performed this pass** against league
+  `1344772855908290560`: `local_exports/dynasty_v1/league_profiles/1344772855908290560.json`
+  and one real snapshot file now exist in this worktree
+  (`local_exports/` is `.gitignore`d, same as Redraft's own profile store,
+  so these are untracked, exactly as intended). Round-trip verified
+  byte-for-byte equal (`dataclasses.asdict` comparison, see live
+  verification below).
+
+### Facade wiring
+
+`src/application/desktop_facade.py`:
+
+- Constructor gained `dynasty_league_root: str | Path | None = None`
+  (defaults to `dynasty_league_store_root(self.repo_root)`, i.e.
+  `<repo_root>/local_exports/dynasty_v1`, overridable via
+  `NWR_DYNASTY_LEAGUE_HOME` exactly like Redraft's own `NWR_REDRAFT_HOME`
+  pattern).
+- New: `import_dynasty_sleeper_league(league_id, *, my_owner_id=None, profile_id=None, seasons=None, client=None) -> FacadePayload`
+  — dynasty-mode-only, calls `dynasty_sleeper_league_service.import_dynasty_league`
+  end to end (fetch → resolve pick capital → persist), returns a summary
+  payload (league name/season/team count/round-count-baseline disclosure/
+  my real pick-capital-by-season counts/snapshot path).
+- New: `load_dynasty_league_profile(profile_id) -> FacadePayload` — reads
+  the persisted profile + latest snapshot back out (used by the three
+  annotated methods below, and directly callable on its own).
+- `dynasty_bootstrap`, `dynasty_workspace`, `dynasty_asset` each gained an
+  **optional, keyword-only** `league_profile_id: str | None = None`.
+  Structural guarantee, not just a tested behavior: every pre-existing line
+  of each method's body is UNCHANGED (verify via `git diff`); the new
+  parameter is checked only in one `if league_profile_id is None: return
+  payload` guard added at the very end, right before the original
+  `return`. When `None` (the default), the exact same `FacadePayload`
+  object that existed before this pass is returned — no new code path
+  executes at all. When set, `_annotate_dynasty_bootstrap_payload`/
+  `_annotate_dynasty_workspace_payload`/`_annotate_dynasty_asset_payload`
+  load the persisted league state, call `annotate_ownership` (from the new
+  service, unchanged), and merge an additive `"ownership"` key onto each
+  row that has a resolvable asset id (`rankings`/`rookies`/`assetOptions`
+  for bootstrap, `personalBoard` for workspace, the asset payload itself
+  for `dynasty_asset`) plus a top-level `"dynastyLeague"` context block —
+  every pre-existing field on every row is passed through via `dict(row)`,
+  never rebuilt.
+- **Regression test proving byte-identical output when omitted**
+  (`tests/test_dynasty_league_import_facade_wiring.py`): `json.dumps(...,
+  sort_keys=True)` equality between the no-argument call and the explicit
+  `league_profile_id=None` call, for all three methods, run against this
+  repo's REAL governed board (`repo_root=REPO_ROOT`, matching the existing
+  `test_desktop_facade_architecture_wiring.py` convention) — **passes**.
+  Also added a call-ordering test
+  (`test_repeated_bootstrap_calls_without_annotation_stay_stable`) proving
+  an annotated call sandwiched between two unannotated calls does not leak
+  any mutation into the shared cached `_OwnerSnapshot` — **passes**
+  (confirms the annotation path only ever builds new dicts, never mutates
+  `snapshot.evidence.rows`/dataframes in place).
+
+### Live verification (LIVE OBSERVATION, real Sleeper API, this pass)
+
+Real GET calls made directly against `1344772855908290560` (not the fake
+client used by the pytest suite): `league/{id}`, `.../rosters`,
+`.../users`, `.../traded_picks`, `.../drafts`, and `draft/{id}/picks` for
+both real drafts (240 + 50 real pick records fetched). Confirmed, matching
+Worker 1's own live findings exactly: league name "Las Vegas Enginerds",
+`rec: 0.0`, `roster_positions` length 24 / no DST slot, `taxi_slots: 0`,
+`reserve_slots: 2`, roster 7 `owner_id "1352768154031374336"` / team name
+"Niners" / `reserve: ["11638", "12484"]`. New this pass: real per-pick
+`years_exp` evidence for both drafts (see round-count section above), and
+the real reconciled 2026/2027/2028 pick-capital table for roster 7.
+`annotate_ownership` exercised against the real fetched roster: Puka Nacua
+(`current:9493`) currently shows real roster 9 ("Rocky Mountain High"),
+**not** roster 7/"Niners" — real, live season drift versus both the
+10-week-stale frozen board snapshot Worker 1 found AND versus whatever
+roster he sat on at Worker 1's own capture time; disclosed as a real,
+expected data-freshness fact, not a bug. 199 of the 240 governed
+current-player board rows resolved to a real roster somewhere in this
+10-team league; 41 are real free agents relative to this specific league
+(expected — the governed board is a league-agnostic 240-player universe).
+
+**Zero-writes verification, two methods:**
+1. Code inspection (same as Worker 1): `SleeperHttpClient.get_json` is
+   GET-only by construction, unmodified, confirmed by re-reading the class
+   this pass.
+2. Real before/after byte-diff of `local_exports/` (the concrete
+   requirement this pass's dispatch asked for, beyond Worker 1's own
+   read-only investigation): `diff -rq --exclude=dynasty_v1 local_exports
+   local_exports.backup-20260918T230905Z` returned **zero differences** —
+   nothing outside the new, intentional `dynasty_v1/` subtree changed
+   anywhere in `local_exports/` during this entire pass, including the
+   real live import.
+
+### Tests added
+
+`tests/test_dynasty_sleeper_league_service.py` (16 tests, all pass, no
+network access — every test builds synthetic Sleeper-shaped data or a
+fake GET-only client):
+- `annotate_ownership`: current-player match on my roster, current-player
+  match on an opponent roster (with real slot-status resolution:
+  starter/bench/reserve), current-player matching nobody (free agent),
+  rookie asset always `UNRESOLVED` with a non-empty reason (both `rookie:`
+  and `blocked-rookie:` prefixes), pick/future-pick assets never annotated,
+  camelCase `assetId` key accepted, and an explicit proof it never returns
+  any score/rank/value-shaped key.
+- `resolve_round_count_baseline`: real startup-vs-rookie classification
+  pattern, an agreement case, a disagreement-with-configured-rounds
+  disclosure case, and an ambiguous-fallback disclosure case.
+- `fetch_dynasty_league_snapshot` end-to-end classification (fake client
+  returning 240 veteran-shaped picks + 50 rookie-shaped picks, reproducing
+  this league's exact real shape) — proves the classification pipeline
+  reaches the correct conclusion from raw pick data, not just when
+  classification is hand-supplied to `resolve_round_count_baseline`
+  directly.
+- `resolve_owned_pick_capital`: the real 3-roster trade shape (including
+  the real multi-pick-per-round edge case this league's own live data
+  actually has), and a malformed-record-is-skipped-not-fatal case.
+- Persistence round-trip (profile + snapshot + pick capital), a
+  missing-profile error case, and a full `import_dynasty_league`
+  orchestration test against a fake client.
+
+`tests/test_dynasty_league_import_facade_wiring.py` (10 tests, all pass,
+run against this repo's REAL governed board via `repo_root=REPO_ROOT`):
+byte-identical-when-omitted for all three annotated methods (the
+correctness-critical guarantee this whole feature depends on), a
+call-ordering/no-mutation-leak test, real import + persistence via the
+facade, annotated bootstrap actually adding ownership (spot-checked that
+every OTHER field on the annotated row equals the unannotated row's same
+field, proving pure addition), annotated single-asset `dynasty_asset`,
+rejecting an unknown `league_profile_id` (`FacadeError` /
+`DYNASTY_LEAGUE_PROFILE_NOT_FOUND`), mode-gating
+(`import_dynasty_sleeper_league` unavailable outside dynasty mode, same
+`MODE_ROUTE_UNAVAILABLE` convention every other mode-gated method uses),
+and `load_dynasty_league_profile` round-tripping persisted state.
+
+**Full-suite regression check:** ran the pre-existing
+`test_desktop_facade_architecture_wiring.py` (all pass),
+`test_status_override_intake_facade.py` (all pass), and
+`test_desktop_application_api.py` (4 pre-existing failures, confirmed via
+`git stash` to be identical on the untouched Worker-1 HEAD — unrelated to
+this pass: 2 are date-freshness/model-drift failures, 1 is a real
+pre-existing `ast`-based import-hygiene check unrelated to Dynasty, 1 is a
+`redraft_bootstrap` data-freshness gap already documented in this branch's
+own known baseline). A `-k dynasty` sweep of the whole `tests/` tree found
+3 further pre-existing, unrelated failures (all date/freshness-window
+drift in `model_v4_rotowire_dynasty_candidate_service`/
+`rookie_veteran_dynasty_bridge_service`, confirmed via `git stash`
+identical on untouched HEAD) — consistent with this worktree's own
+documented ~323-pre-existing-failure baseline (see
+`nwr-full-suite-preexisting-failures` in project memory); zero new
+failures introduced by this pass.
+
+### Dynasty processes status
+
+Confirmed running and untouched throughout (LIVE OBSERVATION): frontend
+`http://127.0.0.1:1421/` (PID 5288, `GET /` → `200`) and backend
+`http://127.0.0.1:18741/` (PID 12852, `GET /api/v1/bootstrap` → `401`,
+same healthy contract-shaped response prior workers documented) — same
+PIDs Worker 1 recorded, confirmed still alive, not restarted. Note for
+Worker 3: these long-running dev processes loaded `desktop_facade.py`
+before this pass's edits landed, so this pass's new backend code is **not
+yet live** in that running process — a restart (or the dev server's own
+hot-reload, if configured) will be needed before Worker 3 can exercise the
+new facade methods through the actual running HTTP API rather than via
+direct Python import, as this pass did.
+
+### Files changed
+
+- `src/services/dynasty_sleeper_league_service.py` (new).
+- `src/application/desktop_facade.py` (modified — see Facade wiring above;
+  every pre-existing line before each method's final `return` is
+  unchanged, confirmed via the byte-identical regression tests).
+- `tests/test_dynasty_sleeper_league_service.py` (new).
+- `tests/test_dynasty_league_import_facade_wiring.py` (new).
+- `docs/codex/dynasty_league_import_v1/LEDGER.md` (this section).
+- `local_exports/dynasty_v1/` (new, untracked/`.gitignore`d, real live
+  import data — see Persistence above).
+
+### Open issues for Worker 3 (frontend wiring)
+
+1. **No frontend surface reads any of this yet** — `league_profile_id` is
+   never passed from any UI today; Dynasty Home/ownership display/Compare/
+   Trade Decision Lab wiring is entirely this next worker's scope, exactly
+   as the dispatch specified.
+2. **Dev processes need a restart** (see Dynasty processes status above)
+   before the new facade methods are reachable through the live HTTP API
+   at `127.0.0.1:18741` — confirm the current hot-reload behavior before
+   assuming a restart is required.
+3. **Rookie ownership is `UNRESOLVED` by design, not a bug to silently
+   paper over** — Worker 3's UI should render this as an honest "ownership
+   unknown for this rookie asset" state (per the original dispatch), not
+   omit the field or guess a value. No rookie identity crosswalk exists
+   yet; building one is out of scope for both this pass and (per the
+   dispatch) Worker 3's frontend pass.
+4. **`import_dynasty_sleeper_league` is not yet exposed over the HTTP API
+   layer** (only as a Python facade method) — Worker 3 will need to find
+   or add the corresponding HTTP route in whatever wraps
+   `DesktopBackendFacade` for the Dynasty desktop app (out of scope for
+   this backend-only pass; not investigated this pass beyond confirming
+   the facade method itself works end-to-end via direct Python calls).
+5. **Multi-Sleeper-account co-owner on roster 7** (`scolety`, found by
+   Worker 1) remains unresolved/unused — irrelevant to this read-only
+   import, still worth the owner's awareness for any future write-capable
+   feature.
+6. **The real 2026 pick-capital table (5 owned picks for roster 7) reflects
+   an ALREADY-COMPLETED draft** — i.e. this is historical fact (who
+   exercised which pick), not upcoming capital to plan around; Worker 3
+   should present 2026 differently from 2027/2028 (real future capital) in
+   any UI that surfaces this, rather than implying all three seasons are
+   equally "upcoming."
+7. **`local_exports/dynasty_v1/` now contains one real, live-imported
+   league profile+snapshot** (league `1344772855908290560`) from this
+   pass's live verification — safe to keep/reuse for Worker 3's frontend
+   testing, or re-import fresh at any time (`import_dynasty_league` is
+   idempotent-safe: it always fetches live and writes a new timestamped
+   snapshot file; the profile file is updated in place, preserving
+   `created_at_utc`).
+
+---

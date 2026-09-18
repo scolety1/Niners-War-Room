@@ -276,6 +276,15 @@ from src.services.rookie_veteran_dynasty_bridge_service import (
     immediate_production_payload,
     load_redraft_bridge_context,
 )
+from src.services.dynasty_sleeper_league_service import (
+    DynastyLeagueFetchError,
+    DynastyLeaguePersistenceError,
+    annotate_ownership,
+    dynasty_league_store_root,
+    import_dynasty_league,
+    load_latest_league_snapshot,
+    load_league_profile as load_dynasty_league_profile_document,
+)
 from src.services.sleeper_import_service import SleeperHttpClient
 from src.services.sleeper_player_catalog_cache import get_sleeper_player_catalog
 from src.services.sleeper_league_context_service import (
@@ -502,6 +511,7 @@ class DesktopBackendFacade:
         redraft_root: str | Path | None = None,
         workspace_root: str | Path | None = None,
         legacy_workspace_root: str | Path | None = None,
+        dynasty_league_root: str | Path | None = None,
     ) -> None:
         normalized_mode = str(mode).strip().lower()
         if normalized_mode not in MODES:
@@ -520,6 +530,15 @@ class DesktopBackendFacade:
             Path(legacy_workspace_root).expanduser().resolve()
             if legacy_workspace_root is not None
             else DEFAULT_WORKSPACE_ROOT
+        )
+        # Dynasty League Import V1 (Worker 2): worktree-isolated, per Redraft's
+        # own profile-store precedent -- deliberately NOT
+        # `DEFAULT_WORKSPACE_ROOT` (the shared, cross-worktree owner-annotation
+        # path), see `dynasty_sleeper_league_service`'s module docstring.
+        self.dynasty_league_root = (
+            Path(dynasty_league_root).expanduser().resolve()
+            if dynasty_league_root is not None
+            else dynasty_league_store_root(self.repo_root)
         )
         self._snapshot_lock = threading.RLock()
         self._redraft_seed_lock = threading.Lock()
@@ -563,7 +582,7 @@ class DesktopBackendFacade:
             return self.dynasty_bootstrap()
         return self.redraft_bootstrap()
 
-    def dynasty_bootstrap(self) -> FacadePayload:
+    def dynasty_bootstrap(self, *, league_profile_id: str | None = None) -> FacadePayload:
         self._require_mode("dynasty")
         snapshot = self._owner_snapshot()
         warnings = list(snapshot.warnings)
@@ -719,13 +738,19 @@ class DesktopBackendFacade:
                 },
             ],
         }
-        return FacadePayload(data=data, warnings=normalized_warnings)
+        payload = FacadePayload(data=data, warnings=normalized_warnings)
+        if league_profile_id is None:
+            return payload
+        return self._annotate_dynasty_bootstrap_payload(payload, league_profile_id)
 
-    def dynasty_workspace(self) -> FacadePayload:
+    def dynasty_workspace(self, *, league_profile_id: str | None = None) -> FacadePayload:
         """Return owner-only overlays without changing any analytical authority."""
 
         self._require_mode("dynasty")
-        return FacadePayload(data=self._dynasty_workspace_payload())
+        payload = FacadePayload(data=self._dynasty_workspace_payload())
+        if league_profile_id is None:
+            return payload
+        return self._annotate_dynasty_workspace_payload(payload, league_profile_id)
 
     def save_dynasty_personal_entry(
         self,
@@ -1231,7 +1256,9 @@ class DesktopBackendFacade:
             }
         )
 
-    def dynasty_asset(self, asset_id: str) -> FacadePayload:
+    def dynasty_asset(
+        self, asset_id: str, *, league_profile_id: str | None = None
+    ) -> FacadePayload:
         self._require_mode("dynasty")
         normalized = self._asset_id(asset_id)
         snapshot = self._owner_snapshot()
@@ -1268,7 +1295,7 @@ class DesktopBackendFacade:
             row,
             load_redraft_bridge_context(self.repo_root),
         )
-        return FacadePayload(
+        payload = FacadePayload(
             data=self._player_detail_payload(
                 row,
                 outcomes=outcomes,
@@ -1277,6 +1304,9 @@ class DesktopBackendFacade:
                 immediate_production=immediate_production_payload(immediate_production),
             )
         )
+        if league_profile_id is None:
+            return payload
+        return self._annotate_dynasty_asset_payload(payload, league_profile_id)
 
     def compare_dynasty_assets(self, asset_ids: Sequence[str]) -> FacadePayload:
         self._require_mode("dynasty")
@@ -6663,6 +6693,230 @@ class DesktopBackendFacade:
                 "sleeperSync": summary,
             }
         )
+
+    # -- Dynasty League Import V1 (Worker 2) -------------------------------
+    # These methods ANNOTATE an already-built Dynasty payload with live
+    # Sleeper league ownership context; they never touch
+    # `governed_asset_registry_service.py`, `CURRENT_BOARD_SHA256`, or any
+    # score/rank/value field. `dynasty_bootstrap`/`dynasty_workspace`/
+    # `dynasty_asset` only reach this code when the caller explicitly opts
+    # in via `league_profile_id` -- when omitted (the default), none of
+    # this runs and those three methods return byte-identical output to
+    # before this feature existed (see
+    # `tests/test_dynasty_league_import_facade_wiring.py`).
+
+    def import_dynasty_sleeper_league(
+        self,
+        league_id: str,
+        *,
+        my_owner_id: str | None = None,
+        profile_id: str | None = None,
+        seasons: Sequence[str] | None = None,
+        client: SleeperHttpClient | None = None,
+    ) -> FacadePayload:
+        """Real, read-only (GET-only) Sleeper fetch -> real pick-capital
+        reconciliation -> persist. Available in dynasty mode only. Never
+        writes to the owner's real AppData or to any governed board path --
+        persists exclusively under `self.dynasty_league_root`
+        (`local_exports/dynasty_v1/` by default, worktree-isolated)."""
+
+        self._require_mode("dynasty")
+        league_id_text = str(league_id or "").strip()
+        if not league_id_text:
+            raise FacadeError(
+                "DYNASTY_LEAGUE_ID_REQUIRED", "A Sleeper league id is required."
+            )
+        try:
+            result = import_dynasty_league(
+                league_id_text,
+                self.dynasty_league_root,
+                client=client,
+                my_owner_id=(str(my_owner_id).strip() if my_owner_id else None),
+                profile_id=profile_id,
+                seasons=seasons,
+            )
+        except DynastyLeagueFetchError as exc:
+            raise FacadeError(
+                "DYNASTY_LEAGUE_FETCH_FAILED", f"Could not fetch the Sleeper league: {exc}"
+            ) from exc
+        except DynastyLeaguePersistenceError as exc:
+            raise FacadeError(
+                "DYNASTY_LEAGUE_PERSISTENCE_FAILED",
+                f"Could not persist the imported Sleeper league: {exc}",
+                status=500,
+            ) from exc
+        return FacadePayload(
+            data={
+                "profileId": result.profile.profile_id,
+                "leagueId": result.profile.league_id,
+                "leagueName": result.profile.league_name,
+                "season": result.profile.season,
+                "numTeams": result.profile.num_teams,
+                "myOwnerId": result.profile.my_owner_id,
+                "myRosterId": result.profile.my_roster_id,
+                "rosterCount": len(result.league_snapshot.rosters),
+                "roundCountBaseline": {
+                    "rounds": result.league_snapshot.round_count_baseline.rounds,
+                    "source": result.league_snapshot.round_count_baseline.source,
+                    "disclosure": result.league_snapshot.round_count_baseline.disclosure,
+                    "ambiguous": result.league_snapshot.round_count_baseline.ambiguous,
+                },
+                "myPickCapitalBySeason": self._pick_capital_summary(
+                    result.pick_capital_by_roster_id.get(result.profile.my_roster_id, ())
+                ),
+                "fetchedAtUtc": result.league_snapshot.fetched_at_utc,
+                "snapshotPath": str(result.snapshot_path),
+            }
+        )
+
+    def load_dynasty_league_profile(self, profile_id: str) -> FacadePayload:
+        """Reads the already-persisted profile + most recent snapshot back
+        out -- used by `dynasty_bootstrap`/`dynasty_workspace`/
+        `dynasty_asset` when `league_profile_id` is supplied, and directly
+        reachable on its own for a simple "what did we last import" view."""
+
+        self._require_mode("dynasty")
+        profile, league_snapshot = self._load_dynasty_league_state(profile_id)
+        pick_capital = {}
+        persisted = load_latest_league_snapshot(self.dynasty_league_root, profile.profile_id)
+        if persisted is not None:
+            pick_capital = persisted.pick_capital_by_roster_id
+        return FacadePayload(
+            data={
+                "profileId": profile.profile_id,
+                "leagueId": profile.league_id,
+                "leagueName": profile.league_name,
+                "season": profile.season,
+                "numTeams": profile.num_teams,
+                "myOwnerId": profile.my_owner_id,
+                "myRosterId": profile.my_roster_id,
+                "scoringSettings": dict(profile.scoring_settings),
+                "rosterPositions": list(profile.roster_positions),
+                "taxiSlots": profile.taxi_slots,
+                "reserveSlots": profile.reserve_slots,
+                "rosters": [
+                    {
+                        "rosterId": roster.roster_id,
+                        "ownerId": roster.owner_id,
+                        "teamName": roster.team_name,
+                        "isMyTeam": roster.roster_id == profile.my_roster_id,
+                        "playerCount": len(roster.players),
+                        "wins": roster.wins,
+                        "losses": roster.losses,
+                        "ties": roster.ties,
+                    }
+                    for roster in league_snapshot.rosters
+                ],
+                "myPickCapitalBySeason": self._pick_capital_summary(
+                    pick_capital.get(profile.my_roster_id, ())
+                ),
+                "fetchedAtUtc": league_snapshot.fetched_at_utc,
+                "updatedAtUtc": profile.updated_at_utc,
+            }
+        )
+
+    def _load_dynasty_league_state(self, profile_id: str):
+        try:
+            profile = load_dynasty_league_profile_document(self.dynasty_league_root, profile_id)
+        except DynastyLeaguePersistenceError as exc:
+            raise FacadeError(
+                "DYNASTY_LEAGUE_PROFILE_NOT_FOUND",
+                f"No imported Dynasty league profile was found: {exc}",
+                status=404,
+            ) from exc
+        persisted = load_latest_league_snapshot(self.dynasty_league_root, profile.profile_id)
+        if persisted is None:
+            raise FacadeError(
+                "DYNASTY_LEAGUE_SNAPSHOT_NOT_FOUND",
+                "This Dynasty league profile has no imported roster snapshot yet.",
+                status=404,
+            )
+        return profile, persisted.league_snapshot
+
+    @staticmethod
+    def _pick_capital_summary(rows: Sequence[Any]) -> dict[str, int]:
+        summary: dict[str, int] = {}
+        for row in rows:
+            summary[row.season] = summary.get(row.season, 0) + 1
+        return summary
+
+    @staticmethod
+    def _merge_ownership_annotation(
+        row: Mapping[str, Any], annotations: Mapping[str, dict[str, Any]]
+    ) -> dict[str, Any]:
+        asset_id = row.get("assetId") or row.get("asset_id")
+        annotation = annotations.get(str(asset_id)) if asset_id else None
+        if annotation is None:
+            return dict(row)
+        merged = dict(row)
+        merged["ownership"] = annotation
+        return merged
+
+    def _annotate_dynasty_bootstrap_payload(
+        self, payload: FacadePayload, league_profile_id: str
+    ) -> FacadePayload:
+        profile, league_snapshot = self._load_dynasty_league_state(league_profile_id)
+        annotations = annotate_ownership(
+            [{"asset_id": row.get("assetId")} for row in payload.data.get("rankings", ())]
+            + [{"asset_id": row.get("assetId")} for row in payload.data.get("rookies", ())]
+            + [{"asset_id": row.get("assetId")} for row in payload.data.get("assetOptions", ())],
+            league_snapshot,
+            my_owner_id=profile.my_owner_id,
+        )
+        data = dict(payload.data)
+        data["rankings"] = [
+            self._merge_ownership_annotation(row, annotations)
+            for row in payload.data.get("rankings", ())
+        ]
+        data["rookies"] = [
+            self._merge_ownership_annotation(row, annotations)
+            for row in payload.data.get("rookies", ())
+        ]
+        data["assetOptions"] = [
+            self._merge_ownership_annotation(row, annotations)
+            for row in payload.data.get("assetOptions", ())
+        ]
+        data["dynastyLeague"] = {
+            "profileId": profile.profile_id,
+            "leagueName": profile.league_name,
+            "myRosterId": profile.my_roster_id,
+            "fetchedAtUtc": league_snapshot.fetched_at_utc,
+        }
+        return FacadePayload(data=data, warnings=payload.warnings)
+
+    def _annotate_dynasty_workspace_payload(
+        self, payload: FacadePayload, league_profile_id: str
+    ) -> FacadePayload:
+        profile, league_snapshot = self._load_dynasty_league_state(league_profile_id)
+        annotations = annotate_ownership(
+            [{"asset_id": row.get("assetId")} for row in payload.data.get("personalBoard", ())],
+            league_snapshot,
+            my_owner_id=profile.my_owner_id,
+        )
+        data = dict(payload.data)
+        data["personalBoard"] = [
+            self._merge_ownership_annotation(row, annotations)
+            for row in payload.data.get("personalBoard", ())
+        ]
+        data["dynastyLeague"] = {
+            "profileId": profile.profile_id,
+            "leagueName": profile.league_name,
+            "myRosterId": profile.my_roster_id,
+            "fetchedAtUtc": league_snapshot.fetched_at_utc,
+        }
+        return FacadePayload(data=data, warnings=payload.warnings)
+
+    def _annotate_dynasty_asset_payload(
+        self, payload: FacadePayload, league_profile_id: str
+    ) -> FacadePayload:
+        profile, league_snapshot = self._load_dynasty_league_state(league_profile_id)
+        annotations = annotate_ownership(
+            [{"asset_id": payload.data.get("assetId")}],
+            league_snapshot,
+            my_owner_id=profile.my_owner_id,
+        )
+        data = self._merge_ownership_annotation(payload.data, annotations)
+        return FacadePayload(data=data, warnings=payload.warnings)
 
     def _owner_snapshot(self) -> _OwnerSnapshot:
         key = self._owner_source_fingerprint()
