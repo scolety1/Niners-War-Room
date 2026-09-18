@@ -1320,3 +1320,280 @@ owner. Specific carry-forward items:
    403N18th Decision History, KHA/403N18th ESPN Data Health cards, Cheat
    Sheet's already-disclosed no-print-stylesheet gap) was honestly labeled
    with a real, specific, correct reason.
+
+## Worker 6 — CLOSURE: final regression, rebuild, live verification, push (2026-09-17)
+
+### Scope and method
+
+Owner's directive: close the cycle out. Final regression, a real rebuild of
+the Redraft frontend (all 5 commits' changes actually compiled and served),
+real browser verification of all 3 real-code fixes (Worker 2's lifecycle
+fix, Worker 3's create/duplicate/import race fix, Worker 5's Manage Leagues
+duplicate fix), push, ledger update. Starting HEAD `963a93d0`, 5 commits
+ahead of `origin/upgrade/nwr-prospective-outcomes-v1-20260914`.
+
+### 1. Final regression — ACTUAL TEST RESULT
+
+- Processes at start: all 4 confirmed already healthy via `netstat` — same
+  PIDs Worker 5 left running (Redraft backend 20368/18742, frontend
+  17016/1422; Dynasty backend 12852/18741, frontend 5288/1421).
+- Backend targeted suite: `python -m pytest tests/test_league_lifecycle_
+  service.py tests/test_league_workspace_context_service.py tests/
+  test_league_workspace_context_sleeper_p1_1.py tests/test_desktop_facade_
+  architecture_wiring.py` -> **42/42 passed**, matching Worker 2's reported
+  count exactly.
+- Frontend: `cd desktop && npx vitest run apps/redraft` -> **430/430
+  passed, 19/19 test files**, matching Worker 3/5's reported count exactly.
+  `npm run typecheck` (`apps/dynasty` + `apps/redraft`) -> **clean**.
+- The same live-timing-benchmark side effect Worker 3/5 already documented
+  regenerated `docs/codex/prospective_outcomes_v1/multi_league_scale_v1/
+  frontend_bench_results.json` as a byproduct of running the suite;
+  reverted via `git checkout --` before doing anything else, not part of
+  this pass's actual change.
+- No code changes were required by regression (all green at the starting
+  HEAD) — see "Live verification" below for the one deeper finding this
+  pass surfaced, which was deliberately NOT turned into a code change (see
+  that section for why).
+
+### 2. Rebuild — ACTUAL TEST RESULT
+
+Confirmed via `desktop/apps/redraft/package.json` and `desktop/scripts/
+nwr_release_gate_smoke.ps1` (the same script prior workers used to start
+this worktree's dev-server pair) that the smoke script itself runs a real
+`npm run build` (production `vite build`) before starting `vite preview`
+on the app's own port — this is the correct, already-established mechanism
+for making committed frontend source changes actually live, not a new
+process.
+
+Killed the pre-existing Redraft frontend (PID 17016) and backend (PID
+20368) processes (`taskkill /F /T`), confirmed both ports free, then ran
+`pwsh -File desktop/scripts/nwr_release_gate_smoke.ps1 -Mode redraft
+-KeepRunning` (no Sleeper credentials passed, so it took the isolated
+local-profile path, not a real Sleeper contact).
+
+**Result (`local_exports/release_gate/20260917T235529Z/
+release_gate_report.json`):** `checkResourcesExitCode: 0`, `cargoCheckExit
+Code: 0`, `viteBuildMs: 1369` (a real, fresh production build — not a
+no-op), `backendReady: true`, every surface-smoke GET/POST 200 (including
+`weekly_home_actions_week1`, which returned 200 here — expected, since
+this script's own fresh local-preset profile has no roster yet, matching
+the script's own documented note that the known K/DST-streamer 500 bug only
+reproduces once a roster exists), **zero findings**.
+
+New processes: Redraft frontend PID **16376** (port 1422, HTTP 200
+confirmed via direct `curl`), Redraft backend PID **31352** (port 18742,
+`/api/v1/bootstrap` HTTP 200 confirmed via direct `curl` with the dev
+token). Dynasty processes (PID 12852/5288) were not touched — nothing
+there was code-changed this cycle, matching the directive.
+
+The smoke script's own `League setup` step (no Sleeper credentials given)
+created a real local profile, "NWR Release Gate Local Profile" — an
+expected, disclosed side effect of using the established smoke-script
+mechanism, not a bug. Deleted during this pass's cleanup (see below).
+
+### 3. Live verification (Chrome MCP, real running rebuilt app)
+
+**a. Lifecycle fix (Worker 2) — CONFIRMED LIVE.** Opened KHA via the
+chooser's "Open workspace": sidebar badge **IN SEASON**, landed on
+**Weekly Home** (not Draft Room), nav showed the in-season set (no Draft
+Room item). Switched to 403 N 18th via the header quick-switcher: same
+result, **IN SEASON**, Weekly Home, correct distinct team count (8-Team
+PPR vs KHA's 16-Team PPR) and distinct data-issue count (2 vs 3). Hard
+reload (F5) on 403 N 18th's Weekly Home: lifecycle stayed IN SEASON, zero
+console errors (verified via `read_console_messages` with `onlyErrors:
+true` after the reload, not just a visual check).
+
+**b. Create/duplicate/import race fix (Worker 3) — CONFIRMED LIVE.**
+Navigated to `/#/attention-center` (triggers its real on-mount sweep
+across then-6 saved profiles), then, without waiting for the sweep to
+settle, immediately navigated to `/#/profile` and submitted the Fast Setup
+form (preset `10_TEAM_1QB_STANDARD`, name "WORKER6 DISPOSABLE TEST",
+provider `local` — no real Sleeper/ESPN contact). Result: created and
+activated immediately (sidebar showed it ACTIVE within ~3s), and — the
+real test — **survived both a further 10s wait (long enough for the sweep
+to fully finish) and a hard reload (F5)**: still ACTIVE, matching Worker
+3's fix (create/duplicate/import wrapped through the same
+`serializeActiveProfileCall` queue the sweep uses, so they serialize
+instead of interleaving-and-clobbering). Cleaned up in section 4 below.
+
+**c. Manage Leagues duplicate fix (Worker 5) — CONFIRMED LIVE, with a
+genuine deeper finding.** Using the disposable WORKER6 profile
+(`ca0cac2853934754be1e842be88de126`) as the duplicate source (itself
+already the active profile, matching the exact real-world shape of this
+bug — the Settings tab always operates on `data.activeProfile`), opened
+`/league/{id}/league?tab=settings` and clicked "Duplicate profile."
+**Visual/steady-state result: PASS.** URL correctly navigated to the new
+profile's own path (`.../f2df99de13b747f1af78a5fa8d55a44a/league?tab=
+settings`), sidebar showed the new "...Copy" profile as ACTIVE, and a
+hard reload confirmed the new profile ("WORKER6 DISPOSABLE TEST Copy")
+remained the real, backend-persisted active profile (`GET /api/v1/
+bootstrap` -> `activeProfileId: f2df99...`, `activeName: "WORKER6
+DISPOSABLE TEST Copy"`). This is the specific criterion the directive
+asked to verify ("stays on the NEW profile, does not silently revert") —
+it holds.
+
+**Network-request evidence (the "verify carefully" part of the
+directive) surfaced something Worker 5's own testing had not caught.**
+`read_network_requests`'s listing order was NOT chronological (a POST
+appeared to precede its own OPTIONS preflight, which is impossible), so
+this was re-checked via `performance.getEntriesByType('resource')` sorted
+by `startTime` for ground truth. **Real chronological sequence:**
+1. `POST .../ca0cac.../duplicate` (66292-66362ms) — 200, creates AND
+   server-side-activates the NEW profile, as designed.
+2. `POST .../ca0cac.../activate` (66371-66594ms) — 200, **the OLD/source
+   profile gets reactivated**, ~9ms after the duplicate call resolved.
+3. `POST .../f2df99.../activate` (66598-66663ms) — 200, the NEW profile
+   gets reactivated again, ~4ms after the previous call resolved,
+   settling on the correct final state.
+
+So the specific *permanent* revert bug Worker 5 fixed does NOT reproduce
+(step 3 always follows step 2 and wins), but a **new, more transient
+instance of a structurally similar race still exists**: the active
+pointer briefly touches the OLD profile before self-correcting, meaning
+`active_profile.json` on disk is written 3 times in ~370ms instead of
+once, and any concurrent read landing in that ~230ms window would see the
+wrong profile as active.
+
+**Root cause (INSPECTED CODE, not guessed):** `LeagueSettingsTab.
+duplicate()` (`desktop/apps/redraft/src/league.tsx`) calls `onUpdate(next)`
+**before** `navigate(...)`. `LeagueScopedPage`'s deep-link-sync effect
+(`desktop/apps/redraft/src/RedraftApp.tsx` ~line 405) depends on both
+`leagueKey` (from the URL) and `data.activeProfileId`/`data.profiles`
+(from `onUpdate`'s state). Because `onUpdate(next)` commits first, there
+is a render where `leagueKey` is still the OLD id (URL hasn't changed
+yet) but `data.activeProfileId` already reads NEW — the effect's guard
+(`!isActive` and `targetProfile` found for the OLD id, since the OLD
+profile is still a valid, undeleted profile) fires and reactivates OLD.
+Only the subsequent `navigate()` call (which updates `leagueKey` to NEW)
+triggers a second effect pass that corrects it back to NEW.
+
+**Deliberately NOT fixed in this pass.** A plausible fix exists (reorder
+so `navigate()` runs before `onUpdate(next)`, or `flushSync` the
+navigation) — reasoned through statically: reordering would make
+`targetProfile` resolve `undefined` for one intermediate render (the NEW
+profile doesn't exist in the pre-`onUpdate` `data.profiles` yet), which
+hits this same component's `if (!leagueKey || !targetProfile) return
+<EmptyState title="League not found".../>` branch, i.e. a plausible
+**new** flash of "League not found" swapped in for the current flash-to-
+OLD-then-self-correct behavior — a different failure mode, not obviously
+a strict improvement, and this component has **zero** test coverage to
+verify against (confirmed, same gap Worker 5 already found: `desktop/
+vitest.config.ts` is node-only, no jsdom/RTL, zero `.test.tsx` files
+anywhere in `apps/redraft/src`). As the closure worker, introducing an
+unverified behavioral change to a fix that already satisfies its stated
+acceptance criterion (does not *stay* reverted) was judged higher-risk
+than leaving a working, steady-state-correct app running. Flagged
+precisely for a future worker instead of guessing at a fix under time
+pressure.
+
+**General sanity pass:** switched to Fantasy Gamers via the chooser
+("Open workspace") — correctly activated (10-Team PPR, real), reproduces
+the already-known, already-disclosed Draft Room/PRE-DRAFT landing-route
+gap (Worker 2/3/4/5, not new). Zero console errors captured across the
+whole verification session (checked via `read_console_messages`,
+`onlyErrors: true`, after every hard reload).
+
+### 4. Cleanup
+
+Three disposable local test profiles were deleted directly from
+`local_exports/redraft_v1/profiles/` (no API delete endpoint exists, same
+pattern every prior worker in this cycle used):
+- `a2ae4b0772964ada9d6ddcd322d28615.json` ("NWR Release Gate Local
+  Profile" — created by the rebuild's own smoke-script run, section 2)
+- `ca0cac2853934754be1e842be88de126.json` ("WORKER6 DISPOSABLE TEST")
+- `f2df99de13b747f1af78a5fa8d55a44a.json` ("WORKER6 DISPOSABLE TEST
+  Copy")
+
+None had a `draft_boards/` entry (confirmed via `ls` before deleting —
+only KHA and 403 N 18th have draft board files). `active_profile.json`
+already pointed at Fantasy Gamers (`941b99ade350410391b1b67c0890af79`)
+by the time cleanup ran (Fantasy Gamers had been activated during the
+general sanity pass), so no dangling active-pointer reference was created.
+Verified via a hard reload of `/#/leagues`: exactly the 5 real/pre-existing
+profiles remain (KHA, 403 N 18th, Fantasy Gamers [ACTIVE], Isolation
+Check Local, 10-team 1QB Standard) — matches every prior worker's
+end-of-pass state exactly.
+
+Untracked smoke-run log files: `dynasty_smoke_stderr.log`, `dynasty_
+smoke_stdout.log`, `redraft_smoke_stderr2.log`, `redraft_smoke_stdout2.log`
+were targeted for deletion per the directive. The two `redraft_smoke_*2*`
+files were deleted successfully once the old Redraft processes that held
+them open were killed for the rebuild (section 2). The two `dynasty_
+smoke_*` files remain — **not deleted, disclosed rather than forced**:
+they are still held open (`Device or resource busy`) by the still-running
+Dynasty backend/frontend processes (PID 12852/5288), which this pass
+correctly did not touch since nothing in Dynasty was code-changed this
+cycle. They are untracked, harmless, gitignored-equivalent scratch output
+(confirmed `git status` shows only these two files, nothing else) — safe
+to delete whenever Dynasty is next restarted for an unrelated reason.
+
+### 5. Push
+
+`git push origin upgrade/nwr-prospective-outcomes-v1-20260914` — pushed
+all 5 local commits (`7c80c8a5`, `11837b62`, `9a3b35f6`, `66177c27`,
+`963a93d0`). Remote SHA confirmed matching local HEAD via `git ls-remote`
+after push: `963a93d0025af5bde6c011589605bb8befedccfa`. No force-push, no
+merge to main.
+
+### Tests added
+
+None. No code was changed this pass (see "Deliberately NOT fixed" above
+for the one deeper finding, kept as a disclosed follow-up rather than an
+unverified fix).
+
+### Files changed
+
+- `docs/codex/dogfood_v1/LEDGER.md` (this entry only)
+
+### Running processes status at end
+
+- Redraft: backend PID **31352** (port 18742, confirmed HTTP 200 on
+  `/api/v1/bootstrap`), frontend PID **16376** (port 1422, confirmed HTTP
+  200) — both NEW as of this pass's rebuild, serving the real production
+  build with all 5 commits' changes compiled in.
+- Dynasty: backend PID 12852 (port 18741), frontend PID 5288 (port 1421)
+  — unchanged, not restarted, not touched.
+- Active Redraft profile at handoff: **Fantasy Gamers** (a real league,
+  matching the pattern every prior worker used — no disposable test
+  profile left as the active pointer).
+
+### Worktree cleanliness
+
+`git status --short` at handoff: only `?? dynasty_smoke_stderr.log` and
+`?? dynasty_smoke_stdout.log` (both untracked, both explained above —
+held open by the still-running, untouched Dynasty processes). No tracked
+files modified beyond this ledger entry. The `frontend_bench_results.json`
+timing-benchmark side effect from running the vitest suite was reverted
+via `git checkout --` before this entry was written, so it does not appear
+in `git status`.
+
+### Open items for the owner / a future worker (none blocking)
+
+1. **New, precisely-diagnosed, low-severity finding**: Manage Leagues'
+   "Duplicate profile" (League > Settings) still touches the OLD profile
+   for ~200ms before self-correcting to the NEW one, due to `onUpdate`
+   committing before `navigate` in `LeagueSettingsTab.duplicate()` (see
+   section 3c for the full root cause and the reasoning for not attempting
+   a blind fix). The originally-scoped bug (permanent revert) is fixed and
+   stays fixed; this is a strictly smaller residual. A future worker with
+   bandwidth to add jsdom/React Testing Library to `desktop/vitest.config.
+   ts` (currently node-only, zero `.test.tsx` files exist) could fix and
+   verify this properly instead of guessing.
+2. The frontend Sleeper-live-status / chooser-routing gap for Fantasy
+   Gamers (Worker 2/3/4/5, re-confirmed live again in this pass from a
+   4th surface) is still open, still correctly worked around by
+   navigating directly to `/#/league/{id}/home`. Real, minor, non-blocking.
+3. The residual `/league/:leagueKey/profile` deep-link exposure Worker 5
+   flagged (same bug class, dormant, no in-app link reaches it) is still
+   open, still low priority.
+4. Two untracked `dynasty_smoke_*.log` files remain in the worktree root,
+   harmless, safe to delete whenever Dynasty is next restarted.
+5. This cycle's dynasty-Sleeper-league gap (Worker 1) and the real AppData
+   install's `active_profile.json` pointing at "Tester" (Worker 1) both
+   remain open, unrelated to this pass, needing an owner decision rather
+   than more engineering.
+
+This is the last worker in the bounded dogfood_v1 cycle. All 5 code/doc
+commits from this cycle are now on `origin/upgrade/nwr-prospective-
+outcomes-v1-20260914`. The app is left running, healthy, and pointed at
+a real league for the owner.
