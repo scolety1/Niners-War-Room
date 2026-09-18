@@ -37,6 +37,7 @@ class FakeFacade:
         self.crash = crash
         self.calls: list[tuple[str, Any]] = []
         self.active_profile_id = "profile-1"
+        self.active_league_profile_id: str | None = None
 
     def bootstrap(self) -> FacadePayload:
         if self.crash:
@@ -49,9 +50,14 @@ class FakeFacade:
             }
         )
 
-    def dynasty_asset(self, asset_id: str) -> FacadePayload:
+    def dynasty_asset(
+        self, asset_id: str, *, league_profile_id: str | None = None
+    ) -> FacadePayload:
         self.calls.append(("asset", asset_id))
-        return FacadePayload(data={"assetId": asset_id})
+        data: dict[str, Any] = {"assetId": asset_id}
+        if league_profile_id is not None:
+            data["ownership"] = {"ownershipStatus": "OWNED", "leagueProfileId": league_profile_id}
+        return FacadePayload(data=data)
 
     def compare_dynasty_assets(self, asset_ids: list[str]) -> FacadePayload:
         self.calls.append(("compare", asset_ids))
@@ -74,16 +80,57 @@ class FakeFacade:
             data={"storeStatus": "loaded", "updatedAtUtc": "", "message": "", "scenarios": []}
         )
 
-    def dynasty_workspace(self) -> FacadePayload:
+    def dynasty_workspace(self, *, league_profile_id: str | None = None) -> FacadePayload:
         self.calls.append(("workspace", None))
+        data: dict[str, Any] = {
+            "storeStatus": "loaded",
+            "personalBoard": [],
+            "decisions": [],
+            "backup": {"status": "none"},
+        }
+        if league_profile_id is not None:
+            data["dynastyLeague"] = {"profileId": league_profile_id}
+        return FacadePayload(data=data)
+
+    def dynasty_active_league_profile_id(self) -> str | None:
+        return self.active_league_profile_id
+
+    def set_active_dynasty_league_profile(self, profile_id: str | None) -> FacadePayload:
+        self.calls.append(("league-set-active", profile_id))
+        self.active_league_profile_id = profile_id
+        return FacadePayload(data={"activeLeagueProfileId": profile_id})
+
+    def import_dynasty_sleeper_league(
+        self,
+        league_id: str,
+        *,
+        my_owner_id: str | None = None,
+        profile_id: str | None = None,
+    ) -> FacadePayload:
+        resolved_profile_id = profile_id or league_id
+        self.calls.append(
+            ("league-import", {"leagueId": league_id, "myOwnerId": my_owner_id, "profileId": profile_id})
+        )
         return FacadePayload(
             data={
-                "storeStatus": "loaded",
-                "personalBoard": [],
-                "decisions": [],
-                "backup": {"status": "none"},
+                "profileId": resolved_profile_id,
+                "leagueId": league_id,
+                "leagueName": "Fixture Dynasty League",
+                "myRosterId": 7,
+                "rosterCount": 10,
             }
         )
+
+    def load_dynasty_league_profile(self, profile_id: str) -> FacadePayload:
+        self.calls.append(("league-load", profile_id))
+        return FacadePayload(data={"profileId": profile_id, "leagueName": "Fixture Dynasty League"})
+
+    def dynasty_bootstrap(self, *, league_profile_id: str | None = None) -> FacadePayload:
+        self.calls.append(("dynasty-bootstrap", league_profile_id))
+        data: dict[str, Any] = {"rankings": [], "rookies": [], "assetOptions": []}
+        if league_profile_id is not None:
+            data["dynastyLeague"] = {"profileId": league_profile_id}
+        return FacadePayload(data=data)
 
     def save_dynasty_personal_entry(self, **value: Any) -> FacadePayload:
         self.calls.append(("personal-board", value))
@@ -463,6 +510,108 @@ def test_dynasty_routes_decode_ids_and_accept_canonical_receive_key() -> None:
         "trade",
         {"give": [asset_id], "receive": ["pick:2027:1"], "teamWindow": "Balanced"},
     ) in facade.calls
+
+
+def test_dynasty_league_import_route_connects_and_persists_active_profile() -> None:
+    facade = FakeFacade("dynasty")
+    with running_server(facade) as server:
+        imported = request(
+            server,
+            "POST",
+            "/api/v1/dynasty/league/import",
+            body={"leagueId": "1344772855908290560", "myOwnerId": "1352768154031374336"},
+            headers=authenticated_headers(),
+        )
+        invalid = request(
+            server,
+            "POST",
+            "/api/v1/dynasty/league/import",
+            body={"leagueId": ""},
+            headers=authenticated_headers(),
+        )
+        unknown_field = request(
+            server,
+            "POST",
+            "/api/v1/dynasty/league/import",
+            body={"leagueId": "x", "sleeperUsername": "nope"},
+            headers=authenticated_headers(),
+        )
+
+    assert imported[0] == 200
+    # The route returns the freshly-annotated bootstrap, not the raw import
+    # summary -- matching every other Dynasty/Redraft mutation route's
+    # "mutate, then return the current bootstrap" convention.
+    assert imported[2]["data"]["dynastyLeague"]["profileId"] == "1344772855908290560"
+    assert (
+        "league-import",
+        {"leagueId": "1344772855908290560", "myOwnerId": "1352768154031374336", "profileId": None},
+    ) in facade.calls
+    assert ("league-set-active", "1344772855908290560") in facade.calls
+    assert facade.active_league_profile_id == "1344772855908290560"
+    assert invalid[0] == 400
+    assert invalid[2]["errors"][0]["code"] == "INVALID_REQUEST_BODY"
+    assert unknown_field[0] == 400
+
+
+def test_dynasty_league_profile_get_and_disconnect_routes() -> None:
+    facade = FakeFacade("dynasty")
+    facade.active_league_profile_id = "already-connected"
+    with running_server(facade) as server:
+        loaded = request(
+            server,
+            "GET",
+            "/api/v1/dynasty/league/already-connected",
+            headers=authenticated_headers(),
+        )
+        disconnected = request(
+            server,
+            "POST",
+            "/api/v1/dynasty/league/disconnect",
+            headers=authenticated_headers(),
+        )
+
+    assert loaded[0] == 200
+    assert loaded[2]["data"]["profileId"] == "already-connected"
+    assert ("league-load", "already-connected") in facade.calls
+    assert disconnected[0] == 200
+    assert ("league-set-active", None) in facade.calls
+    assert facade.active_league_profile_id is None
+    # Disconnect returns the plain (unannotated) bootstrap -- no active
+    # league remains once the marker is cleared.
+    assert "dynastyLeague" not in disconnected[2]["data"]
+
+
+def test_dynasty_workspace_and_asset_routes_pass_the_active_league_profile_id() -> None:
+    facade = FakeFacade("dynasty")
+    with running_server(facade) as server:
+        unconnected_workspace = request(
+            server, "GET", "/api/v1/dynasty/workspace", headers=authenticated_headers()
+        )
+        unconnected_asset = request(
+            server,
+            "GET",
+            f"/api/v1/dynasty/assets/{quote('current:9493', safe='')}",
+            headers=authenticated_headers(),
+        )
+
+    assert "dynastyLeague" not in unconnected_workspace[2]["data"]
+    assert "ownership" not in unconnected_asset[2]["data"]
+
+    facade2 = FakeFacade("dynasty")
+    facade2.active_league_profile_id = "connected-league"
+    with running_server(facade2) as server2:
+        connected_workspace = request(
+            server2, "GET", "/api/v1/dynasty/workspace", headers=authenticated_headers()
+        )
+        connected_asset = request(
+            server2,
+            "GET",
+            f"/api/v1/dynasty/assets/{quote('current:9493', safe='')}",
+            headers=authenticated_headers(),
+        )
+
+    assert connected_workspace[2]["data"]["dynastyLeague"]["profileId"] == "connected-league"
+    assert connected_asset[2]["data"]["ownership"]["leagueProfileId"] == "connected-league"
 
 
 def test_dynasty_saved_trade_routes_are_typed_and_scoped() -> None:

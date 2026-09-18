@@ -89,6 +89,7 @@ export interface PersonalBoardEntry {
   teamWindow: WorkspaceTeamWindow;
   createdAtUtc: string;
   updatedAtUtc: string;
+  ownership?: AssetOwnership;
 }
 
 export interface PersonalBoardInput {
@@ -134,6 +135,72 @@ export interface WorkspaceBackupStatus {
   message: string;
 }
 
+// Dynasty League Import V1 (Worker 3): real Sleeper ownership annotation,
+// additive on top of every already-governed row -- see
+// `dynasty_sleeper_league_service.annotate_ownership`'s own docstring for
+// the exact honesty contract (never guessed, `UNRESOLVED` disclosed for
+// rookies rather than silently omitted).
+export type OwnershipStatus = "OWNED" | "FREE_AGENT" | "UNRESOLVED";
+
+export interface AssetOwnership {
+  ownershipStatus: OwnershipStatus;
+  rosterId: number | null;
+  rosterTeamName: string | null;
+  rosterSlotStatus: string | null;
+  isMyTeam: boolean;
+  reason: string;
+}
+
+/** Present on `DynastyBootstrap`/`DynastyWorkspace` only once a league has
+ * been connected (`league_profile_id` was resolved server-side from the
+ * persisted "active league" marker) -- absent entirely otherwise, matching
+ * the byte-identical-when-not-connected guarantee the backend facade
+ * tests. */
+export interface DynastyLeagueContext {
+  profileId: string;
+  leagueName: string;
+  myRosterId: number | null;
+  fetchedAtUtc: string;
+}
+
+export interface DynastyLeagueImportInput {
+  leagueId: string;
+  myOwnerId?: string;
+  profileId?: string;
+}
+
+export interface DynastyLeagueRosterSummary {
+  rosterId: number;
+  ownerId: string;
+  teamName: string;
+  isMyTeam: boolean;
+  playerCount: number;
+  wins: number;
+  losses: number;
+  ties: number;
+}
+
+/** The full response of `load_dynasty_league_profile` -- what the "already
+ * connected" state can look like when the owner revisits the Connect
+ * League screen. */
+export interface DynastyLeagueProfileSummary {
+  profileId: string;
+  leagueId: string;
+  leagueName: string;
+  season: string;
+  numTeams: number;
+  myOwnerId: string | null;
+  myRosterId: number | null;
+  scoringSettings: Record<string, number>;
+  rosterPositions: string[];
+  taxiSlots: number;
+  reserveSlots: number;
+  rosters: DynastyLeagueRosterSummary[];
+  myPickCapitalBySeason: Record<string, number>;
+  fetchedAtUtc: string;
+  updatedAtUtc: string;
+}
+
 export interface DynastyWorkspace {
   storeStatus: "loaded" | "empty" | "blocked";
   message: string;
@@ -141,6 +208,7 @@ export interface DynastyWorkspace {
   personalBoard: PersonalBoardEntry[];
   decisions: OwnerDecisionRecord[];
   backup: WorkspaceBackupStatus;
+  dynastyLeague?: DynastyLeagueContext;
 }
 
 export interface DynastySummary {
@@ -172,6 +240,7 @@ export interface DynastyRanking {
   confidence: string;
   risk: string;
   assetId: string;
+  ownership?: AssetOwnership;
 }
 
 export interface AssetOption {
@@ -195,6 +264,7 @@ export interface AssetOption {
   draftRound: number | null;
   overallPick: number | null;
   refreshAvailable: boolean;
+  ownership?: AssetOwnership;
 }
 
 export interface RookieRanking {
@@ -238,6 +308,7 @@ export interface RookieRanking {
   draftRound: number | null;
   overallPick: number | null;
   eligibilityReason: string;
+  ownership?: AssetOwnership;
 }
 
 export interface RookieIntelligence {
@@ -308,6 +379,7 @@ export interface DynastyBootstrap {
   marketFreshness: MarketFreshness;
   planning: PlanningWorkspace;
   notices: Notice[];
+  dynastyLeague?: DynastyLeagueContext;
 }
 
 export interface PlayerDetail {
@@ -355,6 +427,7 @@ export interface PlayerDetail {
   refreshAvailable: boolean;
   rookieIntelligence: RookieIntelligence | null;
   immediateProduction?: ImmediateProduction;
+  ownership?: AssetOwnership;
 }
 
 export interface ImmediateProduction {

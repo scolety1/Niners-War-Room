@@ -1,9 +1,23 @@
-import type { AssetOption, DynastyBootstrap, DynastyRanking } from "@nwr/contracts";
-import { Button, DataTable, PageHeader, Panel, SearchInput, SegmentedControl, SelectField, StatusBadge, formatNumber, stableSortRows } from "@nwr/ui";
+import type { AssetOption, AssetOwnership, DynastyBootstrap, DynastyRanking } from "@nwr/contracts";
+import { Button, DataTable, PageHeader, Panel, SearchInput, SegmentedControl, SelectField, StatusBadge, type TableColumn, formatNumber, stableSortRows } from "@nwr/ui";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ownerDisplay, ownerLabel } from "../lib/owner-copy";
+import { resolveOwnershipDisplay } from "../lib/ownership";
 import { matchesPlayerSearch } from "../lib/search";
+
+function OwnershipBadge({ ownership }: { ownership: AssetOwnership | undefined }) {
+  const display = resolveOwnershipDisplay(ownership);
+  if (!display) return <span>—</span>;
+  return <StatusBadge tone={display.tone} label={display.label} />;
+}
+
+const OWNERSHIP_COLUMN: TableColumn = {
+  key: "ownership",
+  label: "Ownership",
+  sort: "text",
+  render: (row) => <OwnershipBadge ownership={row.ownership as AssetOwnership | undefined} />,
+};
 
 function OwnerValue({ value }: { value: unknown }) {
   const display = ownerDisplay(value);
@@ -74,6 +88,11 @@ export function AssetExplorerPage({ data }: { data: DynastyBootstrap }) {
         { key: "authority", label: "Source authority", sort: "text", render: (row) => ownerLabel(row.authority) },
         { key: "draftEligible", label: "Draft", sort: "text", render: (row) => row.draftEligible ? <StatusBadge tone="safe" label="Draft eligible" /> : <span>—</span> },
         { key: "scoreStatus", label: "Score status", sort: "text", render: (row) => <StatusBadge tone={row.evidenceBlocked ? "review" : row.modelScoreEligible ? "safe" : "review"} label={row.evidenceBlocked ? "Manual review" : String(row.scoreStatus)} /> },
+        // Dynasty League Import V1 (Worker 3): only added once a league is
+        // actually connected -- `data.dynastyLeague` is absent otherwise,
+        // so Asset Explorer looks exactly as it did before for anyone who
+        // hasn't connected a league.
+        ...(data.dynastyLeague ? [OWNERSHIP_COLUMN] : []),
       ]} resetKey={tableResetKey} rows={rows.map((row) => ({ ...row }))} rowKey={(row) => String(row.assetId)} onRowClick={(row) => navigate(`/players/${encodeURIComponent(String(row.assetId))}`)} />
     </Panel>
   </>;
@@ -119,6 +138,7 @@ export function RankingsPage({ data }: { data: DynastyBootstrap }) {
         { key: "marketGap", label: "Gap", sort: "number", align: "right", render: (row) => row.marketGap == null ? "—" : `${(row.marketGap as number) > 0 ? "+" : ""}${formatNumber(row.marketGap as number, 0)}` },
         { key: "confidence", label: "Confidence", sort: "text", render: (row) => <OwnerValue value={row.confidence} /> },
         { key: "risk", label: "Risk", sort: "text", render: (row) => <OwnerValue value={row.risk} /> },
+        ...(data.dynastyLeague ? [OWNERSHIP_COLUMN] : []),
       ]} resetKey={tableResetKey} rows={rankingRecords(filtered)} rowKey={(row) => String(row.assetId)} onRowClick={(row) => navigate(`/players/${encodeURIComponent(String(row.assetId))}`)} />
     </Panel>
   </>;

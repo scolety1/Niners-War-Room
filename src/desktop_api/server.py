@@ -110,6 +110,15 @@ _REDRAFT_DECISION_BUNDLE_V2 = re.compile(r"^/api/v1/redraft/draft/([^/]+)/decisi
 _REDRAFT_CATCH_UP_PREVIEW = re.compile(r"^/api/v1/redraft/draft/([^/]+)/catch-up/preview$")
 _REDRAFT_CATCH_UP_APPLY = re.compile(r"^/api/v1/redraft/draft/([^/]+)/catch-up/apply$")
 _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+)$")
+# NWR Dynasty League Import V1 (Worker 3): the real Sleeper DYNASTY league
+# "Connect League" surface -- a read-only import (GET-only Sleeper fetch
+# underneath, see `dynasty_sleeper_league_service.py`) plus the durable
+# "which league is connected" selection, following the exact same
+# body/response/error conventions every other Dynasty route on this page
+# already uses.
+_DYNASTY_LEAGUE_IMPORT = "/api/v1/dynasty/league/import"
+_DYNASTY_LEAGUE_DISCONNECT = "/api/v1/dynasty/league/disconnect"
+_DYNASTY_LEAGUE_PROFILE = re.compile(r"^/api/v1/dynasty/league/([^/]+)$")
 _PRODUCTION_DESKTOP_ORIGINS = frozenset(
     {
         "http://tauri.localhost",
@@ -368,8 +377,45 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
         if method == "GET" and path == "/api/v1/dynasty/trades":
             return self.server.facade.list_dynasty_trades()
 
+        if method == "POST" and path == _DYNASTY_LEAGUE_IMPORT:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"leagueId", "myOwnerId", "profileId"})
+            league_id = body.get("leagueId")
+            if not isinstance(league_id, str) or not league_id.strip():
+                raise self._invalid_body("leagueId must be a non-empty string.")
+            my_owner_id = body.get("myOwnerId")
+            if my_owner_id is not None and not isinstance(my_owner_id, str):
+                raise self._invalid_body("myOwnerId must be a string when supplied.")
+            profile_id = body.get("profileId")
+            if profile_id is not None and not isinstance(profile_id, str):
+                raise self._invalid_body("profileId must be a string when supplied.")
+            import_result = self.server.facade.import_dynasty_sleeper_league(
+                league_id, my_owner_id=my_owner_id, profile_id=profile_id,
+            )
+            active_profile_id = import_result.data.get("profileId")
+            # A real, successful import always becomes the connected league
+            # -- this is the durable half of "Connect League": the
+            # selection is persisted here (surviving a restart) rather than
+            # left for the frontend to separately remember.
+            self.server.facade.set_active_dynasty_league_profile(active_profile_id)
+            return self.server.facade.dynasty_bootstrap(league_profile_id=active_profile_id)
+
+        if method == "POST" and path == _DYNASTY_LEAGUE_DISCONNECT:
+            body = self._json_body(allow_empty=True)
+            self._reject_unknown_fields(body, set())
+            self.server.facade.set_active_dynasty_league_profile(None)
+            return self.server.facade.dynasty_bootstrap()
+
+        dynasty_league_profile_match = _DYNASTY_LEAGUE_PROFILE.fullmatch(path)
+        if method == "GET" and dynasty_league_profile_match:
+            return self.server.facade.load_dynasty_league_profile(
+                unquote(dynasty_league_profile_match.group(1))
+            )
+
         if method == "GET" and path == "/api/v1/dynasty/workspace":
-            return self.server.facade.dynasty_workspace()
+            return self.server.facade.dynasty_workspace(
+                league_profile_id=self.server.facade.dynasty_active_league_profile_id()
+            )
 
         if method == "POST" and path == "/api/v1/dynasty/workspace/personal-board":
             body = self._json_body()
@@ -451,7 +497,10 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                     "The requested API route was not found.",
                     status=HTTPStatus.NOT_FOUND,
                 )
-            return self.server.facade.dynasty_asset(unquote(encoded))
+            return self.server.facade.dynasty_asset(
+                unquote(encoded),
+                league_profile_id=self.server.facade.dynasty_active_league_profile_id(),
+            )
         if method == "POST" and path == "/api/v1/dynasty/compare":
             body = self._json_body()
             self._reject_unknown_fields(body, {"assetIds"})

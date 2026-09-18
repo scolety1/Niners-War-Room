@@ -1,5 +1,5 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { DynastyBootstrap, PlayerDetail, RookieRanking } from "@nwr/contracts";
+import type { AssetOwnership, DynastyBootstrap, PlayerDetail, RookieRanking } from "@nwr/contracts";
 import {
   Button,
   DataTable,
@@ -11,6 +11,7 @@ import {
   SearchInput,
   SelectField,
   StatusBadge,
+  type TableColumn,
   formatNumber,
 } from "@nwr/ui";
 import { useEffect, useMemo, useState } from "react";
@@ -22,12 +23,26 @@ import {
   ownerLabel,
   ownerResearchValue,
 } from "../lib/owner-copy";
+import { resolveOwnershipDisplay } from "../lib/ownership";
 import { matchesPlayerSearch } from "../lib/search";
 
 function OwnerValue({ value, fallback }: { value: unknown; fallback?: string }) {
   const display = ownerDisplay(value, fallback);
   return <span title={display.title}>{display.label}</span>;
 }
+
+function OwnershipBadge({ ownership }: { ownership: AssetOwnership | undefined }) {
+  const display = resolveOwnershipDisplay(ownership);
+  if (!display) return <span>—</span>;
+  return <StatusBadge tone={display.tone} label={display.label} />;
+}
+
+const OWNERSHIP_COLUMN: TableColumn = {
+  key: "ownership",
+  label: "Ownership",
+  sort: "text",
+  render: (row) => <OwnershipBadge ownership={row.ownership as AssetOwnership | undefined} />,
+};
 
 function decodeAssetId(value: string | undefined) {
   if (!value) return "";
@@ -167,6 +182,9 @@ export function PlayerDetailBody({
           </span>
           <h2>{detail.name}</h2>
           <p>{ownerLabel(detail.authority)}</p>
+          {detail.ownership ? (
+            <p><OwnershipBadge ownership={detail.ownership} /></p>
+          ) : null}
         </div>
         <div className="player-identity__actions">
           <Button disabled={decisionBlocked} icon="compare" onClick={onCompare} title={decisionBlocked ? "A unique governed selection identity is required." : undefined}>
@@ -406,6 +424,12 @@ export function RookieReviewPage({ data }: { data: DynastyBootstrap }) {
             { key: "currentRole", label: "Current role", render: (row) => <OwnerValue value={row.currentRole} /> },
             { key: "confidence", label: "Confidence", render: (row) => <OwnerValue value={row.confidence} /> },
             { key: "warnings", label: "Warning", render: (row) => <OwnerValue value={row.warnings} /> },
+            // Dynasty League Import V1 (Worker 3): rookie assets always get
+            // an honest "Ownership unresolved" badge once a league is
+            // connected -- no Sleeper-ID crosswalk exists yet for the
+            // rookie board's synthetic asset IDs, so this is real, never
+            // guessed or silently omitted (see `annotate_ownership`).
+            ...(data.dynastyLeague ? [OWNERSHIP_COLUMN] : []),
           ]}
           rows={rookieRecords(rows)}
           rowKey={(row) => String(row.assetId)}

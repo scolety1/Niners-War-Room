@@ -1,4 +1,4 @@
-import type { DynastyBootstrap } from "@nwr/contracts";
+import type { AssetOwnership, DynastyBootstrap } from "@nwr/contracts";
 import { ActionCard, Button, DataTable, MetricCard, PageHeader, Panel, StatusBadge, formatNumber } from "@nwr/ui";
 import { useNavigate } from "react-router-dom";
 import { ownerLabel } from "../lib/owner-copy";
@@ -11,10 +11,29 @@ export function HomePage({ data }: { data: DynastyBootstrap }) {
     .sort((left, right) => (right.marketGap ?? 0) - (left.marketGap ?? 0))
     .slice(0, 7)
     .map((row) => ({ ...row }));
+  // Dynasty League Import V1 (Worker 3): present ONLY once a real league is
+  // connected -- `data.dynastyLeague` is entirely absent otherwise (the
+  // backend facade's byte-identical-when-not-connected guarantee), so this
+  // whole section renders nothing for anyone who hasn't connected a league,
+  // exactly matching Home's pre-existing appearance.
+  const dynastyLeague = data.dynastyLeague;
+  const myRoster = dynastyLeague
+    ? data.rankings.filter((row) => row.ownership?.isMyTeam).map((row) => ({ ...row }))
+    : [];
+  const myTeamName = dynastyLeague
+    ? data.rankings.find((row) => row.ownership?.isMyTeam)?.ownership?.rosterTeamName || null
+    : null;
 
   return <>
-    <PageHeader eyebrow="Owner command center" title="Your dynasty, in decision order." description="Rank, compare, pressure-test, and plan from one governed long-term view. Model operations stay behind the glass." status={<><StatusBadge tone="safe" label="Finished V1 authority" /><StatusBadge tone="review" label={ownerLabel(data.marketFreshness.status, "Market freshness review")} /></>} actions={<><Button icon="compare" onClick={() => navigate("/compare")}>Compare players</Button><Button icon="trade" variant="secondary" onClick={() => navigate("/trades")}>Analyze trade</Button></>} />
+    <PageHeader eyebrow="Owner command center" title="Your dynasty, in decision order." description="Rank, compare, pressure-test, and plan from one governed long-term view. Model operations stay behind the glass." status={<><StatusBadge tone="safe" label="Finished V1 authority" /><StatusBadge tone="review" label={ownerLabel(data.marketFreshness.status, "Market freshness review")} />{dynastyLeague ? <StatusBadge tone="safe" label={`Connected: ${dynastyLeague.leagueName || dynastyLeague.profileId}`} /> : null}</>} actions={<><Button icon="compare" onClick={() => navigate("/compare")}>Compare players</Button><Button icon="trade" variant="secondary" onClick={() => navigate("/trades")}>Analyze trade</Button></>} />
     {data.notices.map((notice) => <div className={`alert-strip ${notice.tone === "blocked" ? "alert-strip--blocked" : ""}`} key={notice.title}><strong>{notice.title}</strong><span>{notice.message}</span></div>)}
+    {!dynastyLeague ? (
+      <div className="alert-strip">
+        <strong>No Dynasty league connected</strong>
+        <span>Connect your real Sleeper league to see your own roster, distinct from the market-wide board.</span>
+        <Button icon="check" onClick={() => navigate("/data-health")} variant="secondary">Connect league</Button>
+      </div>
+    ) : null}
     <section className="decision-hero"><div><span className="decision-hero__eyebrow">Decision pulse · Long-term roster architecture</span><h2>What needs your attention?</h2><p>Market disagreement, rookie uncertainty, and open owner decisions are surfaced here. No outside signal can silently reorder the NWR board.</p></div><div className="decision-hero__actions"><Button icon="search" onClick={() => navigate("/players")}>Evaluate player</Button><Button icon="market" variant="secondary" onClick={() => navigate("/market")}>Scan market gaps</Button></div></section>
     <div className="metric-grid">
       <MetricCard label="Governed board" value={summary.rankedPlayers} detail="Finished V1 assets" trend="Board authority" icon="board" tone="violet" />
@@ -22,6 +41,33 @@ export function HomePage({ data }: { data: DynastyBootstrap }) {
       <MetricCard label="Rookie review" value={summary.rookieRows} detail={`${summary.manualReviewRookies} manual review`} trend={`${summary.blockedRookies} unresolved`} icon="rookie" tone="crimson" />
       <MetricCard label="Open decisions" value={summary.workspace.openDecisions} detail={`${summary.workspace.savedScenarios} saved scenarios`} trend={`${summary.workspace.targets} targets`} icon="target" tone="cyan" />
     </div>
+    {dynastyLeague ? (
+      <Panel
+        title={`Your roster${myTeamName ? ` — ${myTeamName}` : ""}`}
+        eyebrow={`${dynastyLeague.leagueName || "Connected league"} · ${myRoster.length} of your players on the governed board`}
+        action={<Button variant="ghost" onClick={() => navigate("/assets")}>Open Asset Explorer</Button>}
+      >
+        {myRoster.length ? (
+          <DataTable
+            columns={[
+              { key: "rank", label: "NWR", width: "62px", render: (row) => <span className="rank-cell"><i /><b>#{String(row.rank ?? "—")}</b></span> },
+              { key: "player", label: "Player", render: (row) => <span className="player-cell"><strong>{String(row.player)}</strong><small>{ownerLabel(row.team)} · {ownerLabel(row.positionRank)}</small></span> },
+              { key: "position", label: "Pos", align: "center", render: (row) => <span className="position-pill">{String(row.position)}</span> },
+              { key: "rosterSlot", label: "Slot", render: (row) => ownerLabel((row.ownership as AssetOwnership | undefined)?.rosterSlotStatus ?? "") },
+              { key: "nwrScore", label: "NWR score", align: "right", render: (row) => formatNumber(row.nwrScore as number, 2) },
+            ]}
+            rows={myRoster}
+            rowKey={(row) => String(row.assetId)}
+            onRowClick={(row) => navigate(`/players/${encodeURIComponent(String(row.assetId))}`)}
+          />
+        ) : (
+          <p className="copy-muted">
+            None of your connected roster's current players matched the governed board yet --
+            this can happen right after a fresh import. Reload Data Health to resync.
+          </p>
+        )}
+      </Panel>
+    ) : null}
     <div className="dashboard-grid">
       <Panel title="Highest-leverage market gaps" eyebrow="Investigate · never automatic" action={<Button variant="ghost" onClick={() => navigate("/market")}>Open full market</Button>}>
         <DataTable columns={[

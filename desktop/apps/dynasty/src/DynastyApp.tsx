@@ -142,7 +142,7 @@ export function DynastyApp() {
         <Route path="/workspace" element={<TeamWorkspacePage client={client} data={data} />} />
         <Route path="/planning" element={<PlanningPage data={data} />} />
         <Route path="/draft" element={<DraftCockpitPage data={data} />} />
-        <Route path="/data-health" element={<DataHealthPage data={data} onReload={reload} />} />
+        <Route path="/data-health" element={<DataHealthPage client={client} data={data} onReload={reload} />} />
         <Route path="*" element={<Navigate replace to="/" />} />
       </Routes>
     </AppShell>

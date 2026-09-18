@@ -279,11 +279,13 @@ from src.services.rookie_veteran_dynasty_bridge_service import (
 from src.services.dynasty_sleeper_league_service import (
     DynastyLeagueFetchError,
     DynastyLeaguePersistenceError,
+    active_league_profile_id as _dynasty_active_league_profile_id,
     annotate_ownership,
     dynasty_league_store_root,
     import_dynasty_league,
     load_latest_league_snapshot,
     load_league_profile as load_dynasty_league_profile_document,
+    set_active_league_profile as _set_active_dynasty_league_profile,
 )
 from src.services.sleeper_import_service import SleeperHttpClient
 from src.services.sleeper_player_catalog_cache import get_sleeper_player_catalog
@@ -579,7 +581,19 @@ class DesktopBackendFacade:
 
     def bootstrap(self) -> FacadePayload:
         if self.mode == "dynasty":
-            return self.dynasty_bootstrap()
+            # Dynasty League Import V1 (Worker 3): the shared `/api/v1/
+            # bootstrap` entry point auto-annotates with whichever league
+            # is currently "connected" (persisted via
+            # `set_active_dynasty_league_profile`/`active_league_profile_id`,
+            # the same durable-selection convention Redraft's own
+            # `active_profile_id`/`activate_redraft_profile` already use).
+            # This is the ONLY place `dynasty_bootstrap`'s optional
+            # `league_profile_id` is filled in automatically -- calling
+            # `dynasty_bootstrap()` directly still defaults to `None` and
+            # stays byte-identical, exactly as Worker 2's tests require.
+            return self.dynasty_bootstrap(
+                league_profile_id=self.dynasty_active_league_profile_id()
+            )
         return self.redraft_bootstrap()
 
     def dynasty_bootstrap(self, *, league_profile_id: str | None = None) -> FacadePayload:
@@ -6813,6 +6827,44 @@ class DesktopBackendFacade:
                 "fetchedAtUtc": league_snapshot.fetched_at_utc,
                 "updatedAtUtc": profile.updated_at_utc,
             }
+        )
+
+    def dynasty_active_league_profile_id(self) -> str | None:
+        """The currently "connected" Dynasty league's profile id, or `None`
+        when no league is connected -- the persisted selection the HTTP
+        route layer reads to auto-annotate `bootstrap`/`dynasty_workspace`/
+        `dynasty_asset` without the frontend needing to resend a
+        `league_profile_id` on every request (GET routes here carry no
+        query string at all -- see `server.py`'s `_validated_path`)."""
+
+        self._require_mode("dynasty")
+        return _dynasty_active_league_profile_id(self.dynasty_league_root)
+
+    def set_active_dynasty_league_profile(self, profile_id: str | None) -> FacadePayload:
+        """Persist which imported league is "connected" -- the durable half
+        of the Connect League flow. `profile_id=None` disconnects. Reuses
+        Redraft's own `active_profile.json` convention
+        (`redraft_engine_v1_service.set_active_profile`), applied to
+        Dynasty's own store root, so the selection survives a full desktop
+        app restart exactly the way Redraft's active-profile selection
+        already does."""
+
+        self._require_mode("dynasty")
+        if profile_id is not None and not isinstance(profile_id, str):
+            raise FacadeError(
+                "DYNASTY_LEAGUE_PROFILE_ID_INVALID",
+                "profile_id must be a string or null.",
+            )
+        try:
+            profile = _set_active_dynasty_league_profile(self.dynasty_league_root, profile_id)
+        except DynastyLeaguePersistenceError as exc:
+            raise FacadeError(
+                "DYNASTY_LEAGUE_PROFILE_NOT_FOUND",
+                f"No imported Dynasty league profile was found: {exc}",
+                status=404,
+            ) from exc
+        return FacadePayload(
+            data={"activeLeagueProfileId": profile.profile_id if profile is not None else None}
         )
 
     def _load_dynasty_league_state(self, profile_id: str):

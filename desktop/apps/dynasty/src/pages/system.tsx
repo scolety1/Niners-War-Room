@@ -1,4 +1,4 @@
-import { createNwrClient, NwrApiError } from "@nwr/api-client";
+import { createNwrClient, NwrApiError, type NwrApiClient } from "@nwr/api-client";
 import type {
   DynastyBootstrap,
   PlanningModuleId,
@@ -422,13 +422,174 @@ export function DraftCockpitPage({ data }: { data: DynastyBootstrap }) {
   );
 }
 
-export function DataHealthPage({ data, onReload }: { data: DynastyBootstrap; onReload: () => void }) {
+// Dynasty League Import V1 (Worker 3): the real "Connect League" flow.
+// Lives on Data Health because this is the page that already, honestly,
+// discloses Dynasty's roster data as manual-only ("without automated
+// roster hydration" -- see the Planning Console copy above) -- the
+// natural place for the owner to change that. A GET-only Sleeper fetch
+// underneath (`dynasty_sleeper_league_service`); no Sleeper writes ever.
+// The connected league selection is persisted server-side
+// (`local_exports/dynasty_v1/active_league_profile.json`, mirroring
+// Redraft's own `active_profile.json` convention) -- it survives a full
+// app/backend restart with no browser-local state needed at all.
+function DynastyLeagueConnectionPanel({
+  client,
+  data,
+  onReload,
+}: {
+  client: NwrApiClient;
+  data: DynastyBootstrap;
+  onReload: () => void;
+}) {
+  const connected = data.dynastyLeague;
+  const [leagueId, setLeagueId] = useState("");
+  const [myOwnerId, setMyOwnerId] = useState("");
+  const [busy, setBusy] = useState<"connect" | "disconnect" | null>(null);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  const myTeamName = connected
+    ? data.rankings.find((row) => row.ownership?.isMyTeam)?.ownership?.rosterTeamName || null
+    : null;
+
+  const connect = async () => {
+    const trimmedLeagueId = leagueId.trim();
+    if (!trimmedLeagueId) {
+      setError("Enter your Sleeper league ID.");
+      return;
+    }
+    setBusy("connect");
+    setError("");
+    setMessage("");
+    try {
+      await client.importDynastySleeperLeague({
+        leagueId: trimmedLeagueId,
+        ...(myOwnerId.trim() ? { myOwnerId: myOwnerId.trim() } : {}),
+      });
+      setMessage("League connected. Ownership context is now live across Home, Asset Explorer, and Player Detail.");
+      onReload();
+    } catch (reason) {
+      setError(
+        reason instanceof NwrApiError
+          ? reason.message
+          : "The Sleeper league could not be imported.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const disconnect = async () => {
+    setBusy("disconnect");
+    setError("");
+    setMessage("");
+    try {
+      await client.disconnectDynastyLeague();
+      setMessage("League disconnected. Ownership context is hidden again.");
+      onReload();
+    } catch (reason) {
+      setError(
+        reason instanceof NwrApiError
+          ? reason.message
+          : "The connected league could not be disconnected.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <Panel
+      title="Dynasty League Connection"
+      eyebrow="Sleeper · read-only import · GET requests only"
+    >
+      {connected ? (
+        <>
+          <div className="alert-strip">
+            <strong>Connected: {connected.leagueName || connected.profileId}</strong>
+            <span>
+              {myTeamName ? `Your team: ${myTeamName} · ` : ""}
+              Roster #{connected.myRosterId ?? "—"} · Imported {connected.fetchedAtUtc ? new Date(connected.fetchedAtUtc).toLocaleString() : "recently"}
+            </span>
+          </div>
+          <p className="copy-muted">
+            Ownership badges now appear on Home, Asset Explorer, and Player Detail. Rookie
+            assets show as "Ownership unresolved" until a Sleeper identity crosswalk exists --
+            this is disclosed on purpose, never silently guessed.
+          </p>
+          <div className="button-row">
+            <Button
+              disabled={busy !== null}
+              icon="undo"
+              onClick={() => void disconnect()}
+              variant="ghost"
+            >
+              {busy === "disconnect" ? "Disconnecting…" : "Disconnect league"}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="copy-muted">
+            No Dynasty league is connected. Roster data stays manual-only (Planning Console
+            entries) until you connect a real Sleeper league below. This is a read-only import --
+            it never writes to Sleeper.
+          </p>
+          <div className="planning-canvas">
+            <label className="form-field">
+              <span>Sleeper league ID</span>
+              <input
+                disabled={busy !== null}
+                onChange={(event) => setLeagueId(event.target.value)}
+                placeholder="e.g. 1344772855908290560"
+                type="text"
+                value={leagueId}
+              />
+            </label>
+            <label className="form-field">
+              <span>Your Sleeper user ID (optional)</span>
+              <input
+                disabled={busy !== null}
+                onChange={(event) => setMyOwnerId(event.target.value)}
+                placeholder="Identifies which roster is yours"
+                type="text"
+                value={myOwnerId}
+              />
+            </label>
+            <div className="button-row">
+              <Button disabled={busy !== null || !leagueId.trim()} icon="check" onClick={() => void connect()}>
+                {busy === "connect" ? "Connecting…" : "Connect league"}
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
+      {error ? <ErrorState message={error} recovery="Verify the league ID and try again." /> : null}
+      {!error && message ? (
+        <div aria-live="polite" className="alert-strip">
+          <strong>{message}</strong>
+        </div>
+      ) : null}
+    </Panel>
+  );
+}
+
+export function DataHealthPage({
+  client,
+  data,
+  onReload,
+}: {
+  client: NwrApiClient;
+  data: DynastyBootstrap;
+  onReload: () => void;
+}) {
   const status = data.status;
   const sourceRows = Object.entries(status.sourceHashes ?? {}).map(([source, hash]) => ({ source, hash, state: "Verified" }));
   return <>
     <PageHeader eyebrow="System · Trust & freshness" title="Data Health" description="Inspect the governed source state, freshness, and local runtime boundary. No page-open refresh or provider call occurs here." status={<><StatusBadge tone={status.tone} label={status.ready ? "Decision ready" : "Review required"} /><StatusBadge tone="safe" label="Scheduled refresh disabled" /></>} actions={<Button icon="activity" onClick={onReload}>Reload local snapshot</Button>} />
     <section className={`health-hero health-hero--${status.tone}`}><div className="health-hero__icon"><Icon name={status.ready ? "check" : "alert"} size={27} /></div><div><span>{status.authority}</span><h2>{status.summary}</h2><p>Source as of {status.sourceAsOf || "unavailable"} · {status.freshness || "freshness unclassified"}</p></div><div><strong>{status.ready ? "READY" : "REVIEW"}</strong><small>Local contract 1.0</small></div></section>
     <div className="metric-grid"><MetricCard label="Dynasty rows" value={data.rankings.length} detail="Expected 240" trend={data.rankings.length === 240 ? "Exact" : "Review"} icon="board" tone="violet" /><MetricCard label="Market matches" value={data.summary.marketMatched} detail={`As of ${data.marketFreshness.sourceAsOf || "—"}`} trend={data.marketFreshness.status} icon="market" tone="gold" /><MetricCard label="Rookie rows" value={data.rookies.length} detail={`${data.summary.manualReviewRookies} manual review`} trend="Review only" icon="rookie" tone="crimson" /><MetricCard label="Scheduled refresh" value="OFF" detail="Owner approval required" trend="Fail-closed" icon="shield" tone="cyan" /></div>
+    <DynastyLeagueConnectionPanel client={client} data={data} onReload={onReload} />
     <div className="split-view"><Panel title="Source integrity" eyebrow="Owner view"><p className="copy-muted">All required Dynasty sources passed local integrity checks. Technical source fingerprints are available below when needed.</p><details className="advanced-details"><summary>Advanced source details</summary>{sourceRows.length ? <DataTable columns={[{key:"source",label:"Authority"},{key:"hash",label:"Source fingerprint",render:(row)=><code className="hash-value">{String(row.hash)}</code>},{key:"state",label:"State",render:()=> <StatusBadge tone="safe" label="Verified" />}]} rows={sourceRows} rowKey={(row)=>String(row.source)} /> : <p className="copy-muted">Technical source details were not included in this runtime snapshot.</p>}</details></Panel><Panel title="Runtime boundary" eyebrow="Windows desktop"><dl className="health-list"><div><dt>Transport</dt><dd>Local computer only</dd></div><div><dt>Cloud dependency</dt><dd>None</dd></div><div><dt>Provider calls</dt><dd>Disabled</dd></div><div><dt>Streamlit fallback</dt><dd>Preserved</dd></div><div><dt>Mode isolation</dt><dd>Dynasty only</dd></div></dl></Panel></div>
     {status.errors.map((error) => <div className="alert-strip alert-strip--blocked" key={error}><strong>Blocked</strong>{error}</div>)}{status.warnings.map((warning) => <div className="alert-strip" key={warning}><strong>Review</strong>{warning}</div>)}
   </>;

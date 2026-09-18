@@ -916,3 +916,328 @@ direct Python import, as this pass did.
    `created_at_utc`).
 
 ---
+
+## Worker 3 — HTTP routes, Connect League UI, Home/Asset Explorer/Player Detail ownership wiring, live verification (2026-09-18)
+
+**Branch/worktree:** same as Workers 1-2, `C:\NWR\prospective-outcomes-v1`.
+Started at HEAD `b2c11c80` (Worker 2's backend commit). Did not push, did
+not touch `main`, did not force anything. Did not touch
+`governed_asset_registry_service.py`, any board CSV, `marginal_roster_
+utility_v2`, or Redraft's processes (1422/18742) at all.
+
+### 1. HTTP routes (INSPECTED CODE + ACTUAL TEST RESULT)
+
+Read `src/desktop_api/server.py` in full first -- confirmed the exact
+existing conventions (`_json_body`/`_reject_unknown_fields`/
+`_invalid_body`, path regexes, "mutate then return the current bootstrap"
+pattern used by every other Dynasty/Redraft mutation route) before adding
+anything, per the dispatch's own instruction not to invent a new pattern.
+
+New routes, all in `src/desktop_api/server.py`:
+- `POST /api/v1/dynasty/league/import` -- body `{leagueId, myOwnerId?,
+  profileId?}`. Calls `facade.import_dynasty_sleeper_league(...)` (Worker
+  2's frozen, tested method -- unchanged), then
+  `facade.set_active_dynasty_league_profile(profileId)` (new, see below),
+  then returns `facade.dynasty_bootstrap(league_profile_id=profileId)` --
+  the freshly annotated bootstrap in one round trip, matching the
+  established "mutate, then return current bootstrap" convention exactly
+  (e.g. `_SLEEPER_REDRAFT_IMPORT`).
+- `POST /api/v1/dynasty/league/disconnect` -- no body. Clears the active
+  marker, returns the plain (unannotated) `dynasty_bootstrap()`.
+- `GET /api/v1/dynasty/league/{profileId}` -- thin pass-through to
+  `facade.load_dynasty_league_profile(profileId)` (Worker 2's method,
+  unchanged).
+
+**Real design decision, not in Worker 2's scope:** `_validated_path`
+rejects ANY query string on every route (`QUERY_NOT_SUPPORTED`), so there
+was no way to pass `league_profile_id` on a GET request. Rather than
+relax that contract, I added a persisted "active league" concept -- the
+same shape Redraft already uses for its own active-profile selection
+(`redraft_engine_v1_service.set_active_profile`/`active_profile_id`,
+`active_profile.json`). New functions in `dynasty_sleeper_league_service.py`:
+`set_active_league_profile(root, profile_id)` (validates the profile
+actually exists via `load_league_profile` before persisting; `None`
+disconnects) and `active_league_profile_id(root)` (reads the marker,
+`None` if absent/corrupt) -- both use the module's existing `_atomic_json`
+helper, persisted at
+`local_exports/dynasty_v1/active_league_profile.json`.
+
+New facade methods (`desktop_facade.py`): `dynasty_active_league_profile_id()`
+and `set_active_dynasty_league_profile(profile_id)`, both dynasty-mode-
+gated. Critically, **Worker 2's `dynasty_bootstrap`/`dynasty_workspace`/
+`dynasty_asset` method bodies are UNCHANGED** -- the active-profile lookup
+happens only at the call site: `bootstrap()`'s dynasty branch now reads
+`self.dynasty_active_league_profile_id()` and passes it in, and the two
+HTTP routes for `/api/v1/dynasty/workspace` and `/api/v1/dynasty/assets/
+{id}` do the same. This preserves Worker 2's own byte-identical-when-
+omitted tests exactly as written (they call `dynasty_bootstrap()` with no
+active-profile marker on disk, so they still get `None` -> unannotated).
+Added a new regression test proving the composed behavior:
+`test_bootstrap_is_unannotated_by_default_and_annotated_once_a_league_is_
+set_active` plus a real cross-process-restart-simulation test
+(`test_set_active_dynasty_league_profile_disconnect_and_restart_
+persistence` -- constructs a SECOND, independent `DesktopBackendFacade`
+instance pointed at the same `dynasty_league_root` to prove there is zero
+shared in-memory state involved, only the on-disk marker).
+
+Full test file `tests/test_desktop_http_api.py`'s `FakeFacade` was updated
+to accept the new `league_profile_id` kwargs on `dynasty_workspace`/
+`dynasty_asset` (previously it had none) and gained the new methods --
+this was REQUIRED, not optional: the pre-existing
+`test_dynasty_routes_decode_ids_and_accept_canonical_receive_key` and
+`test_dynasty_workspace_routes_are_bounded_and_authenticated` tests would
+otherwise 500 on the new kwarg. Added 3 new route-level tests (import +
+persists-active, profile-get + disconnect, workspace/assets pass the
+active id through only when connected).
+
+### 2. Connect League UI (LIVE OBSERVATION)
+
+Lives on Data Health (`desktop/apps/dynasty/src/pages/system.tsx`,
+`DynastyLeagueConnectionPanel`) -- per the dispatch's own hint, this is
+the page whose Planning Console copy already discloses "without automated
+roster hydration," so it's the natural, existing place to add a real
+connect action rather than inventing a new nav destination. Minimal real
+form: Sleeper league ID + optional owner ID -> `POST /api/v1/dynasty/
+league/import` -> on success, `onReload()` (the same `reload` callback
+`DynastyApp.tsx` already threads through every page, which re-runs the
+top-level bootstrap fetch). Connected state shows league name, team name
+(derived from any owned ranking row's real `ownership.rosterTeamName`,
+never hardcoded), roster number, import timestamp, and a real
+**Disconnect** button (`POST /api/v1/dynasty/league/disconnect`) -- not
+explicitly asked for by the dispatch, added because "selectable" implies
+being able to select "no league" again, and it made the byte-identical
+fallback path independently live-testable without restarting the backend.
+
+**Persistence mechanism:** entirely server-side (the `active_league_
+profile.json` marker above) -- no browser localStorage/sessionStorage
+involved at all. This means the "connected" selection survives not just a
+page reload but a FULL BACKEND RESTART, which is the strictly stronger
+guarantee the dispatch actually asked for ("survive a restart").
+
+### 3. Home wiring (LIVE OBSERVATION)
+
+`desktop/apps/dynasty/src/pages/home.tsx`: `data.dynastyLeague` (present
+only once connected, per the byte-identical contract) gates a new "Your
+roster -- {team}" panel showing the real rows where
+`row.ownership?.isMyTeam` is true (rank, player, position, real roster
+slot status, NWR score), plus a status-row "Connected: {league name}"
+badge and (when NOT connected) a "No Dynasty league connected" strip with
+a real "Connect league" button that navigates to Data Health. **Verified
+LIVE, not just from the backend's own tests**: with no league connected,
+Home rendered pixel-for-pixel identical to its pre-existing appearance
+(screenshot-compared before and after this whole pass, and again after a
+real Disconnect); with `1344772855908290560` connected, Home showed a
+real "LAS VEGAS ENGINERDS" status badge and a real "Your roster -- Niners"
+table with real players (De'Von Achane, Zay Flowers, Drake Maye, Chase
+Brown, Jameson Williams, ...) and real slot statuses (starter/bench).
+
+### 4. Asset Explorer / Player Detail ownership (LIVE OBSERVATION)
+
+New pure helper `desktop/apps/dynasty/src/lib/ownership.ts`,
+`resolveOwnershipDisplay(ownership)` -- follows this codebase's own
+`resolveFaabDisplay`-style precedent explicitly named in the dispatch
+(`desktop/apps/redraft/src/improve-team-explain.ts`): returns `null` for
+no-ownership-data (no league connected, or an asset type with no
+ownership concept, e.g. picks), and a `{label, tone, detail}` badge for
+`OWNED` (split into "On your roster" vs. "Owned by {team}"), `FREE_AGENT`,
+and `UNRESOLVED` (rookies -- always shown, never omitted or guessed).
+7 unit tests in `ownership.test.ts`, all passing, covering every branch
+including the empty-team-name and empty-reason-string fallbacks.
+
+Wired into: `AssetExplorerPage` and `RankingsPage`
+(`pages/rankings.tsx`, an additive "Ownership" column, only added when
+`data.dynastyLeague` is set), `RookieReviewPage`
+(`pages/research.tsx`, same additive column -- proves rookies show
+`UNRESOLVED` in a real list view, not just in one-off detail), and
+`PlayerDetailBody`'s identity header (a real ownership badge next to the
+player's name/team/authority line, sourced from the per-asset `GET /api/
+v1/dynasty/assets/{id}` response).
+
+**Real, live spot-checks (via Chrome MCP, `get_page_text` over the full
+Asset Explorer table after connecting the real league -- 379 real rows
+inspected, not a sample):**
+- **My-roster player:** De'Von Achane (#9) -> "ON YOUR ROSTER". Confirmed
+  again on its own Player Detail page (`/#/players/current%3A9226`) --
+  real badge in the identity header.
+- **Opponent-roster player:** Puka Nacua (#1) -> "OWNED BY ROCKY MOUNTAIN
+  HIGH" -- this independently reproduces Worker 2's own live finding (Puka
+  Nacua sits on roster 9, not roster 7, as of this same season) from a
+  completely different code path (UI rendering vs. Worker 2's direct
+  Python `annotate_ownership` call).
+- **Free agent:** Darius Slayton (#89), Joe Mixon (#97), Calvin Austin
+  (#100), and 30+ others -> "FREE AGENT".
+- **Rookie (unresolved):** every one of the 73 real Rookie Review rows
+  (Jeremiyah Love, Jordyn Tyson, ...) and all 7 Manual Review rookies
+  (De'Zhaun Stribling, Carson Beck, ...) -> "OWNERSHIP UNRESOLVED" -- the
+  honest disclosed state, never silently omitted or guessed, exactly as
+  designed.
+- **Pick/future-pick assets:** no ownership badge rendered at all (the
+  Ownership column shows `—`) -- `annotate_ownership` correctly leaves
+  these unannotated (draft-pick capital is a separate structure Worker 4
+  was never asked to surface here), and the UI never fabricates a status
+  for them.
+
+### 5. Live verification -- full sequence (LIVE OBSERVATION)
+
+Killed the stale dev processes from Worker 2's session (frontend PID
+5288, backend PID 12852 -- confirmed dead via `netstat`), rebuilt the
+frontend for real (`npm run build:dynasty` -- **required**, this app's
+dev process runs `vite preview`, which serves the last build, not source;
+confirmed this the same way the dogfood-cycle lesson referenced in the
+dispatch describes), and relaunched both: backend via
+`scripts/run_nwr_desktop_api.py --port 18741 --mode dynasty` (dev
+bearer-token credentials piped over stdin, matching `browserRuntime`'s
+own hardcoded dev-mode fallback token in `api-client/src/index.ts`, so no
+Tauri shell was needed to exercise this through a real browser), frontend
+via `vite preview --port 1421 --strictPort` from
+`desktop/apps/dynasty`.
+
+Full Chrome MCP sequence, all real, all confirmed via screenshot or
+`get_page_text` (never asserted from code alone):
+1. Home, no league connected -- confirmed the "No Dynasty league
+   connected" strip + Connect League CTA, real `239` market-matched
+   count (matches this session's own live pytest baseline exactly).
+2. Clicked through to Data Health, typed the real league ID
+   (`1344772855908290560`) and real owner ID (`1352768154031374336`) --
+   **note:** the MCP `form_input` tool coerces its `value` through a
+   JS number internally and silently lost precision on these 19-digit
+   IDs (`...290560` became `...290600`); switched to `computer` click+type
+   instead, which preserves the exact string. Worth remembering for any
+   future 19-digit-Sleeper-ID UI test.
+3. Clicked "Connect league" -- real success message, "Connected: Las
+   Vegas Enginerds · Your team: Niners · Roster #7 · Imported 9/18/2026,
+   5:55:18 PM".
+4. Home -- real "CONNECTED: LAS VEGAS ENGINERDS" status badge, real "Your
+   roster -- Niners" panel with real players.
+5. Asset Explorer -- full-table real spot-checks (section 4 above).
+6. Player Detail -- real "ON YOUR ROSTER" badge on De'Von Achane.
+7. Hard browser reload (`navigate` to `/`) -- connection persisted.
+8. **Killed the backend process entirely** (`Stop-Process`, confirmed
+   port `18741` free via `netstat`) and started a **brand-new, unrelated
+   backend process** (new PID, zero shared memory) -- reloaded the
+   browser -- **connection still showed "CONNECTED: LAS VEGAS
+   ENGINERDS"**, proving persistence is real (on-disk), not an artifact
+   of one long-lived process.
+9. Clicked "Disconnect league" -- Home reverted to the exact original
+   "No Dynasty league connected" appearance (screenshot-compared).
+10. Reconnected the real league again (same flow) to leave a real,
+    working, connected state on disk for Worker 4 to build against
+    immediately, rather than an artificially-disconnected one.
+
+No console errors at any point (`read_console_messages`, `onlyErrors:
+true`, checked mid-sequence).
+
+### Tests added
+
+- `tests/test_dynasty_sleeper_league_service.py`: 4 new tests for
+  `active_league_profile_id`/`set_active_league_profile` (default-none,
+  persists-and-survives-a-fresh-read, disconnect, rejects-unimported).
+- `tests/test_dynasty_league_import_facade_wiring.py`: 3 new tests --
+  `bootstrap()`'s composed default-vs-connected behavior, a real
+  independent-second-facade-instance restart simulation, and the
+  unknown-profile rejection path.
+- `tests/test_desktop_http_api.py`: 3 new route-level tests (import +
+  persists active + returns annotated bootstrap; profile-get +
+  disconnect; workspace/assets pass the active id through only once
+  connected) plus required `FakeFacade` updates for the new
+  `league_profile_id` kwargs/methods.
+- `desktop/apps/dynasty/src/lib/ownership.test.ts`: 7 new tests for
+  `resolveOwnershipDisplay` (null-when-disconnected, my-team, opponent
+  team with a real name and with an empty-name fallback, free agent,
+  unresolved with a real reason and with an empty-reason fallback).
+
+**Full-suite regression check, this pass:** `pytest tests/
+test_desktop_http_api.py tests/test_dynasty_league_import_facade_wiring.py
+tests/test_dynasty_sleeper_league_service.py
+tests/test_desktop_facade_architecture_wiring.py` -- 83 passed. `npm run
+typecheck` (both dynasty and redraft `tsconfig.json` projects) -- clean,
+zero errors. `npx vitest run` (whole `desktop/` workspace, both apps) --
+486 passed, 30 files. One incidental finding: running the full `vitest`
+suite regenerates `docs/codex/prospective_outcomes_v1/multi_league_scale_
+v1/frontend_bench_results.json` with new real-but-noisy timing numbers
+(a benchmark test writes its own results file) -- reverted that file via
+`git checkout --` before committing since it's timing noise unrelated to
+this pass, not a real regression.
+
+### Dynasty processes status (final)
+
+Backend: `http://127.0.0.1:18741/` -- PID `41112` (the SECOND restart in
+this pass, per the persistence test above; the very first restart, PID
+`13552`, was intentionally killed as part of that same test). Frontend:
+`http://127.0.0.1:1421/` -- PID `37176`, serving the real rebuilt
+`dist/` (`vite preview`). Both confirmed healthy via live browser use
+through this entire pass. Redraft's own processes (1422/18742) were never
+touched.
+
+### Files changed
+
+- `src/desktop_api/server.py` (3 new routes).
+- `src/application/desktop_facade.py` (`bootstrap()` composed with the
+  active-profile lookup; 2 new methods; Worker 2's 3 annotated methods'
+  bodies unchanged).
+- `src/services/dynasty_sleeper_league_service.py` (2 new persistence
+  functions, same `_atomic_json` convention).
+- `desktop/packages/contracts/src/index.ts` (new `AssetOwnership`/
+  `DynastyLeagueContext`/`DynastyLeagueImportInput`/
+  `DynastyLeagueProfileSummary`/`DynastyLeagueRosterSummary` types;
+  additive optional `ownership?`/`dynastyLeague?` fields on the existing
+  ranking/asset/rookie/workspace/bootstrap/player-detail types).
+- `desktop/packages/api-client/src/index.ts` (3 new client methods).
+- `desktop/apps/dynasty/src/lib/ownership.ts` (new, pure).
+- `desktop/apps/dynasty/src/lib/ownership.test.ts` (new).
+- `desktop/apps/dynasty/src/DynastyApp.tsx` (passes `client` into
+  `DataHealthPage`).
+- `desktop/apps/dynasty/src/pages/system.tsx` (new
+  `DynastyLeagueConnectionPanel`, `DataHealthPage` signature change).
+- `desktop/apps/dynasty/src/pages/home.tsx` (Your Roster panel, connect
+  CTA).
+- `desktop/apps/dynasty/src/pages/rankings.tsx` (Ownership column on
+  Asset Explorer + Dynasty Rankings).
+- `desktop/apps/dynasty/src/pages/research.tsx` (Ownership column on
+  Rookie Review, ownership badge on Player Detail).
+- `tests/test_dynasty_sleeper_league_service.py`,
+  `tests/test_dynasty_league_import_facade_wiring.py`,
+  `tests/test_desktop_http_api.py` (new/updated tests, see above).
+- `docs/codex/dynasty_league_import_v1/LEDGER.md` (this section).
+
+Not committed (pre-existing untracked leftovers from Worker 2's own
+session, not touched or relied upon by this pass): `dynasty_smoke_
+stderr.log`, `dynasty_smoke_stdout.log`,
+`local_exports.backup-20260918T230905Z/`.
+
+### Open issues for Worker 4 (Compare + Trade Decision Lab + full closure)
+
+1. **Compare and Trade Decision Lab remain entirely unwired**, exactly as
+   scoped -- `compare_dynasty_assets`/`evaluate_dynasty_trade` never
+   receive a `league_profile_id` and their pages never read `ownership`.
+   This is real, deliberate, in-scope-for-Worker-4 work, not an oversight.
+2. **A real league IS currently connected** on disk
+   (`local_exports/dynasty_v1/`, profile id
+   `1344772855908290560`) -- Worker 4 can build/test against it
+   immediately; re-running the Connect League flow is idempotent-safe if
+   a fresher snapshot is ever wanted (re-fetches live, writes a new
+   timestamped snapshot, profile file updated in place).
+3. **Rookie ownership is still `UNRESOLVED` by design** -- no crosswalk
+   was built this pass either; still an honest, disclosed gap, not
+   something Compare/Trade Lab should silently paper over if Worker 4
+   surfaces rookie ownership there too.
+4. **The Connect League form has no client-side re-validation beyond
+   "non-empty league ID"** -- a garbage/nonexistent league ID surfaces the
+   real backend `DYNASTY_LEAGUE_FETCH_FAILED`/network error message
+   as-is (via `ErrorState`), not a friendlier pre-check; acceptable for
+   this pass's scope but worth polishing later if the owner hits it.
+5. **No UI exists yet for picking a SECOND or different league profile**
+   once one is connected (only connect-a-new-one, which overwrites which
+   profile is "active" via a fresh import, or disconnect) -- the backend
+   supports arbitrary `profileId`s and `GET /api/v1/dynasty/league/
+   {profileId}` already, so a "switch between previously-imported
+   leagues" picker is straightforward to add later but was not asked for
+   this pass and wasn't built.
+6. **Dev-mode bearer token used for this pass's live verification**
+   (`nwr-desktop-development-token-only-000000000000`, the same hardcoded
+   fallback `browserRuntime()` already uses when not running inside
+   Tauri) -- this is the established, pre-existing convention for
+   testing this app through a plain browser rather than the native shell;
+   not a new credential or weakening of anything.
+
+---

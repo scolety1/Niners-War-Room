@@ -852,6 +852,53 @@ def load_league_profile(root: str | Path, profile_id: str) -> DynastyLeagueProfi
         ) from exc
 
 
+def _active_profile_marker_path(root: Path) -> Path:
+    return Path(root) / "active_league_profile.json"
+
+
+def set_active_league_profile(
+    root: str | Path, profile_id: str | None
+) -> DynastyLeagueProfile | None:
+    """Persist which imported league profile is the "connected" Dynasty
+    league -- the concrete mechanism by which the owner's Connect League
+    selection survives an app restart. Mirrors Redraft's own
+    `set_active_profile`/`active_profile_id` convention
+    (`redraft_engine_v1_service.py`) exactly: a single small marker JSON
+    file under the store root, atomically written, holding only the id.
+
+    `profile_id=None` disconnects (clears the marker) without touching any
+    already-persisted league profile/snapshot data. A non-`None` id is
+    validated against `load_league_profile` first -- the marker can never
+    point at a profile that does not actually exist on disk -- and the
+    canonical, normalized profile id (as resolved by that load) is what
+    gets persisted, not the caller's raw string.
+    """
+
+    root_path = Path(root)
+    if profile_id is None:
+        _atomic_json(_active_profile_marker_path(root_path), {"profile_id": None})
+        return None
+    profile = load_league_profile(root_path, profile_id)
+    _atomic_json(_active_profile_marker_path(root_path), {"profile_id": profile.profile_id})
+    return profile
+
+
+def active_league_profile_id(root: str | Path) -> str | None:
+    """Read back the currently "connected" league profile id, or `None`
+    when no league is connected (including when the marker file does not
+    exist yet -- the default, pre-connection state)."""
+
+    path = _active_profile_marker_path(Path(root))
+    if not path.is_file():
+        return None
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, TypeError):
+        return None
+    value = doc.get("profile_id") if isinstance(doc, dict) else None
+    return str(value) if isinstance(value, str) and value else None
+
+
 def _league_snapshot_from_dict(doc: Mapping[str, Any]) -> DynastyLeagueSnapshot:
     settings_doc = doc.get("settings") or {}
     settings = DynastyLeagueSettings(

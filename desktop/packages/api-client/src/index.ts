@@ -11,6 +11,8 @@ import {
   type DesktopMode,
   type DynastyBootstrap,
   type DynastyComparison,
+  type DynastyLeagueImportInput,
+  type DynastyLeagueProfileSummary,
   type DynastyWorkspace,
   type KdstStreamerResult,
   type LeagueWorkspaceContext,
@@ -375,6 +377,32 @@ export class NwrApiClient {
 
   loadDynastyWorkspace(): Promise<DynastyWorkspace> {
     return this.request("/api/v1/dynasty/workspace");
+  }
+
+  // Dynasty League Import V1 (Worker 3): the real "Connect League" flow --
+  // a GET-only Sleeper fetch underneath (see `dynasty_sleeper_league_
+  // service.fetch_dynasty_league_snapshot`), never a write. A successful
+  // import also becomes the persisted "active" league server-side (see
+  // `set_active_dynasty_league_profile`), so this returns the freshly
+  // ownership-annotated bootstrap directly -- the same "mutate, then
+  // return the current bootstrap" convention every other Dynasty/Redraft
+  // mutation route on this client already follows.
+  importDynastySleeperLeague(input: DynastyLeagueImportInput): Promise<DynastyBootstrap> {
+    return this.request("/api/v1/dynasty/league/import", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
+
+  disconnectDynastyLeague(): Promise<DynastyBootstrap> {
+    return this.request("/api/v1/dynasty/league/disconnect", {
+      method: "POST",
+      body: "{}",
+    });
+  }
+
+  loadDynastyLeagueProfile(profileId: string): Promise<DynastyLeagueProfileSummary> {
+    return this.request(`/api/v1/dynasty/league/${encodeURIComponent(profileId)}`);
   }
 
   savePersonalBoardEntry(input: PersonalBoardInput): Promise<DynastyWorkspace> {

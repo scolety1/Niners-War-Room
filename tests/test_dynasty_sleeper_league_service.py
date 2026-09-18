@@ -23,6 +23,7 @@ from src.services.dynasty_sleeper_league_service import (
     DynastyRosterEntry,
     PickOwnership,
     RoundCountBaseline,
+    active_league_profile_id,
     annotate_ownership,
     fetch_dynasty_league_snapshot,
     import_dynasty_league,
@@ -32,6 +33,7 @@ from src.services.dynasty_sleeper_league_service import (
     resolve_round_count_baseline,
     save_league_profile,
     save_league_snapshot,
+    set_active_league_profile,
 )
 
 
@@ -488,6 +490,50 @@ def test_persistence_round_trips_profile_and_snapshot(tmp_path: Path) -> None:
 def test_load_league_profile_raises_for_missing_profile(tmp_path: Path) -> None:
     with pytest.raises(DynastyLeaguePersistenceError):
         load_league_profile(tmp_path / "dynasty_v1", "does-not-exist")
+
+
+# --------------------------------------------------------------------------
+# Active-profile ("Connect League") persistence -- Worker 3
+# --------------------------------------------------------------------------
+
+
+def test_active_league_profile_id_is_none_before_anything_is_connected(tmp_path: Path) -> None:
+    root = tmp_path / "dynasty_v1"
+    assert active_league_profile_id(root) is None
+
+
+def test_set_active_league_profile_persists_and_survives_a_fresh_read(tmp_path: Path) -> None:
+    root = tmp_path / "dynasty_v1"
+    rosters = [_roster(7, "owner-7", "Niners", players=["100"], starters=["100"])]
+    snapshot = _snapshot(rosters=rosters)
+    profile = save_league_profile(root, snapshot, my_owner_id="owner-7")
+
+    returned = set_active_league_profile(root, profile.profile_id)
+    assert returned == profile
+    # A brand-new read (simulating a full process/app restart -- no shared
+    # in-memory state at all) must see the same persisted selection.
+    assert active_league_profile_id(root) == profile.profile_id
+
+
+def test_set_active_league_profile_none_disconnects(tmp_path: Path) -> None:
+    root = tmp_path / "dynasty_v1"
+    rosters = [_roster(7, "owner-7", "Niners", players=["100"], starters=["100"])]
+    snapshot = _snapshot(rosters=rosters)
+    profile = save_league_profile(root, snapshot, my_owner_id="owner-7")
+    set_active_league_profile(root, profile.profile_id)
+    assert active_league_profile_id(root) == profile.profile_id
+
+    returned = set_active_league_profile(root, None)
+    assert returned is None
+    assert active_league_profile_id(root) is None
+
+
+def test_set_active_league_profile_rejects_an_unimported_profile(tmp_path: Path) -> None:
+    root = tmp_path / "dynasty_v1"
+    with pytest.raises(DynastyLeaguePersistenceError):
+        set_active_league_profile(root, "never-imported")
+    # A failed activation must never leave a dangling/incorrect marker.
+    assert active_league_profile_id(root) is None
 
 
 def test_import_dynasty_league_uses_injected_client_and_persists(tmp_path: Path) -> None:

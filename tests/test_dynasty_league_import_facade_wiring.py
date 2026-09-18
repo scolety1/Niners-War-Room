@@ -235,6 +235,71 @@ def test_import_dynasty_sleeper_league_unavailable_outside_dynasty_mode(tmp_path
     assert exc_info.value.code == "MODE_ROUTE_UNAVAILABLE"
 
 
+# --------------------------------------------------------------------------
+# Active-profile ("Connect League") persistence -- Worker 3
+# --------------------------------------------------------------------------
+
+
+def test_bootstrap_is_unannotated_by_default_and_annotated_once_a_league_is_set_active(
+    tmp_path: Path,
+) -> None:
+    """The shared `bootstrap()` entry point (what `/api/v1/bootstrap` calls)
+    must stay byte-identical to today until a league is explicitly made
+    active, and then must auto-annotate without the caller repeating
+    `league_profile_id` on every request."""
+
+    facade = _facade(tmp_path)
+    assert facade.dynasty_active_league_profile_id() is None
+    before_connect = facade.bootstrap()
+    assert "dynastyLeague" not in before_connect.data
+
+    profile_id = _import_fixture_league(facade)
+    facade.set_active_dynasty_league_profile(profile_id)
+    assert facade.dynasty_active_league_profile_id() == profile_id
+
+    after_connect = facade.bootstrap()
+    assert after_connect.data["dynastyLeague"]["profileId"] == profile_id
+    # Calling dynasty_bootstrap() directly, with no argument, is UNCHANGED
+    # by any of this -- it is still the caller's job to opt in explicitly.
+    # This is the exact guarantee the byte-identical-when-omitted tests
+    # above already prove; re-asserted here for the active-profile path
+    # specifically.
+    assert "dynastyLeague" not in facade.dynasty_bootstrap().data
+
+
+def test_set_active_dynasty_league_profile_disconnect_and_restart_persistence(
+    tmp_path: Path,
+) -> None:
+    facade = _facade(tmp_path)
+    profile_id = _import_fixture_league(facade)
+    facade.set_active_dynasty_league_profile(profile_id)
+    assert facade.bootstrap().data["dynastyLeague"]["profileId"] == profile_id
+
+    # Simulate a full backend restart: a brand-new facade instance pointed
+    # at the SAME on-disk root, no shared in-memory state at all.
+    restarted_facade = DesktopBackendFacade(
+        repo_root=REPO_ROOT,
+        mode="dynasty",
+        redraft_root=tmp_path / "redraft",
+        workspace_root=tmp_path / "workspace",
+        dynasty_league_root=tmp_path / "dynasty_v1",
+    )
+    assert restarted_facade.dynasty_active_league_profile_id() == profile_id
+    assert restarted_facade.bootstrap().data["dynastyLeague"]["profileId"] == profile_id
+
+    restarted_facade.set_active_dynasty_league_profile(None)
+    assert restarted_facade.dynasty_active_league_profile_id() is None
+    assert "dynastyLeague" not in restarted_facade.bootstrap().data
+
+
+def test_set_active_dynasty_league_profile_rejects_unknown_profile(tmp_path: Path) -> None:
+    facade = _facade(tmp_path)
+    with pytest.raises(FacadeError) as exc_info:
+        facade.set_active_dynasty_league_profile("never-imported")
+    assert exc_info.value.code == "DYNASTY_LEAGUE_PROFILE_NOT_FOUND"
+    assert facade.dynasty_active_league_profile_id() is None
+
+
 def test_load_dynasty_league_profile_round_trips_persisted_state(tmp_path: Path) -> None:
     facade = _facade(tmp_path)
     profile_id = _import_fixture_league(facade)
