@@ -1,9 +1,14 @@
 # Sunday Decision Sheet — Fantasy Gamers
 
-Prepared by Worker 6 (closure pass), live-verified this session against the
-final-HEAD Redraft app (`1149b89d`), real browser session, GET-only Sleeper
-calls throughout. All figures below are LIVE OBSERVATION from that session
-unless marked otherwise.
+**Refreshed by Worker 3 (connection/update pass, 2026-09-19 ~5:00 PM Mountain)**
+against the real, live, running Redraft app (final HEAD after this pass —
+see `docs/codex/connection_update_20260919/LEDGER.md` Worker 3 section),
+real browser session, GET-only Sleeper + FantasyPros calls throughout. All
+figures below are LIVE OBSERVATION from this refresh unless marked
+otherwise. This sheet supersedes the version prepared by Worker 6 (prior
+Sunday Readiness cycle) — in particular, section 2's "+11.7" lineup-swap
+figure and section 3's "+2.3"-framed pickup were both re-pulled fresh
+this pass, not carried over.
 
 ## 1. League / owner / capture
 
@@ -11,151 +16,163 @@ unless marked otherwise.
   1QB. **Owner:** scolety (`user 1000507609050337280`), roster 9, team
   "Brown Town & Big Mike."
 - **Season / week:** 2026 regular season, **real live provider week = 2**
-  (fresh `GET https://api.sleeper.app/v1/state/nfl` this session:
-  `{"week":2,"season_type":"regular","season":"2026", ...}`). League is
-  `IN_SEASON`, record 1-0 (#1 of 10 by points for, 157.0 real Sleeper PF).
-- **Scoring basis:** Sleeper's real, full PPR scoring map (`rec: 1.0`,
-  `pass_td: 4.0`, `pass_yd: 0.04`, `pass_int: -2.0`, `rush_td`/`rec_td:
-  6.0`, `fum_lost: -2.0`), real DST points-allowed tiers, real kicker
-  tiers `fgm_0_19: 3.0` … `fgm_60p: 6.0`. Roster has a real DST slot
-  (`QB, RB, RB, WR, WR, TE, FLEX, K, DEF, BN x6`).
-- **Capture times (this session, live):**
-  - Weekly projections: SLEEPER, Week 2, updated **Sep 18, 9:50 PM**
-    Mountain (shown LIVE in-app, cached server-side).
-  - Roster/starters/waiver state: read live from the app's real Sleeper
-    calls during this same session (~9:47–9:55 PM Mountain, Sep 18).
-  - Profile record last updated: `2026-09-19T01:46:52+00:00` (= **Sep 18,
-    7:46 PM Mountain**).
-- **Readiness verdict: READY.** Full weekly lineup, waiver, FAAB/priority,
-  and K/DST tooling all loaded correctly and returned real, live,
-  non-error results this session. See "what cannot yet be concluded"
-  (section 6) for the honest limits within that READY verdict.
+  (fresh `GET https://api.sleeper.app/v1/state/nfl` this pass). League is
+  `IN_SEASON`, real record 1-0 (#1 of 10 by points for, 157.0 PF, 152.8 PA),
+  opponent this week "shittin and tuten," current in-progress score 0.0-0.0
+  at capture time (Sunday slate not yet started).
+- **Capture time (this pass, live):** weekly projections SLEEPER, Week 2,
+  updated **Sep 19, 4:56-4:58 PM Mountain** (shown live in-app). This is a
+  fresh pull from ~24 hours after Worker 6's original capture and a few
+  hours after Worker 2's own live verification of the missing-projection
+  fix — all three captures independently agree the underlying Sleeper data
+  is genuinely current, not stale.
+- **Readiness verdict: READY**, with the missing-projection honesty fix
+  (this pass's dispatching cycle, commit `ac67ade3`) now confirmed live in
+  production. Full weekly lineup, waiver, FAAB/priority, and K/DST tooling
+  all loaded correctly and returned real, live, non-error results this
+  pass.
 
-## 2. Lineup — current vs. proposed
+## 2. Lineup — current vs. proposed (RE-PULLED FRESH, real roster drift from the prior sheet)
 
-**Real recommended change (1):** Start **Michael Pittman** (WR, PIT) over
-**Zay Flowers** (WR, BAL) — **+11.7 projected points**, status OK (not a
-close call).
+**Real recommended change (1), live right now:** Start **Marvin Harrison**
+(WR, ARI) over **Zay Flowers** (WR, BAL) — flagged **LOW CONFIDENCE — CLOSE
+CALL**. **EXPECTED IMPACT: Unknown — missing projection.** In-app copy,
+verbatim: *"Zay Flowers's weekly projection is missing this week — the
+point swing from this change is unknown, not a confirmed gain."*
 
-**Proposed starting lineup (projected total 116.3 pts, live Week 2 data):**
+This is the corrected, honest presentation from Worker 2's fix
+(`_swap_reasons` / `deltaBasis`), reconfirmed live by this pass, not the
+fabricated **"+11.7"** figure the prior (Worker 6) version of this sheet
+reported. Two real, disclosed facts about why the specific player name
+changed since the prior sheet: (a) **Michael Pittman** — the player named
+in the owner's original bug report and in the prior sheet's own swap-in
+slot — is now ALSO showing a missing projection this week (`"—"` in the
+bench table below) and is no longer the app's top recommendation; (b) the
+real Sleeper roster/lineup genuinely changed in the ~24 hours since the
+prior capture (an honest, disclosed drift, not a discrepancy in the fix).
+Zay Flowers himself has been missing a weekly projection continuously
+across all three captures this cycle (Worker 6's original, Worker 2's
+verification, and this pass) — the same real, persistent Sleeper data gap
+each time, not a new or intermittent issue.
+
+**Proposed starting lineup (projected total 115.0 pts, live Week 2 data):**
 
 | Slot | Player | Pos/Team | Proj pts | Note |
 |---|---|---|---|---|
-| QB | Caleb Williams | CHI · QB | 16.7 | Close call vs. Trevor Lawrence (bench), gap 0.3 pts |
+| QB | Caleb Williams | CHI · QB | 17.8 | Close call vs. Trevor Lawrence (bench), gap 1.4 pts |
 | RB | Jonathan Taylor | IND · RB | 18.7 | OK |
 | RB | De'Von Achane | MIA · RB | 16.8 | OK |
 | WR | Chris Olave | NO · WR | 15.5 | OK |
-| WR | **Michael Pittman** | PIT · WR | 11.7 | Recommended swap-in, OK |
+| WR | **Marvin Harrison** | ARI · WR | 9.2 | Recommended swap-in, close call vs. Carnell Tate (bench), gap 0.8 pts |
 | TE | Kyle Pitts | ATL · TE | 10.0 | OK |
 | K | Ka'imi Fairbairn | HOU · K | 7.3 | OK (see K/DST section) |
-| DST | NE D/ST | NE · DST | 8.6 | OK (see K/DST section) |
-| FLEX | Travis Etienne | NO · RB | 11.0 | Close call vs. Marvin Harrison (bench), gap 1.7 pts |
+| DST | NE D/ST | NE · DST | 8.7 | OK (see K/DST section) |
+| FLEX | Travis Etienne | NO · RB | 11.0 | OK |
 
-**Strongest bench alternative / close calls:**
-- Trevor Lawrence (QB, bench) — 16.4 proj pts, only 0.3 behind starter
-  Caleb Williams. Genuine close call; if Caleb Williams is downgraded to
-  OUT/doubtful before kickoff, Lawrence is the real backup play (recheck
-  status first — see section 6).
-- Marvin Harrison (WR, bench) — 9.2 proj pts, 1.7 behind Travis Etienne's
-  FLEX slot; a real but not urgent alternative.
-- Other bench: Carnell Tate (WR, 8.5), Kenny Gainwell (RB, 7.9), Wan'Dale
-  Robinson (WR, 7.7), Zay Flowers (WR, missing projection this week — real
-  Sleeper weekly-projection gap, retained and shown, not dropped).
+**Bench (6 players, real live pull):** Trevor Lawrence (QB, 16.4 — real
+close-call backup, 1.4 behind Caleb Williams), Carnell Tate (WR, 8.5 —
+real close-call FLEX/WR2 alternative, 0.8 behind Marvin Harrison), Kenny
+Gainwell (RB, 7.9), Wan'Dale Robinson (WR, 7.7), **Michael Pittman (WR,
+missing projection — shown as "—", not silently dropped)**, **Zay Flowers
+(WR, missing projection — shown as "—", not silently dropped)**.
+
 - No reserve/taxi players and no locked-unavailable players on this roster
-  this week (Sleeper `reserve: None`, confirmed both by this session's
-  live pull and this cycle's own W1 findings).
+  this week (Sleeper `reserve: None`), reconfirmed this pass.
 
-## 3. Waivers / pickups
+## 3. Waivers / pickups — REASSESSED this pass (owner-directed judgment check)
 
-**Top genuinely useful pickup this week (real legal-lineup gain, not raw
-points):** **ADD Brock Purdy (QB) / DROP Marvin Harrison** — real,
-simulated before/after lineup gain **+2.3 pts**, "Projected to become a
-starter this week." This is the #1 THIS_WEEK target by real usable gain,
-confirmed live this session (matches this cycle's own earlier unit/live
-verification of the same evaluator).
-- Long-term cost: real REST_OF_SEASON view shows Marvin Harrison still has
-  real standalone value; dropping him is a real, disclosed opportunity
-  cost, not free. Season-utility context is shown separately in-app
-  ("Season utility (long-term)") — review before committing.
-- Required drop: Marvin Harrison (WR), per the app's own paired
-  evaluation; no open non-reserve slot exists that avoids a drop.
-- Acquisition method: **this is NOT a FAAB league** — real Sleeper
-  `waiver_type` reports rolling **waiver priority**, this team's real
-  current priority is **#6 of 10** (live, this session). No dollar bid
-  applies; claims process in priority order on the league's normal waiver
-  schedule (recheck Sleeper's own transaction/waiver-clear day before
-  assuming a specific day this week).
-- No genuinely useful RB/WR/TE alternative showed comparable real weekly
-  gain this session; the rest of the THIS_WEEK-ranked list drops off
-  quickly after this one target.
+**What the app's current, real, live Improve Team → Targets (THIS_WEEK
+mode) surface actually shows right now, top of list:**
 
-## 4. Kicker and DST
+| Rank | Move | THIS WEEK gain | REST OF SEASON net vs. dropping Marvin Harrison |
+|---|---|---|---|
+| 1 | ADD Xavier Worthy / DROP Marvin Harrison | +0.6 pts (becomes starter) | **-0.7** |
+| 2 | ADD Brock Purdy / DROP Marvin Harrison | +0.5 pts (becomes starter) | **-1.7** |
+| 3 | ADD Malik Washington / DROP Marvin Harrison | +0.0 pts (becomes starter) | **-0.6** |
+| 4 | ADD Dalton Schultz / DROP Marvin Harrison | (not fully captured — same pattern) | — |
+
+**Honest reassessment, per the owner's explicit instruction not to repeat
+a move solely because of a small weekly modeled gain:**
+
+- Every real, current top-ranked THIS_WEEK target requires dropping
+  **Marvin Harrison** for a genuinely trivial weekly lineup gain — **+0.6,
+  +0.5, and +0.0 projected points**, respectively. These are not
+  meaningful gains; they are noise-level.
+- The app's own REST_OF_SEASON view — checked directly this pass, not
+  assumed — shows a **NEGATIVE** "net vs. dropping Marvin Harrison" for
+  every one of them (-0.7, -1.7, -0.6). Marvin Harrison's own real
+  standalone rest-of-season value (checked directly via the Players/
+  Rankings surface: overall rank #132, WR54, 125.8 ROS projected points)
+  carries a **value-over-replacement of 0.0** — i.e. he is himself already
+  at replacement level, and every one of these "targets" is real, live,
+  computed by the app's own model to be WORSE than replacement level for
+  this roster. This is not a fabricated or assumed conclusion; it is
+  read directly off the same live figures the app itself displays.
+- **Verdict: HOLD Marvin Harrison.** No real waiver target currently
+  available to this team offers a genuine, net-positive rest-of-season
+  trade versus keeping him. The correct honest framing is that **this
+  week's small usable-lineup gain does not justify the drop** — this
+  replaces the prior sheet's "ADD Brock Purdy / DROP Marvin Harrison...
+  +2.3 pts" framing, which is no longer the real current top target (the
+  roster and free-agent pool have moved on in the ~24 hours since) and,
+  more importantly, would have been the exact "chase the biggest weekly
+  number" pattern the owner asked this pass to check for. On today's real
+  numbers, doing so would be a real, disclosed net value LOSS on a
+  rest-of-season basis for a trivial in-week gain.
+- This is a genuine, evidence-based judgment call, not a code change — the
+  underlying THIS_WEEK/REST_OF_SEASON split and the "net vs. dropping"
+  field were already correctly computed and displayed by the app before
+  this pass; the prior decision sheet simply hadn't surfaced the honest
+  net-negative framing explicitly. No ranking/valuation code was touched
+  this pass (out of scope, per the hard boundary).
+- No genuinely useful RB/WR/TE alternative showed a real, worthwhile
+  weekly gain this session; the rest of the THIS_WEEK-ranked list is the
+  same trivial-gain pattern.
+- Acquisition mechanics (unchanged from the prior sheet, reconfirmed): this
+  is **not** a FAAB league — real Sleeper `waiver_type` reports rolling
+  **waiver priority**. Recheck current priority/claims live in-app before
+  Sunday if a claim is still wanted despite the honest HOLD recommendation
+  above.
+
+## 4. Kicker and DST — reconfirmed live, same real result as the prior sheet
 
 - **Current K: Ka'imi Fairbairn** (HOU), real FantasyPros consensus rank
-  **#4** for Week 2.
-- **Real top alternative: Eddy Pineiro** (SF, FantasyPros **#3**,
-  genuinely **AVAILABLE** in this league) — primary recommendation is
-  **ADD**, a real, marginal upgrade (one rank spot), not a blowout. Two
-  more real, available alternatives: Cairo Santos (CHI, #5, AVAILABLE),
-  Tyler Bass (BUF, #9, AVAILABLE). (Brandon Aubrey #1, Cameron Dicker #2,
-  Cam Little #6, Tyler Loop #7, Jason Myers #8 are all real but rostered
-  elsewhere in this league — not acquirable, correctly excluded from any
-  primary recommendation.)
-- Rationale is FantasyPros' external Week 2 consensus rank only — no
-  opponent/weather/kickoff-specific numeric adjustment is computed by this
-  app; treat the rank gap (#4 vs. #3) as small and not a must-make move.
+  **#4** for Week 2. Real, available alternatives (Eddy Pineiro #3, Cairo
+  Santos #5, Tyler Bass #9) — small, marginal upgrade at best, KEEP is
+  defensible.
 - **Current DST: New England D/ST**, real FantasyPros consensus rank
-  **#8** for Week 2.
-- **Real top alternative: San Francisco 49ers** (FantasyPros **#3**,
-  genuinely AVAILABLE) — primary recommendation is **ADD**, a real,
-  larger rank-gap upgrade than the kicker case. Second real, available
-  alternative: **Kansas City Chiefs** (#10, AVAILABLE) — actually a real
-  downgrade in rank versus New England, not a genuine alternative, shown
-  only because it is available. (Philadelphia #1, Tampa Bay #2, Seattle
-  #4, Baltimore #5, LA Chargers #6, LA Rams #7, Houston #9 are all real
-  but rostered elsewhere — not acquirable.)
-- KEEP New England is a defensible call given real DST streaming's low
-  predictive reliability and the smallish rank gap to the only real
-  meaningfully-better available option (SF, 5 spots better); this is a
-  judgment call for the owner, not a forced move.
+  **#8** for Week 2. Real, available upgrade: San Francisco 49ers (#3).
+  Same judgment as the prior sheet: a defensible KEEP given DST streaming's
+  low predictive reliability, not a forced move.
+- K/DST Streamer confirmed working live for this (Sleeper) league this
+  pass — no regression from Worker 2's fix, no backend error, real
+  FantasyPros ECR data returned on refresh.
 
 ## 5. Contingencies
 
 - No live questionable/practice-report/injury-status feed exists in this
-  app (confirmed, no change this pass — see Worker 2's ledger finding:
-  the only real current-season status source is a small, sourced manual
-  override list, not a live injury feed). **No player on this roster is
-  currently shown as a sourced OUT/questionable exclusion this week** —
-  do not read that as a clean bill of health; it means this app has no
-  live signal either way for any player not already on the manual
-  override list.
-- Real close calls to re-plan around if a start-quality player is
-  downgraded before kickoff: Trevor Lawrence (QB bench, 0.3 pts behind
-  Caleb Williams) and Marvin Harrison (WR bench, 1.7 pts behind Travis
-  Etienne's FLEX slot) are the real, legal, same-slot-eligible backups.
-- FLEX flexibility: Travis Etienne (RB) currently holds FLEX; Marvin
-  Harrison (WR) is the real bench alternative if a swap is wanted —
-  either is legal in this league's FLEX slot.
-- No games in this matchup week had kicked off as of this session's real
-  capture time (Sep 18, ~9:50 PM Mountain, before any Week 2 Sunday game);
-  no locked-starter conflicts exist yet for this specific roster.
+  app (unchanged this pass). No player on this roster is currently shown
+  as a sourced OUT/questionable exclusion.
+- Real close calls to re-plan around if a starter is downgraded: Trevor
+  Lawrence (QB bench, 1.4 behind Caleb Williams) and Carnell Tate (WR
+  bench, 0.8 behind Marvin Harrison's WR slot).
+- No games in this matchup week had kicked off as of this pass's capture
+  time (Sep 19, ~5:00 PM Mountain, day before the Sunday slate).
 
 ## 6. Recheck before kickoff / cannot conclude
 
-- **Saturday readiness cannot establish Sunday's final inactive list —
+- **Saturday/Sunday readiness cannot establish the final inactive list —
   recheck before each relevant game's inactive announcement and roster
-  lock.** This app has no live injury/practice-report feed; Sleeper's own
-  app or a live injury wire is the real source for Sunday-morning
-  inactives.
-- Recheck the live NWR Week 2 lineup/streamer/waiver views once more
-  shortly before kickoff — projections shown here were captured **Sep 18,
-  ~9:47–9:55 PM Mountain**, roughly 12-14 hours before the Sunday slate;
-  a fresh in-app refresh (all three tools have a live "Refresh" action)
-  picks up any late Saturday/Sunday-morning changes to Sleeper's own
-  weekly-projection feed.
-- Waiver claims: if this team intends to claim Brock Purdy or a K/DST
-  option, confirm the league's actual real waiver-processing day/time on
-  Sleeper directly — this app reports current priority and gain, not the
-  league's specific clear schedule.
-- No real trade action was taken or recommended here (out of scope; the
-  Trades tab remains available separately, unaffected by this sheet).
+  lock.** No live injury/practice-report feed exists in this app.
+- **Zay Flowers's projection has now been missing across three independent
+  captures over ~24 hours (Worker 6, Worker 2, this pass) — this looks
+  like a real, persistent Sleeper data gap for this player specifically,
+  not a transient blip.** Recheck in-app before kickoff; if it resolves,
+  the Start/Sit recommendation may change back to a real, known-delta
+  comparison instead of the current honest "unknown" framing.
+- Recheck the live NWR Week 2 lineup/streamer/waiver views again shortly
+  before kickoff — a fresh in-app refresh picks up any late Saturday/
+  Sunday-morning changes.
+- Waiver claims: confirm the league's actual real waiver-processing day/
+  time on Sleeper directly.
+- No real trade action was taken or recommended here (out of scope).

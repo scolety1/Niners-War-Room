@@ -637,3 +637,169 @@ verification pass (read-only Start/Sit view only).
    11932) were left RUNNING with this pass's fix already live — no restart
    needed before continuing manual verification, unless further code
    changes require a rebuild.
+
+---
+
+## Worker 3 (2026-09-19, ~5:00 PM Mountain) — CLOSURE: ESPN re-verification, decision-sheet refresh, Purdy/Harrison reassessment, full regression, push
+
+Closure worker for this pass. No `marginal_roster_utility_v2`, governed
+Redraft valuation, or Dynasty `governed_asset_registry_service.py`
+valuation code touched. No Sleeper/ESPN writes anywhere (every real call
+this pass was a plain GET or a rejected POST — see below).
+
+### 17. ESPN leagues (KHA, 403 N 18th) — LIVE OBSERVATION, independently re-verified via real Chrome MCP interaction, not just cited from Worker 1
+
+Activated each real profile live in the running app (backend pid 44000,
+preview pid 11932) and checked Weekly Home, Start/Sit (`/lineup`),
+Improve Team (`/waivers`), and the K/DST Streamer tab for both leagues.
+
+- Weekly Home / Start/Sit / Improve Team: all four surfaces, both
+  leagues, show the identical, honest, static "Sleeper league required"
+  empty state — INSPECTED CODE confirms this is a provider gate
+  (`data.activeProfile?.provider === "sleeper"`) present on every weekly
+  surface in `desktop/apps/redraft/src/in-season.tsx` and
+  `improve-team.tsx`, unchanged by Worker 2's fix.
+- **K/DST Streamer — a real, previously-uncharacterized sub-behavior,
+  checked precisely per the dispatch instruction rather than assumed
+  identical to the other tabs.** Its "External consensus authority" panel
+  renders unconditionally for a non-Sleeper profile (FantasyPros ECR does
+  not itself require a roster). Clicking "Refresh K/DST ECR" after
+  manually setting an NFL week sends a real
+  `POST /api/v1/redraft/kdst/streamer`, which both leagues' backends
+  honestly reject with **HTTP 409, "Command center unavailable — The
+  active profile has no valid Sleeper import receipt. Re-import it before
+  opening the K/DST Streamer."** — confirmed via `read_network_requests`
+  for both KHA and 403 N 18th independently. This is an honest,
+  backend-enforced block, not stale data presented as current.
+- **One real, minor, precisely-reproduced UX gap found, NOT fixed this
+  pass:** before the NFL week input is manually edited, clicking "Refresh
+  K/DST ECR" is a genuine silent no-op (zero network requests, zero
+  visible error) — `loadStreamers()`'s guard in `improve-team.tsx`
+  (`streamerWeek == null`) returns early, and `streamerWeek` never
+  resolves for a non-Sleeper profile (no live `LeagueWorkspaceContext`),
+  even though the input's displayed value is a `?? 1` fallback that looks
+  populated. Root cause identified and a minimal fix considered (surface
+  an explicit error instead of silently returning), but **not applied**:
+  this codebase has zero React component-test infrastructure anywhere
+  (`grep` for `@testing-library/react` and any `*.test.tsx` file across
+  `desktop/apps/redraft/src` — zero matches), so a component-behavior
+  change could not be verified per the "keep it small, test it"
+  requirement without first building test infra, which is out of this
+  pass's bounded scope. The overall BLOCKED verdict is unaffected either
+  way (the backend correctly rejects the real request once one is sent).
+  Documented as a follow-up in both ESPN decision sheets' addenda.
+- **Verdict: UNCHANGED for both leagues. BLOCKED for Start/Sit, Improve
+  Team, and K/DST streaming.** No current input was found to genuinely
+  support any new sub-capability this pass.
+
+### 18. Decision sheets refreshed — LIVE OBSERVATION, real fresh pulls, not reused from any prior worker's capture
+
+`docs/codex/sunday_readiness_20260920/decision_sheets/01_fantasy_gamers.md`
+and `02_las_vegas_enginerds.md` rewritten with data re-pulled live this
+pass (~24 hours after Worker 6's original capture, a few hours after
+Worker 2's fix verification):
+
+- **Fantasy Gamers:** Start/Sit now recommends Start **Marvin Harrison**
+  over Zay Flowers (not Michael Pittman, named in the original report and
+  the prior sheet — Pittman himself now also has a missing projection and
+  is no longer the top recommendation; a real, disclosed roster/lineup
+  drift, not a discrepancy in the fix). Honest "Unknown — missing
+  projection" framing confirmed live, replacing the prior sheet's
+  fabricated "+11.7".
+- **Las Vegas Enginerds:** Start/Sit still recommends Start **Jalen
+  Coker** over Zay Flowers — an exact name match to the owner's original
+  report, roster unchanged since the prior capture. Honest "Unknown —
+  missing projection" framing confirmed live, replacing the prior sheet's
+  fabricated "+7.6".
+- Both leagues' waiver/K-DST sections re-pulled and reconfirmed (Enginerds:
+  Kimani Vidal/Hockenson ROS target essentially unchanged, +18.7 marginal
+  utility, matches prior capture almost exactly; Fantasy Gamers: see
+  section 19 below, materially reassessed).
+- `03_kha_high_stakes.md` / `04_403_n_18th.md`: light addenda appended
+  (not full rewrites, since the underlying verdict didn't change) with
+  this pass's independent live re-verification evidence, including the
+  K/DST Streamer 409 detail and the UX-gap finding from section 17.
+
+### 19. Purdy/Harrison-shaped waiver suggestion — REASSESSED, real judgment-quality finding
+
+The real current equivalent of the owner's flagged suggestion (rosters
+move hour to hour, so "Purdy/Harrison" itself is no longer literally the
+top target) is Fantasy Gamers' THIS_WEEK-ranked Improve Team list, real
+and live this pass:
+
+| Rank | Move | THIS WEEK gain | ROS net vs. dropping Harrison |
+|---|---|---|---|
+| 1 | ADD Xavier Worthy / DROP Marvin Harrison | +0.6 pts | **-0.7** |
+| 2 | ADD Brock Purdy / DROP Marvin Harrison | +0.5 pts | **-1.7** |
+| 3 | ADD Malik Washington / DROP Marvin Harrison | +0.0 pts | **-0.6** |
+
+Cross-checked Marvin Harrison's own real standalone rest-of-season value
+directly via the Players/Rankings surface: overall rank #132 (WR54), ROS
+125.8 projected points, **value over replacement 0.0** — he is himself
+already at real replacement level, and the app's own live REST_OF_SEASON
+"net vs. dropping" field is NEGATIVE for every one of the current top
+THIS_WEEK targets (all three checked, not assumed from the first one).
+
+**Honest judgment, per the owner's explicit instruction not to repeat a
+suggestion solely because of a small weekly modeled gain: HOLD Marvin
+Harrison.** No real current waiver target offers a genuine net-positive
+rest-of-season trade against him; the real weekly gains on offer (+0.0 to
++0.6 pts) are noise-level, and the app's own already-existing
+THIS_WEEK/REST_OF_SEASON split plus "net vs. dropping" field already
+correctly compute and DISPLAY this honest tradeoff — this pass's finding
+is that the prior decision sheet's narrative hadn't surfaced that honest
+net-negative framing, not that the underlying ranking/valuation logic is
+broken. **No ranking/valuation code was touched** (out of scope, per the
+hard boundary) — this was a decision-sheet narrative fix, not a code fix,
+and the underlying computation was independently verified correct as-is.
+
+### 20. Full regression — ACTUAL TEST RESULT
+
+- Same targeted Python suite as Worker 2 listed (10 files): **206 passed,
+  0 failed** — identical count.
+- `tests/test_desktop_application_api.py`: **4 failed, 46 passed** —
+  byte-identical failure set to Worker 2's own stash-verified pre-existing
+  baseline (`test_dynasty_facade_composes_real_governed_workflows`,
+  `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`,
+  `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`,
+  `test_facade_has_no_streamlit_or_app_component_dependency`).
+- `npx vitest run` (desktop/): **30 files, 503 tests, all passed** —
+  identical count to Worker 2's own run.
+- `npm run typecheck` (desktop/): clean, zero errors.
+- `docs/codex/prospective_outcomes_v1/multi_league_scale_v1/
+  frontend_bench_results.json` regenerated again (same timing-noise
+  pattern Worker 2 already documented) — reverted with `git checkout --`,
+  not part of this pass's commit.
+
+### 21. Cleanup — LIVE OBSERVATION
+
+Confirmed via `Get-Process` that Worker 6's old dev-process PIDs
+(43364/49760) are genuinely gone (only Worker 2's 44000/11932 are alive,
+serving this pass's final HEAD) before deleting the now-orphaned
+`.worker6_*` scratch files (`*.log`, `*.log.err`, `*_creds.json` ×2 sets —
+redraft + dynasty). `.worker2_*` files and
+`local_exports.backup-20260918T230905Z/` left untouched, as instructed.
+
+### 22. Push — ACTUAL RESULT
+
+`git push origin upgrade/nwr-prospective-outcomes-v1-20260914` — pushed
+this pass's commit (decision-sheet refresh + this ledger update) on top
+of Worker 1/2's `ac67ade3`. Remote SHA confirmed to match local HEAD via
+`git ls-remote`.
+
+### FILES CHANGED THIS PASS (Worker 3)
+
+- `docs/codex/sunday_readiness_20260920/decision_sheets/01_fantasy_gamers.md`
+  — full refresh with live-repulled data and the Purdy/Harrison HOLD
+  reassessment.
+- `docs/codex/sunday_readiness_20260920/decision_sheets/02_las_vegas_enginerds.md`
+  — full refresh with live-repulled data.
+- `docs/codex/sunday_readiness_20260920/decision_sheets/03_kha_high_stakes.md`
+  / `04_403_n_18th.md` — addenda appended with this pass's independent
+  live re-verification.
+- This ledger.
+
+No application/service/test code was modified — the K/DST Streamer UX gap
+(section 17) was found, root-caused, and deliberately left unfixed this
+pass pending real component-test infrastructure; documented as a
+follow-up rather than shipped as an unverified change.
