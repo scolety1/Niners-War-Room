@@ -111,6 +111,88 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   return { promise, resolve };
 }
 
+/**
+ * W9 fix (NWR Sunday Readiness overnight cycle, Worker 4): the real,
+ * source-risk-flagged bug at `improve-team.tsx`'s streamer request
+ * lifecycle (~L149-180) -- results/error were cleared on profile change,
+ * but an outstanding, already-in-flight multi-week streamer request had no
+ * profile/request-generation check of its own, so a late-arriving response
+ * could repopulate the screen with a PRIOR league's streamer results after
+ * switching leagues. Fixed with the same `createStaleResponseGuard`
+ * primitive, applied to `improve-team.tsx`'s own `loadStreamers` (a
+ * SEQUENTIAL multi-request loop -- up to 3 real FantasyPros ECR reads, one
+ * per horizon week -- not `useAsync`'s single-request shape), including a
+ * mid-loop check so a switch during the sequence also stops issuing further
+ * requests for the now-inactive league, not just discards the final
+ * result. `runGuardedStreamerSequence` below is a faithful reproduction of
+ * that real loop's own guard usage (mirrors `runGuardedFetch` above for the
+ * single-request case).
+ */
+function runGuardedStreamerSequence(
+  weekPromises: Array<Promise<string>>,
+  applied: string[][],
+  fetchedWeeks: number[],
+): { guard: ReturnType<typeof createStaleResponseGuard>; done: Promise<void> } {
+  const guard = createStaleResponseGuard();
+  const done = (async () => {
+    const loaded: string[] = [];
+    for (let index = 0; index < weekPromises.length; index += 1) {
+      if (guard.isStale()) return;
+      fetchedWeeks.push(index);
+      loaded.push(await weekPromises[index]!);
+    }
+    if (!guard.isStale()) applied.push(loaded);
+  })();
+  return { guard, done };
+}
+
+describe("W9 fix: streamer multi-week request lifecycle across a league switch", () => {
+  it("never repopulates the screen with a prior league's streamer results after a late-arriving multi-week response", async () => {
+    const applied: string[][] = [];
+    const fetchedA: number[] = [];
+    const week1A = deferred<string>();
+    const week2A = deferred<string>();
+    const { guard: guardA, done: doneA } = runGuardedStreamerSequence([week1A.promise, week2A.promise], applied, fetchedA);
+
+    // Prior league's (A's) first week resolves, and -- in the SAME tick,
+    // with no intervening await, exactly like a synchronous profile-change
+    // effect firing off the owner's click -- the owner switches to a real
+    // newly-connected league (e.g. Fantasy Gamers -> Enginerds) before A's
+    // loop ever gets a chance to check the mid-loop guard for week 2.
+    week1A.resolve("league-A-week1");
+    guardA.supersede();
+
+    const fetchedB: number[] = [];
+    const week1B = deferred<string>();
+    const { done: doneB } = runGuardedStreamerSequence([week1B.promise], applied, fetchedB);
+    week1B.resolve("league-B-week1");
+    await doneB;
+
+    // League A's stale second-week response finally arrives, out of order,
+    // after B already applied -- it must never land, and (mid-loop check)
+    // must never even have been fetched.
+    week2A.resolve("league-A-week2");
+    await doneA;
+
+    expect(applied).toEqual([["league-B-week1"]]);
+    expect(fetchedA).toEqual([0]); // week 2 never fetched once stale
+  });
+
+  it("still applies a full multi-week response that completes before any switch happens", async () => {
+    const applied: string[][] = [];
+    const fetched: number[] = [];
+    const week1 = deferred<string>();
+    const week2 = deferred<string>();
+    const { done } = runGuardedStreamerSequence([week1.promise, week2.promise], applied, fetched);
+    week1.resolve("week1");
+    week2.resolve("week2");
+    await done;
+
+    expect(applied).toEqual([["week1", "week2"]]);
+    expect(fetched).toEqual([0, 1]);
+  });
+});
+
 describe("createStaleResponseGuard (active-profile stale-response adversary)", () => {
   it("never applies a response that resolves AFTER its guard was superseded by a profile switch", async () => {
     const applied: string[] = [];

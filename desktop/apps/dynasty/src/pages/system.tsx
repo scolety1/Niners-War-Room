@@ -444,7 +444,7 @@ function DynastyLeagueConnectionPanel({
   const connected = data.dynastyLeague;
   const [leagueId, setLeagueId] = useState("");
   const [myOwnerId, setMyOwnerId] = useState("");
-  const [busy, setBusy] = useState<"connect" | "disconnect" | null>(null);
+  const [busy, setBusy] = useState<"connect" | "disconnect" | "refresh" | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -498,6 +498,47 @@ function DynastyLeagueConnectionPanel({
     }
   };
 
+  // D1 fix (NWR Sunday Readiness overnight cycle, Worker 4): before this,
+  // an already-connected league had NO way to get a fresh Sleeper pull --
+  // reloading the page only re-reads the latest already-SAVED local
+  // snapshot (`load_dynasty_league_profile`), never fetches a new one, and
+  // the only button offered while connected was "Disconnect league" (owner
+  // would have to disconnect, re-type the league id, and reconnect just to
+  // refresh). Reuses the SAME real, read-only `importDynastySleeperLeague`
+  // GET-only import path Connect already uses -- resubmitting the SAME
+  // real league id (and owner id, when known) the connected profile itself
+  // now discloses (`connected.leagueId`/`myOwnerId`, both additive fields
+  // this pass added to the contract). Every real import call already
+  // writes a NEW, uniquely-timestamped snapshot file
+  // (`save_league_snapshot`'s `utc_snapshot_stamp()` filename) and never
+  // overwrites or discards a prior one, and a failed fetch raises before
+  // any new file is written -- so the previous snapshot and connection
+  // state are structurally preserved on a failed refresh with no extra
+  // code needed here.
+  const refresh = async () => {
+    if (!connected) return;
+    setBusy("refresh");
+    setError("");
+    setMessage("");
+    try {
+      await client.importDynastySleeperLeague({
+        leagueId: connected.leagueId,
+        ...(connected.myOwnerId ? { myOwnerId: connected.myOwnerId } : {}),
+        profileId: connected.profileId,
+      });
+      setMessage("League refreshed from Sleeper. A new dated snapshot was saved.");
+      onReload();
+    } catch (reason) {
+      setError(
+        reason instanceof NwrApiError
+          ? reason.message
+          : "The league could not be refreshed from Sleeper. The previous snapshot is unchanged.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <Panel
       title="Dynasty League Connection"
@@ -518,6 +559,13 @@ function DynastyLeagueConnectionPanel({
             this is disclosed on purpose, never silently guessed.
           </p>
           <div className="button-row">
+            <Button
+              disabled={busy !== null}
+              icon="activity"
+              onClick={() => void refresh()}
+            >
+              {busy === "refresh" ? "Refreshing…" : "Refresh from Sleeper"}
+            </Button>
             <Button
               disabled={busy !== null}
               icon="undo"

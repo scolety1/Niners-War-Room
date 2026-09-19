@@ -28,6 +28,14 @@ export function leagueKeyFor(profile: Pick<LeagueProfile, "profileId">): LeagueK
 // `src/services/league_lifecycle_service.py` (2026-09-17 fix).
 const STALE_DRAFT_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 
+// 2026-09-18 fix (D2, Sunday Readiness overnight cycle, Worker 4) -- mirrors
+// `STALE_DRAFT_MIN_COMPLETION_RATIO` in the backend module above: age alone
+// is not completion evidence. Real KHA (157/192 = 81.8%) and real 403 N
+// 18th (118/128 = 92.2%) both clear this bound comfortably; a synthetic
+// "just one pick" draft does not, and correctly stays LIVE_DRAFT even once
+// stale.
+const STALE_DRAFT_MIN_COMPLETION_RATIO = 0.5;
+
 /**
  * Mirrors `src/services/league_lifecycle_service.py::resolve_league_lifecycle`
  * in spirit so a routing decision never needs an extra network round trip
@@ -67,10 +75,13 @@ export function resolveLeagueLifecycle(
   const totalDraftPicks = Math.max(0, profile.teamCount) * Math.max(0, profile.draft.rounds);
   if (totalDraftPicks > 0 && draftedCount >= totalDraftPicks) return "IN_SEASON";
   const liveSyncCapable = profile.provider === "sleeper" && Boolean(profile.providerLeagueId);
-  if (!liveSyncCapable && draftBoard?.updatedAtUtc) {
-    const lastActivity = Date.parse(draftBoard.updatedAtUtc);
-    if (!Number.isNaN(lastActivity) && now.getTime() - lastActivity >= STALE_DRAFT_THRESHOLD_MS) {
-      return "IN_SEASON";
+  if (!liveSyncCapable && draftBoard?.updatedAtUtc && totalDraftPicks > 0) {
+    const completionRatio = draftedCount / totalDraftPicks;
+    if (completionRatio >= STALE_DRAFT_MIN_COMPLETION_RATIO) {
+      const lastActivity = Date.parse(draftBoard.updatedAtUtc);
+      if (!Number.isNaN(lastActivity) && now.getTime() - lastActivity >= STALE_DRAFT_THRESHOLD_MS) {
+        return "IN_SEASON";
+      }
     }
   }
   return "LIVE_DRAFT";

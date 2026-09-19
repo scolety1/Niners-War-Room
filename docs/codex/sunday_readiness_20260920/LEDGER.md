@@ -1288,3 +1288,603 @@ W9 + D2)
    route (`RedraftApp.tsx`) wires to before trusting a source-only fix.
 6. **KHA and 403 N 18th remain BLOCKED** for any current-state Sunday tool
    (unchanged, re-confirmed only incidentally, not this Worker's focus).
+
+---
+
+## Worker 4 -- Enginerds Sunday surface + W8 + D1 + ESPN checklist + W9 + D2
+(2026-09-18, ~8:46-9:15 PM Mountain)
+
+Time check: started ~8:46 PM Mountain (~15h14m remaining to the Saturday
+noon deadline). This entry written ~9:15 PM (~14h45m remaining). No
+deadline risk.
+
+### W8 -- Enginerds Redraft weekly-decision surface -- INSPECTED CODE +
+ACTUAL TEST RESULT + LIVE OBSERVATION (the primary deliverable)
+
+**Investigated the existing "import a Sleeper redraft profile" path first,
+per the brief's explicit instruction not to build a parallel importer.**
+Found it: `src/services/sleeper_redraft_owner_service.py`'s
+`import_sleeper_redraft_profile` (wired at `desktop_facade.py:2385`,
+`POST /api/v1/redraft/profiles/import-sleeper`, frontend
+`profile.tsx`'s real "Import from Sleeper" panel, already used to onboard
+Fantasy Gamers). This is a real, generic, provider-agnostic Sleeper ->
+Redraft importer -- reuses the SAME Sleeper league data already connected
+Dynasty-side (`1344772855908290560`), but goes through Redraft's own
+completely separate profile store (`local_exports/redraft_v1/profiles/`,
+not `local_exports/dynasty_v1/`) and Redraft's own weekly services --
+never Dynasty valuation. Confirmed no code sharing/coupling with
+`governed_asset_registry_service.py` anywhere in this path (INSPECTED
+CODE: grepped the whole import module, zero references).
+
+**Real owner username resolved first (LIVE OBSERVATION):** `GET
+https://api.sleeper.app/v1/user/1352768154031374336` -> real
+`username: "mcolety1"` (display_name and username differ here -- the
+import endpoint validates against the real `username` field, not
+display_name, confirmed by reading `import_sleeper_redraft_profile`'s own
+validation).
+
+**Real import performed live, via the actual browser UI (not a backend
+shortcut)** -- Redraft dev pair rebuilt+restarted first (real `npm run
+build --workspace @nwr/redraft-desktop`, fresh backend on 18742 with real
+dev startup credentials piped via stdin the same way
+`nwr_release_gate_smoke.ps1` does, fresh `vite preview` on 1422 -- the
+prior pair Worker 3 left running predated this Worker's own code changes).
+Navigated to Profile & Scoring's real "Import from Sleeper" panel, entered
+league id `1344772855908290560` and username `mcolety1`, clicked "Import &
+activate".
+
+**A real automation-tool hazard found and worked around (not a product
+bug):** the `form_input` MCP tool's numeric coercion mangled the 19-digit
+Sleeper league id (`1344772855908290560` -> `1344772855908290600`,
+precision loss past JS's safe-integer range) when set via its `value`
+parameter. Caught by re-reading the field before submitting, not assumed
+correct. Worked around by clicking the field and using real keystroke
+`type` input instead, which preserved the exact string. Flagging this for
+any future worker automating a 19-digit Sleeper id through this tool --
+always re-read the field after `form_input` on a long numeric-looking
+string.
+
+**Real result, confirmed multiple ways:**
+- New profile `6687d2b3aa21450ea0fc9e1792d461ff` created at
+  `local_exports/redraft_v1/profiles/6687d2b3aa21450ea0fc9e1792d461ff.json`
+  (6th profile file, up from Worker 1's confirmed 5) -- real captured
+  roster `{bench_size: 14, dst: 0, flex: 2, k: 1, qb: 1, rb: 2,
+  superflex: 0, te: 1, wr: 3}` and real scoring `{reception: 0.0,
+  passing_td: 3.0, rushing_td/receiving_td: 4.0, interception/
+  fumble_lost: -1.0, passing_yards: 0.0333...}` -- byte-exact match to
+  Worker 1's independently-captured real Enginerds settings.
+  `local_exports/dynasty_v1/` confirmed untouched by this import (file
+  mtime check: the Dynasty league profile file's mtime predates this
+  Worker's whole session) -- the two stores are genuinely isolated, as
+  designed.
+- UI immediately showed "ACTIVE LEAGUE Las Vegas Enginerds · 2026 ·
+  10-Team Standard · 1QB", 6 profiles total.
+
+**Start/Sit -- LIVE OBSERVATION, real custom scoring, real roster:** first
+attempt hit a real "Command center unavailable" timeout (a cold-cache
+first request -- real Sleeper weekly-projection catalog for ~9400 players
+plus a real nflverse schedule pull for game-lock both cold on a
+freshly-restarted backend); a direct `curl` to the same endpoint completed
+in 347ms once warm, and a manual "Refresh weekly projections" click in the
+browser then rendered correctly with zero further issue -- documented as a
+real, disclosed cold-start latency characteristic, not a functional bug
+(not investigated further under this pass's time box). Confirmed via both
+direct API call and rendered UI:
+  - Real 10-slot starting lineup (QB, RB, RB, WR, WR, WR, TE, K, FLEX,
+    FLEX -- **no DST anywhere**, matching real `roster.dst == 0`).
+  - Real recommendation: "Start Jalen Coker over Zay Flowers, +7.6
+    projected points" with a genuine LOW CONFIDENCE / CLOSE CALL badge.
+  - Real league-exact scoring: every non-K starter `scoringContext:
+    "NWR_LEAGUE_SCORING"`; the K (Cam Little) scored under
+    `NWR_LEAGUE_SCORING_KDST_WEEKLY_PARTIAL` with real, disclosed gaps
+    `['fgm_0_19', 'fgm_50p']` (his real raw weekly row had no 0-19-yard
+    field-goal entry that week, and Sleeper's payload has no 50+ breakout
+    at all -- both real, not fabricated). `nonExactScoringInTotal: true`,
+    correctly disclosed in the UI banner.
+  - Real reserve/game-lock buckets populated: `reserve` showed Ricky
+    Pearsall (11638); `lockedUnavailable` showed Skyler Bell (already
+    kicked off).
+  - **A real, correctly-sourced exclusion investigated and confirmed NOT a
+    bug:** the second real reserve id (12484, Jayden Higgins) was
+    initially missing from the `reserve` bucket -- investigated with a
+    live, instrumented repro of `build_roster_candidates`/
+    `optimize_weekly_lineup` against the real facade and real Sleeper
+    data. Root cause: Higgins has a real, sourced `SEASON_OUT` manual
+    status override already on file (`current_player_status_overrides_
+    service.py`: "Torn ACL in training camp...season-ending for 2026,"
+    4 real cited sources, verified 2026-09-07) -- `_status_for` correctly
+    routes a ZERO_VALUE_KINDS status to `excluded` BEFORE the
+    reserve/taxi check ever runs, per the module's own documented
+    precedence. This is real, correct, evidence-based behavior (excluded
+    for a stronger, sourced reason than merely being reserve-slotted),
+    not a defect -- no code change made.
+  - Zero console errors (checked via `read_console_messages`,
+    `onlyErrors: true`).
+
+**Improve Team -- LIVE OBSERVATION, all four tabs, real Enginerds data:**
+  - **Targets/Add-Drop, REST_OF_SEASON:** 25 real targets, real FAAB
+    suggested bids ($30-50 MEDIUM urgency example shown) -- confirms
+    Worker 3's `waiver_type` fix (`==2`) now correctly detects Enginerds
+    as a real FAAB league live, not just by prior unit test.
+  - **Targets/Add-Drop, THIS_WEEK:** real "NFL WEEK 2" auto-populated
+    (W1 fix confirmed for Enginerds too); real "THIS WEEK: real
+    legal-lineup gain: 0.7 pts" language rendered; real gain-sorted order
+    (0.7, 0.6, ...), not season-utility order.
+  - **FAAB tab:** real "$100 of $100 total," real "14 WEEKS REMAINING"
+    (from real Sleeper schedule/playoff_week_start), and the real,
+    correct disclosure banner: "This is your real, live Sleeper FAAB
+    budget (waiver priority #2, read fresh this request -- never a stored
+    or hardcoded number)."
+  - **Streamers tab -- the specific, previously-only-unit-tested case now
+    LIVE-verified:** clicked "Refresh K/DST ECR." Real primary
+    recommendation: **"KEEP Cam Little (K)"** -- a genuine case of the
+    owner's own real starter (real FantasyPros ECR #6) beating every real
+    available alternative this week, rendered as the actual primary card
+    (W6's KEEP-current fix, live, for the first time against a real
+    league where this exact scenario occurred naturally). Confirmed via a
+    direct authenticated API call to `/api/v1/redraft/kdst/streamer`:
+    `primaryRecommendation: {"playerName": "Cam Little", "rosterStatus":
+    "YOUR_STARTER", "recommendation": "START"}`.
+
+### NO-DST ENFORCEMENT -- LIVE OBSERVATION (the specific ask Worker 3
+flagged as unit-tested-only)
+
+Same real `/kdst/streamer` call: the top-level `traceIds` array contained
+**exactly one entry, for K only** -- no DST trace id anywhere, confirming
+FantasyPros' DST consensus was never even requested. The DST decision
+envelope itself: `primaryRecommendation: null`, `confidenceState:
+"UNAVAILABLE"`, `rationale: "This league has no DST roster slot; DST
+pickups are never recommended."` The rendered UI showed "No available
+recommendation / No DST streamer read for Week 2" and "No candidates / No
+DST rows returned for Week 2" -- real, honest, position-configuration
+enforcement confirmed live for Enginerds' real `roster.dst == 0`, not just
+by Worker 3's unit test.
+
+### A real, pre-existing, reconfirmed-not-new display bug found while
+verifying W8 (NOT fixed this pass -- documented, out of narrow scope)
+
+`desktop/apps/redraft/src/in-season.tsx`'s `WeeklyHomePage` "Stage" row
+(and the left-sidebar lifecycle badge, via `shell-identity.tsx`) both call
+the LOCAL, bootstrap-only `resolveLeagueLifecycle(profile, draftBoard)`
+from `league-context.ts` -- which has no live provider-status fetch by
+design (see that function's own docstring) -- instead of reading the
+CORRECT, live, provider-status-aware `lifecycle` field the backend's own
+`/api/v1/redraft/league-workspace-context` endpoint already returns
+correctly. **Confirmed via direct curl, real Enginerds:** that endpoint
+returns `"lifecycle": "IN_SEASON"` with the exact correct basis ("The
+league provider reports real league status 'in_season'..."), while the
+Weekly Home page and sidebar simultaneously show "PRE-DRAFT" for the same
+real league. **This is NOT new and NOT caused by this pass's D2 fix** --
+confirmed it also affects Fantasy Gamers (visible in this pass's very
+first screenshot, before any Enginerds work began) and is exactly the
+"known, separately-tracked gap" Worker 2's own 2026-09-17 fix docstring in
+`league-context.ts` already disclosed ("that half is a known gap for this
+purely-local heuristic"). Does NOT block any real functionality --
+Start/Sit, Improve Team, and Weekly Home's own data all loaded and
+computed correctly regardless of this cosmetic label, confirmed live.
+Not fixed this pass (would require reworking which lifecycle source
+`in-season.tsx`/`shell-identity.tsx`/`RedraftApp.tsx` read from, a
+multi-file change outside this pass's narrow W8/W9/D1/D2/ESPN scope) --
+flagged precisely for Worker 5 or a future pass.
+
+### ESPN leagues (KHA, 403 N 18th) -- documentation-only deliverable, no
+new integration built, per the hard boundary
+
+**No ESPN client/service was added anywhere this pass** (confirmed,
+re-grepped `src/` fresh: zero matches for any ESPN API pattern, same as
+Worker 1/3's independent findings).
+
+**Live-verified BLOCKED state, both leagues, this pass:**
+- Activated the real KHA profile (`fb1c49402c7644a99120197d41344bbb`) in
+  the browser. Sidebar/header correctly show **IN SEASON** (this pass's
+  own D2 fix, live-verified -- see below). Start/Sit correctly shows
+  "Sleeper league required / Start/Sit needs a live Sleeper roster and the
+  real weekly-projection source" -- an honest, explicit BLOCKED state, not
+  a silent failure and not stale historical draft data presented as
+  current.
+- 403 N 18th not re-clicked through the UI this pass (KHA's confirmation
+  plus Worker 1/3's independent code-level confirmation that the SAME
+  facade guard applies to every non-Sleeper profile is sufficient
+  corroboration; both share the identical `isSleeper` gate in
+  `improve-team.tsx`/`in-season.tsx`).
+
+**The exact input checklist for the owner, if ESPN support is ever
+pursued (documentation only, nothing built or attempted this pass):**
+
+1. **Real current roster read.** Today, both leagues have ONLY a
+   historical draft board (KHA: 157 real picks; 403 N 18th: 118 real
+   picks) -- zero post-draft transaction history exists anywhere in this
+   codebase for either league. Needed: either (a) the owner manually
+   re-enters their current real roster through a `provider: "local"`
+   profile (the exact mechanism already proven safe for this app's local
+   test profiles -- reuses existing, tested code, zero new integration),
+   refreshed by hand whenever it goes stale, or (b) a genuine, new,
+   read-only ESPN Fantasy API integration.
+2. **Real scoring config re-confirmation.** KHA's profile has
+   `practical_mode: True` (K/DST already handled by manual entry, a
+   real, previously-fixed mechanism -- unrelated to this gap). 403 N
+   18th's `draft.roster_limits` is empty (`{}`) -- no per-position cap
+   recorded anywhere in this worktree's copy of that profile; would need
+   re-entry or a live ESPN settings read.
+3. **Real transaction/waiver state.** Neither league has ever had any
+   ESPN-sourced transaction, waiver, or trade data in this codebase.
+   Needed for any FAAB/waiver tooling to work: a real, current
+   transaction log, which today only a live ESPN API (or fully manual
+   owner tracking) could supply.
+4. **The smallest validated import path, if pursued (not started, listed
+   only, per the hard boundary against building a new ESPN integration
+   this pass):** a genuine, new, read-only ESPN Fantasy API client, GET
+   requests only, built the same disciplined way this codebase's Sleeper
+   client was (a single, narrow HTTP wrapper + a dedicated import
+   service, following `sleeper_redraft_owner_service.py`'s own structure
+   as the template). ESPN's fantasy API requires the owner's own
+   authenticated session cookies (`SWID` and `espn_s2`) for a private
+   league -- these must come from the owner explicitly (copied from their
+   own logged-in browser session); this pass did not request, receive,
+   store, or attempt to obtain either value, per the hard boundary
+   against scraping/cookie extraction. Until the owner explicitly
+   supplies both, ESPN readiness stays BLOCKED by design, not by a
+   missing feature this pass could have shipped.
+5. **403 N 18th's real ESPN league id (`1009373442`) is still not
+   present anywhere in this worktree's own profile JSON**
+   (`provider_league_id: null`, unchanged since Worker 1's finding) -- it
+   would need to be re-entered from this ledger/prior memory or the real
+   native-install receipt file before any future import attempt could
+   even target the right league.
+
+### W9 -- streamer request-ordering race -- INSPECTED CODE + ACTUAL TEST
+RESULT (mechanism proven; the exact live race not independently
+reproduced under real network timing this pass -- see below)
+
+**Root cause confirmed exactly as the brief described**, at
+`improve-team.tsx` (~L165-205 in this HEAD, module grew since the audited
+SHA): `loadStreamers` (invoked by the Streamers tab's manual "Refresh
+K/DST ECR" button, a multi-request sequential loop -- up to 3 real
+FantasyPros ECR reads, one per horizon week) had a real, separate
+`useEffect` that cleared `streamerResults`/`streamerError` on
+`data.activeProfileId` change, but the in-flight async function itself had
+NO profile/request-generation check of its own -- its `.then`-equivalent
+`setStreamerResults(loaded)` at the end of the loop would apply
+unconditionally even if the owner had already switched to a different
+league while the request was still in flight, silently repopulating the
+new league's screen with the PRIOR league's streamer results.
+
+**Fix:** reused the SAME `createStaleResponseGuard()` primitive already
+established in `weekly-shared.tsx` and used by `useAsync` everywhere else
+in this codebase, applied via a `useRef` (since `loadStreamers` is
+manually triggered, not an automatic `useEffect`-driven fetch like
+`useAsync`'s own single-request shape): the guard is superseded and a
+fresh one created on every profile change (same `useEffect` that already
+cleared results/error), and `loadStreamers` captures the CURRENT guard by
+value at call time, checking `guard.isStale()` both mid-loop (before each
+new week's request -- stops issuing further requests for an
+already-inactive league, not just discarding the final result) and before
+applying the final `setStreamerResults`/`setStreamerError`. `finally`
+still always clears the working spinner regardless of staleness (a
+UI-only concern, not a data leak).
+
+**Regression test (ACTUAL TEST RESULT):** added to
+`weekly-shared.test.ts` (co-located with `createStaleResponseGuard`'s own
+existing adversarial-ordering tests, same established pattern -- this repo
+has no jsdom/@testing-library/react, so the guard's OWN behavior is tested
+directly rather than through a rendered component, matching how the
+existing tests already prove `useAsync`'s single-request case): a new
+`runGuardedStreamerSequence` helper faithfully reproduces the real
+multi-week loop's own guard usage. Two new tests: (1) a league-A first
+week resolves, the owner switches leagues in the same tick (no intervening
+await, exactly matching a synchronous profile-change effect), the guard is
+superseded before the loop's mid-loop check for week 2 ever runs -- proven
+`fetchedA == [0]` (week 2 never even requested) and `applied ==
+[["league-B-week1"]]` (league A's results never land); (2) a full,
+non-superseded sequence still applies correctly. **29 tests total in this
+file, all pass** (up from 27 pre-existing).
+
+**Live reproduction of the exact real-network race was NOT attempted this
+pass** -- local network calls complete in well under a second, making a
+reliable, non-flaky browser-level race difficult to force deterministically
+within this pass's time budget, and no network-throttling tool was
+available in this session's browser toolset. This is disclosed as a real,
+honest gap in live evidence for this one fix (the CODE fix and its
+regression test are both real and verified; the live-race REPRODUCTION
+specifically is not) -- Worker 5, with more time or a throttling tool,
+should attempt a real live repro (switch Fantasy Gamers -> Enginerds mid
+K/DST-streamer-request) if thoroughness requires it.
+
+### D2 -- draft-completion-evidence tightening -- INSPECTED CODE + ACTUAL
+TEST RESULT + LIVE OBSERVATION
+
+**Root cause confirmed exactly as the brief described, and confirmed
+MORE material than the brief's own framing suggested:** the 24-hour
+staleness fallback in `league_lifecycle_service.py`'s
+`resolve_league_lifecycle` fired for ANY `drafted_count >= 1` once stale
+-- age alone, no minimum completion evidence. **Investigated whether the
+two real leagues this fallback exists for (KHA, 403 N 18th) actually
+depend on it, rather than assuming**: computed their real ratios --
+KHA 157/192 = **81.8%**, 403 N 18th 118/128 = **92.2%** -- both real,
+neither reaches the exact-count branch (`drafted_count >= total_draft_
+picks`) above it, so **both real leagues' correct IN_SEASON resolution
+genuinely depends on this exact fallback today**, not a hypothetical edge
+case.
+
+**Fix:** added `STALE_DRAFT_MIN_COMPLETION_RATIO = 0.5` -- the staleness
+fallback now requires `drafted_count / total_draft_picks >= 0.5` **in
+addition to** the existing 24h-quiet check, in both the backend
+(`league_lifecycle_service.py`) and its frontend mirror
+(`league-context.ts`'s `resolveLeagueLifecycle`, used for local/bootstrap
+routing decisions). 0.5 was chosen deliberately below both real leagues'
+own ratios (81.8%/92.2%) so neither regresses, while a "just one pick"
+draft (the brief's exact repro shape, ~0.5% of a 192-pick league) or a
+genuinely-abandoned ~20%-drafted league no longer silently resolves as
+complete on age alone.
+
+**ACTUAL TEST RESULT (Python, `tests/test_league_lifecycle_service.py`,
+23 pre-existing -> 27 after this pass's 4 new tests):**
+- **Negative case (the exact brief repro):**
+  `test_stale_but_barely_started_draft_does_not_falsely_resolve_complete`
+  -- 1 of 192 picks, stale since 2026-09-10, evaluated 2026-09-17 (7 days
+  stale). **PASSES: resolves LIVE_DRAFT, not IN_SEASON** (would have
+  wrongly resolved IN_SEASON before this fix).
+- **Negative case (a more plausible abandoned-draft shape):**
+  `test_stale_partial_draft_under_completion_ratio_stays_live_draft` --
+  25 of 128 (~20%), stale for weeks. PASSES: LIVE_DRAFT.
+- **Positive controls (the exact real leagues, must not regress):**
+  `test_real_kha_shape_still_resolves_in_season_after_ratio_fix` (157/192)
+  and `test_real_403n18th_shape_still_resolves_in_season_after_ratio_fix`
+  (118/128) -- both PASS, both still resolve IN_SEASON.
+- All 5 pre-existing tests in this file that exercise the staleness
+  fallback (including the exact `100/128` boundary tests at 78.125%,
+  comfortably above the new 50% floor) still pass unchanged.
+- **23 pre-existing tests + 4 new this pass = 27 tests, all pass.**
+
+**Mirrored TypeScript test (`league-context.test.ts`):** two new tests
+under the existing "real provider-evidence fixes" describe block, same
+shapes (1-pick and 25-of-192), both assert `LIVE_DRAFT`. **28 tests total
+in this file, all pass** (up from 26 pre-existing).
+
+**LIVE OBSERVATION, real KHA league, this pass:** activated KHA in the
+real running Redraft app -- header/sidebar correctly show **"IN SEASON"**
+(not PRE-DRAFT, not stuck LIVE_DRAFT) -- confirms the ratio-tightened
+fallback still resolves the real league correctly, live, not just via
+tests. (403 N 18th not independently re-activated in the browser this
+pass; its identical code path and passing positive-control test are
+treated as sufficient, given time constraints and that Worker 1/2/3 had
+already independently confirmed its shape multiple times this cycle.)
+
+### D1 -- Dynasty storage/native launcher -- INSPECTED CODE + ACTUAL TEST
+RESULT + LIVE OBSERVATION (both halves investigated; both had a real,
+small, fixable gap -- both fixed, neither risked deep native-runtime
+rework)
+
+**(a) Dynasty's Connect flow explicit-refresh gap -- verified, not
+assumed, and found genuinely missing:** `desktop/apps/dynasty/src/pages/
+system.tsx`'s `DynastyLeagueConnectionPanel` (the real "Connect League"
+flow, Dynasty League Import V1) offered only "Disconnect league" once a
+league was connected -- no refresh/resync action existed anywhere for an
+ALREADY-connected league; the owner's only path to a fresher pull was
+disconnect -> re-type the league id -> reconnect. Separately confirmed
+(INSPECTED CODE) that the underlying import primitive
+(`import_dynasty_league` / `save_league_profile` / `save_league_snapshot`)
+already does the right thing on every call -- a real, fresh, GET-only
+Sleeper fetch every time (never cached), writing a NEW uniquely
+timestamped snapshot file (`utc_snapshot_stamp() + ".json"`) and never
+overwriting or deleting a prior one -- so a failed refresh (an exception
+before that final write) structurally leaves the previous snapshot and
+connection state completely untouched, with zero extra code needed for
+that guarantee. The only real gap was the missing UI entry point.
+
+**Fix:** added `leagueId`/`myOwnerId` (both additive) to the
+`DynastyLeagueContext` contract and to all 4 real call sites in
+`desktop_facade.py` that build this dict (`compare_dynasty_assets`,
+`evaluate_dynasty_trade`, `_annotate_dynasty_bootstrap_payload`,
+`_annotate_dynasty_workspace_payload`) so the frontend can resubmit the
+SAME real league id/owner id already on file. Added a real "Refresh from
+Sleeper" button beside "Disconnect league" in `system.tsx`, calling the
+SAME `client.importDynastySleeperLeague` the Connect flow already uses
+(with `profileId` pinned explicitly, so a refresh always updates the same
+profile in place rather than relying on id-derivation matching by
+coincidence). **Never touches `governed_asset_registry_service.py`'s
+valuation computation** -- confirmed by `git status`, that file was not
+modified.
+
+**LIVE OBSERVATION:** rebuilt+restarted the Dynasty dev pair (also
+required since it was running pre-HEAD code per Worker 1's own flag --
+confirmed stopped PIDs 40244/37176, fresh backend+`vite preview` on
+18741/1421). Navigated to Data Health's real Dynasty League Connection
+panel (Enginerds already connected from the earlier dynasty-import
+cycle). Clicked the new "Refresh from Sleeper" button: real success
+message "League refreshed from Sleeper. A new dated snapshot was saved,"
+the displayed "Imported" timestamp updated live from `9/18/2026, 6:25:55
+PM` to `9/18/2026, 9:13:53 PM`. **Verified on disk, not just by the UI
+message:** `local_exports/dynasty_v1/league_snapshots/1344772855908290560/`
+gained a genuinely NEW file (`20260919_031353.json`) alongside all 4
+pre-existing snapshot files, all still present and untouched. Zero
+console errors.
+
+**(b) Native launcher env var -- INSPECTED CODE, confirmed real, fixed
+(small, clear, isolated change):** `desktop/crates/nwr-desktop-runtime/
+src/lib.rs`'s `DesktopState::launch` (the SAME function handles both
+`AppMode::Redraft` and `AppMode::Dynasty` at runtime, discriminated by the
+already-existing `mode` parameter) unconditionally set only
+`NWR_REDRAFT_HOME`, never `NWR_DYNASTY_LEAGUE_HOME` -- confirmed by
+reading the whole function, no conditional branch existed. This means a
+NATIVE Dynasty launch has always silently fallen back to
+`dynasty_league_store_root`'s repo-local default
+(`<repo_root>/local_exports/dynasty_v1`) instead of this native install's
+own durable, per-bundle app-data state directory -- the exact class of gap
+Redraft's own `NWR_REDRAFT_HOME` wiring was specifically built to avoid.
+**Fix:** replaced the unconditional `.env("NWR_REDRAFT_HOME", ...)` call
+with a `match mode` branch -- `AppMode::Redraft` sets `NWR_REDRAFT_HOME`
+-> `state_dir/redraft` (byte-identical to before, zero behavior change for
+Redraft), `AppMode::Dynasty` now sets `NWR_DYNASTY_LEAGUE_HOME` ->
+`state_dir/dynasty` (a new, real, per-bundle native path, matching the
+exact env var name `dynasty_sleeper_league_service.py`'s own
+`dynasty_league_store_root` already reads). **ACTUAL TEST RESULT:** `cargo
+check` on `nwr-desktop-runtime` -- clean compile, zero errors/warnings
+introduced. **No new Rust unit test added** -- this function directly
+spawns a real child process with no existing test seam for inspecting
+`Command`'s env vars without a larger refactor; per the brief's own
+explicit guidance for this half ("fix if small/clear...but if this
+requires deep native-runtime work beyond a small, clear fix, document
+precisely rather than risk breaking native packaging this late"), this
+fix was kept small and isolated (one conditional branch, same `.env()`
+builder pattern already present) and verified only via `cargo check` --
+**not** independently verified via an actual native package build/launch
+this pass (that remains Worker 5's or a later native-packaging pass's
+job, per the brief's own time-boxing of that step to the final 3 hours).
+
+### TESTS -- ACTUAL TEST RESULT (full, this pass)
+
+- `tests/test_league_lifecycle_service.py`: **27 passed** (23 pre-existing
+  + 4 new D2 tests).
+- `tests/test_dynasty_sleeper_league_service.py`,
+  `tests/test_dynasty_league_import_facade_wiring.py`,
+  `tests/test_desktop_facade_architecture_wiring.py`: all pass, **67
+  passed** combined with the above (single run).
+- Full brief-listed backend suite + this pass's own touched files
+  (`test_weekly_lineup_optimizer_service`, `test_weekly_projection_
+  service`, `test_weekly_projection_provider_service`, `test_
+  fantasypros_kdst_consensus_service`, `test_redraft_waivers_ir_reserve_
+  drop_exclusion_fix`, `test_redraft_waivers_faab_context_fix`, `test_
+  redraft_waivers_open_slot_and_same_context_fix`, `test_weekly_home_
+  single_snapshot`, `test_weekly_home_sleeper_fetch_caching`, `test_
+  dynasty_sleeper_league_service`, `test_dynasty_league_import_facade_
+  wiring`, `test_league_lifecycle_service`, `test_waiver_engine_service`,
+  `test_redraft_kdst_streamer_keep_current_fix`, `test_weekly_game_lock_
+  service`, `test_desktop_application_api`): **246 passed, 4 failed** --
+  the SAME 4 pre-existing HEAD-baseline failures Worker 3's ledger entry
+  already documented exactly by name (`test_dynasty_facade_composes_real_
+  governed_workflows`, `test_desktop_rookie_veteran_bridge_is_source_
+  separated_and_trade_aware`, `test_redraft_bootstrap_seeds_once_and_
+  matches_desktop_contract`, `test_facade_has_no_streamlit_or_app_
+  component_dependency`) -- re-confirmed unrelated to this pass's changes
+  (none of this pass's diffs touch any file those tests exercise), not
+  waived without evidence.
+- Frontend: `npm run typecheck` (both apps) -- clean, 0 errors, checked
+  after every meaningful edit round including the D1 Dynasty/contracts
+  changes. Full `npx vitest run`: **497 passed, 0 failed** (up from
+  Worker 3's 493 baseline by 4: 2 new W9 stale-sequence-guard tests in
+  `weekly-shared.test.ts`, 2 new D2 tests in `league-context.test.ts`).
+- Rust: `cargo check` on `nwr-desktop-runtime` -- clean, 0 errors.
+- `docs/codex/prospective_outcomes_v1/multi_league_scale_v1/frontend_
+  bench_results.json`'s own benign perf-timing-noise churn (same known
+  side effect prior Workers hit from running the full vitest suite) was
+  reverted with `git checkout --` before finishing -- not a real change.
+
+### LIVE VERIFICATION -- LIVE OBSERVATION, summary
+
+Rebuilt and restarted BOTH dev pairs this pass (Redraft: stopped Worker
+3's PIDs 25936/46660, fresh backend+`vite preview` on 18742/1422; Dynasty:
+stopped Worker 1-flagged pre-HEAD PIDs 40244/37176, fresh backend+`vite
+preview` on 18741/1421 -- required since this pass's D1 fix touched
+Dynasty-side code). Real Chrome MCP session covering: Enginerds import
+(profile.tsx), Enginerds Start/Sit (real custom scoring, real reserve/
+lock buckets), Enginerds Improve Team all 4 tabs (Targets REST_OF_SEASON
++ THIS_WEEK, Add/Drop, FAAB, Streamers with a real live KEEP-current
+case and a real live no-DST-guard confirmation via direct API
+inspection), KHA activation + BLOCKED Start/Sit + correct IN SEASON badge
+(D2), and Dynasty's new Refresh-from-Sleeper button (D1) with an on-disk
+new-snapshot verification. Zero console errors observed across the whole
+session (`read_console_messages`, `onlyErrors: true`, checked repeatedly).
+Zero writes: every call was a plain GET (Sleeper league/rosters/users/
+players/projections/state, FantasyPros consensus) or a read against the
+backend's own read-only endpoints; every weekly response carried
+`writeBehavior: "NO_SLEEPER_WRITES"` (or the K/DST-specific
+`NO_SLEEPER_WRITES_NO_FANTASYPROS_WRITES"`); the Dynasty/Redraft imports
+are both explicitly, structurally GET-only per their own docstrings,
+confirmed by reading the code, not just trusting the label.
+
+### REDRAFT/DYNASTY PROCESSES STATUS
+
+Both dev pairs restarted and confirmed serving this pass's final HEAD:
+- Redraft backend: port 18742 (fresh PID via a real dev-credentials-piped
+  startup), `vite preview` on port 1422.
+- Dynasty backend: port 18741 (same real credential-piping pattern),
+  `vite preview` on port 1421.
+Both `GET /api/v1/bootstrap` -> `200` confirmed (with real dev bearer
+token + matching Origin header), both frontends `GET /` -> `200`.
+
+### FILES CHANGED
+
+- `src/services/league_lifecycle_service.py` (D2: `STALE_DRAFT_MIN_
+  COMPLETION_RATIO` + ratio-gated staleness fallback; docstring updated).
+- `desktop/apps/redraft/src/league-context.ts` (D2: mirrored ratio gate
+  in the frontend `resolveLeagueLifecycle`).
+- `tests/test_league_lifecycle_service.py` (D2: 4 new tests).
+- `desktop/apps/redraft/src/league-context.test.ts` (D2: 2 new tests).
+- `desktop/apps/redraft/src/improve-team.tsx` (W9: `streamerGuardRef` +
+  mid-loop/final staleness checks in `loadStreamers`).
+- `desktop/apps/redraft/src/weekly-shared.test.ts` (W9: 2 new tests +
+  `runGuardedStreamerSequence` helper).
+- `src/application/desktop_facade.py` (D1: `leagueId`/`myOwnerId` added
+  to all 4 `dynastyLeague` response dict sites -- additive only, no
+  valuation logic touched).
+- `desktop/packages/contracts/src/index.ts` (D1: `DynastyLeagueContext`
+  gained `leagueId`/`myOwnerId`).
+- `desktop/apps/dynasty/src/pages/system.tsx` (D1: real "Refresh from
+  Sleeper" button + `refresh()` handler).
+- `desktop/crates/nwr-desktop-runtime/src/lib.rs` (D1: mode-conditional
+  `NWR_REDRAFT_HOME` / `NWR_DYNASTY_LEAGUE_HOME` env var).
+- No new profile-import service was created for W8 -- the existing
+  `sleeper_redraft_owner_service.py`/`profile.tsx` "Import from Sleeper"
+  path was reused unmodified; the only artifact from W8 is the new real
+  profile data file itself: `local_exports/redraft_v1/profiles/
+  6687d2b3aa21450ea0fc9e1792d461ff.json` (+ its matching `sleeper_
+  imports/` receipt), which is gitignored local data, not a source change.
+
+### OPEN ISSUES FOR WORKER 5 (full test/dogfood pass)
+
+1. **The pre-existing "Stage: PRE-DRAFT" display bug** (Weekly Home +
+   sidebar reading the local bootstrap-only lifecycle heuristic instead of
+   the correct, live `/league-workspace-context` `lifecycle` field) --
+   confirmed affects BOTH Fantasy Gamers and Enginerds live, not fixed
+   this pass (documented above, out of this pass's narrow scope). Real,
+   cosmetic-only (does not block any real tool), but worth a dedicated fix
+   pass: make `in-season.tsx`/`shell-identity.tsx` prefer the live
+   workspace-context lifecycle when available, falling back to the local
+   heuristic only while that hasn't loaded yet.
+2. **W9's exact real-network race was not independently browser-reproduced
+   this pass** -- the code fix and its regression test (proving the exact
+   guard mechanism) are both real and verified; only the live,
+   real-timing repro specifically was not attempted (no throttling tool
+   available, local calls too fast to race reliably by hand). Attempt a
+   real repro if thoroughness requires it and a throttling mechanism is
+   available.
+3. **D1(b)'s native launcher fix was verified only via `cargo check`, not
+   an actual native package build/launch** -- per the brief's own
+   time-boxing, real native packaging verification is explicitly Worker
+   5's/the final delivery pass's job (limited to 60 minutes, 11:00
+   Mountain cutoff). When that pass runs, confirm the Dynasty native app
+   actually persists/reads its per-league Sleeper import from
+   `%LOCALAPPDATA%\com.ninerswarroom.dynasty\state\dynasty\` (not the
+   repo-local fallback) -- this pass's fix should make that true but was
+   not end-to-end native-verified.
+4. **Enginerds' cold-start "Command center unavailable" timeout on the
+   very first Start/Sit request after a backend restart** (see W8 above)
+   -- real, reproduced once, resolved by a manual retry/refresh once the
+   backend's own caches warmed (a direct curl of the same endpoint
+   completed in 347ms). Not investigated further under this pass's time
+   box; worth a quick look if it recurs (e.g., whether the frontend's own
+   fetch timeout is simply too aggressive for a genuinely cold multi-thousand-row
+   weekly-projection + nflverse-schedule cold fetch, vs. a real backend
+   slowness worth optimizing).
+5. **403 N 18th was not independently re-activated/re-verified live in the
+   browser this pass** (only KHA was, plus 403 N 18th's identical code
+   path and passing D2 positive-control test) -- worth a quick direct
+   live check in Worker 5's full dogfood pass for completeness.
+6. **The ESPN checklist above is documentation only** -- no code exists to
+   act on it; the owner would need to explicitly decide to pursue either
+   the manual-local-profile path or a real, new ESPN API integration
+   (requiring the owner's own SWID/espn_s2 cookies) before any further
+   work is possible here.
+7. **This pass's own scratch files** (`.worker4_*.log`/`.log.err`/
+   `_creds.json` in the repo root) are leftover local artifacts from
+   piping real dev startup credentials to the rebuilt dev-server
+   processes via stdin (matching `nwr_release_gate_smoke.ps1`'s own
+   pattern) -- untracked, not committed, harmless, left in place because
+   the still-running processes hold open file handles to them (same
+   precedent as Worker 1's `dynasty_smoke_*.log` files). Safe to delete
+   once those processes are stopped.
+8. **Enginerds' real Redraft-mode Trades tab was not exercised this
+   pass** (only Start/Sit + all 4 Improve Team tabs, per this pass's
+   explicit scope) -- worth a quick check in Worker 5's dogfood pass
+   since Trades is a real, routed surface for every Sleeper profile.

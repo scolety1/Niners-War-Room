@@ -38,6 +38,7 @@ import {
   ProviderStatusLine,
   WeekControl,
   appendPlayerDetailColumn,
+  createStaleResponseGuard,
   describeUnmatchedRosterPlayers,
   resolveSeasonProjectionBasisCaption,
   useAsync,
@@ -173,7 +174,23 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
   const [streamerError, setStreamerError] = useState<NwrApiError | null>(null);
   const [streamerWorking, setStreamerWorking] = useState(false);
   const provider: ExternalConsensusStatus | undefined = data.externalConsensus;
+  // W9 fix (Sunday Readiness overnight, Worker 4): results/error were
+  // already cleared on profile change here, but an ALREADY IN-FLIGHT
+  // `loadStreamers()` request (kicked off before the switch) had no
+  // profile/request-generation check of its own -- when it resolved AFTER
+  // the switch, its `.then`/`.catch` callbacks still unconditionally called
+  // `setStreamerResults`/`setStreamerError`, silently repopulating the
+  // NEWLY active league's screen with the PRIOR league's streamer results.
+  // Fixed with the same `createStaleResponseGuard` primitive `useAsync`
+  // already uses elsewhere in this file/module: the guard is superseded
+  // (and a fresh one created) every time the active profile changes, and
+  // `loadStreamers` -- captured by value at call time, not re-read from a
+  // shared mutable ref -- only applies its own result if that exact guard
+  // is still the live one.
+  const streamerGuardRef = useRef(createStaleResponseGuard());
   useEffect(() => {
+    streamerGuardRef.current.supersede();
+    streamerGuardRef.current = createStaleResponseGuard();
     setStreamerResults([]);
     setStreamerError(null);
   }, [data.activeProfileId]);
@@ -181,6 +198,7 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
     // W1 fix: never load streamers for an unresolved week (would have
     // silently meant "Week 1" before this pass).
     if (streamerWorking || !provider?.configured || streamerWeek == null) return;
+    const guard = streamerGuardRef.current;
     setStreamerWorking(true);
     setStreamerError(null);
     setStreamerResults([]);
@@ -188,15 +206,25 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
     const loaded: KdstStreamerResult[] = [];
     try {
       // Sequential, not parallel -- mirrors WeeklyToolsPage's own reasoning:
-      // caps this at 3 real FantasyPros ECR reads, never a burst.
+      // caps this at 3 real FantasyPros ECR reads, never a burst. Also
+      // checked mid-loop (not just at the end) so a league switch during a
+      // multi-week streamer read stops issuing further requests for the
+      // now-inactive league, not just discards the final result.
       for (let offset = 0; offset < weekCount; offset += 1) {
+        if (guard.isStale()) return;
         const targetWeek = Math.min(18, streamerWeek + offset);
         loaded.push(await client.kdstStreamer(targetWeek));
       }
-      setStreamerResults(loaded);
+      if (!guard.isStale()) setStreamerResults(loaded);
     } catch (reason) {
-      setStreamerError(reason instanceof NwrApiError ? reason : new NwrApiError("K/DST Streamer could not read its sources."));
+      if (!guard.isStale()) {
+        setStreamerError(reason instanceof NwrApiError ? reason : new NwrApiError("K/DST Streamer could not read its sources."));
+      }
     } finally {
+      // Always clear the spinner, even for a superseded request -- it is
+      // this (now-inactive) request's own working flag, not a data field
+      // that could leak stale results, and a stuck "Loading..." state for
+      // the newly active league would be its own real bug.
       setStreamerWorking(false);
     }
   }, [streamerWorking, provider, streamerHorizon, streamerWeek, client]);

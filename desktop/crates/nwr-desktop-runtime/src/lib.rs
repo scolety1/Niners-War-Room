@@ -251,7 +251,6 @@ impl DesktopState {
             .env("NWR_DESKTOP_MODE", mode.as_str())
             .env("NWR_DESKTOP_STATE_DIR", &state_dir)
             .env("NWR_DESKTOP_LOG_DIR", &log_dir)
-            .env("NWR_REDRAFT_HOME", state_dir.join("redraft"))
             .env(
                 "NWR_PERSONAL_WORKSPACE_ROOT",
                 state_dir.join("personal-workspace"),
@@ -261,6 +260,27 @@ impl DesktopState {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::from(stderr));
+        // D1 fix (NWR Sunday Readiness overnight cycle, Worker 4): this same
+        // `launch` function runs for BOTH modes, but unconditionally set
+        // only `NWR_REDRAFT_HOME` here -- so a native Dynasty launch never
+        // told its backend where to persist per-league Sleeper imports, and
+        // it silently fell back to `redraft_engine_v1_service`'s repo-local
+        // default (`local_exports/dynasty_v1` under the app's install
+        // directory, per `dynasty_sleeper_league_service.py`'s own
+        // `dynasty_league_store_root` fallback) instead of this native
+        // install's own real, durable, per-bundle app-data state directory
+        // -- the same class of gap Redraft's own `NWR_REDRAFT_HOME` wiring
+        // already avoids. Mirrors the exact same pattern per mode, zero
+        // behavior change for Redraft (still `NWR_REDRAFT_HOME` ->
+        // `state_dir/redraft`, byte-identical to before).
+        match mode {
+            AppMode::Redraft => {
+                command.env("NWR_REDRAFT_HOME", state_dir.join("redraft"));
+            }
+            AppMode::Dynasty => {
+                command.env("NWR_DYNASTY_LEAGUE_HOME", state_dir.join("dynasty"));
+            }
+        }
 
         // A parent may use token/port overrides for development, but the child receives
         // neither through its inherited environment. Secrets cross only the private stdin pipe.

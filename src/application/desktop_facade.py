@@ -1442,6 +1442,14 @@ class DesktopBackendFacade:
                 "leagueName": profile.league_name,
                 "myRosterId": profile.my_roster_id,
                 "fetchedAtUtc": league_snapshot.fetched_at_utc,
+                # D1 fix (Sunday Readiness overnight, Worker 4): additive --
+                # lets the frontend offer a real "Refresh from Sleeper"
+                # action on an already-connected league by resubmitting the
+                # SAME real league id (and owner id, when known) that was
+                # used to connect it, instead of requiring disconnect ->
+                # reconnect to get a fresh, dated snapshot.
+                "leagueId": profile.league_id,
+                "myOwnerId": profile.my_owner_id,
             }
         return FacadePayload(data=data)
 
@@ -1493,6 +1501,14 @@ class DesktopBackendFacade:
                 "leagueName": profile.league_name,
                 "myRosterId": profile.my_roster_id,
                 "fetchedAtUtc": league_snapshot.fetched_at_utc,
+                # D1 fix (Sunday Readiness overnight, Worker 4): additive --
+                # lets the frontend offer a real "Refresh from Sleeper"
+                # action on an already-connected league by resubmitting the
+                # SAME real league id (and owner id, when known) that was
+                # used to connect it, instead of requiring disconnect ->
+                # reconnect to get a fresh, dated snapshot.
+                "leagueId": profile.league_id,
+                "myOwnerId": profile.my_owner_id,
             }
         return FacadePayload(data=data)
 
@@ -7320,6 +7336,11 @@ class DesktopBackendFacade:
             "leagueName": profile.league_name,
             "myRosterId": profile.my_roster_id,
             "fetchedAtUtc": league_snapshot.fetched_at_utc,
+            # D1 fix (Sunday Readiness overnight, Worker 4): see the
+            # matching comment above -- additive fields for a real
+            # "Refresh from Sleeper" action on an already-connected league.
+            "leagueId": profile.league_id,
+            "myOwnerId": profile.my_owner_id,
         }
         return FacadePayload(data=data, warnings=payload.warnings)
 
@@ -7342,6 +7363,11 @@ class DesktopBackendFacade:
             "leagueName": profile.league_name,
             "myRosterId": profile.my_roster_id,
             "fetchedAtUtc": league_snapshot.fetched_at_utc,
+            # D1 fix (Sunday Readiness overnight, Worker 4): see the
+            # matching comment above -- additive fields for a real
+            # "Refresh from Sleeper" action on an already-connected league.
+            "leagueId": profile.league_id,
+            "myOwnerId": profile.my_owner_id,
         }
         return FacadePayload(data=data, warnings=payload.warnings)
 

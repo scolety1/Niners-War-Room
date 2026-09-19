@@ -116,6 +116,22 @@ describe("resolveLeagueLifecycle -- real provider-evidence fixes", () => {
     const now = new Date("2026-09-17T00:00:00Z");
     expect(resolveLeagueLifecycle(fantasyGamers, staleSleeperBoard, now)).toBe("LIVE_DRAFT");
   });
+
+  // 2026-09-18 fix (D2, Sunday Readiness overnight, Worker 4): age alone is
+  // not completion evidence -- mirrors the backend's own
+  // STALE_DRAFT_MIN_COMPLETION_RATIO fix in league_lifecycle_service.py.
+  it("does not resolve a stale, barely-started non-live-syncable draft as complete (brief D2 repro: just one pick)", () => {
+    const oneRealPick = board({ configured: true, drafted: ["p"], updatedAtUtc: "2026-09-10T00:00:00Z" });
+    const now = new Date("2026-09-17T00:00:00Z");
+    expect(resolveLeagueLifecycle(khaEspn, oneRealPick, now)).toBe("LIVE_DRAFT");
+  });
+
+  it("does not resolve a stale, minority-drafted non-live-syncable board as complete", () => {
+    // 25 of 192 (~13%) -- well under the 50% floor, stale for weeks.
+    const partial = board({ configured: true, drafted: new Array(25).fill("p"), updatedAtUtc: "2026-09-01T00:00:00Z" });
+    const now = new Date("2026-09-17T00:00:00Z");
+    expect(resolveLeagueLifecycle(khaEspn, partial, now)).toBe("LIVE_DRAFT");
+  });
 });
 
 describe("resolveLeagueHomeSubpath", () => {

@@ -161,6 +161,12 @@ export interface DynastyLeagueContext {
   leagueName: string;
   myRosterId: number | null;
   fetchedAtUtc: string;
+  // D1 fix (NWR Sunday Readiness overnight cycle, Worker 4): additive --
+  // lets the frontend offer a real "Refresh from Sleeper" action on an
+  // already-connected league by resubmitting the same real league id (and
+  // owner id, when known) instead of requiring disconnect -> reconnect.
+  leagueId: string;
+  myOwnerId: string | null;
 }
 
 export interface DynastyLeagueImportInput {

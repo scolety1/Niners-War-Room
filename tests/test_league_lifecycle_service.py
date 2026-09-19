@@ -217,3 +217,71 @@ def test_stale_threshold_boundary_at_exactly_24h_is_in_season():
         now_utc=now,
     )
     assert resolution.lifecycle == "IN_SEASON"
+
+
+# --- 2026-09-18 fix (D2, Sunday Readiness overnight, Worker 4): age alone
+# is not completion evidence -- a non-live-sync draft with just one pick
+# must not be inferred complete after 24 quiet hours. Real KHA/403 N 18th
+# (above) both clear a large majority of their configured picks and must
+# keep resolving IN_SEASON unchanged; a barely-started draft must not. ---
+
+
+def test_stale_but_barely_started_draft_does_not_falsely_resolve_complete():
+    # The exact brief D2 repro shape: a non-live-sync draft with just ONE
+    # real recorded pick, quiet for well over 24 hours. Before this fix,
+    # `drafted_count >= 1` alone was enough to trip the staleness fallback
+    # and this would have wrongly resolved IN_SEASON.
+    now = datetime(2026, 9, 17, tzinfo=timezone.utc)
+    resolution = resolve_league_lifecycle(
+        archived=False, draft_configured=True, drafted_count=1,
+        total_draft_picks=192, current_pick=None,
+        live_sync_capable=False,
+        draft_last_activity_utc="2026-09-10T00:00:00+00:00",
+        now_utc=now,
+    )
+    assert resolution.lifecycle == "LIVE_DRAFT"
+    assert resolution.lifecycle != "IN_SEASON"
+
+
+def test_stale_partial_draft_under_completion_ratio_stays_live_draft():
+    # A more plausible genuinely-abandoned mid-draft shape: 20% of a
+    # configured draft, stale for weeks. Must not be declared complete on
+    # age alone.
+    now = datetime(2026, 9, 17, tzinfo=timezone.utc)
+    resolution = resolve_league_lifecycle(
+        archived=False, draft_configured=True, drafted_count=25,
+        total_draft_picks=128, current_pick=None,
+        live_sync_capable=False,
+        draft_last_activity_utc="2026-09-01T00:00:00+00:00",
+        now_utc=now,
+    )
+    assert resolution.lifecycle == "LIVE_DRAFT"
+
+
+def test_real_kha_shape_still_resolves_in_season_after_ratio_fix():
+    # Positive control: the real league this whole fallback exists for
+    # must not regress. 157/192 = 81.8%, comfortably above the new 50%
+    # floor.
+    now = datetime(2026, 9, 17, tzinfo=timezone.utc)
+    resolution = resolve_league_lifecycle(
+        archived=False, draft_configured=True, drafted_count=157,
+        total_draft_picks=192, current_pick=None,
+        live_sync_capable=False,
+        draft_last_activity_utc="2026-09-03T04:28:00+00:00",
+        now_utc=now,
+    )
+    assert resolution.lifecycle == "IN_SEASON"
+
+
+def test_real_403n18th_shape_still_resolves_in_season_after_ratio_fix():
+    # Positive control: 118/128 = 92.2%, comfortably above the new 50%
+    # floor.
+    now = datetime(2026, 9, 17, tzinfo=timezone.utc)
+    resolution = resolve_league_lifecycle(
+        archived=False, draft_configured=True, drafted_count=118,
+        total_draft_picks=128, current_pick=None,
+        live_sync_capable=False,
+        draft_last_activity_utc="2026-09-08T02:50:29+00:00",
+        now_utc=now,
+    )
+    assert resolution.lifecycle == "IN_SEASON"
