@@ -8,12 +8,35 @@ describe("explainHomeAction", () => {
       category: "START_SIT",
       priority: 1,
       summary: "Start Player A over Player B",
-      detail: { slotType: "WR", startPlayer: "Player A", benchPlayer: "Player B", projectedDelta: 2.8, summary: "Start Player A over Player B" },
+      detail: { slotType: "WR", startPlayer: "Player A", benchPlayer: "Player B", projectedDelta: 2.8, deltaBasis: "KNOWN", summary: "Start Player A over Player B" },
     };
     const result = explainHomeAction(action);
     expect(result.expectedImpact).toBe("+2.8 projected points");
     expect(result.confidence).toBeNull();
     expect(result.alternative).toBeNull();
+    expect(result.why).toMatch(/outscore/);
+  });
+
+  // NWR connection/update pass, Worker 2 (2026-09-19): the owner-reported
+  // Zay Flowers bug, reproduced at the Weekly Home action-card layer -- a
+  // swap whose displaced (bench) player has no real weekly projection must
+  // never show a fabricated impact figure or imply a confirmed gain.
+  it("never fabricates an impact figure for a swap with an unknown (missing-projection) delta", () => {
+    const action: WeeklyHomeAction = {
+      category: "START_SIT",
+      priority: 1,
+      summary: "Start Michael Pittman over Zay Flowers",
+      detail: {
+        slotType: "WR", startPlayer: "Michael Pittman", benchPlayer: "Zay Flowers",
+        projectedDelta: null, deltaBasis: "UNKNOWN_MISSING_BENCH_PROJECTION",
+        summary: "START Michael Pittman over Zay Flowers -- Zay Flowers's projection is missing this week; point swing unknown.",
+      },
+    };
+    const result = explainHomeAction(action);
+    expect(result.expectedImpact).toBeNull();
+    expect(result.confidence).toBe("LOW");
+    expect(result.why).toMatch(/missing/);
+    expect(result.why).not.toMatch(/\+11\.7/);
   });
 
   it("marks a START_SIT_CLOSE_CALL as LOW confidence using the real closeCall signal", () => {

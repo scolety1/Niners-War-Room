@@ -363,6 +363,18 @@ def rank_waiver_candidates(
             # False) sorts after every real evaluated candidate -- never
             # treated as a real zero gain.
             gain_missing = not candidate.this_week_evaluated
+            # NWR connection/update pass, Worker 2 (2026-09-19): checked this
+            # `or 0.0` for the same silent-missing-as-zero mistake found and
+            # fixed in `weekly_lineup_optimizer_service._swap_reasons`.
+            # Verified NOT a live bug: `this_week_lineup_gain` is set to
+            # `impact.gain` (always a real float, never `None` -- see
+            # `ThisWeekAddDropImpact.gain`'s own construction) whenever
+            # `this_week_evaluated` is True, and `gain_missing` above (using
+            # `this_week_evaluated`, not this value) already sorts every
+            # non-evaluated candidate last BEFORE this tiebreaker is ever
+            # consulted. `or 0.0` therefore never actually substitutes for a
+            # real missing value in practice -- kept as a defensive
+            # fallback, not a fabrication path.
             gain = -(candidate.this_week_lineup_gain or 0.0)
             fallback_missing = candidate.marginal_utility is None
             fallback = -(candidate.marginal_utility or 0.0)

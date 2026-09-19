@@ -56,13 +56,30 @@ export function explainLineupSwap(
   resultingSlot: WeeklyLineupSlot | null,
 ): LineupSwapExplanation {
   const closeCall = resultingSlot?.closeCall ?? false;
+  // NWR connection/update pass, Worker 2 (2026-09-19): a swap whose
+  // displaced player has no real weekly projection this week must never
+  // show a fabricated point swing (the owner-reported Zay Flowers bug --
+  // "+11.7"/"+7.6" that were really just the new starter's own raw points
+  // minus an assumed, wrong zero). Checked BEFORE the close-call branch --
+  // an unknown delta is its own honest state, not a confident recommendation.
+  if (swap.deltaBasis !== "KNOWN") {
+    return {
+      headline: `Start ${swap.startPlayer} over ${swap.benchPlayer}`,
+      why: `${swap.benchPlayer}'s weekly projection is missing this week -- the point swing from this change is unknown, not a confirmed gain.`,
+      alternative: null,
+      impact: "Unknown -- missing projection",
+      tone: "warning",
+      confidence: "LOW",
+      status: resultingSlot?.status ?? null,
+    };
+  }
   return {
     headline: `Start ${swap.startPlayer} over ${swap.benchPlayer}`,
     why: closeCall
       ? "Projected to outscore the current starter this week -- but the margin over the next-best option is real and small, a genuine close call, not a clear-cut start."
       : `Projected to outscore the current starter at ${swap.slotType} this week.`,
     alternative: closeCall ? (resultingSlot?.closeCallAlternative ?? null) : null,
-    impact: `${formatSigned(swap.projectedDelta)} projected points`,
+    impact: `${formatSigned(swap.projectedDelta as number)} projected points`,
     tone: closeCall ? "warning" : "recommended",
     confidence: closeCall ? "LOW" : null,
     status: resultingSlot?.status ?? null,

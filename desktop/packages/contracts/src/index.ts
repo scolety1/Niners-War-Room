@@ -1147,7 +1147,17 @@ export interface WeeklyLineupSwap {
   slotType: string;
   startPlayer: string;
   benchPlayer: string;
-  projectedDelta: number;
+  /** NWR connection/update pass, Worker 2 (2026-09-19): honestly `null`
+   * when `deltaBasis !== "KNOWN"` -- the displaced (`benchPlayer`) side has
+   * no real weekly-projection row this week, so the true point swing is
+   * genuinely unknown. Never a fabricated number (owner-reported bug fix:
+   * this used to silently substitute 0.0 for a missing projection). */
+  projectedDelta: number | null;
+  /** "KNOWN" (a real, computable delta -- including a real 0.0 on either
+   * side, e.g. a kicker projected for exactly zero points) or
+   * "UNKNOWN_MISSING_BENCH_PROJECTION" (the bench player's projection is
+   * genuinely missing this week, not zero). */
+  deltaBasis: "KNOWN" | "UNKNOWN_MISSING_BENCH_PROJECTION";
   summary: string;
 }
 

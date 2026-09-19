@@ -68,15 +68,26 @@ export function explainHomeAction(action: WeeklyHomeAction): HomeActionExplanati
     // detail is the real WeeklyLineupSwap NWR already computed for this
     // swap (see redraft_weekly_lineup's own `swaps` field, unchanged).
     const swap = action.detail as unknown as WeeklyLineupSwap;
+    // NWR connection/update pass, Worker 2 (2026-09-19): `Number.isFinite`
+    // already degraded `expectedImpact` to `null` correctly for a
+    // `projectedDelta` of `null` before this pass (a genuine coincidence of
+    // JS semantics, not a designed fix) -- `why`/`confidence` did not, and
+    // would have kept implying a confirmed "outscore" comparison even when
+    // the bench player's own projection is genuinely missing. Fixed
+    // explicitly using the real `deltaBasis` field rather than relying on
+    // that incidental numeric behavior.
+    const deltaUnknown = swap.deltaBasis !== "KNOWN";
     return {
       doThis: action.summary,
       categoryLabel,
-      why: `Projected to outscore the current starter at ${swap.slotType} this week.`,
+      why: deltaUnknown
+        ? `${swap.benchPlayer}'s weekly projection is missing this week -- the point swing is unknown, not a confirmed gain.`
+        : `Projected to outscore the current starter at ${swap.slotType} this week.`,
       secondaryWhy: null,
       expectedImpact: Number.isFinite(swap.projectedDelta)
-        ? `${formatSigned(swap.projectedDelta)} projected points`
+        ? `${formatSigned(swap.projectedDelta as number)} projected points`
         : null,
-      confidence: null,
+      confidence: deltaUnknown ? "LOW" : null,
       alternative: null,
     };
   }

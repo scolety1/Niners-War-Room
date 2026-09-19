@@ -429,3 +429,88 @@ def test_regression_fixture_5c_locked_bench_player_excluded_from_new_starts() ->
     assert rb_slot.status == "EMPTY"
     assert any(c.player_name == "Locked Bench Player" for c in result.locked_unavailable)
 
+
+# ---------------------------------------------------------------------------
+# NWR connection/update pass, Worker 2 (2026-09-19) -- owner-reported bug
+# fix: `_swap_reasons` used to compute `bumped.projected_points or 0.0`,
+# silently treating a genuinely MISSING weekly projection on the displaced
+# player as a real, known 0.0. This fabricated a delta equal to the new
+# starter's own raw points (real-world case: Zay Flowers had no projection
+# row this week; both "start Pittman over Flowers, +11.7" and "start Coker
+# over [bench], +7.6" were built on this exact silent-zero substitution).
+# These fixtures prove the fix DISTINGUISHES a genuinely missing projection
+# from a real, known 0.0 -- an explicit owner requirement, not merely "no
+# crash".
+# ---------------------------------------------------------------------------
+
+
+def test_swap_with_real_known_zero_bumped_projection_produces_a_real_numeric_delta() -> None:
+    """A real, KNOWN 0.0 projection (e.g. a kicker projected for exactly
+    zero points in a specific bad-weather week) is a genuine, computable
+    value -- the resulting delta must be a real number equal to the new
+    starter's own points minus that real 0.0, with `delta_basis == "KNOWN"`,
+    never treated the same as a missing projection."""
+
+    roster = RosterSettings(qb=0, rb=0, wr=0, te=0, flex=0, superflex=0, k=1, dst=0, bench_size=10)
+    candidates = [
+        _candidate("k_bad_weather", "Bad Weather Kicker", "K", 0.0, starting=True),
+        _candidate("k_bench", "Bench Kicker", "K", 9.0, starting=False),
+    ]
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    assert len(result.swaps_vs_current) == 1
+    swap = result.swaps_vs_current[0]
+    assert swap.start_player == "Bench Kicker"
+    assert swap.bench_player == "Bad Weather Kicker"
+    assert swap.delta_basis == "KNOWN"
+    assert swap.projected_delta == 9.0  # 9.0 - a REAL, known 0.0 -- not fabricated, not dropped
+    assert "9.0" in swap.summary
+
+
+def test_swap_with_missing_bumped_projection_is_honestly_unknown_not_fabricated_zero() -> None:
+    """The displaced player has NO real weekly-projection row at all
+    (`projected_points=None`) -- a genuinely missing value, not a real
+    zero. The fix must represent this delta as honestly UNKNOWN
+    (`projected_delta is None`, `delta_basis ==
+    "UNKNOWN_MISSING_BENCH_PROJECTION"`), never as a fabricated number
+    equal to the new starter's own raw points (the exact pre-fix bug)."""
+
+    roster = RosterSettings(qb=0, rb=0, wr=1, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=10)
+    candidates = [
+        _candidate("wr_no_projection", "No-Projection Incumbent", "WR", None, starting=True),
+        _candidate("wr_bench", "New Starter", "WR", 12.0, starting=False),
+    ]
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    assert len(result.swaps_vs_current) == 1
+    swap = result.swaps_vs_current[0]
+    assert swap.start_player == "New Starter"
+    assert swap.bench_player == "No-Projection Incumbent"
+    assert swap.delta_basis == "UNKNOWN_MISSING_BENCH_PROJECTION"
+    assert swap.projected_delta is None
+    # The pre-fix bug would have fabricated exactly 12.0 (12.0 - 0.0).
+    assert "12.0" not in swap.summary
+    assert "unknown" in swap.summary.lower()
+    assert "missing" in swap.summary.lower()
+
+
+def test_owner_reported_zay_flowers_shaped_case_reproduced_and_fixed() -> None:
+    """The exact real-world shape from the owner's bug report: a real
+    starter promotion (Michael Pittman over Zay Flowers) where the
+    displaced player (Zay Flowers) has no projection row this week at all.
+    Confirms the fix produces the honest unknown state, not a fabricated
+    "+11.7"-style number."""
+
+    roster = RosterSettings(qb=0, rb=0, wr=1, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=10)
+    candidates = [
+        _candidate("zay_flowers", "Zay Flowers", "WR", None, starting=True),
+        _candidate("michael_pittman", "Michael Pittman", "WR", 11.7, starting=False),
+    ]
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    assert len(result.swaps_vs_current) == 1
+    swap = result.swaps_vs_current[0]
+    assert swap.start_player == "Michael Pittman"
+    assert swap.bench_player == "Zay Flowers"
+    assert swap.projected_delta is None, "must NOT be the fabricated 11.7 (Pittman's own raw points minus an assumed zero)"
+    assert swap.delta_basis == "UNKNOWN_MISSING_BENCH_PROJECTION"
+    assert "+11.7" not in swap.summary
+    assert "Zay Flowers" in swap.summary and "missing" in swap.summary.lower()
+

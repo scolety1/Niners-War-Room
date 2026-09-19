@@ -403,3 +403,237 @@ exactly as found — not touched, not committed.
    configuration. Worth a direct, one-line question to the owner rather than
    further investigation from this side, if a future worker needs certainty
    on this point.
+
+---
+
+## Worker 2 (2026-09-19) — owner-reported missing-projection-treated-as-zero bug, fixed end to end
+
+Separate, precisely-scoped bug fix. Unrelated to Flaim/ESPN (Worker 1,
+above) — existing profiles, branch, and worktree untouched otherwise.
+
+### 9. The exact bug — INSPECTED CODE, confirmed exactly as reported
+
+`src/services/weekly_lineup_optimizer_service.py`, `_swap_reasons` (line
+612 pre-fix): `delta = round((slot.player.projected_points or 0.0) -
+(bumped.projected_points or 0.0), 2)`. The guard a few lines above only
+ensures the NEW starter (`slot.player`) has a real projection; the
+DISPLACED player (`bumped`) can legitimately have `projected_points =
+None` (no real weekly-projection row at all this week — not the same as a
+real, known 0.0) and still fell through `bumped.projected_points or 0.0`,
+silently substituting 0.0 and fabricating a delta equal to the new
+starter's own raw points, presented as a real, known point swing. Exactly
+the owner's report.
+
+### 10. Fix — INSPECTED CODE / ACTUAL TEST RESULT
+
+`SwapReason.projected_delta` is now `float | None`, with a new parallel
+`delta_basis: str` field (`"KNOWN"` | `"UNKNOWN_MISSING_BENCH_PROJECTION"`).
+When `bumped.projected_points is None`, `_swap_reasons` now sets
+`projected_delta=None`, `delta_basis="UNKNOWN_MISSING_BENCH_PROJECTION"`,
+and an honest summary ("`{bumped}`'s projection is missing this week;
+point swing unknown") instead of a fabricated `+X.X`. A real, known 0.0
+projection (e.g. a kicker in a bad-weather week) still produces a real,
+`"KNOWN"`-basis numeric delta — the fix distinguishes missing from zero,
+not just "never show a number here."
+
+### 11. Upstream chain — INSPECTED CODE / ACTUAL TEST RESULT, all four areas checked
+
+- **Recommendations**: Start/Sit's `primaryRecommendation`/swap ordering
+  (`desktop_facade.py::redraft_weekly_lineup`) is NOT delta-sorted — it
+  follows `_SLOT_ORDER` iteration order, unchanged. No fabricated-high-delta
+  promotion risk existed here; verified by reading the code, not assumed.
+- **Confidence**: real, previously-undisclosed gap found and fixed. Neither
+  `unprojected_starter_count` nor `unresolved_identity_starter_count` ever
+  saw a swap's displaced player (he's no longer a starter after
+  optimization, by definition), so Start/Sit could report NOMINAL
+  confidence while its own TOP recommendation rested on a fabricated point
+  swing. Pulled the whole confidence-gate decision out into a new, small,
+  pure, independently-tested function, `_start_sit_confidence` (module
+  level, `desktop_facade.py`, just above `class DesktopBackendFacade`), and
+  added one more branch: the FIRST swap in `swaps_vs_current` (the same one
+  surfaced as `primaryRecommendation`) having `delta_basis != "KNOWN"` now
+  forces `LOW` confidence with an explicit basis string. 7 new unit tests
+  in `tests/test_start_sit_confidence_missing_projection.py` cover every
+  branch/priority ordering, including the missing-vs-zero distinction.
+- **Totals**: `optimize_weekly_lineup`'s own `total` computation (lines
+  ~386-417) verified CORRECT, not assumed — it already excludes any starter
+  with `projected_points is None` from `projected_total` (tracks him via
+  `unprojected_count` instead), so it never had the "missing as zero" bug.
+  Documented this verification directly in `simulate_this_week_add_drop`'s
+  own docstring (see next section) since both totals it diffs depend on it.
+- **UI**: `desktop/packages/contracts/src/index.ts`'s `WeeklyLineupSwap`
+  type updated (`projectedDelta: number | null`, new `deltaBasis` field).
+  `desktop/apps/redraft/src/lineup-explain.ts` (`explainLineupSwap`, the
+  Start/Sit page's own explain layer) now branches on `deltaBasis` BEFORE
+  the close-call branch and returns an honest "Unknown -- missing
+  projection" impact string with `tone="warning"`/`confidence="LOW"` —
+  never calls `formatSigned(null)`. `desktop/apps/redraft/src/home-action-
+  explain.ts` (Weekly Home's action-card layer) was ALSO checked and fixed:
+  its existing `Number.isFinite(swap.projectedDelta)` guard happened to
+  already degrade `expectedImpact` to `null` correctly for a `null` delta
+  (a real but incidental JS-semantics coincidence, not a designed fix) —
+  but `why`/`confidence` did not, and would have kept implying a confirmed
+  "outscore" comparison; fixed explicitly using the real `deltaBasis` field.
+- **Traces**: the Start/Sit decision-trace record
+  (`_record_decision_trace_safe`'s `alternatives` list, and the
+  `swap_rows`/`primaryRecommendation` the owner-facing
+  `DecisionResultEnvelope` also carries) now include `projectedDelta`/
+  `deltaBasis` on every swap row, so a missing-projection swap's honest
+  uncertainty is preserved in Decision History rather than only fixed in
+  the live response.
+
+### 12. `simulate_this_week_add_drop` / waiver engine — INSPECTED CODE, verified correct (not fabricated, one documented residual risk)
+
+Explicitly re-derived rather than assumed. `gain = after.total -
+baseline.total` is a fair, symmetric diff of two already-honest totals
+(section 11's Totals finding) — never fabricated. The one real remaining
+risk checked: could the ADD CANDIDATE itself have `projected_points is
+None` and still become a starter, silently OMITTING (not fabricating, but
+also not disclosing) his own real contribution from `after.total`? The
+ONE real call site
+(`desktop_facade.py`'s THIS_WEEK waiver evaluation, ~line 4025-4033)
+pre-filters its shortlist to `row.projected_points is not None` BEFORE
+ever building an `add_candidate` — confirmed by direct inspection, not
+assumed — so this risk does not currently occur in production. Documented
+both the verification and the residual risk directly in
+`simulate_this_week_add_drop`'s own docstring for a future caller.
+`waiver_engine_service.py`'s `sort_key` (`gain = -(candidate.
+this_week_lineup_gain or 0.0)`) was checked for the same pattern: verified
+the `or 0.0` never actually fires in practice (`gain_missing`, using
+`this_week_evaluated` — not this value — already sorts every
+non-evaluated candidate last before this tiebreaker is consulted, and
+`this_week_lineup_gain` is always a real float, never `None`, whenever
+`this_week_evaluated` is `True`) — documented inline as a verified-safe
+defensive fallback, not a live bug, no behavior change made.
+
+### 13. Regression tests — ACTUAL TEST RESULT
+
+New/updated, all passing:
+- `tests/test_weekly_lineup_optimizer_service.py`: 3 new tests —
+  `test_swap_with_real_known_zero_bumped_projection_produces_a_real_numeric_delta`
+  (real 0.0 kicker → real `"KNOWN"` delta 9.0),
+  `test_swap_with_missing_bumped_projection_is_honestly_unknown_not_fabricated_zero`
+  (missing → `None`/`"UNKNOWN_MISSING_BENCH_PROJECTION"`, no fabricated
+  12.0), and
+  `test_owner_reported_zay_flowers_shaped_case_reproduced_and_fixed` (the
+  exact real-world shape, asserts `"+11.7"` never appears).
+- `tests/test_start_sit_confidence_missing_projection.py` (new file): 7
+  tests covering `_start_sit_confidence`'s every branch and priority
+  ordering, including that a `"KNOWN"` delta never trips the new branch.
+- `desktop/apps/redraft/src/lineup-explain.test.ts` / `home-action-
+  explain.test.ts`: 1 new test each, both asserting no `"+11.7"`/`"+\d"`
+  leaks through and the honest unknown state renders instead.
+- `makeSwap()` test fixtures and one existing inline test-fixture object
+  updated to carry `deltaBasis: "KNOWN"` (required field now).
+
+### 14. Live verification — LIVE OBSERVATION
+
+Rebuilt (`npm run build:redraft`) and restarted both Redraft dev processes
+(python `scripts/run_nwr_desktop_api.py` on 127.0.0.1:18742, `vite
+preview` on 127.0.0.1:1422) with the fix, replacing Worker 6's stale
+pre-fix processes (old pids 43364/49760; new pids 44000/11932 — new log
+files `.worker2_backend.log`/`.worker2_preview.log`, old `.worker6_*.log`
+files left untouched). Confirmed via Chrome MCP against the REAL, LIVE
+Fantasy Gamers and Las Vegas Enginerds Sleeper leagues (both still have a
+real, currently-missing Zay Flowers weekly projection, Week 2, as of
+2026-09-19 ~4:47 PM):
+
+- **Fantasy Gamers Start/Sit** now shows "Start Marvin Harrison over Zay
+  Flowers" · badge "LOW CONFIDENCE — CLOSE CALL" · "Zay Flowers's weekly
+  projection is missing this week -- the point swing from this change is
+  unknown, not a confirmed gain." · "EXPECTED IMPACT: Unknown -- missing
+  projection." No fabricated number anywhere. Note: the real-world
+  replacement player is now "Marvin Harrison" rather than the "Michael
+  Pittman" named in the owner's original report — an honest, expected
+  drift (Sleeper rosters/lineups genuinely change hour to hour), not a
+  discrepancy in the fix itself; the underlying mechanism (Zay Flowers
+  still missing a projection, correctly handled) is the same.
+- **Las Vegas Enginerds Start/Sit** now shows "Start Jalen Coker over Zay
+  Flowers" — an EXACT name match to the owner's original report — same
+  honest "LOW CONFIDENCE — CLOSE CALL" / "Unknown -- missing projection"
+  presentation, no fabricated `+7.6`.
+
+Both leagues' real, live decision sheets are DEMONSTRABLY no longer
+producing the fabricated numbers the owner reported. `git status` on
+`local_exports/` confirmed zero profile/roster writes from this
+verification pass (read-only Start/Sit view only).
+
+### 15. Test results — ACTUAL TEST RESULT
+
+- Targeted Python suites (`test_weekly_lineup_optimizer_service.py`,
+  `test_start_sit_confidence_missing_projection.py`,
+  `test_waiver_engine_service.py`, `test_desktop_facade_architecture_
+  wiring.py`, `test_player_availability_status_consumer_consistency.py`,
+  `test_weekly_home_single_snapshot.py`,
+  `test_weekly_home_sleeper_fetch_caching.py`,
+  `test_decision_envelope_service.py`,
+  `test_boundary_property_reliability_pack_v1.py`,
+  `test_prospective_outcome_ingestion_orchestrator_v1_service.py`): **206
+  passed, 0 failed.**
+- `tests/test_desktop_application_api.py`: **4 failed, 46 passed** —
+  confirmed PRE-EXISTING and unrelated to this fix by running it BEFORE
+  (via `git stash`) and after this pass's changes: byte-identical failure
+  set both times (`test_dynasty_facade_composes_real_governed_workflows`,
+  `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`,
+  `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`,
+  `test_facade_has_no_streamlit_or_app_component_dependency`). Differs
+  from this same worktree's own documented Draft Upgrade HQ 5-failure
+  baseline (a different worktree/branch) — not re-litigated here, just
+  independently confirmed pre-existing via the stash A/B test, which is
+  the rigorous bar this pass used.
+- Full desktop vitest suite (`npm run test` in `desktop/`): **30 files,
+  503 tests, all passed** (both before and after, run twice for
+  confirmation).
+- `npm run typecheck` (`tsc -b` for both dynasty + redraft): clean, zero
+  errors.
+- Note: `docs/codex/prospective_outcomes_v1/multi_league_scale_v1/
+  frontend_bench_results.json` gets regenerated (timing-noise diff only,
+  no content/shape change) by the full `npm run test` run in `desktop/` —
+  reverted with `git checkout --` both times after confirming it was
+  benchmark-timing noise, not a real change; not part of this commit.
+
+### 16. Files changed this pass
+
+- `src/services/weekly_lineup_optimizer_service.py` — the core fix
+  (`SwapReason`, `_swap_reasons`), plus a verification-documenting
+  docstring addition to `simulate_this_week_add_drop`.
+- `src/services/waiver_engine_service.py` — verification-documenting
+  comment only, no behavior change.
+- `src/application/desktop_facade.py` — new `_start_sit_confidence`
+  function (confidence-gate fix, extracted for testability), swap payload/
+  trace/envelope now carry `deltaBasis`/`projectedDelta` honestly.
+- `desktop/packages/contracts/src/index.ts` — `WeeklyLineupSwap` type.
+- `desktop/apps/redraft/src/lineup-explain.ts` — Start/Sit explain layer.
+- `desktop/apps/redraft/src/home-action-explain.ts` — Weekly Home explain
+  layer.
+- `tests/test_weekly_lineup_optimizer_service.py` — 3 new regression
+  tests.
+- `tests/test_start_sit_confidence_missing_projection.py` — new file, 7
+  tests.
+- `desktop/apps/redraft/src/lineup-explain.test.ts` /
+  `home-action-explain.test.ts` — new tests + fixture updates.
+- This ledger.
+
+### OPEN ISSUES FOR WORKER 3
+
+1. Verify ESPN status for Start/Sit, Improve Team, K/DST streaming for
+   both ESPN leagues (KHA, 403 N 18th) — per Worker 1's findings (sections
+   6-8 above), this is almost certainly still BLOCKED (no ESPN client
+   exists anywhere in `src/`, both profiles have no post-draft ESPN data)
+   — but verify precisely against current code, don't just cite Worker 1.
+2. Refresh the Sunday decision sheets for Fantasy Gamers and Las Vegas
+   Enginerds now that this fix is live — the sheets that originally showed
+   the fabricated "+11.7"/"+7.6" numbers need to be regenerated so they
+   show the corrected, honest output (see section 14 above for exactly
+   what the corrected live output now looks like for each league).
+3. Reassess the Purdy/Harrison waiver suggestion mentioned in the
+   dispatching brief — not investigated this pass (out of this pass's
+   precise scope), needs its own direct look.
+4. Run the full test suite and push (this pass deliberately did NOT push,
+   per instructions — Worker 3 is the one that pushes once everything is
+   verified). `git log -1` before pushing should show this pass's commit
+   on top of Worker 1's.
+5. Both Redraft dev processes (backend :18742 pid 44000, preview :1422 pid
+   11932) were left RUNNING with this pass's fix already live — no restart
+   needed before continuing manual verification, unless further code
+   changes require a rebuild.

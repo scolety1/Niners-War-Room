@@ -32,6 +32,7 @@ function makeSwap(overrides: Partial<WeeklyLineupSwap> = {}): WeeklyLineupSwap {
     startPlayer: "Player A",
     benchPlayer: "Player B",
     projectedDelta: 2.8,
+    deltaBasis: "KNOWN",
     summary: "Start Player A over Player B",
     ...overrides,
   };
@@ -111,5 +112,28 @@ describe("explainLineupSwap", () => {
     const slot = makeSlot({ closeCall: false, closeCallAlternative: "Player Z" });
     const result = explainLineupSwap(makeSwap(), slot);
     expect(result.alternative).toBeNull();
+  });
+
+  // NWR connection/update pass, Worker 2 (2026-09-19): the owner-reported
+  // Zay Flowers bug, reproduced at this presentation layer -- a swap whose
+  // displaced (bench) player has no real weekly projection ("Zay Flowers's
+  // projection is missing this week") must never render a fabricated
+  // "+11.7 projected points"-style impact, and must not be presented as a
+  // confident (tone=recommended) recommendation.
+  it("shows an honest 'unknown' impact, never a fabricated number, for a missing-projection delta", () => {
+    const swap = makeSwap({
+      startPlayer: "Michael Pittman",
+      benchPlayer: "Zay Flowers",
+      projectedDelta: null,
+      deltaBasis: "UNKNOWN_MISSING_BENCH_PROJECTION",
+      summary: "START Michael Pittman over Zay Flowers -- Zay Flowers's projection is missing this week; point swing unknown.",
+    });
+    const result = explainLineupSwap(swap, makeSlot({ status: "healthy", closeCall: false }));
+    expect(result.headline).toBe("Start Michael Pittman over Zay Flowers");
+    expect(result.impact).not.toMatch(/\+11\.7|\+\d/);
+    expect(result.impact).toMatch(/[Uu]nknown/);
+    expect(result.why).toMatch(/missing/);
+    expect(result.tone).toBe("warning");
+    expect(result.confidence).toBe("LOW");
   });
 });

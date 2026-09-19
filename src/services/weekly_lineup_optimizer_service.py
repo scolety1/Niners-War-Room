@@ -89,6 +89,26 @@ Every new parameter above defaults to empty/`None` and is purely additive:
 called with no reserve/taxi/lock/catalog input (as every pre-existing test
 and call site does until updated), this module's output is byte-identical
 to before this pass.
+
+--- NWR connection/update pass, Worker 2 (2026-09-19) -----------------------
+
+Owner-reported bug fix: `_swap_reasons` used to compute a swap's displayed
+`projected_delta` as `slot.player.projected_points - (bumped.projected_points
+or 0.0)` -- silently treating a genuinely MISSING weekly projection on the
+displaced (`bumped`) player as a real, known 0.0. This fabricated a delta
+equal to the new starter's own raw points, presented as a real, known point
+swing (real-world case: Zay Flowers had no projection row; both the "start
+Pittman over Flowers, +11.7" and "start Coker over [bench], +7.6" swap
+explanations were built on this exact silent-zero substitution). Fixed:
+`SwapReason.projected_delta` is now `float | None`, with a parallel
+`delta_basis` field (`"KNOWN"` | `"UNKNOWN_MISSING_BENCH_PROJECTION"`) so a
+missing-projection swap is represented HONESTLY -- neither fabricated nor
+silently dropped. A real, known 0.0 projection (e.g. a kicker in a
+bad-weather week) is NOT the same as a missing projection and still produces
+a real, KNOWN numeric delta. See `_swap_reasons` below for the exact logic,
+and `desktop_facade.py`'s Start/Sit confidence-gate branch for the matching
+upstream fix (a top recommendation built on an unknown delta is no longer
+reported as NOMINAL confidence).
 """
 
 from __future__ import annotations
@@ -176,7 +196,23 @@ class SwapReason:
     slot_type: str
     start_player: str
     bench_player: str
-    projected_delta: float
+    # `None` only when `delta_basis != "KNOWN"` -- the displaced
+    # (`bench_player`) side has no real weekly projection row this week, so
+    # the true point swing is genuinely unknown, never a fabricated number
+    # (see `delta_basis`/`_swap_reasons` below). Never `None` when
+    # `delta_basis == "KNOWN"`.
+    projected_delta: float | None
+    # "KNOWN" (both sides have a real projected-points value; `projected_
+    # delta` is a real, computable number, including a real 0.0 on either
+    # side) or "UNKNOWN_MISSING_BENCH_PROJECTION" (the displaced
+    # `bench_player` has `projected_points is None` -- a genuinely missing
+    # weekly-projection row, e.g. Sleeper's projection endpoint has no entry
+    # for him at all this week -- NOT the same thing as a real, known 0.0).
+    # Owner-reported bug fix (2026-09-19): `bumped.projected_points or 0.0`
+    # used to silently treat "missing" as "zero", fabricating a delta equal
+    # to the new starter's own raw points and presenting it as a real,
+    # known point swing. Missing must remain unknown, not zero.
+    delta_basis: str
     summary: str
 
 
@@ -499,7 +535,29 @@ def simulate_this_week_add_drop(
     both the BEFORE and AFTER lineups are produced by the SAME `optimize_
     weekly_lineup` this module already exposes, with the SAME locks/
     reserve/taxi/status-override inputs on both sides (only the roster pool
-    itself changes)."""
+    itself changes).
+
+    NWR connection/update pass, Worker 2 (2026-09-19): `gain`/`becomes_
+    starter` were checked for the same silent-missing-as-zero mistake
+    `_swap_reasons` had. Verified honest, not fabricated: `optimize_weekly_
+    lineup`'s own `total` already correctly EXCLUDES any starter with
+    `projected_points is None` from `projected_total` (never substitutes
+    0.0 for him -- see that function's own `unprojected_count` handling),
+    so both `baseline` and `after` here are each already an honest total,
+    and `gain = after.total - baseline.total` is a fair, symmetric
+    comparison of two honest numbers -- never a fabricated one. The one
+    real remaining risk this pass checked directly: if `add_candidate`
+    itself has `projected_points is None` and still becomes a starter, his
+    own real (unknown) contribution is silently OMITTED from `after.total`
+    (not fabricated as zero, but also not disclosed as missing) -- `gain`
+    would then understate the real value of the add without saying so. The
+    one real call site (`desktop_facade.py`'s THIS_WEEK waiver evaluation)
+    was confirmed this pass to only ever build `add_candidate` from a free
+    agent whose `projected_points is not None` (it pre-filters the
+    shortlist on exactly that condition before calling this function), so
+    this risk does not currently occur in production. A future caller that
+    evaluates an add candidate with no real projection row should be aware
+    `gain` can silently undercount in that specific case."""
 
     baseline = optimize_weekly_lineup(
         candidates=own_roster_candidates, roster=roster, status_overrides=status_overrides
@@ -609,14 +667,42 @@ def _swap_reasons(
         pool = same_slot or benched_pool
         bumped = max(pool, key=lambda c: c.projected_points if c.projected_points is not None else float("-inf"))
         benched_pool.remove(bumped)
-        delta = round((slot.player.projected_points or 0.0) - (bumped.projected_points or 0.0), 2)
+        if bumped.projected_points is None:
+            # Owner-reported bug fix (2026-09-19): `bumped` (the displaced
+            # player) has NO real weekly-projection row this week -- his
+            # true point total is genuinely unknown, not zero. The prior
+            # code (`bumped.projected_points or 0.0`) silently substituted
+            # 0.0 here, fabricating a delta equal to `slot.player`'s own raw
+            # points and presenting it as a real, known point swing (the
+            # real-world Zay Flowers case: a "+11.7" / "+7.6" that was
+            # really just the new starter's own total minus an assumed,
+            # wrong zero for the unprojected bumped player). Carry the
+            # uncertainty through honestly instead of hiding the swap or
+            # fabricating a number for it.
+            delta = None
+            delta_basis = "UNKNOWN_MISSING_BENCH_PROJECTION"
+            summary = (
+                f"START {slot.player.player_name} over {bumped.player_name} -- "
+                f"{bumped.player_name}'s projection is missing this week; point swing unknown."
+            )
+        else:
+            # `slot.player.projected_points` is guaranteed non-None here (the
+            # early `continue` above already excluded that case); `bumped
+            # .projected_points` may legitimately be a real, known 0.0 (e.g.
+            # a kicker projected for exactly zero points this week) -- that
+            # is a real, computable delta, never confused with the missing
+            # case above.
+            delta = round(slot.player.projected_points - bumped.projected_points, 2)
+            delta_basis = "KNOWN"
+            summary = f"START {slot.player.player_name} over {bumped.player_name}, {delta:+.1f} projected"
         reasons.append(
             SwapReason(
                 slot_type=slot.slot_type,
                 start_player=slot.player.player_name,
                 bench_player=bumped.player_name,
                 projected_delta=delta,
-                summary=f"START {slot.player.player_name} over {bumped.player_name}, {delta:+.1f} projected",
+                delta_basis=delta_basis,
+                summary=summary,
             )
         )
     return tuple(reasons)

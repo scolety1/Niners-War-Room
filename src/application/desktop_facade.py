@@ -501,6 +501,65 @@ class _OwnerSnapshot:
     warnings: tuple[str, ...]
 
 
+def _start_sit_confidence(
+    *,
+    weekly_health_freshness: str | None,
+    unprojected_starter_count: int,
+    unresolved_identity_starter_count: int,
+    primary_swap_delta_basis: str | None,
+    primary_swap_bench_player: str | None,
+) -> tuple[str, str]:
+    """Start/Sit's confidence-gate decision. Pulled out of `redraft_weekly_
+    lineup` (NWR connection/update pass, Worker 2, 2026-09-19) as a small,
+    pure, independently-testable function -- reads only the real,
+    already-computed signals its caller passes in, never recomputes
+    anything itself. See `redraft_weekly_lineup`'s own call site for the
+    real values each argument is built from.
+
+    The last branch (`primary_swap_delta_basis`) is this pass's own fix for
+    a real, previously-undisclosed gap: neither counter above sees a swap
+    whose DISPLACED player has a missing weekly projection, because that
+    player is, by definition, no longer a starter after optimization -- his
+    missing projection never touched `unprojected_starter_count` or
+    `unresolved_identity_starter_count`. Without this branch, the TOP
+    recommended change could rest on a genuinely unknown point swing (the
+    owner-reported Zay Flowers case -- see `weekly_lineup_optimizer_
+    service._swap_reasons`) while this endpoint still reported NOMINAL
+    confidence. `primary_swap_delta_basis`/`primary_swap_bench_player` must
+    be the FIRST entry of `lineup.swaps_vs_current` (the same swap the
+    caller surfaces as `primaryRecommendation`), or `None` when there are no
+    swaps at all (nothing to be unconfident about here)."""
+
+    if weekly_health_freshness == "STALE":
+        return "LOW", "Weekly projections are STALE; the last known-good snapshot was reused."
+    if unprojected_starter_count:
+        return (
+            "LOW",
+            f"{unprojected_starter_count} starter(s) have no usable weekly projection "
+            "or a real required slot is empty this week.",
+        )
+    if unresolved_identity_starter_count:
+        # W3 fix (Sunday Readiness overnight cycle, Worker 2): a real,
+        # reproduced gap -- an unresolved-identity starter previously left
+        # BOTH counters at zero (points existed, so it wasn't
+        # "unprojected"), so this branch fell through to a falsely NOMINAL
+        # confidence with no real identity confirmation behind it.
+        return (
+            "LOW",
+            f"{unresolved_identity_starter_count} starter(s) have an unresolved player "
+            "identity (a real provider point value exists, but NWR could not confirm which "
+            "canonical player it belongs to).",
+        )
+    if primary_swap_delta_basis is not None and primary_swap_delta_basis != "KNOWN":
+        return (
+            "LOW",
+            "The top recommended change has an unknown point swing this week -- "
+            f"{primary_swap_bench_player}'s weekly projection is missing "
+            "(see that recommendation's own summary).",
+        )
+    return "NOMINAL", "Every starter has a live weekly projection this week."
+
+
 class DesktopBackendFacade:
     """Cached, deterministic facade over admitted NWR services.
 
@@ -3411,7 +3470,18 @@ class DesktopBackendFacade:
                 ],
             },
             alternatives=[
-                {"slotType": swap.slot_type, "summary": swap.summary} for swap in lineup.swaps_vs_current
+                {
+                    "slotType": swap.slot_type,
+                    "summary": swap.summary,
+                    # NWR connection/update pass, Worker 2 (2026-09-19):
+                    # carry the same honest missing-projection uncertainty
+                    # into the decision trace/provenance record -- a
+                    # fabricated delta must never be baked into history
+                    # permanently just because it was already fixed live.
+                    "projectedDelta": swap.projected_delta,
+                    "deltaBasis": swap.delta_basis,
+                }
+                for swap in lineup.swaps_vs_current
             ],
             league_snapshot_id=league_snapshot_id,
             status_versions=self._status_versions_snapshot(),
@@ -3422,37 +3492,25 @@ class DesktopBackendFacade:
         # of the real fields already computed above -- nothing here is
         # recomputed or replaces the engine's own real response below.
         weekly_health_dict = weekly_health.to_dict()
-        if weekly_health_dict.get("freshness") == "STALE":
-            confidence_state, confidence_basis = (
-                "LOW",
-                "Weekly projections are STALE; the last known-good snapshot was reused.",
-            )
-        elif lineup.unprojected_starter_count:
-            confidence_state, confidence_basis = (
-                "LOW",
-                f"{lineup.unprojected_starter_count} starter(s) have no usable weekly projection "
-                "or a real required slot is empty this week.",
-            )
-        elif lineup.unresolved_identity_starter_count:
-            # W3 fix (Sunday Readiness overnight cycle, Worker 2): a real,
-            # reproduced gap -- an unresolved-identity starter previously
-            # left BOTH counters at zero (points existed, so it wasn't
-            # "unprojected"), so this branch fell through to a falsely
-            # NOMINAL confidence with no real identity confirmation behind
-            # it. Now checked explicitly.
-            confidence_state, confidence_basis = (
-                "LOW",
-                f"{lineup.unresolved_identity_starter_count} starter(s) have an unresolved player "
-                "identity (a real provider point value exists, but NWR could not confirm which "
-                "canonical player it belongs to).",
-            )
-        else:
-            confidence_state, confidence_basis = (
-                "NOMINAL",
-                "Every starter has a live weekly projection this week.",
-            )
+        confidence_state, confidence_basis = _start_sit_confidence(
+            weekly_health_freshness=weekly_health_dict.get("freshness"),
+            unprojected_starter_count=lineup.unprojected_starter_count,
+            unresolved_identity_starter_count=lineup.unresolved_identity_starter_count,
+            primary_swap_delta_basis=(
+                lineup.swaps_vs_current[0].delta_basis if lineup.swaps_vs_current else None
+            ),
+            primary_swap_bench_player=(
+                lineup.swaps_vs_current[0].bench_player if lineup.swaps_vs_current else None
+            ),
+        )
         swap_rows = [
-            {"slotType": swap.slot_type, "summary": swap.summary} for swap in lineup.swaps_vs_current
+            {
+                "slotType": swap.slot_type,
+                "summary": swap.summary,
+                "projectedDelta": swap.projected_delta,
+                "deltaBasis": swap.delta_basis,
+            }
+            for swap in lineup.swaps_vs_current
         ]
         # NWR pre-UI architecture pass (directive section 2): the canonical
         # PlayerAvailabilityStatus authority, same map every other migrated
@@ -3611,7 +3669,13 @@ class DesktopBackendFacade:
                         "slotType": swap.slot_type,
                         "startPlayer": swap.start_player,
                         "benchPlayer": swap.bench_player,
+                        # NWR connection/update pass, Worker 2 (2026-09-19):
+                        # `projectedDelta` can now be honestly `null` --
+                        # never a fabricated number -- when `deltaBasis` is
+                        # not `"KNOWN"` (the bench player's own weekly
+                        # projection is genuinely missing this week).
                         "projectedDelta": swap.projected_delta,
+                        "deltaBasis": swap.delta_basis,
                         "summary": swap.summary,
                     }
                     for swap in lineup.swaps_vs_current
