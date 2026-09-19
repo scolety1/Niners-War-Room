@@ -1241,3 +1241,437 @@ stderr.log`, `dynasty_smoke_stdout.log`,
    not a new credential or weakening of anything.
 
 ---
+
+## Worker 4 — Compare + Trade Decision Lab wiring, isolation testing, closure (2026-09-18)
+
+**Branch/worktree:** same as Workers 1-3, `C:\NWR\prospective-outcomes-v1`.
+Started at HEAD `684c2b98` (Worker 3's commit). This is the CLOSURE worker
+for this cycle. Did not touch `main`, did not force anything, did not
+touch `governed_asset_registry_service.py`/any board CSV/
+`CURRENT_BOARD_SHA256`/`evaluate_trade_decision`/`compare_dynasty_assets`'s
+own scoring internals, did not touch Redraft's `marginal_roster_utility_v2`
+or Redraft's running processes. Read-only Sleeper access only throughout
+(confirmed by re-inspecting `SleeperHttpClient` -- unchanged, GET-only by
+construction -- and by never calling any write-shaped Sleeper endpoint;
+also confirmed via a direct, independent live `GET
+https://api.sleeper.app/v1/league/.../rosters` call used only for the
+roster-accuracy spot-check below).
+
+### 1. Compare wiring (INSPECTED CODE + ACTUAL TEST RESULT + LIVE OBSERVATION)
+
+`src/application/desktop_facade.py`'s `compare_dynasty_assets` gained an
+optional `league_profile_id: str | None = None` keyword parameter. The
+existing body -- which builds `leans`/`ranges`/`players`/`bridge`/
+`warnings` from `rows` via `build_owner_compare_summary`/
+`build_rookie_veteran_bridge`/`build_player_compare_decision_summary`/
+`decision_summary_rows` -- is completely unchanged; the new parameter is
+only read in one `if league_profile_id:` block added at the very end,
+after `data` (renamed from the old inline dict literal) is already fully
+built. When set, it loads the persisted league state and calls
+`annotate_ownership` (Worker 2's frozen, unchanged function) over the
+compared asset ids, attaching two new top-level keys: `ownership` (a flat
+list of `{assetId, ownership}` entries -- see the flat-list note below) and
+`dynastyLeague` (the same context block `dynasty_bootstrap` already uses).
+
+**A real bug found and fixed this pass, before it ever reached the live
+app:** my first draft returned ownership as a dict keyed by the literal
+asset id (`{"current:9493": {...}}`). This worktree already has a
+documented, load-bearing hazard for exactly this shape --
+`contracts.public_json_value`/`camel_case_key` walks every JSON object key
+and camelCases it as if it were a schema field name, so `"current:9493"`
+silently became `"currentFixturePlayer"`-style mangled garbage (reproduced
+live via a direct HTTP call against `FakeFacade` in
+`test_desktop_http_api.py` before any browser was involved -- see the
+"Differing items" `KeyError` this pass's own test run surfaced). Fixed by
+switching to a flat `Array<{assetId, ownership}>` list, the exact same
+shape `redraft_decision_bundle`'s own `positions`/`traceIds`/
+`decisionEnvelopes` already use for the identical reason (their own code
+comments cite the same hazard). This is now the second real, independently
+found instance of this exact class of bug in this codebase (the first
+being the "camelCase-dict-key serialization bug" the owner feedback
+closure V4 saga already found in Cheat Sheets) -- worth the owner's
+continued awareness any time a dict is keyed by a live data id rather than
+a fixed schema field name.
+
+**Byte-identical-when-omitted, tested**
+(`tests/test_dynasty_league_import_facade_wiring.py`,
+`test_compare_dynasty_assets_is_byte_identical_when_league_profile_id_omitted`):
+`compare_dynasty_assets(ids)` and `compare_dynasty_assets(ids,
+league_profile_id=None)` produce byte-identical JSON, `"ownership"` and
+`"dynastyLeague"` both absent.
+
+**Annotation is provably additive, tested**
+(`test_compare_dynasty_assets_with_league_profile_id_adds_ownership_without_touching_scores`):
+strips the two new keys back out of the annotated response and asserts
+byte-identical equality against the unannotated response for everything
+else -- `leans`/`ranges`/`players`/`bridge`/`warnings` are untouched by
+connecting a league. Also asserts a real `current:9493` (Puka Nacua, this
+fixture's one owned asset) resolves `OWNED`/`isMyTeam: true`/`rosterTeamName:
+"Niners"`, and that no `pick:*` asset ever appears in `ownership` (no
+ownership concept for picks -- never guessed).
+
+**Frontend (`desktop/apps/dynasty/src/pages/decisions.tsx`):**
+`ComparePage`'s `AssetPicker`/`SelectedChips` (shared with Trade Lab) show
+a live ownership badge per asset sourced from the already-annotated
+`data.assetOptions` (bootstrap-time truth -- present the instant the
+picker renders, before any comparison runs). After running a comparison,
+`ComparisonResult` additionally renders the comparison's OWN `ownership`
+list (evaluation-time truth) as a small badge in the BODY of each
+`ranges`/`players` Panel, plus a one-line "Ownership context: connected to
+{league}" disclosure directly under the section title stating explicitly
+that the label never changes a lean/range/dimension/advantage. New pure
+helper `ownershipLookup()` (`desktop/apps/dynasty/src/lib/ownership.ts`)
+turns the flat list back into a `Map` for lookups; the module's own
+comment documents exactly why the list shape exists (the camelCase-key
+hazard above).
+
+**A real, live, reproduced-and-fixed layout bug (LIVE OBSERVATION via
+Chrome MCP, not just code review):** my first attempt put the ownership
+badge inside `AssetPicker`'s own per-row `<button>` (stacked as a third
+line under the player name/position). Live in the browser this visually
+OVERLAPPED into the next row -- `getBoundingClientRect()` proved the
+button's own box stayed a fixed 38px tall (`.asset-picker` is a CSS grid
+whose row tracks resolved to a uniform 38px, matching only the
+`min-height: 38px` media-query rule, not the taller actual content) while
+the badge's own rect extended 8px past the button's bottom edge, into the
+next grid row. Fixed by removing the badge from `AssetPicker`'s row
+entirely (kept it in `SelectedChips`, which is a flex-wrap row and
+provably does not have this constraint) and, separately, by moving the
+`ComparisonResult`/`TradeResult` panel badges from the `Panel` component's
+`action` header slot into the panel BODY -- the header slot also
+overlapped/clipped text live when paired with a multi-word eyebrow
+("Advantages & uncertainty" wrapped to 3 lines and the badge visually cut
+across it, confirmed via `zoom` screenshot before the fix and confirmed
+clean after). Both fixes verified live via a real rebuild
+(`npm run build:dynasty`) + hard reload + screenshot before reporting
+either "fixed."
+
+**Tests added:** `ownership.test.ts` unchanged (no new branches needed for
+`ownershipLookup`, which is a one-line pure transform); no new dedicated
+unit test file for the layout fix itself since it is not pure logic --
+verified instead by the live `getBoundingClientRect()` evidence above plus
+a final live screenshot showing zero overlap.
+
+### 2. Trade Decision Lab wiring (INSPECTED CODE + ACTUAL TEST RESULT + LIVE OBSERVATION)
+
+`evaluate_dynasty_trade` gained the identical optional
+`league_profile_id: str | None = None` parameter, with the identical
+structural guarantee: `evaluate_trade_decision(state, lookup,
+team_window=team_window)` is called and converted to `data` via
+`_trade_decision_payload(decision)` BEFORE the new `if league_profile_id:`
+block ever runs -- `evaluate_trade_decision` never receives
+`league_profile_id` at all, so there is no code path by which ownership
+could influence the trade-value computation, not just a tested behavior
+but a structural fact provable from the diff alone. When set, it
+annotates the union of `give_ids`/`receive_ids` and attaches the same
+`ownership`/`dynastyLeague` shape as Compare.
+
+**Byte-identical-when-omitted and provably-additive, tested** (same two
+test patterns as Compare, in `test_dynasty_league_import_facade_wiring.py`):
+`test_evaluate_dynasty_trade_is_byte_identical_when_league_profile_id_omitted`
+and
+`test_evaluate_dynasty_trade_with_league_profile_id_flags_a_real_non_roster_give_side`
+-- the latter builds a real give-side asset that is NOT on the fixture
+league's roster 7 (confirmed `FREE_AGENT`/`isMyTeam: false`) and a
+receive-side asset that IS (`current:9493`, `isMyTeam: true`), and asserts
+the trade decision's own fields are byte-identical whether or not the
+league is connected.
+
+**The owner's exact correctness requirement -- real, live, working (LIVE
+OBSERVATION):** new pure functions in `decisions.tsx`
+(`rosterOwnedAssetIds`, `fillTradeSideFromRoster`,
+`resolveTradeRosterWarnings`; 5 new unit tests in `decisions.test.ts`,
+covering opponent-owned/free-agent/unresolved-rookie give-side cases, an
+already-owned receive-side case, and the "no ownership data at all ->
+never warn" case) compute LIVE warnings from the bootstrap-time
+`data.assetOptions` ownership as soon as the owner selects assets --
+before any "Evaluate" click. Live-reproduced against the real connected
+league (Las Vegas Enginerds): selected Puka Nacua (real roster 9, "Rocky
+Mountain High") onto the GIVE side and the app immediately rendered *"Puka
+Nacua is on your give side, but is currently owned by Rocky Mountain High
+in your connected league, not your roster."* -- the exact real scenario
+the dispatch asked to catch, using real annotated ownership data, with
+zero code path into `evaluate()`/the trade computation.
+
+**"My side" is now REAL by default, override still fully manual (the
+dispatch's other explicit requirement):** a new "Fill from your roster"
+button (`Panel`'s `action` slot on the "You give" panel, shown only when a
+league is connected and at least one real roster-owned asset exists) calls
+`fillTradeSideFromRoster`, which appends real `isMyTeam` asset ids onto
+whatever the owner has already picked -- never removes/reorders an
+existing manual pick, never adds past the 6-asset side limit, and every
+filled asset remains individually removable via its chip's `x` exactly
+like a manually added one. Live-verified: clicking it on an empty "You
+give" side filled exactly the 6 real roster-7 starters/bench players
+(De'Von Achane, Zay Flowers, Drake Maye, Chase Brown, Jameson Williams,
+Wan'Dale Robinson -- all real, all matching the live Sleeper roster
+fetched independently below), each chip correctly labeled "ON YOUR
+ROSTER". The owner can still freely remove any of these or add a
+non-owned asset (as demonstrated by the Puka Nacua warning scenario
+above) -- this is a real default, never a hard constraint.
+
+**Post-evaluation ownership record, also live-verified:** `TradeResult`
+renders a new "Roster context at evaluation" panel (only when
+`decision.dynastyLeague` is present) listing every give/receive asset with
+its ownership badge sourced from `decision.ownership` -- the real snapshot
+AS OF that specific evaluation, kept deliberately separate from the live
+picker-time warnings above so a saved/exported trade brief always carries
+what was true when it was evaluated. Live-evaluated a real 6-for-1 package
+(5 real roster players + Puka Nacua vs. Jonathan Taylor) and the app
+correctly rendered `REJECT`/`MEDIUM` confidence (the real, untouched
+trade-value computation) alongside a correct roster-context table (5x "ON
+YOUR ROSTER", Puka Nacua "OWNED BY ROCKY MOUNTAIN HIGH" on the give side,
+Jonathan Taylor "OWNED BY DIRT DEVILS" on the receive side) and the
+explicit disclosure line: *"This ownership record never changed the
+recommendation, confidence, or any dimension above."*
+
+### 3. HTTP routes (INSPECTED CODE + ACTUAL TEST RESULT)
+
+`src/desktop_api/server.py`: `POST /api/v1/dynasty/compare` and `POST
+/api/v1/dynasty/trades/evaluate` now pass
+`league_profile_id=self.server.facade.dynasty_active_league_profile_id()`
+-- the exact same "read the persisted active-league marker at the call
+site" pattern Worker 3 established for `/api/v1/dynasty/workspace` and
+`/api/v1/dynasty/assets/{id}`; no new persistence mechanism, no new mode
+gate (both routes were already dynasty-only; `dynasty_active_league_profile_id`
+is itself dynasty-mode-gated, so a redraft-mode request still fails with
+the same `MODE_ROUTE_UNAVAILABLE` it always did, just raised one call
+earlier in the chain -- confirmed no test anywhere asserts the specific
+call site for that error, only the code). New route-level test
+`test_dynasty_compare_and_trade_routes_pass_the_active_league_profile_id`
+in `tests/test_desktop_http_api.py` proves both routes read the active
+marker without the frontend resending a profile id.
+
+### 4. Isolation testing (LIVE OBSERVATION, real running apps)
+
+- **Dynasty vs. Redraft independence:** opened a second tab against
+  Redraft's real running frontend (`http://127.0.0.1:1422/`, untouched
+  PID `16376`) while Dynasty's tab simultaneously showed "CONNECTED: LAS
+  VEGAS ENGINERDS" -- Redraft independently showed its own real active
+  league, "Fantasy Gamers" (`local_exports/redraft_v1/`'s own
+  `active_profile.json`), completely unaffected. Did not click or modify
+  anything in the Redraft tab (read-only observation only, per the hard
+  boundary); closed the tab immediately after. This is consistent with,
+  and now re-confirms with a real simultaneous two-tab observation, the
+  structural fact Worker 3 already established: the two apps use entirely
+  separate persistence roots (`local_exports/dynasty_v1/` vs.
+  `local_exports/redraft_v1/`) and entirely separate backend processes.
+- **Persistence across a real backend restart (second independent
+  confirmation of Worker 3's own result):** killed the Dynasty backend
+  process this session inherited (PID `41112`) to pick up this pass's
+  Python changes, relaunched a brand-new process
+  (`scripts/run_nwr_desktop_api.py --port 18741 --mode dynasty`, new PID
+  `40244`, confirmed via `netstat`), and confirmed via a direct
+  `GET /api/v1/bootstrap` call that `dynastyLeague.profileId` was still
+  `1344772855908290560` -- zero shared memory with the killed process,
+  same result as Worker 3's own restart test.
+- **Hard reload:** `location.reload()` in the live browser tab preserved
+  the connected state (server-side marker, no browser storage involved).
+- **Disconnect -> reconnect cycle, live, end to end:** clicked
+  "Disconnect league" on Data Health -- real message "League disconnected.
+  Ownership context is hidden again." and the form reverted to its
+  disconnected state. Re-entered the exact league id
+  (`1344772855908290560`) and owner id (`1352768154031374336`) using the
+  `computer` click+type technique (per Worker 3's own documented
+  `form_input`-precision-loss gotcha for 19-digit Sleeper ids -- re-hit
+  this pass while testing the flow, confirmed still a live tool
+  limitation), clicked "Connect league" -- real success message "League
+  connected. Ownership context is now live across Home, Asset Explorer,
+  and Player Detail," a fresh real import timestamp
+  (`Imported 9/18/2026, 6:25:55 PM`, distinct from the pre-existing
+  connection's `5:57:02 PM` timestamp, proving a real new live Sleeper
+  fetch happened, not a cached replay).
+- **Roster-accuracy spot-check against live Sleeper data, fetched
+  independently this pass (not reused from any prior worker's capture):**
+  `GET https://api.sleeper.app/v1/league/1344772855908290560/rosters`
+  (direct call, this session, 2026-09-18) confirmed roster 7's real
+  `owner_id` (`1352768154031374336`) and real player list. Cross-referenced
+  6 of those real player ids against `GET
+  https://api.sleeper.app/v1/players/nfl` (also fetched fresh this pass)
+  and against what the Dynasty app's own live "Fill from your roster"
+  button populated: **De'Von Achane (9226), Zay Flowers (9997), Jameson
+  Williams (8148), Drake Maye (11564), Chase Brown (9224), Wan'Dale
+  Robinson (8126) -- all 6 independently confirmed on the real live
+  Sleeper roster 7 AND all 6 rendered by the app as "ON YOUR ROSTER."**
+  This exceeds the requested 2-3-player minimum. No real roster drift was
+  found since Worker 2/3's own captures earlier the same day (expected --
+  same in-season week, no waiver claims processed in the intervening
+  hours).
+
+### 5. Tests -- cumulative counts (ACTUAL TEST RESULT)
+
+- `pytest tests/test_desktop_http_api.py tests/test_dynasty_league_import_facade_wiring.py tests/test_dynasty_sleeper_league_service.py tests/test_desktop_facade_architecture_wiring.py tests/test_status_override_intake_facade.py`
+  -- **93 passed** (Worker 3's 83 baseline + 5 new facade tests + 1 new
+  service-level assertion set folded into existing files + 4 new HTTP
+  route/behavior tests worth of net growth; exact breakdown: 4 new tests
+  in `test_dynasty_league_import_facade_wiring.py`, 1 new test in
+  `test_desktop_http_api.py`, plus the pre-existing 83 + the previously
+  un-summed `test_status_override_intake_facade.py` file now included in
+  this pass's combined run for completeness).
+- `pytest tests/test_desktop_application_api.py` -- **4 failed, 46
+  passed**, `git stash`-confirmed identical to the untouched Worker-3 HEAD
+  (same 4: `test_dynasty_facade_composes_real_governed_workflows`,
+  `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`,
+  `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`,
+  `test_facade_has_no_streamlit_or_app_component_dependency` -- all real,
+  pre-existing date-freshness/market-drift/import-hygiene failures
+  unrelated to Dynasty league import, matching this worktree's own
+  documented baseline). Zero new failures introduced.
+- `npm run typecheck` (both `apps/dynasty` and `apps/redraft` tsconfig
+  projects) -- clean, zero errors.
+- `npx vitest run` (whole `desktop/` workspace) -- **491 passed, 30
+  files** (Worker 3's 486 baseline + 5 new pure-function tests in
+  `decisions.test.ts`). The `frontend_bench_results.json` timing-noise
+  regeneration Worker 3 already documented recurred this pass too;
+  reverted via `git checkout --` before committing, same as Worker 3.
+
+### 6. Native build (INSPECTED CODE + LIVE OBSERVATION)
+
+**Applies to Dynasty -- inspected, not assumed.** `desktop/package.json`
+has `bundle:dynasty` (`check:resources && sidecar:build &&
+tauri:build --workspace @nwr/dynasty-desktop`), the exact structural
+mirror of `bundle:redraft`. Dynasty is NOT web-only by design in this
+repo; a native Tauri package is a real, supported target for it.
+
+**Skipped this pass due to genuinely insufficient host memory, not
+forced into a doomed attempt.** `Get-CimInstance Win32_OperatingSystem`
+at the time of this decision: **0.98 GB free out of 15.11 GB total** --
+lower than the prior cycle's own documented OOM-blocking condition for
+Redraft's native build. A Tauri/Rust release build needs multiple GB of
+free RAM for the Rust compiler alone; attempting one here would almost
+certainly repeat the prior documented failure rather than produce a real
+result. Per this pass's own explicit instruction ("if memory is
+insufficient, skip and report why rather than forcing a failure"), no
+`bundle:dynasty` attempt was made. This remains a real, open item for a
+future pass once the host has more free RAM -- not evidence that Dynasty
+lacks native packaging.
+
+### 7. Dynasty processes status (final, LIVE OBSERVATION)
+
+Frontend: `http://127.0.0.1:1421/` -- PID `37176` (same process the whole
+pass; a real rebuild via `npm run build:dynasty` was run twice this pass
+to pick up the frontend code/CSS changes -- required, since this process
+runs `vite preview`, which serves the last build from disk, not source;
+each rebuild was followed by a real `location.reload()` and a live
+screenshot/DOM check before treating it as picked up). Backend:
+`http://127.0.0.1:18741/` -- PID `40244` (restarted once this pass to pick
+up the Python facade/route changes; confirmed via `netstat` and a direct
+`GET /api/v1/bootstrap` call). **Real league IS connected** at the end of
+this pass: `dynastyLeague.profileId == "1344772855908290560"`,
+`leagueName == "Las Vegas Enginerds"`, `myRosterId == 7` -- reconnected
+deliberately after the disconnect/reconnect test, left live for the owner.
+
+### 8. Redraft processes status (final, LIVE OBSERVATION)
+
+Frontend: `http://127.0.0.1:1422/` -- PID `16376`. Backend:
+`http://127.0.0.1:18742/` -- PID `31352`. **Both identical to the PIDs
+observed at the very start of this pass** -- neither process was ever
+restarted, killed, or had any file under its control modified. The one
+interaction with Redraft this pass was a single read-only `navigate` +
+`screenshot` in a second browser tab (see Isolation testing above),
+immediately closed.
+
+### Files changed
+
+- `src/application/desktop_facade.py` (`compare_dynasty_assets`/
+  `evaluate_dynasty_trade` gained the optional `league_profile_id`
+  parameter and the additive `ownership`/`dynastyLeague` block; every
+  pre-existing line of each method's body before that point is
+  unchanged).
+- `src/desktop_api/server.py` (2 routes now pass the active league
+  profile id through, same pattern as Worker 3's other routes).
+- `tests/test_dynasty_league_import_facade_wiring.py` (4 new tests).
+- `tests/test_desktop_http_api.py` (1 new route-level test, `FakeFacade`
+  signature updates for the new kwarg and the flat-list `ownership`
+  shape).
+- `desktop/packages/contracts/src/index.ts` (new `AssetOwnershipEntry`
+  type; additive optional `ownership`/`dynastyLeague` fields on
+  `DynastyComparison`/`TradeDecision`).
+- `desktop/apps/dynasty/src/lib/ownership.ts` (new `ownershipLookup()`
+  helper).
+- `desktop/apps/dynasty/src/pages/decisions.tsx` (Compare + Trade
+  Decision Lab wiring: ownership badges, live roster-mismatch warnings,
+  "Fill from your roster," post-evaluation roster-context panel; new pure
+  functions `rosterOwnedAssetIds`/`fillTradeSideFromRoster`/
+  `resolveTradeRosterWarnings`/`ownershipLookup` usage/`OwnershipTag`).
+- `desktop/apps/dynasty/src/pages/decisions.test.ts` (5 new tests for the
+  new pure functions).
+- `desktop/apps/dynasty/src/pages.css` (new, narrowly-scoped rules for
+  the chip badge, the roster-warning strips, and the roster-context body
+  layout; explicitly does NOT add a rule for the reverted
+  `AssetPicker`-row badge attempt, with a comment explaining why).
+- `docs/codex/dynasty_league_import_v1/LEDGER.md` (this section).
+
+Not committed (pre-existing untracked leftovers from earlier workers'
+sessions, not touched or relied upon by this pass):
+`dynasty_smoke_stderr.log`, `dynasty_smoke_stdout.log`,
+`local_exports.backup-20260918T230905Z/`.
+
+### For the owner -- precise, evidence-backed summary
+
+**Working capabilities (all live-verified this pass, not inferred):**
+- Connect/Disconnect a real Sleeper Dynasty league from Data Health,
+  surviving a hard reload AND a full backend process restart.
+- Home, Asset Explorer, Dynasty Rankings, Rookie Review, and Player Detail
+  all show real ownership badges once connected (Worker 3; re-confirmed
+  live this pass).
+- **Compare** now shows real ownership badges (picker/chips live,
+  per-asset panels after running a comparison) without altering any lean,
+  range, dimension, advantage, or bridge value -- structurally guaranteed
+  and tested.
+- **Trade Decision Lab** now shows real ownership on both sides, a live
+  "you don't actually own this give-side asset" warning the instant it's
+  selected (before evaluating), a one-click "Fill from your roster" that
+  defaults the give side from real roster data while leaving every pick
+  manually removable/addable, and a post-evaluation "Roster context at
+  evaluation" record -- none of it touches the trade recommendation,
+  confidence, or dimension outcomes.
+- Rookie assets consistently show "Ownership unresolved" everywhere
+  (Compare and Trade Lab included) -- never a guessed or omitted status.
+
+**Remaining gaps (precise, not glossed over):**
+- No multi-league picker UI still exists (Worker 3's own open item,
+  unchanged) -- connecting a different league overwrites which profile is
+  "active"; the backend supports arbitrary saved profiles already.
+- Rookie ownership crosswalk still does not exist -- "unresolved" is
+  correct behavior, not a placeholder for a future real answer without
+  new work.
+- No native Tauri build was produced this pass (host had 0.98 GB free
+  RAM) -- browser-based verification through the real running app is the
+  only verification status for this pass; the installed native app was
+  NOT rebuilt or re-verified.
+- The Connect League form still does no client-side league-id
+  pre-validation beyond non-empty (Worker 3's own open item, unchanged).
+- "Fill from your roster" only fills the GIVE side (matches the exact
+  wording of the dispatch's own requirement); there is no equivalent
+  one-click helper for auto-suggesting realistic receive-side targets.
+
+**Click-to-test instructions (for the owner, using the browser build left
+running):**
+1. Open `http://127.0.0.1:1421/#/data-health` -- confirm the connected
+   league banner reads "Connected: Las Vegas Enginerds · Your team: Niners
+   · Roster #7."
+2. Open `http://127.0.0.1:1421/#/compare` -- pick 2-4 assets (opponent-
+   owned assets show a real "Owned by {team}" badge in the picker chips);
+   click "Compare now"; scroll to any player panel and confirm the
+   ownership badge appears under the player name, separate from the
+   floor/expected/ceiling and advantages/risks content above it.
+3. Open `http://127.0.0.1:1421/#/trades` -- click "Fill from your roster"
+   to see the real give side populate; try adding an opponent's player to
+   the give side and watch the real warning banner appear immediately;
+   click "Evaluate trade" and scroll to "Roster context at evaluation" to
+   see the ownership record tied to that specific evaluation.
+4. On Data Health, click "Disconnect league" then reconnect with league id
+   `1344772855908290560` and owner id `1352768154031374336` to see the
+   full real cycle again.
+
+**Browser-vs-installed-app verification status:** every claim above was
+verified through the real running browser build
+(`http://127.0.0.1:1421/`, `vite preview` serving a real
+`npm run build:dynasty` output) against the real backend
+(`http://127.0.0.1:18741/`, real HTTP requests, real Sleeper data). The
+native Tauri-packaged desktop app was NOT built or verified this pass (see
+Native build above) -- this is an honest, disclosed gap, not an
+overclaim.
+
+---

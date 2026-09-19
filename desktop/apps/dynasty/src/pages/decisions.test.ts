@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
-import type { AssetOption, BridgeDecision, DynastyComparison } from "@nwr/contracts";
+import type { AssetOption, AssetOwnership, BridgeDecision, DynastyComparison } from "@nwr/contracts";
 
 import {
   bridgeBadgeTone,
   bridgeDecisionGroups,
+  fillTradeSideFromRoster,
   isCurrentDecisionRequest,
   isSameTradePackage,
   nextTradeSide,
   ownerBridgePreference,
   ownerDimensionLabel,
   canSelectAsset,
+  resolveTradeRosterWarnings,
+  rosterOwnedAssetIds,
 } from "./decisions";
 
 const stribling: AssetOption = {
@@ -125,5 +128,102 @@ describe("decision input guards", () => {
     expect(canSelectAsset(stribling)).toBe(true);
     expect(stribling.modelScoreEligible).toBe(false);
     expect(stribling.blocked).toBe(false);
+  });
+});
+
+function ownership(overrides: Partial<AssetOwnership> = {}): AssetOwnership {
+  return {
+    ownershipStatus: "OWNED",
+    rosterId: 7,
+    rosterTeamName: "Niners",
+    rosterSlotStatus: "starter",
+    isMyTeam: true,
+    reason: "",
+    ...overrides,
+  };
+}
+
+function assetWithOwnership(
+  assetId: string,
+  overrides: Partial<AssetOwnership> = {},
+): AssetOption {
+  return { ...stribling, assetId, name: assetId, ownership: ownership(overrides) };
+}
+
+describe("Dynasty League Import V1 (Worker 4): Compare + Trade Decision Lab ownership wiring", () => {
+  it("collects only real roster-owned asset ids, never opponent or free-agent ones", () => {
+    const assets: AssetOption[] = [
+      assetWithOwnership("current:mine-1", { isMyTeam: true }),
+      assetWithOwnership("current:opponent", { isMyTeam: false, rosterTeamName: "Rocky Mountain High" }),
+      assetWithOwnership("current:free-agent", {
+        ownershipStatus: "FREE_AGENT",
+        isMyTeam: false,
+        rosterTeamName: null,
+      }),
+      { ...stribling, assetId: "rookie:unresolved" },
+    ];
+    expect(rosterOwnedAssetIds(assets)).toEqual(["current:mine-1"]);
+  });
+
+  it("fills a trade side from real roster ownership without disturbing an existing manual selection", () => {
+    const roster = ["current:mine-1", "current:mine-2", "current:mine-3"];
+    // A prior manual pick is kept, in its original position, and never duplicated.
+    expect(fillTradeSideFromRoster(["current:mine-2"], [], roster, 6)).toEqual([
+      "current:mine-2",
+      "current:mine-1",
+      "current:mine-3",
+    ]);
+    // Never adds an asset already selected on the OTHER side.
+    expect(fillTradeSideFromRoster([], ["current:mine-1"], roster, 6)).toEqual([
+      "current:mine-2",
+      "current:mine-3",
+    ]);
+    // Still respects the side limit -- a real default, not a forced dump of the whole roster.
+    expect(fillTradeSideFromRoster([], [], roster, 2)).toEqual(["current:mine-1", "current:mine-2"]);
+  });
+
+  it("flags a give-side asset the owner does not actually hold -- opponent, free agent, and unresolved rookie cases", () => {
+    const map = new Map<string, AssetOwnership>([
+      ["current:mine", ownership({ isMyTeam: true })],
+      ["current:opponent", ownership({ isMyTeam: false, rosterTeamName: "Rocky Mountain High" })],
+      ["current:free-agent", ownership({ ownershipStatus: "FREE_AGENT", isMyTeam: false, rosterTeamName: null })],
+      ["rookie:x", ownership({ ownershipStatus: "UNRESOLVED", isMyTeam: false, reason: "No crosswalk yet." })],
+    ]);
+    const name = (id: string) => `Name(${id})`;
+    const warnings = resolveTradeRosterWarnings(
+      ["current:mine", "current:opponent", "current:free-agent", "rookie:x"],
+      [],
+      map,
+      name,
+    );
+    expect(warnings).toHaveLength(3);
+    expect(warnings.map((warning) => warning.kind)).toEqual([
+      "GIVE_OWNED_BY_OPPONENT",
+      "GIVE_NOT_ON_ROSTER",
+      "GIVE_UNRESOLVED",
+    ]);
+    expect(warnings.at(0)?.message).toContain("Rocky Mountain High");
+    expect(warnings.at(2)?.message).toContain("No crosswalk yet.");
+  });
+
+  it("flags a receive-side asset already on the owner's roster, and never warns on an asset with no ownership concept", () => {
+    const map = new Map<string, AssetOwnership>([
+      ["current:mine", ownership({ isMyTeam: true })],
+    ]);
+    const warnings = resolveTradeRosterWarnings(
+      ["pick:2027:1st"],
+      ["current:mine"],
+      map,
+      (id) => id,
+    );
+    expect(warnings).toEqual([
+      { assetId: "current:mine", kind: "RECEIVE_ALREADY_OWNED", message: expect.stringContaining("already on your roster") },
+    ]);
+  });
+
+  it("never warns when ownership data is entirely absent (no league connected)", () => {
+    expect(resolveTradeRosterWarnings(["current:a"], ["current:b"], new Map(), (id) => id)).toEqual(
+      [],
+    );
   });
 });

@@ -507,7 +507,10 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             asset_ids = body.get("assetIds")
             if not isinstance(asset_ids, list):
                 raise self._invalid_body("assetIds must be an array.")
-            return self.server.facade.compare_dynasty_assets(asset_ids)
+            return self.server.facade.compare_dynasty_assets(
+                asset_ids,
+                league_profile_id=self.server.facade.dynasty_active_league_profile_id(),
+            )
         if method == "POST" and path == "/api/v1/dynasty/trades/evaluate":
             body = self._json_body()
             self._reject_unknown_fields(body, {"give", "receive", "get", "teamWindow"})
@@ -526,6 +529,7 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 give=give,
                 receive=receive,
                 team_window=team_window,
+                league_profile_id=self.server.facade.dynasty_active_league_profile_id(),
             )
         if method == "POST" and path == "/api/v1/dynasty/trades/export":
             body = self._json_body()

@@ -492,12 +492,26 @@ export interface CompareRange {
   method: string;
 }
 
+/** Dynasty League Import V1 (Worker 4): one entry per asset id the backend
+ * could make an honest ownership determination for -- a flat LIST, never a
+ * dict keyed by the literal asset id (that shape hits the shared camelCase
+ * JSON-key transform, which mangles any dict key it treats as a schema
+ * field name; see `desktop_facade.compare_dynasty_assets`'s own comment).
+ * Present only once a Dynasty league is connected, exactly like
+ * `AssetOption.ownership`/`DynastyBootstrap.dynastyLeague`. */
+export interface AssetOwnershipEntry {
+  assetId: string;
+  ownership: AssetOwnership;
+}
+
 export interface DynastyComparison {
   leans: CompareLean[];
   ranges: CompareRange[];
   players: ComparePlayer[];
   warnings: string[];
   bridge?: RookieVeteranBridge | null;
+  ownership?: AssetOwnershipEntry[];
+  dynastyLeague?: DynastyLeagueContext;
 }
 
 export type TeamWindow = "Contending" | "Balanced" | "Rebuilding";
@@ -525,6 +539,8 @@ export interface TradeDecision {
   dimensions: TradeDimension[];
   counterStatus: "available" | "blocked";
   counterMessage: string;
+  ownership?: AssetOwnershipEntry[];
+  dynastyLeague?: DynastyLeagueContext;
 }
 
 export interface SavedTradeScenario {

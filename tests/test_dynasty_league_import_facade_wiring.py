@@ -300,6 +300,149 @@ def test_set_active_dynasty_league_profile_rejects_unknown_profile(tmp_path: Pat
     assert facade.dynasty_active_league_profile_id() is None
 
 
+# --------------------------------------------------------------------------
+# Compare + Trade Decision Lab ownership annotation -- Worker 4
+# --------------------------------------------------------------------------
+
+
+def test_compare_dynasty_assets_is_byte_identical_when_league_profile_id_omitted(
+    tmp_path: Path,
+) -> None:
+    facade = _facade(tmp_path)
+    bootstrap = facade.dynasty_bootstrap()
+    current_ids = [
+        row["assetId"]
+        for row in bootstrap.data["assetOptions"]
+        if row["assetType"] == "Current Player"
+    ][:2]
+    baseline = facade.compare_dynasty_assets(current_ids)
+    explicit_none = facade.compare_dynasty_assets(current_ids, league_profile_id=None)
+    assert json.dumps(baseline.data, sort_keys=True, default=str) == json.dumps(
+        explicit_none.data, sort_keys=True, default=str
+    )
+    assert "ownership" not in baseline.data
+    assert "dynastyLeague" not in baseline.data
+
+
+def test_evaluate_dynasty_trade_is_byte_identical_when_league_profile_id_omitted(
+    tmp_path: Path,
+) -> None:
+    facade = _facade(tmp_path)
+    bootstrap = facade.dynasty_bootstrap()
+    current_ids = [
+        row["assetId"]
+        for row in bootstrap.data["assetOptions"]
+        if row["assetType"] == "Current Player"
+    ][:2]
+    baseline = facade.evaluate_dynasty_trade(
+        give=[current_ids[0]], receive=[current_ids[1]], team_window="Balanced"
+    )
+    explicit_none = facade.evaluate_dynasty_trade(
+        give=[current_ids[0]],
+        receive=[current_ids[1]],
+        team_window="Balanced",
+        league_profile_id=None,
+    )
+    assert json.dumps(baseline.data, sort_keys=True, default=str) == json.dumps(
+        explicit_none.data, sort_keys=True, default=str
+    )
+    assert "ownership" not in baseline.data
+    assert "dynastyLeague" not in baseline.data
+
+
+def test_compare_dynasty_assets_with_league_profile_id_adds_ownership_without_touching_scores(
+    tmp_path: Path,
+) -> None:
+    """The owner's explicit requirement: ownership must be a SEPARATE
+    annotation, never allowed to influence (or appear to influence) the
+    comparison's own leans/ranges/players/bridge fields."""
+
+    facade = _facade(tmp_path)
+    profile_id = _import_fixture_league(facade)
+    bootstrap = facade.dynasty_bootstrap()
+    current_ids = [
+        row["assetId"]
+        for row in bootstrap.data["assetOptions"]
+        if row["assetType"] == "Current Player"
+    ][:2]
+    # Puka Nacua (current:9493) is the one real asset the fixture league's
+    # roster 7 (my team) actually holds -- force it into the comparison so
+    # the annotated-OWNED path is exercised for real, not just FREE_AGENT.
+    if "current:9493" not in current_ids:
+        current_ids[0] = "current:9493"
+
+    baseline = facade.compare_dynasty_assets(current_ids)
+    annotated = facade.compare_dynasty_assets(current_ids, league_profile_id=profile_id)
+
+    # Every comparison-verdict field is untouched -- same content, in the
+    # same order, once the two new additive keys are stripped back out.
+    annotated_core = {
+        key: value for key, value in annotated.data.items() if key not in {"ownership", "dynastyLeague"}
+    }
+    assert json.dumps(annotated_core, sort_keys=True, default=str) == json.dumps(
+        baseline.data, sort_keys=True, default=str
+    )
+
+    assert annotated.data["dynastyLeague"]["profileId"] == profile_id
+    ownership_by_asset = {row["assetId"]: row["ownership"] for row in annotated.data["ownership"]}
+    assert ownership_by_asset["current:9493"]["ownershipStatus"] == "OWNED"
+    assert ownership_by_asset["current:9493"]["isMyTeam"] is True
+    assert ownership_by_asset["current:9493"]["rosterTeamName"] == "Niners"
+    # A real, honest negative: an asset id this function has no ownership
+    # concept for (a draft pick) is simply absent, never guessed.
+    assert all(not row["assetId"].startswith("pick:") for row in annotated.data["ownership"])
+
+
+def test_evaluate_dynasty_trade_with_league_profile_id_flags_a_real_non_roster_give_side(
+    tmp_path: Path,
+) -> None:
+    """The owner's explicit correctness requirement: flag (display-only) an
+    asset on the "give" side that is NOT actually on the real roster --
+    without touching the trade-value computation itself."""
+
+    facade = _facade(tmp_path)
+    profile_id = _import_fixture_league(facade)
+    bootstrap = facade.dynasty_bootstrap()
+    current_ids = [
+        row["assetId"]
+        for row in bootstrap.data["assetOptions"]
+        if row["assetType"] == "Current Player" and row["assetId"] != "current:9493"
+    ]
+    other_asset = current_ids[0]
+
+    baseline = facade.evaluate_dynasty_trade(
+        give=[other_asset], receive=["current:9493"], team_window="Balanced"
+    )
+    annotated = facade.evaluate_dynasty_trade(
+        give=[other_asset],
+        receive=["current:9493"],
+        team_window="Balanced",
+        league_profile_id=profile_id,
+    )
+
+    # The trade decision itself (recommendation/confidence/dimensions/etc.)
+    # is byte-identical whether or not a league is connected -- this is the
+    # structural proof `evaluate_trade_decision` never received
+    # `league_profile_id` at all.
+    annotated_core = {
+        key: value for key, value in annotated.data.items() if key not in {"ownership", "dynastyLeague"}
+    }
+    assert json.dumps(annotated_core, sort_keys=True, default=str) == json.dumps(
+        baseline.data, sort_keys=True, default=str
+    )
+
+    ownership_by_asset = {row["assetId"]: row["ownership"] for row in annotated.data["ownership"]}
+    # The fixture league's roster 7 (my team) holds ONLY player 9493 -- any
+    # other real current asset is a genuine free agent relative to this
+    # 2-team fixture league, i.e. NOT on my roster, i.e. exactly the real
+    # "you don't actually own this give-side asset" case.
+    assert ownership_by_asset[other_asset]["ownershipStatus"] == "FREE_AGENT"
+    assert ownership_by_asset[other_asset]["isMyTeam"] is False
+    # The receive-side asset (Puka, current:9493) is correctly reported as
+    # already on my roster -- a real, honest "already own this" signal too.
+    assert ownership_by_asset["current:9493"]["isMyTeam"] is True
+
+
 def test_load_dynasty_league_profile_round_trips_persisted_state(tmp_path: Path) -> None:
     facade = _facade(tmp_path)
     profile_id = _import_fixture_league(facade)

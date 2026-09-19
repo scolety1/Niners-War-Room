@@ -1,6 +1,8 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
 import type {
   AssetOption,
+  AssetOwnership,
+  AssetOwnershipEntry,
   DynastyBootstrap,
   DynastyComparison,
   TeamWindow,
@@ -21,8 +23,123 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { matchesPlayerSearch } from "../lib/search";
+import { ownershipLookup, resolveOwnershipDisplay } from "../lib/ownership";
 
 const TRADE_SIDE_LIMIT = 6;
+
+// ----------------------------------------------------------------------
+// Dynasty League Import V1 (Worker 4): Compare + Trade Decision Lab
+// ownership wiring. Every function below is a PURE, display-only layer on
+// top of already-computed data -- none of it reads or writes any
+// comparison score/verdict or trade-value field, satisfying the owner's
+// explicit hard boundary ("ownership is a display/annotation/warning layer
+// only"). See `desktop_facade.compare_dynasty_assets`/
+// `evaluate_dynasty_trade`'s own comments for the backend half of the same
+// guarantee.
+// ----------------------------------------------------------------------
+
+/** Real roster-owned asset ids from the already-annotated `assetOptions`
+ * list (bootstrap-time truth) -- the "REAL default" the dispatch asked
+ * for, used only to pre-fill the give side; the owner can always remove or
+ * add manually afterward (see `fillTradeSideFromRoster`). */
+export function rosterOwnedAssetIds(assets: readonly AssetOption[]): string[] {
+  return assets
+    .filter((asset) => asset.ownership?.ownershipStatus === "OWNED" && asset.ownership.isMyTeam)
+    .map((asset) => asset.assetId);
+}
+
+/** Appends real roster asset ids onto an existing manual selection --
+ * never removes or reorders what the owner already picked, skips anything
+ * already selected on either side, and still respects the side limit. A
+ * real default sourced from actual roster ownership, not a forced
+ * constraint: every asset it adds remains individually removable exactly
+ * like a manually added one. */
+export function fillTradeSideFromRoster(
+  current: readonly string[],
+  other: readonly string[],
+  rosterAssetIds: readonly string[],
+  limit = TRADE_SIDE_LIMIT,
+): string[] {
+  const next = [...current];
+  for (const assetId of rosterAssetIds) {
+    if (next.length >= limit) break;
+    if (next.includes(assetId) || other.includes(assetId)) continue;
+    next.push(assetId);
+  }
+  return next;
+}
+
+export type TradeRosterWarningKind =
+  | "GIVE_OWNED_BY_OPPONENT"
+  | "GIVE_NOT_ON_ROSTER"
+  | "GIVE_UNRESOLVED"
+  | "RECEIVE_ALREADY_OWNED";
+
+export interface TradeRosterWarning {
+  assetId: string;
+  kind: TradeRosterWarningKind;
+  message: string;
+}
+
+/** The owner's explicit correctness requirement: flag (never block) a
+ * "give" asset that real, live ownership data says is NOT actually on the
+ * owner's roster -- an opponent's asset, a free agent, or (for a rookie
+ * asset with no crosswalk yet) genuinely unconfirmable. Also flags the
+ * mirror-image oddity on the receive side (already owned). An asset with
+ * no ownership entry at all (no league connected, or an asset type with no
+ * ownership concept such as a draft pick) produces no warning -- never
+ * guessed. This never touches `give`/`receive` themselves or any trade
+ * score -- it only classifies what is already selected. */
+export function resolveTradeRosterWarnings(
+  give: readonly string[],
+  receive: readonly string[],
+  ownership: ReadonlyMap<string, AssetOwnership>,
+  nameForAsset: (assetId: string) => string,
+): TradeRosterWarning[] {
+  const warnings: TradeRosterWarning[] = [];
+  for (const assetId of give) {
+    const entry = ownership.get(assetId);
+    if (!entry) continue;
+    if (entry.ownershipStatus === "OWNED" && entry.isMyTeam) continue;
+    const name = nameForAsset(assetId);
+    if (entry.ownershipStatus === "OWNED") {
+      warnings.push({
+        assetId,
+        kind: "GIVE_OWNED_BY_OPPONENT",
+        message: `${name} is on your give side, but is currently owned by ${entry.rosterTeamName || "another team"} in your connected league, not your roster.`,
+      });
+    } else if (entry.ownershipStatus === "FREE_AGENT") {
+      warnings.push({
+        assetId,
+        kind: "GIVE_NOT_ON_ROSTER",
+        message: `${name} is on your give side, but is a free agent in your connected league, not on your roster.`,
+      });
+    } else if (entry.ownershipStatus === "UNRESOLVED") {
+      warnings.push({
+        assetId,
+        kind: "GIVE_UNRESOLVED",
+        message: `${name}'s real ownership could not be confirmed (${entry.reason || "no identity crosswalk yet"}) -- verify manually before trading it away.`,
+      });
+    }
+  }
+  for (const assetId of receive) {
+    const entry = ownership.get(assetId);
+    if (entry?.ownershipStatus === "OWNED" && entry.isMyTeam) {
+      warnings.push({
+        assetId,
+        kind: "RECEIVE_ALREADY_OWNED",
+        message: `${nameForAsset(assetId)} is on your receive side, but is already on your roster.`,
+      });
+    }
+  }
+  return warnings;
+}
+
+function OwnershipTag({ ownership }: { ownership: AssetOwnership | undefined }) {
+  const display = resolveOwnershipDisplay(ownership);
+  if (!display) return null;
+  return <StatusBadge tone={display.tone} label={display.label} />;
+}
 
 export function bridgeBadgeTone(badge: string): "safe" | "blocked" | "review" {
   if (badge === "PRODUCTION") return "safe";
@@ -201,6 +318,9 @@ function SelectedChips({
       {selected.map((assetId) => (
         <span className="chip" key={assetId}>
           {lookup.get(assetId)?.name ?? assetId}
+          {lookup.get(assetId)?.ownership ? (
+            <OwnershipTag ownership={lookup.get(assetId)?.ownership} />
+          ) : null}
           <button
             aria-label={`Remove ${lookup.get(assetId)?.name ?? assetId}`}
             disabled={disabled}
@@ -369,12 +489,26 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
   );
   const bridge = result.bridge;
   const { horizons: horizonDecisions, traits: traitDecisions } = bridgeDecisionGroups(result);
+  // Dynasty League Import V1 (Worker 4): ownership is looked up from
+  // `result.ownership` -- a real, separate annotation attached AFTER
+  // `leans`/`ranges`/`players`/`bridge` were already fully computed on the
+  // backend (see `desktop_facade.compare_dynasty_assets`). Rendered only
+  // as extra display context next to each player's own panel; it never
+  // feeds into any lean/range/dimension/advantage value above.
+  const ownership = useMemo(() => ownershipLookup(result.ownership), [result.ownership]);
   return (
     <div className="comparison-result">
       <div className="section-title">
         <h2>{bridge ? `${bridge.players[0]} vs ${bridge.players[1]}` : "NWR preference by horizon"}</h2>
         <span>{bridge ? "Rookie ↔ Veteran mode" : "Decision first · evidence second"}</span>
       </div>
+      {result.dynastyLeague ? (
+        <p className="copy-muted">
+          Ownership context: connected to {result.dynastyLeague.leagueName}. This label never
+          changes a lean, range, dimension, or advantage above -- it is separate display context
+          only.
+        </p>
+      ) : null}
       {bridge ? (
         <>
           <div className="bridge-horizon-grid">
@@ -445,6 +579,16 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
       <div className="advantage-grid">
         {result.ranges.map((range) => (
           <Panel key={range.assetId} title={range.player} eyebrow={range.ageWindow}>
+            {ownership.get(range.assetId) ? (
+              // Rendered in the panel BODY, never the header, to avoid a
+              // real, reproduced-live overlap bug: `.panel__header` does
+              // not wrap, and a wide ownership badge next to a long
+              // multi-word eyebrow (e.g. "Advantages & uncertainty")
+              // visually overlapped and clipped the eyebrow text.
+              <div className="panel-ownership-line">
+                <OwnershipTag ownership={ownership.get(range.assetId)} />
+              </div>
+            ) : null}
             <div className="range-grid">
               <RangeCell label="Downside signal" value={range.floor} tone="floor" />
               <RangeCell label="Research neighborhood" value={range.expected} tone="expected" />
@@ -478,6 +622,11 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
       <div className="advantage-grid">
         {result.players.map((player) => (
           <Panel key={player.assetId} title={player.player} eyebrow="Advantages & uncertainty">
+            {ownership.get(player.assetId) ? (
+              <div className="panel-ownership-line">
+                <OwnershipTag ownership={ownership.get(player.assetId)} />
+              </div>
+            ) : null}
             <div className="pros-cons">
               <div>
                 <strong>Advantages</strong>
@@ -539,6 +688,41 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
   const requestSequence = useRef(0);
   const decisionResult = useRef<HTMLDivElement>(null);
   const busy = evaluating || saving || exporting;
+
+  // Dynasty League Import V1 (Worker 4): real ownership context for the
+  // trade builder, sourced from the already-annotated `assetOptions` list
+  // (bootstrap-time truth -- present only once a league is connected,
+  // identical to Asset Explorer/Rankings' own convention). Purely a
+  // display/warning layer: none of this is read by `evaluate()` above or
+  // by the trade-value computation on the backend.
+  const assetLookup = useMemo(
+    () => new Map(data.assetOptions.map((asset) => [asset.assetId, asset])),
+    [data.assetOptions],
+  );
+  const nameForAsset = (assetId: string) => assetLookup.get(assetId)?.name ?? assetId;
+  const liveOwnership = useMemo(
+    () =>
+      new Map(
+        data.assetOptions
+          .filter((asset): asset is AssetOption & { ownership: AssetOwnership } =>
+            Boolean(asset.ownership),
+          )
+          .map((asset) => [asset.assetId, asset.ownership]),
+      ),
+    [data.assetOptions],
+  );
+  const rosterAssetIds = useMemo(() => rosterOwnedAssetIds(data.assetOptions), [data.assetOptions]);
+  const rosterWarnings = useMemo(
+    () => resolveTradeRosterWarnings(give, receive, liveOwnership, nameForAsset),
+    [give, receive, liveOwnership],
+  );
+  const fillFromRoster = () => {
+    if (busy) return;
+    const next = fillTradeSideFromRoster(give, receive, rosterAssetIds);
+    if (next.length === give.length) return;
+    invalidateDecision();
+    setGive(next);
+  };
 
   useEffect(() => {
     if (!decision) return;
@@ -845,8 +1029,32 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
         </div>
         <p>The team window changes fit—not source ranks, scores, or evidence.</p>
       </div>
+      {rosterWarnings.length ? (
+        <div className="trade-roster-warnings">
+          {rosterWarnings.map((warning) => (
+            <div className="alert-strip" key={`${warning.assetId}-${warning.kind}`}>
+              {warning.message}
+            </div>
+          ))}
+        </div>
+      ) : null}
       <div className="trade-builder">
-        <Panel title="You give" eyebrow="Current roster side">
+        <Panel
+          action={
+            data.dynastyLeague && rosterAssetIds.length ? (
+              <Button
+                disabled={busy}
+                icon="layers"
+                onClick={fillFromRoster}
+                variant="ghost"
+              >
+                Fill from your roster
+              </Button>
+            ) : undefined
+          }
+          title="You give"
+          eyebrow="Current roster side"
+        >
           <AssetPicker
             assets={data.assetOptions}
             disabled={busy}
@@ -970,19 +1178,45 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
       {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
       {decision ? (
         <div aria-live="polite" ref={decisionResult} tabIndex={-1}>
-          <TradeResult decision={decision} />
+          <TradeResult
+            decision={decision}
+            give={evaluatedPackage?.give ?? give}
+            receive={evaluatedPackage?.receive ?? receive}
+            nameForAsset={nameForAsset}
+          />
         </div>
       ) : null}
     </>
   );
 }
 
-function TradeResult({ decision }: { decision: TradeDecision }) {
+function TradeResult({
+  decision,
+  give,
+  receive,
+  nameForAsset,
+}: {
+  decision: TradeDecision;
+  give: string[];
+  receive: string[];
+  nameForAsset: (assetId: string) => string;
+}) {
   const tone = decision.recommendation.includes("ACCEPT")
     ? "accept"
     : decision.recommendation.includes("REJECT")
       ? "reject"
       : "counter";
+  // Dynasty League Import V1 (Worker 4): the real ownership record AS OF
+  // this specific evaluation (`decision.ownership`, attached strictly
+  // after `evaluate_trade_decision` already computed everything else --
+  // see `desktop_facade.evaluate_dynasty_trade`). Kept separate from the
+  // live picker-time warnings above so a saved/exported trade brief always
+  // carries the ownership snapshot that was true at the moment it was
+  // evaluated.
+  const evaluationOwnership = useMemo(
+    () => ownershipLookup(decision.ownership),
+    [decision.ownership],
+  );
   return (
     <div className="trade-result">
       <section className={`trade-verdict trade-verdict--${tone}`}>
@@ -997,6 +1231,36 @@ function TradeResult({ decision }: { decision: TradeDecision }) {
           <small>{decision.preferredSide}</small>
         </div>
       </section>
+      {decision.dynastyLeague ? (
+        <Panel title="Roster context at evaluation" eyebrow={`Connected to ${decision.dynastyLeague.leagueName} · display only`}>
+          <div className="trade-roster-context">
+            <div>
+              <strong>You give</strong>
+              <ul className="compact-list">
+                {give.map((assetId) => (
+                  <li key={assetId}>
+                    {nameForAsset(assetId)} <OwnershipTag ownership={evaluationOwnership.get(assetId)} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <strong>You receive</strong>
+              <ul className="compact-list">
+                {receive.map((assetId) => (
+                  <li key={assetId}>
+                    {nameForAsset(assetId)} <OwnershipTag ownership={evaluationOwnership.get(assetId)} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <p className="copy-muted">
+            This ownership record never changed the recommendation, confidence, or any dimension
+            above -- it is the real roster state at the moment this trade was evaluated.
+          </p>
+        </Panel>
+      ) : null}
       <div className="split-view">
         <Panel title="Why" eyebrow="Strongest independent dimensions">
           <ol className="reason-list">

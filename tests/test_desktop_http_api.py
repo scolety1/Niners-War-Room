@@ -59,9 +59,20 @@ class FakeFacade:
             data["ownership"] = {"ownershipStatus": "OWNED", "leagueProfileId": league_profile_id}
         return FacadePayload(data=data)
 
-    def compare_dynasty_assets(self, asset_ids: list[str]) -> FacadePayload:
-        self.calls.append(("compare", asset_ids))
-        return FacadePayload(data={"assetIds": asset_ids})
+    def compare_dynasty_assets(
+        self, asset_ids: list[str], *, league_profile_id: str | None = None
+    ) -> FacadePayload:
+        self.calls.append(("compare", asset_ids, league_profile_id))
+        data: dict[str, Any] = {"assetIds": asset_ids}
+        if league_profile_id is not None:
+            data["ownership"] = [
+                {
+                    "assetId": asset_id,
+                    "ownership": {"ownershipStatus": "OWNED", "leagueProfileId": league_profile_id},
+                }
+                for asset_id in asset_ids
+            ]
+        return FacadePayload(data=data)
 
     def evaluate_dynasty_trade(
         self,
@@ -69,10 +80,20 @@ class FakeFacade:
         give: list[str],
         receive: list[str],
         team_window: str,
+        league_profile_id: str | None = None,
     ) -> FacadePayload:
         value = {"give": give, "receive": receive, "teamWindow": team_window}
-        self.calls.append(("trade", value))
-        return FacadePayload(data=value)
+        self.calls.append(("trade", value, league_profile_id))
+        data = dict(value)
+        if league_profile_id is not None:
+            data["ownership"] = [
+                {
+                    "assetId": asset_id,
+                    "ownership": {"ownershipStatus": "OWNED", "leagueProfileId": league_profile_id},
+                }
+                for asset_id in (*give, *receive)
+            ]
+        return FacadePayload(data=data)
 
     def list_dynasty_trades(self) -> FacadePayload:
         self.calls.append(("trade-list", None))
@@ -505,11 +526,51 @@ def test_dynasty_routes_decode_ids_and_accept_canonical_receive_key() -> None:
 
     assert asset[0] == compare[0] == trade[0] == 200
     assert ("asset", asset_id) in facade.calls
-    assert ("compare", [asset_id, "current:second"]) in facade.calls
+    assert ("compare", [asset_id, "current:second"], None) in facade.calls
     assert (
         "trade",
         {"give": [asset_id], "receive": ["pick:2027:1"], "teamWindow": "Balanced"},
+        None,
     ) in facade.calls
+
+
+def test_dynasty_compare_and_trade_routes_pass_the_active_league_profile_id() -> None:
+    """Dynasty League Import V1 (Worker 4): once a league is connected,
+    `/api/v1/dynasty/compare` and `/api/v1/dynasty/trades/evaluate` must
+    read the same persisted "active league" marker the bootstrap/workspace/
+    asset routes already use -- the owner should never have to resend a
+    profile id on every Compare/Trade Lab request."""
+
+    facade = FakeFacade("dynasty")
+    facade.active_league_profile_id = "profile-active"
+    asset_id = "current:fixture-player"
+    with running_server(facade) as server:
+        compare = request(
+            server,
+            "POST",
+            "/api/v1/dynasty/compare",
+            body={"assetIds": [asset_id, "current:second"]},
+            headers=authenticated_headers(),
+        )
+        trade = request(
+            server,
+            "POST",
+            "/api/v1/dynasty/trades/evaluate",
+            body={"give": [asset_id], "receive": ["current:second"], "teamWindow": "Balanced"},
+            headers=authenticated_headers(),
+        )
+
+    assert compare[0] == trade[0] == 200
+    assert ("compare", [asset_id, "current:second"], "profile-active") in facade.calls
+    assert (
+        "trade",
+        {"give": [asset_id], "receive": ["current:second"], "teamWindow": "Balanced"},
+        "profile-active",
+    ) in facade.calls
+    compare_ownership = {row["assetId"]: row["ownership"] for row in compare[2]["data"]["ownership"]}
+    trade_ownership = {row["assetId"]: row["ownership"] for row in trade[2]["data"]["ownership"]}
+    assert compare_ownership[asset_id]["leagueProfileId"] == "profile-active"
+    assert trade_ownership[asset_id]["leagueProfileId"] == "profile-active"
 
 
 def test_dynasty_league_import_route_connects_and_persists_active_profile() -> None:

@@ -1322,7 +1322,9 @@ class DesktopBackendFacade:
             return payload
         return self._annotate_dynasty_asset_payload(payload, league_profile_id)
 
-    def compare_dynasty_assets(self, asset_ids: Sequence[str]) -> FacadePayload:
+    def compare_dynasty_assets(
+        self, asset_ids: Sequence[str], *, league_profile_id: str | None = None
+    ) -> FacadePayload:
         self._require_mode("dynasty")
         normalized = [self._asset_id(value) for value in asset_ids]
         if not 2 <= len(normalized) <= 4:
@@ -1396,15 +1398,48 @@ class DesktopBackendFacade:
                     "method": _text(value.get("Range method")),
                 }
             )
-        return FacadePayload(
-            data={
-                "leans": [asdict(lean) for lean in owner_summary.leans],
-                "ranges": ranges,
-                "players": players,
-                "warnings": list(dict.fromkeys(compare_warnings)),
-                "bridge": bridge.as_payload() if bridge is not None else None,
+        data: dict[str, Any] = {
+            "leans": [asdict(lean) for lean in owner_summary.leans],
+            "ranges": ranges,
+            "players": players,
+            "warnings": list(dict.fromkeys(compare_warnings)),
+            "bridge": bridge.as_payload() if bridge is not None else None,
+        }
+        # Dynasty League Import V1 (Worker 4): a real ownership ANNOTATION
+        # layer only, applied strictly after every comparison score/verdict
+        # field above has already been fully computed from `rows`. This
+        # never influences `leans`/`ranges`/`players`/`bridge` -- it only
+        # attaches a separate `ownershipByAssetId` block the frontend can
+        # render as distinct display context (see
+        # `resolveOwnershipDisplay` / the owner's explicit "distinguish
+        # player valuation from league-specific recommendation quality"
+        # requirement). Byte-identical to today when `league_profile_id`
+        # is omitted (the default) -- this branch never executes.
+        if league_profile_id:
+            profile, league_snapshot = self._load_dynasty_league_state(league_profile_id)
+            annotations = annotate_ownership(
+                [{"asset_id": value} for value in normalized],
+                league_snapshot,
+                my_owner_id=profile.my_owner_id,
+            )
+            # A flat list, never a dict keyed by the literal asset id --
+            # the shared camelCase JSON-key transform
+            # (`contracts.public_json_value`/`camel_case_key`) mangles any
+            # dict key it treats as a schema field name (e.g.
+            # "current:9493" -> "current9493"), the same documented hazard
+            # `redraft_decision_bundle`'s `positions`/`traceIds` already
+            # avoid this same way.
+            data["ownership"] = [
+                {"assetId": asset_id, "ownership": annotation}
+                for asset_id, annotation in annotations.items()
+            ]
+            data["dynastyLeague"] = {
+                "profileId": profile.profile_id,
+                "leagueName": profile.league_name,
+                "myRosterId": profile.my_roster_id,
+                "fetchedAtUtc": league_snapshot.fetched_at_utc,
             }
-        )
+        return FacadePayload(data=data)
 
     def evaluate_dynasty_trade(
         self,
@@ -1412,6 +1447,7 @@ class DesktopBackendFacade:
         give: Sequence[str],
         receive: Sequence[str],
         team_window: str,
+        league_profile_id: str | None = None,
     ) -> FacadePayload:
         self._require_mode("dynasty")
         _snapshot, give_ids, receive_ids, lookup, key_for_id = self._trade_context(
@@ -1424,7 +1460,37 @@ class DesktopBackendFacade:
             [key_for_id[value] for value in receive_ids],
         )
         decision = evaluate_trade_decision(state, lookup, team_window=team_window)
-        return FacadePayload(data=self._trade_decision_payload(decision))
+        data = self._trade_decision_payload(decision)
+        # Dynasty League Import V1 (Worker 4): same annotation-only pattern
+        # as `compare_dynasty_assets` above -- `evaluate_trade_decision`
+        # above never receives `league_profile_id` and its return value is
+        # converted to `data` BEFORE this branch runs, so the real
+        # trade-value computation is structurally untouched by this block.
+        # This only attaches real, live roster-ownership context so the
+        # frontend can warn (display-only) when a "give" asset the owner
+        # selected is not actually on their real roster -- a genuine
+        # correctness signal, never a block on exploring a hypothetical
+        # trade.
+        if league_profile_id:
+            profile, league_snapshot = self._load_dynasty_league_state(league_profile_id)
+            annotations = annotate_ownership(
+                [{"asset_id": value} for value in (*give_ids, *receive_ids)],
+                league_snapshot,
+                my_owner_id=profile.my_owner_id,
+            )
+            # Same flat-list shape and same reason as `compare_dynasty_assets`
+            # above -- never a dict keyed by the literal asset id.
+            data["ownership"] = [
+                {"assetId": asset_id, "ownership": annotation}
+                for asset_id, annotation in annotations.items()
+            ]
+            data["dynastyLeague"] = {
+                "profileId": profile.profile_id,
+                "leagueName": profile.league_name,
+                "myRosterId": profile.my_roster_id,
+                "fetchedAtUtc": league_snapshot.fetched_at_utc,
+            }
+        return FacadePayload(data=data)
 
     def list_dynasty_trades(self) -> FacadePayload:
         """List reopenable Trading Lab scenarios from the Personal Workspace."""

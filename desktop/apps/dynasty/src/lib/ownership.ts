@@ -1,4 +1,4 @@
-import type { AssetOwnership } from "@nwr/contracts";
+import type { AssetOwnership, AssetOwnershipEntry } from "@nwr/contracts";
 
 export interface OwnershipBadgeDisplay {
   label: string;
@@ -68,4 +68,20 @@ export function resolveOwnershipDisplay(
     default:
       return null;
   }
+}
+
+/**
+ * Dynasty League Import V1 (Worker 4). `compare_dynasty_assets` and
+ * `evaluate_dynasty_trade` return ownership as a flat LIST
+ * (`AssetOwnershipEntry[]`), never a dict keyed by the literal asset id --
+ * that shape hits the shared backend camelCase JSON-key transform, which
+ * mangles any dict key it treats as a schema field name (see
+ * `desktop_facade.compare_dynasty_assets`'s own comment for the concrete,
+ * reproduced example). This turns that list back into a lookup Map for
+ * callers that want to key off an asset id.
+ */
+export function ownershipLookup(
+  entries: AssetOwnershipEntry[] | undefined,
+): Map<string, AssetOwnership> {
+  return new Map((entries ?? []).map((entry) => [entry.assetId, entry.ownership]));
 }
