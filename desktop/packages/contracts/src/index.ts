@@ -2660,3 +2660,44 @@ export interface CommandItem {
   icon: string;
   keywords?: string[];
 }
+
+// --- League capability model (Flaim-integration cycle, 2026-09-19) -------
+//
+// Design-only as of this pass: this type documents the intended shape of
+// a future, provider-agnostic replacement for patterns like
+// `profile.provider === "sleeper"` (see `in-season.tsx`, `improve-team.tsx`,
+// and others). It mirrors `src/services/league_capability_service.py`'s
+// `LeagueCapabilities` dataclass field-for-field. No backend endpoint
+// serializes this type into a live response yet, and no frontend call
+// site reads it yet -- see docs/codex/flaim_integration_20260919/LEDGER.md
+// for exactly what was designed vs. wired this pass. Once a real ESPN/
+// Flaim snapshot exists and a facade endpoint starts returning this
+// shape, tools should check the SPECIFIC field(s) they need (e.g.
+// `hasLineupEligibility`) instead of a blanket provider check.
+export type ScoringSettingsCompleteness = "COMPLETE" | "PARTIAL" | "UNKNOWN";
+export type AvailablePlayerPoolCoverage = "COMPLETE" | "BOUNDED" | "NONE";
+export type StandingsAvailability = "DISCLOSED_NON_AUTHORITATIVE" | "NONE";
+// Always "NOT_ENABLED" today -- see CAPABILITY_AUTHORIZATION_MAP.md. Kept
+// as an explicit literal (not merely omitted) so a future reviewer sees
+// the constraint recorded.
+export type TransactionDirectionCapability = "NOT_ENABLED";
+
+export interface LeagueCapabilities {
+  hasVerifiedIdentity: boolean;
+  hasRosterData: boolean;
+  hasLineupEligibility: boolean;
+  hasScoringSettings: ScoringSettingsCompleteness;
+  hasAvailablePlayerPool: AvailablePlayerPoolCoverage;
+  hasStandings: StandingsAvailability;
+  transactionDirection: TransactionDirectionCapability;
+  /** When this profile's underlying data was actually retrieved -- distinct
+   * from any provider-published as-of time. Null means unknown, never a
+   * fabricated "now". */
+  retrievedAtUtc: string | null;
+  /** The provider's own published as-of time, if known. Frequently null --
+   * most Flaim-sourced records don't expose one (see the July 2026 audit
+   * findings this constraint traces back to). */
+  providerAsOfUtc: string | null;
+  /** Human-readable notes for any non-COMPLETE/non-NONE flag above. */
+  disclosures: string[];
+}

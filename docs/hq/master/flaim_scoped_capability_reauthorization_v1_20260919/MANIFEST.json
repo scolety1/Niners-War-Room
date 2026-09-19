@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "packet_id": "flaim_scoped_capability_reauthorization_v1_20260919",
+  "packet_type": "OWNER_GOVERNANCE_AUTHORIZATION",
+  "supersedes": null,
+  "amends": null,
+  "cites_unedited": "docs/hq/master/fantasy_plugin_research_canonicalization_closeout_v1_20260711/",
+  "note": "This packet does not amend or supersede the cited July packet. It is a new, additional, narrower authorization that sits alongside it. The July packet's own files were not modified by this packet and carry no cross-reference back into this one.",
+  "verdict": "SCOPED_READ_ONLY_CAPABILITY_AUTHORIZATION_GRANTED_FOR_IDENTITY_ROSTER_LINEUP_SETTINGS_ONLY",
+  "authorized_by": "project owner, dated 2026-09-19, relayed via dispatching brief to Flaim-integration-cycle Worker 1",
+  "reentry_trigger_invoked": "Written persistent-use, display, and retention permission (per docs/hq/master/fantasy_plugin_research_canonicalization_closeout_v1_20260711/PROVIDER_CHANGE_REENTRY_GATE.md, trigger 7 of 8, unedited)",
+  "production_external_analysis_influence_percent": 0,
+  "hash_algorithm": "SHA-256",
+  "manifest_self_hash": "OMITTED_TO_AVOID_SELF_REFERENCE",
+  "files": [
+    {
+      "path": "OWNER_AUTHORIZATION_AND_JULY_FINDINGS_RECORD.md",
+      "sha256": "022e98bd5931b9c8864da73f6443fb6efd8be4b1b41fdbc346ac911c7bd0c50f"
+    },
+    {
+      "path": "CAPABILITY_AUTHORIZATION_MAP.md",
+      "sha256": "4cc255dde7a4f03673a5e18e42a9e4da535e1e0a97fadc2d9e1fff8231f192da"
+    }
+  ]
+}
