@@ -220,6 +220,7 @@ from src.services.weekly_lineup_optimizer_service import (
     build_roster_candidates,
     optimize_weekly_lineup,
 )
+from src.services.weekly_game_lock_service import compute_weekly_game_lock
 from src.services.waiver_engine_service import (
     describe_unmatched_roster_players,
     pair_add_drop,
@@ -3272,11 +3273,26 @@ class DesktopBackendFacade:
             fetched_at=weekly_health.retrieved_at,
         )
         status_overrides = load_status_overrides(self.repo_root)
+        # NWR Sunday Readiness overnight cycle, Worker 2 (W2): real,
+        # sourced reserve/taxi membership straight off THIS SAME live
+        # roster read (Sleeper's own `reserve`/`taxi` arrays -- never a
+        # second fetch), and a real, live kickoff/lock lookup
+        # (`weekly_game_lock_service.py`, a real nflverse schedules pull,
+        # scoped to lock-state only -- does not touch or depend on
+        # `injury_availability_context_service.py`'s own separate,
+        # still-gated next-game/opponent/bye display). A failed lock fetch
+        # degrades honestly to "no real lock data this pass" (empty
+        # locked-team set) -- never a guessed lock state.
+        game_lock = compute_weekly_game_lock(season=selected.season, week=week)
         candidates = build_roster_candidates(
             roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
             starter_sleeper_player_ids=[str(value) for value in own_roster.get("starters") or []],
             projection_rows=projection_result.rows,
             status_overrides=status_overrides,
+            reserve_sleeper_player_ids=[str(value) for value in own_roster.get("reserve") or []],
+            taxi_sleeper_player_ids=[str(value) for value in own_roster.get("taxi") or []],
+            locked_teams=sorted(game_lock.locked_teams) if game_lock.source_status == "OK" else (),
+            player_catalog=players if isinstance(players, Mapping) else None,
         )
         lineup = optimize_weekly_lineup(
             candidates=candidates, roster=selected.roster, status_overrides=status_overrides
@@ -3323,7 +3339,21 @@ class DesktopBackendFacade:
         elif lineup.unprojected_starter_count:
             confidence_state, confidence_basis = (
                 "LOW",
-                f"{lineup.unprojected_starter_count} starter(s) have no usable weekly projection.",
+                f"{lineup.unprojected_starter_count} starter(s) have no usable weekly projection "
+                "or a real required slot is empty this week.",
+            )
+        elif lineup.unresolved_identity_starter_count:
+            # W3 fix (Sunday Readiness overnight cycle, Worker 2): a real,
+            # reproduced gap -- an unresolved-identity starter previously
+            # left BOTH counters at zero (points existed, so it wasn't
+            # "unprojected"), so this branch fell through to a falsely
+            # NOMINAL confidence with no real identity confirmation behind
+            # it. Now checked explicitly.
+            confidence_state, confidence_basis = (
+                "LOW",
+                f"{lineup.unresolved_identity_starter_count} starter(s) have an unresolved player "
+                "identity (a real provider point value exists, but NWR could not confirm which "
+                "canonical player it belongs to).",
             )
         else:
             confidence_state, confidence_basis = (
@@ -3371,6 +3401,7 @@ class DesktopBackendFacade:
                 "decisionEnvelope": decision_envelope.to_dict(),
                 "projectedTotal": lineup.projected_total,
                 "unprojectedStarterCount": lineup.unprojected_starter_count,
+                "unresolvedIdentityStarterCount": lineup.unresolved_identity_starter_count,
                 "starters": [
                     {
                         "slotType": slot.slot_type,
@@ -3421,6 +3452,40 @@ class DesktopBackendFacade:
                     }
                     for candidate in lineup.excluded
                 ],
+                # NWR Sunday Readiness overnight cycle, Worker 2 (W2): real,
+                # sourced reserve/taxi and locked-bench members -- kept
+                # distinct from `excluded` (a real status-override
+                # exclusion) and `bench` (a genuinely available, startable
+                # bench player). Neither bucket is ever selectable as an
+                # unconditional START by this endpoint.
+                "reserve": [
+                    {
+                        "sleeperPlayerId": candidate.sleeper_player_id,
+                        "canonicalPlayerId": candidate.canonical_player_id,
+                        "playerName": candidate.player_name,
+                        "position": candidate.position,
+                        "projectedPoints": candidate.projected_points,
+                        "isTaxi": candidate.is_taxi,
+                        "playerAvailabilityStatus": availability_status_by_id.get(
+                            candidate.canonical_player_id
+                        ),
+                    }
+                    for candidate in lineup.reserve
+                ],
+                "lockedUnavailable": [
+                    {
+                        "sleeperPlayerId": candidate.sleeper_player_id,
+                        "canonicalPlayerId": candidate.canonical_player_id,
+                        "playerName": candidate.player_name,
+                        "position": candidate.position,
+                        "projectedPoints": candidate.projected_points,
+                        "playerAvailabilityStatus": availability_status_by_id.get(
+                            candidate.canonical_player_id
+                        ),
+                    }
+                    for candidate in lineup.locked_unavailable
+                ],
+                "gameLock": game_lock.to_dict(),
                 "swaps": [
                     {
                         "slotType": swap.slot_type,

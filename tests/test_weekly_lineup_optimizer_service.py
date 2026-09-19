@@ -24,11 +24,15 @@ def _row(sleeper_id, name, position, points, canonical=None, identity="MATCHED")
     )
 
 
-def _candidate(sleeper_id, name, position, points, starting=False, canonical=None, identity="MATCHED"):
+def _candidate(
+    sleeper_id, name, position, points, starting=False, canonical=None, identity="MATCHED",
+    reserve=False, taxi=False, locked=False,
+):
     return RosterCandidate(
         sleeper_player_id=sleeper_id, canonical_player_id=canonical or f"nwr-{sleeper_id}",
         player_name=name, position=position, team="AAA", projected_points=points,
         identity_match=identity, currently_starting=starting,
+        is_reserve=reserve, is_taxi=taxi, is_locked=locked,
     )
 
 
@@ -181,3 +185,247 @@ def test_close_call_flags_a_small_margin_and_leaves_a_blowout_unflagged() -> Non
     assert flex_slot.close_call is True
     dst_slot = next(slot for slot in result.starters if slot.slot_type == "DST")
     assert dst_slot.close_call is False
+
+
+# ---------------------------------------------------------------------------
+# NWR Sunday Readiness overnight cycle, Worker 2 -- the 5 concrete
+# regression fixtures from the governing brief (section "2. Fix W1-W4"),
+# each written as a real failing-before/passing-after case against the
+# EXACT numbers the brief specifies. "Failing-before" is documented in each
+# test's own comment (traced against the pre-fix source, not re-run against
+# reverted code) rather than re-run live, since the fix already replaced
+# that code in this same file.
+# ---------------------------------------------------------------------------
+
+
+def test_regression_fixture_1_duplicate_sits_produces_one_correct_swap_set() -> None:
+    """Two RB slots; current A=10, B=9; bench C=20, D=19. Correct optimal
+    set is C/D, total gain 20 (39 - 19). BEFORE this pass's fix, the old
+    per-slot-type `_swap_reasons` independently searched the whole bench
+    for "the currently-starting RB" for EACH newly-started RB slot and
+    always picked the single highest-points one (A) both times -- emitting
+    "START C over A" (+10) and "START D over A" (+9), sitting A twice and
+    summing to a wrong displayed total of 19, never mentioning B at all.
+    AFTER: exactly one swap per real newly-benched player, each used once,
+    and the summed displayed deltas equal the real total gain.
+    """
+
+    roster = RosterSettings(qb=0, rb=2, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=10)
+    candidates = [
+        _candidate("a", "A", "RB", 10.0, starting=True),
+        _candidate("b", "B", "RB", 9.0, starting=True),
+        _candidate("c", "C", "RB", 20.0, starting=False),
+        _candidate("d", "D", "RB", 19.0, starting=False),
+    ]
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    started_names = {slot.player.player_name for slot in result.starters if slot.player}
+    assert started_names == {"C", "D"}
+    assert result.projected_total == 39.0
+
+    sat_players = [swap.bench_player for swap in result.swaps_vs_current]
+    # The real bug: A named twice, B never named.
+    assert sorted(sat_players) == ["A", "B"], "each real displaced incumbent must be named exactly once"
+    assert len(result.swaps_vs_current) == 2
+    total_displayed_gain = sum(swap.projected_delta for swap in result.swaps_vs_current)
+    assert total_displayed_gain == 20.0, "displayed swap deltas must sum to the real total gain (39 - 19), not 19"
+
+
+def test_regression_fixture_2_flex_rearrangement_no_longer_disappears() -> None:
+    """RB=1, WR=1, FLEX=1; current RB=10 (RB slot), WR=20 (WR slot), FLEX
+    WR=5 (FLEX slot); bench RB=15. Correct new set is WR20/RB15/RB10(FLEX).
+    BEFORE this pass's fix: the old code's `slot.player.currently_starting`
+    guard skipped the FLEX slot's new occupant (RB10, who is still
+    `currently_starting` via his OLD slot) entirely, and the RB slot's new
+    occupant (RB15) found no same-slot-type (RB-eligible) benched
+    incumbent (the real displaced player, WR5, is a WR) -- so ZERO swaps
+    were emitted and the UI's no-swaps branch claimed "Already optimal"
+    despite the starting SET having actually changed. AFTER: the real
+    before/after ID diff finds WR5 genuinely benched and RB15 genuinely
+    new, and emits the real swap regardless of slot-type mismatch.
+    """
+
+    roster = RosterSettings(qb=0, rb=1, wr=1, te=0, flex=1, superflex=0, k=0, dst=0, bench_size=10)
+    candidates = [
+        _candidate("rb10", "RB10", "RB", 10.0, starting=True),
+        _candidate("wr20", "WR20", "WR", 20.0, starting=True),
+        _candidate("wr5", "WR5", "WR", 5.0, starting=True),
+        _candidate("rb15", "RB15", "RB", 15.0, starting=False),
+    ]
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    started_names = {slot.player.player_name for slot in result.starters if slot.player}
+    assert started_names == {"WR20", "RB15", "RB10"}
+    assert result.projected_total == 45.0
+    # The real bug: this was empty (falsely "Already optimal").
+    assert len(result.swaps_vs_current) >= 1
+    assert any(swap.start_player == "RB15" and swap.bench_player == "WR5" for swap in result.swaps_vs_current)
+
+
+def test_regression_fixture_3_missing_starter_counts_as_unprojected_not_silently_dropped() -> None:
+    """A real roster/starter id with NO row at all in
+    `weekly_projection_service`'s output. BEFORE this pass's fix:
+    `build_roster_candidates` silently `continue`d past it -- the
+    candidate list, the EMPTY slot's own accounting, and
+    `unprojected_starter_count` all showed zero real effect, letting a
+    caller's LIVE-feed confidence gate stay falsely NOMINAL. AFTER: the
+    player is kept (for coverage/explanation) and a real empty starting
+    slot increments `unprojected_starter_count`.
+    """
+
+    roster = RosterSettings(qb=1, rb=0, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=0)
+    candidates = build_roster_candidates(
+        roster_sleeper_player_ids=["missing-1"],
+        starter_sleeper_player_ids=["missing-1"],
+        projection_rows=(),  # no row anywhere for this id -- the real gap
+        status_overrides=(),
+    )
+    # The real bug: this used to be an empty tuple (the player vanished).
+    assert len(candidates) == 1
+    assert candidates[0].identity_match == "UNMATCHED_NO_PROJECTION_ROW"
+    assert candidates[0].projected_points is None
+
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    qb_slot = result.starters[0]
+    assert qb_slot.status == "EMPTY"
+    # The real bug: this was 0 before the fix (an empty slot was invisible
+    # to the confidence gate).
+    assert result.unprojected_starter_count == 1
+    assert len(result.swaps_vs_current) == 0  # no real replacement was available to name
+
+
+def test_regression_fixture_3b_missing_starter_resolves_name_and_position_from_catalog() -> None:
+    """Same real gap as fixture 3, but the caller supplies the real Sleeper
+    player catalog (as the facade does) -- the missing player is now
+    resolved to a real name/position instead of an opaque id, still
+    honestly unprojected."""
+
+    candidates = build_roster_candidates(
+        roster_sleeper_player_ids=["9001"],
+        starter_sleeper_player_ids=["9001"],
+        projection_rows=(),
+        status_overrides=(),
+        player_catalog={"9001": {"position": "RB", "team": "sf", "full_name": "Real Player"}},
+    )
+    assert len(candidates) == 1
+    assert candidates[0].player_name == "Real Player"
+    assert candidates[0].position == "RB"
+    assert candidates[0].team == "SF"
+    assert candidates[0].projected_points is None
+    assert candidates[0].identity_match == "UNMATCHED_NO_PROJECTION_ROW"
+
+
+def test_regression_fixture_4_unmatched_identity_not_promoted_to_ok() -> None:
+    """An unmatched RB with 10 projected points, the only candidate for a
+    single RB slot. BEFORE this pass's fix: the final `LineupSlot.status`
+    was derived purely from `projected_points is None`, so a real,
+    provider-scored-but-identity-UNMATCHED player rendered as plain "OK" --
+    indistinguishable from a confirmed-identity starter. AFTER: identity
+    confirmation is checked FIRST; an unmatched starter is always
+    UNRESOLVED_IDENTITY, never OK, regardless of whether points exist.
+    """
+
+    roster = RosterSettings(qb=0, rb=1, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=0)
+    candidates = [
+        _candidate("u1", "Unknown RB", "RB", 10.0, starting=False, identity="UNMATCHED"),
+    ]
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    rb_slot = result.starters[0]
+    assert rb_slot.player is not None
+    assert rb_slot.player.player_name == "Unknown RB"
+    # The real bug: this was "OK" before the fix.
+    assert rb_slot.status == "UNRESOLVED_IDENTITY"
+    assert rb_slot.status != "OK"
+    assert result.unresolved_identity_starter_count == 1
+    # Points are still real/usable (Sleeper did project 10) -- only the
+    # STATUS label changes, never a silent zeroing of a real number.
+    assert result.projected_total == 10.0
+
+
+def test_kdst_unmatched_identity_is_not_flagged_unresolved_by_design() -> None:
+    """Real, live-reproduced follow-up finding (verified against Fantasy
+    Gamers' real Week 2 roster this pass): NWR's governed ranking has ZERO
+    K/DST rows BY DESIGN (the same established distinction
+    `waiver_engine_service.py`'s own `_OUT_OF_RANKED_MODEL_SCOPE_POSITIONS`
+    draws), so every real K/DST candidate is structurally
+    `identity_match != "MATCHED"` in every league, every week -- never a
+    genuine identity failure. Without this carve-out, fixture 4's fix would
+    make any league that starts a K or DST show permanently LOW confidence
+    for a real, expected scope boundary, not an actual data problem.
+    """
+
+    roster = RosterSettings(qb=0, rb=0, wr=0, te=0, flex=0, superflex=0, k=1, dst=1, bench_size=0)
+    candidates = [
+        _candidate("k1", "Some Kicker", "K", 8.0, identity="UNMATCHED"),
+        _candidate("d1", "NE D/ST", "DST", 6.0, identity="UNMATCHED"),
+    ]
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    statuses = {slot.slot_type: slot.status for slot in result.starters}
+    assert statuses["K"] == "OK"
+    assert statuses["DST"] == "OK"
+    assert result.unresolved_identity_starter_count == 0
+
+
+def test_regression_fixture_5a_reserve_excluded_from_normal_candidate_selection() -> None:
+    """Without a matching hard-exclusion override, a 20-point reserve
+    candidate must NOT beat the active 10-point starter. BEFORE this
+    pass's fix, reserve/taxi membership was not carried into this
+    optimizer at all, so a reserve player retaining a real projection
+    could win the greedy selection outright. AFTER: reserve/taxi are
+    hard-excluded from the normal eligible pool before any point
+    comparison happens.
+    """
+
+    roster = RosterSettings(qb=0, rb=1, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=10)
+    candidates = [
+        _candidate("active", "Active Starter", "RB", 10.0, starting=True),
+        _candidate("reserve", "Reserve Player", "RB", 20.0, starting=False, reserve=True),
+    ]
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    rb_slot = result.starters[0]
+    assert rb_slot.player is not None
+    # The real bug: this would have been "Reserve Player" (20 > 10) before the fix.
+    assert rb_slot.player.player_name == "Active Starter"
+    assert any(c.player_name == "Reserve Player" for c in result.reserve)
+    assert not any(c.player_name == "Reserve Player" for c in result.bench)
+
+
+def test_regression_fixture_5b_locked_starter_is_pinned_not_swapped_out() -> None:
+    """A 10-point ALREADY-LOCKED starter must not be swapped for a
+    20-point bench candidate -- his real game already kicked off, so NWR
+    cannot legally recommend benching him. BEFORE this pass's fix, lock
+    state was not carried into this optimizer at all, so pure point
+    comparison would have swapped him out. AFTER: a locked current
+    starter is pinned in phase 1, before the normal greedy comparison
+    ever runs.
+    """
+
+    roster = RosterSettings(qb=0, rb=1, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=10)
+    candidates = [
+        _candidate("locked", "Locked Starter", "RB", 10.0, starting=True, locked=True),
+        _candidate("bench", "Bench Upgrade", "RB", 20.0, starting=False, locked=False),
+    ]
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    rb_slot = result.starters[0]
+    assert rb_slot.player is not None
+    # The real bug: this would have been "Bench Upgrade" (20 > 10) before the fix.
+    assert rb_slot.player.player_name == "Locked Starter"
+    assert any(c.player_name == "Bench Upgrade" for c in result.bench)
+    assert len(result.swaps_vs_current) == 0
+
+
+def test_regression_fixture_5c_locked_bench_player_excluded_from_new_starts() -> None:
+    """A bench player whose own game already kicked off (locked) and who
+    was NOT already starting must never be newly started this week, even
+    when he is the only real candidate for an open slot -- inserting him
+    now would be illegal on the real platform. The slot must stay real and
+    visibly EMPTY, not silently filled by an illegal move."""
+
+    roster = RosterSettings(qb=0, rb=1, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=10)
+    candidates = [
+        _candidate("locked_bench", "Locked Bench Player", "RB", 25.0, starting=False, locked=True),
+    ]
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    rb_slot = result.starters[0]
+    assert rb_slot.player is None
+    assert rb_slot.status == "EMPTY"
+    assert any(c.player_name == "Locked Bench Player" for c in result.locked_unavailable)
+

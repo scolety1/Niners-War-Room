@@ -42,6 +42,8 @@ import {
   resolveSeasonProjectionBasisCaption,
   useAsync,
   useFreeAgents,
+  useProviderWeek,
+  useWeekSelection,
 } from "./weekly-shared";
 
 /**
@@ -86,10 +88,24 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
     [searchParams, setSearchParams],
   );
 
+  // NWR Sunday Readiness overnight cycle, Worker 2 (W1 fix): the real,
+  // reproduced bug -- this page previously hardcoded BOTH the waiver week
+  // (`useState(1)`) and the streamer week (`useState(1)`, below) instead
+  // of reusing Weekly Home's own already-correct provider-week mechanism.
+  // A real Week 2 owner could silently get Week 1 THIS_WEEK waiver/
+  // streamer recommendations with no loading/unknown state in between.
+  // Both now derive from the SAME real provider-week source
+  // (`useProviderWeek`, weekly-shared.tsx), each with its own independent
+  // manual override (a waiver decision and a streamer decision are real,
+  // separate NFL weeks the owner may be planning at once -- unchanged from
+  // this page's own prior documented intent for the streamer week).
+  const profileIdForWeek = isSleeper ? data.activeProfileId : null;
+  const { providerWeek, error: weekContextError } = useProviderWeek(client, profileIdForWeek);
+
   // Shared Waivers read -- backs Targets, Add-Drop, and FAAB alike (all
   // three are different views over the exact same `WaiversResult`).
   const [mode, setMode] = useState<"THIS_WEEK" | "REST_OF_SEASON">("REST_OF_SEASON");
-  const [week, setWeek] = useState(1);
+  const { week, manualWeekOverride: manualWaiverWeekOverride, setManualWeekOverride: setManualWaiverWeekOverride, usingProviderWeek: usingProviderWaiverWeek } = useWeekSelection(providerWeek, profileIdForWeek);
   const [position, setPosition] = useState("ALL");
   const [selectedAddId, setSelectedAddId] = useState<string | null>(null);
 
@@ -122,11 +138,14 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
     }
   }, [data.activeProfileId]);
 
+  // W1 fix: THIS_WEEK mode must not fire until the real provider week has
+  // resolved (or the owner picked one manually) -- never silently request
+  // Week 1. REST_OF_SEASON is unaffected (it never depended on `week`).
   const waiversLoader = useCallback(
-    () => (isSleeper
+    () => (isSleeper && (mode !== "THIS_WEEK" || week != null)
       ? client.redraftWaivers({
         mode,
-        ...(mode === "THIS_WEEK" ? { week } : {}),
+        ...(mode === "THIS_WEEK" && week != null ? { week } : {}),
         ...(budgetScenario ? { budgetScenario } : {}),
       })
       : null),
@@ -145,8 +164,10 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
 
   // K/DST Streamer read -- own week/horizon, independent of the Waivers
   // week above (a streamer decision and a weekly-lineup decision are real,
-  // separate NFL weeks the owner may be planning at once).
-  const [streamerWeek, setStreamerWeek] = useState(1);
+  // separate NFL weeks the owner may be planning at once). W1 fix: was
+  // `useState(1)` -- now derived from the same real provider-week source,
+  // with its own independent manual override.
+  const { week: streamerWeek, manualWeekOverride: manualStreamerWeekOverride, setManualWeekOverride: setManualStreamerWeekOverride, usingProviderWeek: usingProviderStreamerWeek } = useWeekSelection(providerWeek, profileIdForWeek);
   const [streamerHorizon, setStreamerHorizon] = useState<StreamerHorizon>("This Week");
   const [streamerResults, setStreamerResults] = useState<KdstStreamerResult[]>([]);
   const [streamerError, setStreamerError] = useState<NwrApiError | null>(null);
@@ -157,7 +178,9 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
     setStreamerError(null);
   }, [data.activeProfileId]);
   const loadStreamers = useCallback(async () => {
-    if (streamerWorking || !provider?.configured) return;
+    // W1 fix: never load streamers for an unresolved week (would have
+    // silently meant "Week 1" before this pass).
+    if (streamerWorking || !provider?.configured || streamerWeek == null) return;
     setStreamerWorking(true);
     setStreamerError(null);
     setStreamerResults([]);
@@ -213,6 +236,28 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
       status={waivers ? <StatusBadge tone="safe" label={`${waivers.addCandidates.length} targets`} /> : undefined}
     />
     {!isSleeper ? <EmptyState title="Sleeper league required" message="Improve Team needs a live Sleeper roster and the governed NWR ranking." /> : null}
+    {/* W1 fix: an honest loading state while the real provider week is
+        still resolving, instead of silently requesting Week 1. Only
+        matters for THIS_WEEK-scoped reads (Targets/Add-Drop THIS_WEEK
+        mode, Streamers) -- REST_OF_SEASON never depended on this. */}
+    {isSleeper && providerWeek == null && !weekContextError ? (
+      <div className="alert-strip alert-strip--pending" role="status">
+        <strong>Loading…</strong>
+        <span>Reading this league's real current NFL week before requesting a THIS WEEK read.</span>
+      </div>
+    ) : null}
+    {weekContextError ? <ErrorState message={weekContextError.message} recovery={weekContextError.recoveryAction} /> : null}
+    {isSleeper && providerWeek != null && (manualWaiverWeekOverride !== null || manualStreamerWeekOverride !== null) ? (
+      <p className="copy-muted">
+        Real current NFL week is {providerWeek}.
+        {manualWaiverWeekOverride !== null && manualWaiverWeekOverride !== providerWeek ? (
+          <> Waivers/Targets week manually set to {manualWaiverWeekOverride}. <Button variant="ghost" onClick={() => setManualWaiverWeekOverride(null)}>Use current week</Button></>
+        ) : null}
+        {manualStreamerWeekOverride !== null && manualStreamerWeekOverride !== providerWeek ? (
+          <> Streamers week manually set to {manualStreamerWeekOverride}. <Button variant="ghost" onClick={() => setManualStreamerWeekOverride(null)}>Use current week</Button></>
+        ) : null}
+      </p>
+    ) : null}
     <nav aria-label="Improve Team sections" className="nwr-tabbar" role="tablist">
       {IMPROVE_TEAM_TABS.map((item) => (
         <button
@@ -241,9 +286,9 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
         seasonSourceAsOf={data.status.sourceAsOf}
         setMode={setMode}
         setPosition={setPosition}
-        setWeek={setWeek}
+        setWeek={setManualWaiverWeekOverride}
         waivers={waivers}
-        week={week}
+        week={week ?? providerWeek ?? 1}
         working={waiversWorking}
       />
     ) : null}
@@ -287,8 +332,8 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
         provider={provider}
         results={streamerResults}
         setHorizon={setStreamerHorizon}
-        setWeek={setStreamerWeek}
-        week={streamerWeek}
+        setWeek={setManualStreamerWeekOverride}
+        week={streamerWeek ?? providerWeek ?? 1}
         working={streamerWorking}
       />
     ) : null}

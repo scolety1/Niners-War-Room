@@ -33,6 +33,14 @@ describe("statusTone (Start/Sit status heuristic)", () => {
     expect(statusTone(null)).toBe("review");
     expect(statusTone(undefined)).toBe("review");
   });
+  // NWR Sunday Readiness overnight cycle, Worker 2 (W3 regression): real
+  // bug -- this real backend status string (weekly_lineup_optimizer_
+  // service's `UNRESOLVED_IDENTITY`) previously matched none of the
+  // "review" substrings and fell through to "safe", making an
+  // identity-unconfirmed starter look identical to a confirmed OK one.
+  it("reads an unresolved-identity starter as review, never safe", () => {
+    expect(statusTone("UNRESOLVED_IDENTITY")).toBe("review");
+  });
 });
 
 describe("Weekly Home NWR Actions category maps", () => {

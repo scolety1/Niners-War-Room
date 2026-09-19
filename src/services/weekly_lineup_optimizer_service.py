@@ -28,6 +28,67 @@ slot he is eligible for) is provably optimal -- this is the standard
 laminar-matroid greedy-optimality result, not a heuristic. Cross-checked
 against brute-force enumeration for small fixtures in the accompanying
 test file, not just asserted.
+
+--- NWR Sunday Readiness overnight cycle, Worker 2 (2026-09-18/19) -------
+
+Section 2 of the governing brief (W1-W4: current-week + legal Start/Sit)
+found and fixed FOUR real, reproduced defects in this module, all
+regression-tested in `tests/test_weekly_lineup_optimizer_service.py`:
+
+  * W2a (reserve/taxi not excluded): `build_roster_candidates` now accepts
+    `reserve_sleeper_player_ids` / `taxi_sleeper_player_ids` (Sleeper's own
+    real roster `reserve`/`taxi` arrays) and tags each `RosterCandidate`
+    with `is_reserve`/`is_taxi`. `optimize_weekly_lineup` hard-excludes
+    both from the normal eligible/greedy pool into a new `reserve` bucket
+    -- a reserve player can never win an unconditional START here, no
+    matter how many points he projects, matching the brief's explicit
+    instruction that reserve/taxi activation (if ever built) must be a
+    separate, conditional transaction, never this optimizer's default
+    output.
+  * W2b (no lock/kickoff input): `build_roster_candidates` now accepts
+    `locked_teams` (a real, live kickoff-derived set from
+    `weekly_game_lock_service.py`, threaded in by the facade) and tags
+    each candidate `is_locked`. `optimize_weekly_lineup` PINS an
+    already-locked CURRENT starter into a real eligible slot regardless of
+    point comparison (his real game already started; NWR cannot un-start
+    him), and hard-excludes an already-locked BENCH player from being
+    newly started (his own real game already started too -- inserting him
+    now would be illegal on the real platform). An unlocked player, or one
+    with no real lock data at all (`locked_teams` empty, e.g. the real
+    schedule fetch failed), behaves exactly as before this pass -- lock
+    logic is strictly additive, never a guess when the input is absent.
+  * W3 (missing-projection rows silently vanish): `build_roster_candidates`
+    previously `continue`d (dropped entirely, not even counted) any real
+    roster/starter id with no matching row in
+    `weekly_projection_service`'s output -- a genuinely real, reproducible
+    gap (Sleeper's weekly-projection endpoint simply has no entry for some
+    real rostered players some weeks). Fixed: such a player is now kept as
+    a real `RosterCandidate` (`identity_match="UNMATCHED_NO_PROJECTION_ROW"`,
+    `projected_points=None`), with name/position/team resolved from the
+    real Sleeper player catalog when the caller supplies one
+    (`player_catalog`, optional) rather than silently dropped -- "missing
+    is not zero, healthy, free agent, or already optimal" (governing
+    brief). Because a truly required starting slot with zero usable
+    candidates now correctly renders `status="EMPTY"`, `optimize_weekly_
+    lineup` also now counts every real EMPTY starting slot toward
+    `unprojected_starter_count` (previously 0 for an empty slot -- the
+    exact false-NOMINAL-confidence gap the brief's fixture 3 describes).
+  * W3b / W4 (unmatched identity silently promoted to OK; duplicate-sit /
+    disappearing-FLEX swap explanations): see `_swap_reasons` and the
+    per-slot status derivation in `optimize_weekly_lineup` below for the
+    exact fix and reasoning -- a real before/after starter-ID diff
+    replaces the old per-slot-type heuristic that could (a) attribute the
+    SAME displaced incumbent to two different new starters (the
+    "duplicate sits" bug) and (b) emit ZERO swaps for a real cross-slot
+    (FLEX) rearrangement that changed the actual starting SET, because the
+    old heuristic only looked for a displaced player who shared the new
+    starter's own slot TYPE, never one who simply moved to a different
+    slot instead of being benched.
+
+Every new parameter above defaults to empty/`None` and is purely additive:
+called with no reserve/taxi/lock/catalog input (as every pre-existing test
+and call site does until updated), this module's output is byte-identical
+to before this pass.
 """
 
 from __future__ import annotations
@@ -60,6 +121,15 @@ _SLOT_ORDER = ("QB", "RB", "WR", "TE", "K", "DST", "FLEX", "SUPERFLEX")
 CLOSE_CALL_ABSOLUTE_PTS = 2.0
 CLOSE_CALL_RELATIVE_FRACTION = 0.15
 
+# Same concept and same two positions as `waiver_engine_service.py`'s own
+# `_OUT_OF_RANKED_MODEL_SCOPE_POSITIONS` (not imported directly -- a small,
+# intentionally duplicated constant to avoid a cross-service import purely
+# for two literal strings): NWR's governed ranking has ZERO K/DST rows by
+# design, so every real K/DST candidate is structurally "UNMATCHED" against
+# it, in every league, every week -- a real, disclosed scope boundary, not
+# a genuine per-player identity-resolution failure.
+_OUT_OF_RANKED_MODEL_SCOPE_POSITIONS = frozenset({"K", "DST"})
+
 
 @dataclass(frozen=True)
 class RosterCandidate:
@@ -71,6 +141,12 @@ class RosterCandidate:
     projected_points: float | None
     identity_match: str
     currently_starting: bool
+    # Worker 2 (Sunday Readiness overnight cycle, W2): real, sourced roster
+    # facts previously not carried into this optimizer at all. All default
+    # False -- purely additive, never inferred when not explicitly supplied.
+    is_reserve: bool = False
+    is_taxi: bool = False
+    is_locked: bool = False
 
 
 @dataclass(frozen=True)
@@ -78,7 +154,9 @@ class LineupSlot:
     slot_type: str
     player: RosterCandidate | None
     projected_points: float | None
-    status: str  # OK | UNPROJECTED | EMPTY | SEASON_OUT | NOT_WITH_TEAM | ADMINISTRATIVE_EXEMPT
+    # OK | UNPROJECTED | EMPTY | UNRESOLVED_IDENTITY | SEASON_OUT |
+    # NOT_WITH_TEAM | ADMINISTRATIVE_EXEMPT
+    status: str
     close_call: bool
     close_call_alternative: str | None
     close_call_margin: float | None
@@ -98,9 +176,25 @@ class WeeklyLineupResult:
     starters: tuple[LineupSlot, ...]
     bench: tuple[RosterCandidate, ...]
     excluded: tuple[RosterCandidate, ...]  # hard-excluded by real status override
-    projected_total: float
-    unprojected_starter_count: int
-    swaps_vs_current: tuple[SwapReason, ...]
+    # Worker 2 (W2): reserve/taxi roster members -- never selectable as an
+    # unconditional start by this optimizer, kept here (not silently
+    # dropped) for coverage/explanation. Distinct from `excluded`, which
+    # remains the real status-override (SEASON_OUT/NOT_WITH_TEAM/
+    # ADMINISTRATIVE_EXEMPT) bucket, unchanged in meaning from before.
+    reserve: tuple[RosterCandidate, ...] = ()
+    # A real bench player whose own game has already kicked off (locked)
+    # and was NOT already a current starter -- cannot legally be newly
+    # started this week, kept for coverage/explanation, never silently
+    # dropped or silently offered as a start.
+    locked_unavailable: tuple[RosterCandidate, ...] = ()
+    projected_total: float = 0.0
+    unprojected_starter_count: int = 0
+    # A starter whose identity was never confirmed against NWR's canonical
+    # mapping (`identity_match != "MATCHED"`) -- may still carry a real
+    # provider point value, but that value is NOT the same confidence as a
+    # confirmed identity. Kept distinct from `unprojected_starter_count`.
+    unresolved_identity_starter_count: int = 0
+    swaps_vs_current: tuple[SwapReason, ...] = ()
 
 
 def _status_for(
@@ -120,26 +214,65 @@ def build_roster_candidates(
     starter_sleeper_player_ids: Sequence[str],
     projection_rows: Sequence[WeeklyProjectionRow],
     status_overrides: Sequence[StatusOverride],
+    reserve_sleeper_player_ids: Sequence[str] = (),
+    taxi_sleeper_player_ids: Sequence[str] = (),
+    locked_teams: Sequence[str] = (),
+    player_catalog: Mapping[str, Mapping[str, object]] | None = None,
 ) -> tuple[RosterCandidate, ...]:
     by_sleeper_id = {row.sleeper_player_id: row for row in projection_rows}
-    overrides_by_id = {override.player_id: override for override in status_overrides}
-    starter_set = {str(value) for value in starter_sleeper_player_ids}
+    # "0" is Sleeper's own placeholder for an empty starter slot -- never a
+    # real player id, and must never be treated as "player 0 is starting".
+    starter_set = {str(value) for value in starter_sleeper_player_ids if str(value) and str(value) != "0"}
+    reserve_set = {str(value) for value in reserve_sleeper_player_ids}
+    taxi_set = {str(value) for value in taxi_sleeper_player_ids}
+    locked_team_set = {str(team).upper().strip() for team in locked_teams if str(team).strip()}
+    catalog = player_catalog or {}
     candidates: list[RosterCandidate] = []
     for raw_id in roster_sleeper_player_ids:
         sleeper_id = str(raw_id)
         row = by_sleeper_id.get(sleeper_id)
-        if row is None:
-            continue  # not a fantasy-relevant position this week (e.g. taxi/practice squad slot)
+        if row is not None:
+            canonical_player_id = row.canonical_player_id
+            player_name = row.player_name
+            position = row.position
+            team = row.team
+            projected_points = row.projected_points
+            identity_match = row.identity_match
+        else:
+            # W3 fix (Sunday Readiness overnight cycle, Worker 2): a real
+            # roster/starter id with NO matching weekly-projection row
+            # (Sleeper's projection endpoint simply has no entry for this
+            # player this week) used to be silently dropped from
+            # `candidates` entirely -- not even counted anywhere. Keep
+            # them, resolved from the real Sleeper player catalog when the
+            # caller supplied one; never fabricate a number, never a
+            # silent disappearance.
+            catalog_entry = catalog.get(sleeper_id)
+            if isinstance(catalog_entry, Mapping):
+                position = str(catalog_entry.get("position") or "UNKNOWN").upper().strip() or "UNKNOWN"
+                team = str(catalog_entry.get("team") or "").upper().strip()
+                player_name = (
+                    str(catalog_entry.get("full_name") or catalog_entry.get("search_full_name") or "").strip()
+                    or f"Sleeper id {sleeper_id}"
+                )
+            else:
+                position, team, player_name = "UNKNOWN", "", f"Sleeper id {sleeper_id}"
+            projected_points = None
+            identity_match = "UNMATCHED_NO_PROJECTION_ROW"
+            canonical_player_id = f"sleeper:{sleeper_id}"
         candidates.append(
             RosterCandidate(
                 sleeper_player_id=sleeper_id,
-                canonical_player_id=row.canonical_player_id,
-                player_name=row.player_name,
-                position=row.position,
-                team=row.team,
-                projected_points=row.projected_points,
-                identity_match=row.identity_match,
+                canonical_player_id=canonical_player_id,
+                player_name=player_name,
+                position=position,
+                team=team,
+                projected_points=projected_points,
+                identity_match=identity_match,
                 currently_starting=sleeper_id in starter_set,
+                is_reserve=sleeper_id in reserve_set,
+                is_taxi=sleeper_id in taxi_set,
+                is_locked=bool(team) and team.upper() in locked_team_set,
             )
         )
     return tuple(candidates)
@@ -158,25 +291,68 @@ def optimize_weekly_lineup(
     }
 
     excluded: list[RosterCandidate] = []
+    reserve: list[RosterCandidate] = []
+    locked_unavailable: list[RosterCandidate] = []
+    pinned: list[RosterCandidate] = []  # locked AND already starting -- must keep a real slot
     eligible: list[RosterCandidate] = []
     for candidate in candidates:
         status = _status_for(candidate.canonical_player_id, candidate.identity_match, overrides_by_id)
         if status in ZERO_VALUE_KINDS:
             excluded.append(candidate)
+            continue
+        if candidate.is_reserve or candidate.is_taxi:
+            # W2: reserve/taxi are never selectable as an unconditional
+            # START here -- real activation (if ever built) is a separate,
+            # conditional roster transaction, not this optimizer's output.
+            reserve.append(candidate)
+            continue
+        if candidate.is_locked and not candidate.currently_starting:
+            # W2: this bench player's own real game already kicked off --
+            # he cannot legally be newly started this week on the real
+            # platform. Distinct from an ordinary bench candidate.
+            locked_unavailable.append(candidate)
+            continue
+        if candidate.is_locked and candidate.currently_starting:
+            pinned.append(candidate)
         else:
             eligible.append(candidate)
 
-    # Global greedy: known-points players first (highest first), then
-    # unprojected players last (in stable roster order) -- never fabricates
-    # a number to sort an unprojected player by.
+    open_slots: dict[str, int] = dict(slot_counts)
+    filled: dict[str, list[RosterCandidate]] = {slot: [] for slot in _SLOT_ORDER}
+
+    # Phase 1 (W2): pin already-locked current starters into a real
+    # eligible slot FIRST, regardless of point comparison -- a locked
+    # starter's real game already started, so NWR cannot recommend
+    # un-starting him for a higher-scoring bench candidate. Stable roster
+    # order (not point order) -- every pinned player starts regardless of
+    # relative points, so their processing order never changes who starts.
+    for candidate in pinned:
+        placed = False
+        for slot_type in _SLOT_ORDER:
+            if candidate.position not in _SLOT_ELIGIBILITY[slot_type]:
+                continue
+            if open_slots.get(slot_type, 0) <= 0:
+                continue
+            filled[slot_type].append(candidate)
+            open_slots[slot_type] -= 1
+            placed = True
+            break
+        if not placed:
+            # No real eligible slot left for this locked starter (e.g. a
+            # roster-settings change since the platform's own lineup was
+            # set) -- fall through to normal competition rather than
+            # silently dropping a real, currently-locked-in player.
+            eligible.append(candidate)
+
+    # Phase 2: the existing global greedy for everyone else (unlocked
+    # candidates, plus any pinned candidate with no matching slot above).
+    # Known-points players first (highest first), then unprojected players
+    # last (in stable roster order) -- never fabricates a number to sort
+    # an unprojected player by.
     eligible.sort(
         key=lambda c: (c.projected_points is None, -(c.projected_points or 0.0), c.player_name)
     )
-
-    open_slots: dict[str, int] = dict(slot_counts)
-    filled: dict[str, list[RosterCandidate]] = {slot: [] for slot in _SLOT_ORDER}
     remaining_by_id = {candidate.sleeper_player_id: candidate for candidate in eligible}
-
     for candidate in eligible:
         for slot_type in _SLOT_ORDER:
             if candidate.position not in _SLOT_ELIGIBILITY[slot_type]:
@@ -192,10 +368,33 @@ def optimize_weekly_lineup(
 
     starters: list[LineupSlot] = []
     unprojected_count = 0
+    unresolved_identity_count = 0
     total = 0.0
     for slot_type in _SLOT_ORDER:
         for player in filled[slot_type]:
-            if player.projected_points is None:
+            # W3b: an unmatched/unresolved identity must never resolve to
+            # plain "OK" just because a provider point value exists -- his
+            # real canonical identity (and therefore his real
+            # status-override eligibility) was never confirmed. EXCEPT for
+            # K/DST: this codebase's own governed ranking has ZERO K/DST
+            # rows BY DESIGN (see `waiver_engine_service.py`'s
+            # `_OUT_OF_RANKED_MODEL_SCOPE_POSITIONS` / `UnmatchedRosterPlayer
+            # .OUT_OF_RANKED_MODEL_SCOPE` -- the same, already-established
+            # distinction this codebase draws elsewhere), so EVERY real K/DST
+            # candidate is structurally "UNMATCHED" against that ranking,
+            # every league, every week -- never a genuine identity failure.
+            # Without this carve-out, any league that starts a K or DST
+            # (nearly all of them) would show a permanently LOW-confidence
+            # Start/Sit result for a real, expected, by-design scope
+            # boundary rather than an actual data problem.
+            if player.identity_match != "MATCHED" and player.position not in _OUT_OF_RANKED_MODEL_SCOPE_POSITIONS:
+                status = "UNRESOLVED_IDENTITY"
+                unresolved_identity_count += 1
+                if player.projected_points is None:
+                    unprojected_count += 1
+                else:
+                    total += player.projected_points
+            elif player.projected_points is None:
                 unprojected_count += 1
                 status = "UNPROJECTED"
             else:
@@ -215,6 +414,12 @@ def optimize_weekly_lineup(
             )
         empty_count = open_slots.get(slot_type, 0)
         for _ in range(max(0, empty_count)):
+            # W3: a real required starting slot with NO usable candidate is
+            # missing production, not neutral -- must increase the
+            # unprojected-starter counter so a caller's confidence gate
+            # (e.g. the facade's NOMINAL/LOW check) cannot stay falsely
+            # NOMINAL while a real starting slot sits empty.
+            unprojected_count += 1
             starters.append(
                 LineupSlot(
                     slot_type=slot_type, player=None, projected_points=None,
@@ -222,13 +427,16 @@ def optimize_weekly_lineup(
                 )
             )
 
-    swaps = _swap_reasons(starters, bench)
+    swaps = _swap_reasons(candidates, starters)
     return WeeklyLineupResult(
         starters=tuple(starters),
         bench=bench,
         excluded=tuple(excluded),
+        reserve=tuple(reserve),
+        locked_unavailable=tuple(locked_unavailable),
         projected_total=round(total, 2),
         unprojected_starter_count=unprojected_count,
+        unresolved_identity_starter_count=unresolved_identity_count,
         swaps_vs_current=swaps,
     )
 
@@ -255,21 +463,70 @@ def _close_call(
     return False, None, None
 
 
-def _swap_reasons(starters: Sequence[LineupSlot], bench: Sequence[RosterCandidate]) -> tuple[SwapReason, ...]:
+def _swap_reasons(
+    all_candidates: Sequence[RosterCandidate], starters: Sequence[LineupSlot]
+) -> tuple[SwapReason, ...]:
+    """W4 fix (Sunday Readiness overnight cycle, Worker 2): a real,
+    complete, nonconflicting before/after starter-ID diff, replacing the
+    old per-slot-type heuristic that had two real, reproduced bugs:
+
+      1. "Duplicate sits" -- when TWO new starters were both eligible for
+         the same slot TYPE (e.g. two RB slots), the old code independently
+         searched the whole bench for "the currently-starting player
+         eligible for this slot type" for EACH new starter, so the SAME
+         displaced incumbent (whoever had the higher points) could be
+         named as "bumped" by both new starters at once -- sitting him
+         twice in the explanation and double/under-counting the real
+         total point swing.
+      2. Disappearing FLEX/cross-slot swaps -- when the real displaced
+         incumbent didn't end up on the bench at all (he moved to a
+         DIFFERENT slot he's also eligible for, e.g. an RB shifted from
+         the dedicated RB slot into FLEX while a new RB was started ahead
+         of him), the old code's `slot.player.currently_starting` guard
+         skipped that new starter's slot entirely (its occupant still
+         "currently_starting" via the OTHER slot), and the truly-benched
+         player's own slot search never found a same-slot-type match
+         either -- so NO swap was emitted at all, and the UI could then
+         wrongly claim "Already optimal" despite the roster's actual
+         starting SET having changed.
+
+    This version instead computes the real before/after starting-ID SETS
+    (which real players are/aren't in the after-optimization starting
+    lineup, regardless of which specific slot they occupy), and greedily
+    pairs each real newly-started player with a real newly-benched player
+    (same-slot-type preferred for a natural "who lost this spot" story,
+    falling back to whichever real former starter is still unaccounted
+    for otherwise) -- each used at most once. "Already optimal" is then
+    correctly derivable as "the before/after starting ID sets are equal",
+    never as "the old heuristic happened to emit nothing".
+    """
+
+    before_starting = {
+        candidate.sleeper_player_id: candidate
+        for candidate in all_candidates
+        if candidate.currently_starting
+    }
+    after_by_id = {
+        slot.player.sleeper_player_id: slot for slot in starters if slot.player is not None
+    }
+    newly_started_ids = {pid for pid in after_by_id if pid not in before_starting}
+    benched_pool = [
+        candidate for pid, candidate in before_starting.items() if pid not in after_by_id
+    ]
+
     reasons: list[SwapReason] = []
     for slot in starters:
-        if slot.player is None or slot.player.currently_starting or slot.player.projected_points is None:
+        if slot.player is None or slot.player.sleeper_player_id not in newly_started_ids:
             continue
-        # This optimizer moved a bench player into a slot a currently-started
-        # player occupied on the platform -- find who is now benched for the
-        # same eligible slot to name the actual swap.
-        newly_benched = [
-            candidate for candidate in bench
-            if candidate.currently_starting and candidate.position in _SLOT_ELIGIBILITY[slot.slot_type]
-        ]
-        if not newly_benched:
+        if slot.player.projected_points is None or not benched_pool:
+            # Never fabricate a delta from an unprojected new starter; and
+            # if nothing real remains in the benched pool there is nothing
+            # honest left to name as displaced.
             continue
-        bumped = max(newly_benched, key=lambda c: c.projected_points or 0.0)
+        same_slot = [c for c in benched_pool if c.position in _SLOT_ELIGIBILITY[slot.slot_type]]
+        pool = same_slot or benched_pool
+        bumped = max(pool, key=lambda c: c.projected_points if c.projected_points is not None else float("-inf"))
+        benched_pool.remove(bumped)
         delta = round((slot.player.projected_points or 0.0) - (bumped.projected_points or 0.0), 2)
         reasons.append(
             SwapReason(

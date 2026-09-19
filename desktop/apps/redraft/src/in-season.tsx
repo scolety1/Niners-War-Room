@@ -55,7 +55,8 @@ import {
   resolveWeekDisplay,
   statusTone,
   useAsync,
-  useLeagueWorkspaceContext,
+  useProviderWeek,
+  useWeekSelection,
 } from "./weekly-shared";
 
 const HOME_MAX_ACTIONS = 5;
@@ -109,14 +110,18 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
   // (hardcoded `useState(1)`). `manualWeekOverride` stays `null` until the
   // owner explicitly changes it, and is reset on every league switch so a
   // previous league's manual choice never leaks into a newly opened one.
-  const { result: context, error: contextError } = useLeagueWorkspaceContext(client, data.activeProfileId);
+  // NWR Sunday Readiness overnight cycle, Worker 2: pure refactor onto the
+  // now-shared `useProviderWeek`/`useWeekSelection` hooks (weekly-shared.tsx)
+  // -- same resolved values, same `?? 1` display fallback at this one call
+  // site, unchanged behavior from before this pass. Start/Sit and Improve
+  // Team now reuse this exact mechanism instead of hardcoding Week 1.
+  const { context, error: contextError } = useProviderWeek(client, data.activeProfileId);
+  const { week: resolvedWeek, manualWeekOverride, setManualWeekOverride, usingProviderWeek } = useWeekSelection(
+    context?.currentWeek ?? null,
+    data.activeProfileId,
+  );
   const providerWeek = context?.currentWeek ?? null;
-  const [manualWeekOverride, setManualWeekOverride] = useState<number | null>(null);
-  useEffect(() => {
-    setManualWeekOverride(null);
-  }, [data.activeProfileId]);
-  const week = manualWeekOverride ?? providerWeek ?? 1;
-  const usingProviderWeek = manualWeekOverride === null && providerWeek !== null;
+  const week = resolvedWeek ?? 1;
 
   // NWR pre-UI architecture CLOSURE pass (directive section 3): ONE
   // request builds the whole Home render -- `redraftWeeklyHomeActions` now
@@ -338,15 +343,30 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
 
 export function LineupPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const isSleeper = data.activeProfile?.provider === "sleeper";
-  const [week, setWeek] = useState(1);
-  const loader = useCallback(() => (isSleeper ? client.redraftWeeklyLineup(week) : null), [client, isSleeper, week]);
+  const profileId = isSleeper ? data.activeProfileId : null;
+  // NWR Sunday Readiness overnight cycle, Worker 2 (W1 fix): this page
+  // used to `useState(1)` -- a hardcoded Week 1 default that could serve
+  // (and silently REQUEST) a Week 1 lineup during a real later week, with
+  // no loading/unknown state in between. Now reuses the same
+  // provider-week mechanism Weekly Home already used (`useProviderWeek`/
+  // `useWeekSelection`, weekly-shared.tsx) -- `week` stays `null` (never a
+  // fabricated 1) until the real provider week resolves or the owner
+  // picks one manually, and the loader below gates on `week != null` so
+  // no request is ever sent for an unresolved week.
+  const { providerWeek, error: contextError, working: contextWorking } = useProviderWeek(client, profileId);
+  const { week, manualWeekOverride, setManualWeekOverride, usingProviderWeek } = useWeekSelection(providerWeek, profileId);
+  const resolvingWeek = week === null && (contextWorking || (profileId != null && providerWeek == null));
+  const loader = useCallback(
+    () => (isSleeper && week != null ? client.redraftWeeklyLineup(week) : null),
+    [client, isSleeper, week],
+  );
   const { result, error, working, reload } = useAsync(loader, [isSleeper, week, data.activeProfileId]);
   // Week-display race fix (shared upgrade B, 2026-09-16): same bug class
   // and fix as WeeklyHomePage above -- see `resolveWeekDisplay` in
   // weekly-shared.tsx. The title used to render the raw `week` input
   // while the starters/swaps/bench below still showed the PREVIOUS
   // week's resolved `result` until the new fetch landed.
-  const weekDisplay = resolveWeekDisplay(week, result?.week ?? null);
+  const weekDisplay = resolveWeekDisplay(week ?? 0, result?.week ?? null);
   // NWR pre-UI architecture CLOSURE pass (directive section 5): the same
   // global Player Detail primitive Waivers uses below -- see
   // player-detail-context.tsx.
@@ -372,12 +392,27 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
   return <>
     <PageHeader
       eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"}
-      title={`Start / Sit — THIS WEEK (Week ${weekDisplay.displayWeek})`}
+      title={week == null ? "Start / Sit — THIS WEEK (week loading…)" : `Start / Sit — THIS WEEK (Week ${weekDisplay.displayWeek})`}
       description="NWR's recommended legal lineup for this week only -- never confused with rest-of-season rankings. Recommendation-only: NWR never writes a lineup to Sleeper."
       status={result ? <StatusBadge tone={result.providerHealth.freshness === "STALE" ? "review" : "safe"} label={`${result.matched} matched · ${result.unmatched} unmatched`} /> : undefined}
-      actions={<div className="profile-edit-actions"><WeekControl week={week} onChange={setWeek} /><RefreshProjectionsButton onRefresh={reload} working={working} /></div>}
+      actions={<div className="profile-edit-actions">
+        <WeekControl week={week ?? providerWeek ?? 1} onChange={setManualWeekOverride} label={usingProviderWeek ? "NFL week (auto)" : "NFL week (manual)"} />
+        {manualWeekOverride !== null && providerWeek !== null && manualWeekOverride !== providerWeek ? (
+          <Button variant="ghost" onClick={() => setManualWeekOverride(null)}>Use current week ({providerWeek})</Button>
+        ) : null}
+        <RefreshProjectionsButton onRefresh={reload} working={working} />
+      </div>}
     />
     {!isSleeper ? <EmptyState title="Sleeper league required" message="Start/Sit needs a live Sleeper roster and the real weekly-projection source." /> : null}
+    {/* W1 fix: while the real provider week is still resolving, show an
+        honest loading state instead of silently requesting Week 1. */}
+    {isSleeper && resolvingWeek ? (
+      <div className="alert-strip alert-strip--pending" role="status">
+        <strong>Loading…</strong>
+        <span>Reading this league's real current NFL week before requesting a lineup.</span>
+      </div>
+    ) : null}
+    {contextError ? <ErrorState message={contextError.message} recovery={contextError.recoveryAction} /> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {/* Week-display race fix: structural check against `result.week` itself
         (see WeeklyHomePage above), not a `working`-flag guess -- true
@@ -471,10 +506,34 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
       <Panel title="Bench" eyebrow={`${result.bench.length} players`}>
         <DataTable columns={benchColumns} rows={result.bench as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} />
       </Panel>
+      {/* NWR Sunday Readiness overnight cycle, Worker 2 (W2): reserve/taxi
+          and locked-bench members are real roster coverage -- shown
+          explicitly, never silently dropped, and never offered as a
+          startable option. Distinct panels from "Not included this week"
+          (a real status-override exclusion, e.g. SEASON_OUT). */}
+      {result.reserve && result.reserve.length ? (
+        <Panel title="Reserve / taxi (not startable)" eyebrow={`${result.reserve.length} player(s)`}>
+          <p className="copy-muted">
+            {result.reserve.map((player) => `${player.playerName}${player.isTaxi ? " (taxi)" : " (reserve)"}`).join(", ")}
+            {" "}-- on your real reserve/taxi slot(s). Activation would be a separate roster transaction NWR does not perform here; not an available start this week.
+          </p>
+        </Panel>
+      ) : null}
+      {result.lockedUnavailable && result.lockedUnavailable.length ? (
+        <Panel title="Locked -- game already started" eyebrow={`${result.lockedUnavailable.length} player(s)`}>
+          <p className="copy-muted">
+            {result.lockedUnavailable.map((player) => player.playerName).join(", ")}
+            {" "}-- real kickoff for their game has already passed and they were not already in your starting lineup; cannot be legally added to a starting slot now.
+          </p>
+        </Panel>
+      ) : null}
       {result.excluded.length ? (
         <Panel title="Not included this week" eyebrow={`${result.excluded.length} player(s)`}>
           <p className="copy-muted">{result.excluded.map((player) => player.playerName).join(", ")} -- no roster slot they're eligible for, or no usable projection.</p>
         </Panel>
+      ) : null}
+      {result.gameLock && result.gameLock.sourceStatus === "UNAVAILABLE" ? (
+        <p className="copy-muted">Real kickoff/lock data was unavailable this pass -- no player was treated as locked. Recheck closer to kickoff.</p>
       ) : null}
     </> : null}
   </>;

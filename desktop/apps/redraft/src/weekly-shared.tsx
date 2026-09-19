@@ -235,6 +235,46 @@ export function useLeagueWorkspaceContext(client: NwrApiClient, profileId: strin
   return useAsync<LeagueWorkspaceContext>(loader, [client, profileId]);
 }
 
+/**
+ * NWR Sunday Readiness overnight cycle, Worker 2 (W1 fix): the ONE shared
+ * "what real NFL week is it" mechanism, extracted from Weekly Home's own
+ * pre-existing, already-correct logic (previously inlined only in
+ * `WeeklyHomePage`, `in-season.tsx`) so Start/Sit and Improve Team can
+ * reuse the SAME provider-week source (`LeagueWorkspaceContext.currentWeek`,
+ * Sleeper's own live `state/nfl` week) instead of each hardcoding
+ * `useState(1)` -- the exact reproduced bug (Start/Sit `in-season.tsx`
+ * L339, Improve Team `improve-team.tsx` L89/L149): a hardcoded Week 1
+ * default could silently serve Week 1 recommendations during a real later
+ * week, with no loading/unknown state in between and no way to tell the
+ * two pages had disagreed.
+ *
+ * Pure refactor for `WeeklyHomePage` (byte-identical resolved `week`
+ * value once resolved -- it still falls back to a literal `1` for
+ * display purposes at ITS OWN call site, unchanged from before this
+ * pass). Start/Sit and Improve Team, migrated onto this same mechanism
+ * for the first time this pass, deliberately do NOT add that `?? 1`
+ * fallback -- `week` stays `null` (never a fabricated 1) until either the
+ * real provider week resolves or the owner picks one manually, and each
+ * loader must gate on `week != null` before firing so no request is ever
+ * silently sent for "Week 1" before the real current week is known.
+ */
+export function useProviderWeek(client: NwrApiClient, profileId: string | null) {
+  const { result: context, error, working } = useLeagueWorkspaceContext(client, profileId);
+  return { providerWeek: context?.currentWeek ?? null, context, error, working };
+}
+
+export function useWeekSelection(providerWeek: number | null, profileId: string | null) {
+  const [manualWeekOverride, setManualWeekOverride] = useState<number | null>(null);
+  // A previous league's manual week choice must never leak into a newly
+  // opened league.
+  useEffect(() => {
+    setManualWeekOverride(null);
+  }, [profileId]);
+  const week = manualWeekOverride ?? providerWeek;
+  const usingProviderWeek = manualWeekOverride === null && providerWeek !== null;
+  return { week, manualWeekOverride, setManualWeekOverride, usingProviderWeek };
+}
+
 export const FREE_AGENT_COLUMNS: TableColumn[] = [
   { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
   { key: "overallRank", label: "NWR rank", sort: "number", align: "right", render: (row) => row.overallRank == null ? "Unranked" : `#${String(row.overallRank)}` },
@@ -358,7 +398,16 @@ export const ACTION_CATEGORY_LINK: Record<string, string> = {
  * empty slot) reads review. */
 export function statusTone(status: string | null | undefined): "safe" | "review" | "blocked" {
   const upper = (status ?? "").toUpperCase();
-  if (!upper || upper === "EMPTY" || upper === "UNPROJECTED" || upper.includes("QUESTIONABLE") || upper.includes("DOUBTFUL") || upper.includes("UNKNOWN")) return "review";
+  // NWR Sunday Readiness overnight cycle, Worker 2 (W3 fix): a real,
+  // reproduced gap -- "UNRESOLVED_IDENTITY" (weekly_lineup_optimizer_
+  // service's real status for a starter whose provider identity was never
+  // confirmed) matched none of the existing "review" substrings and fell
+  // through to plain "safe" (identical to a confirmed OK starter). It
+  // must read as a genuine risk signal, never as OK.
+  if (
+    !upper || upper === "EMPTY" || upper === "UNPROJECTED" || upper === "UNRESOLVED_IDENTITY"
+    || upper.includes("QUESTIONABLE") || upper.includes("DOUBTFUL") || upper.includes("UNKNOWN")
+  ) return "review";
   if (upper.includes("OUT") || upper.includes("IR") || upper.includes("SUSPEND")) return "blocked";
   return "safe";
 }

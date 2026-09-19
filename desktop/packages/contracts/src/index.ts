@@ -1152,6 +1152,37 @@ export interface DecisionResultEnvelope {
   issues: string[];
 }
 
+// NWR Sunday Readiness overnight cycle, Worker 2 (W2/W3): real reserve/taxi
+// and locked-bench coverage -- kept distinct from `excluded` (a real
+// status-override exclusion) and from a genuinely available `bench`
+// player. Neither bucket is ever selectable as an unconditional START.
+export interface WeeklyLineupCoverageEntry {
+  sleeperPlayerId: string;
+  canonicalPlayerId: string | null;
+  playerName: string;
+  position: string;
+  projectedPoints?: number | null;
+  isTaxi?: boolean;
+  playerAvailabilityStatus: PlayerAvailabilityStatus | null;
+}
+
+export interface WeeklyGameLockInfo {
+  season: number;
+  week: number;
+  seasonType: string;
+  source: string;
+  sourceStatus: "OK" | "UNAVAILABLE";
+  fetchedAt: string;
+  lockedTeams: string[];
+  // A flat list, not a dict keyed by team code -- the shared desktop API
+  // camelCase JSON-key transform mangles arbitrary data-dict keys (e.g.
+  // "BUF" -> "bUF"); see `weekly_game_lock_service.py`'s `to_dict()`.
+  kickoffUtcByTeam: Array<{ team: string; kickoffUtc: string }>;
+  unknownTeams: string[];
+  issues: string[];
+  error: string | null;
+}
+
 export interface WeeklyLineupResult {
   season: number;
   week: number;
@@ -1167,6 +1198,10 @@ export interface WeeklyLineupResult {
   decisionEnvelope?: DecisionResultEnvelope;
   projectedTotal: number;
   unprojectedStarterCount: number;
+  /** A starter whose provider identity was never confirmed against NWR's
+   * canonical mapping -- may still carry a real point value, but that
+   * value is not the same confidence as a confirmed identity. */
+  unresolvedIdentityStarterCount?: number;
   starters: WeeklyLineupSlot[];
   bench: WeeklyLineupBenchPlayer[];
   excluded: Array<{
@@ -1176,6 +1211,9 @@ export interface WeeklyLineupResult {
     position: string;
     playerAvailabilityStatus: PlayerAvailabilityStatus | null;
   }>;
+  reserve?: WeeklyLineupCoverageEntry[];
+  lockedUnavailable?: WeeklyLineupCoverageEntry[];
+  gameLock?: WeeklyGameLockInfo;
   swaps: WeeklyLineupSwap[];
   writeBehavior: string;
 }

@@ -491,3 +491,355 @@ ESPN league.
    call above is the authoritative source and should be re-checked again
    closer to Sunday if this cycle runs long, since `week`/`display_week`
    will change as games are played.
+
+---
+
+## Worker 2 — Fix W1-W4: current-week and legal Start/Sit (2026-09-18,
+~7:26-7:55 PM Mountain)
+
+Time check: started ~7:26 PM Mountain, finished this entry ~7:55 PM.
+**~16h05m remained to the Saturday noon deadline when this pass finished.**
+No deadline risk.
+
+### W1 — current-week initialization — INSPECTED CODE + ACTUAL TEST RESULT
++ LIVE OBSERVATION
+
+Root cause confirmed exactly as the brief's audit described: Start/Sit
+(`in-season.tsx` `LineupPage`, real line was 346 in this HEAD, not 339 --
+the file had grown slightly since the audited SHA) and Improve Team
+(`improve-team.tsx`, waiver week L92 and streamer week L149) each
+hardcoded `useState(1)`, independent of Weekly Home's own already-correct
+`LeagueWorkspaceContext.currentWeek` mechanism.
+
+Fix: extracted Weekly Home's inline logic into two new shared hooks in
+`weekly-shared.tsx` -- `useProviderWeek` (thin wrapper over the existing
+`useLeagueWorkspaceContext`) and `useWeekSelection` (the manual-override
+state machine, `week` stays `null`, never a fabricated `1`, until the real
+provider week resolves or the owner picks one). `WeeklyHomePage` itself
+was refactored onto these same two hooks (pure refactor, byte-identical
+resolved `week`, same `?? 1` display fallback preserved at that one call
+site -- confirmed via the existing weekly-shared/in-season test suites,
+unchanged pass count). `LineupPage`, and Improve Team's waiver week AND
+streamer week, now reuse the exact same mechanism, with NO `?? 1`
+fallback -- each loader gates on `week != null`, and an honest
+"Loading..." banner is shown while unresolved. Manual overrides remain
+explicit, per-surface, and reset on league switch (unchanged behavior).
+
+**LIVE OBSERVATION (real browser, real Fantasy Gamers league, real
+provider week = 2):** Start/Sit's "NFL WEEK (AUTO)" field showed `2`
+immediately, correct on first render, title read "Start / Sit — THIS WEEK
+(Week 2)". Improve Team's Targets/Add-Drop THIS_WEEK mode and the
+Streamers tab both showed "NFL WEEK: 2" as well. No flash of "1" observed,
+no console errors. Verified via a real Chrome MCP session against the
+rebuilt+restarted dev pair (see below).
+
+### W2 — locks, reserve/taxi, injury-status distinctness — INSPECTED CODE
++ ACTUAL TEST RESULT + LIVE OBSERVATION
+
+**Reserve/taxi:** `build_roster_candidates` (`weekly_lineup_optimizer_
+service.py`) now accepts `reserve_sleeper_player_ids`/
+`taxi_sleeper_player_ids` (Sleeper's own real roster `reserve`/`taxi`
+arrays, threaded from the facade's own already-fetched `own_roster`
+mapping -- no second fetch) and tags each `RosterCandidate` with
+`is_reserve`/`is_taxi`. `optimize_weekly_lineup` hard-excludes both from
+the normal eligible/greedy pool into a new `reserve` bucket, before any
+point comparison happens -- a reserve player can never win an
+unconditional START regardless of his projection. Real activation (not
+built this pass -- out of narrow scope) would be a separate, conditional
+transaction; this fix only prevents the illegal default.
+
+**Lock/kickoff:** a new, narrowly-scoped module,
+`src/services/weekly_game_lock_service.py`, does a real, live
+`nflreadpy.load_schedules(seasons=[season])` pull (confirmed live this
+pass, real Week 2 2026 data: Thursday BUF@DET already locked as of this
+pass's real wall-clock time, Sunday games not yet locked) and computes
+which teams' real games have already kicked off, using nflverse's real
+`gameday`+`gametime` columns (Eastern Time convention, confirmed via a
+real spot-check). Deliberately does **not** touch, extend, or depend on
+`injury_availability_context_service.py`'s own separate, still-gated
+next-game/opponent/bye display -- this module answers only "has this
+team's game already started," nothing else, and is wired only into the
+weekly lineup optimizer, not any injury/availability surface. A fetch
+failure degrades honestly to an empty locked-team set (`sourceStatus:
+"UNAVAILABLE"`), never a guessed lock state. `optimize_weekly_lineup`
+PINS an already-locked current starter into a real eligible slot
+regardless of point comparison (phase 1, before the normal greedy runs),
+and hard-excludes an already-locked bench player (not already starting)
+from being newly started, into a new `locked_unavailable` bucket.
+
+**Injury-status distinctness:** the existing `_status_for`/`ZERO_VALUE_
+KINDS` hard-exclusion (SEASON_OUT/NOT_WITH_TEAM/ADMINISTRATIVE_EXEMPT)
+was left untouched -- confirmed by re-reading `player_availability_status_
+service.py` this pass that this manual-override list is genuinely the
+ONLY real current-season status source in this codebase (no live
+injury/practice-report feed exists anywhere), so "questionable" cannot be
+honestly sourced/displayed this pass -- not attempted, not fabricated.
+What WAS newly added and is real: RESERVE (Sleeper's own roster field) and
+LOCKED (real kickoff-derived) are now genuinely distinct, sourced facts
+from UNRESOLVED_IDENTITY (a new, distinct status -- see W3) and from the
+existing SEASON_OUT/NOT_WITH_TEAM/ADMINISTRATIVE_EXEMPT excludes. All five
+now render as visually/semantically distinct buckets in the API response
+and the Start/Sit UI (`reserve`, `lockedUnavailable`, `excluded`,
+`starters[].status`), never collapsed into one "zero" bucket.
+
+**Real facade wiring:** `desktop_facade.py`'s `redraft_weekly_lineup` now
+calls `compute_weekly_game_lock(season=selected.season, week=week)` and
+passes `own_roster.get("reserve")`/`.get("taxi")` and the real player
+catalog (`players/nfl`, already fetched for this same request) into
+`build_roster_candidates`. New response fields: `reserve`,
+`lockedUnavailable`, `unresolvedIdentityStarterCount`, `gameLock`.
+
+### W3 — missing-projection rows, unprojected count, unmatched identity —
+INSPECTED CODE + ACTUAL TEST RESULT + LIVE OBSERVATION
+
+Confirmed the exact real gap: `build_roster_candidates` previously
+`continue`d past any roster/starter id with NO row in `weekly_projection_
+service`'s output (Sleeper's weekly-projection endpoint simply has no
+entry for some real rostered players some weeks) -- silently dropped, not
+even counted. Fixed: such a player is now kept
+(`identity_match="UNMATCHED_NO_PROJECTION_ROW"`, resolved name/position/
+team from the real Sleeper player catalog when supplied, never
+fabricated). A real required starting slot that ends up EMPTY now
+increments `unprojected_starter_count` (previously always 0 for an empty
+slot). The facade's confidence gate now also checks a new
+`unresolved_identity_starter_count` (previously any unmatched-but-pointed
+starter fell through to a falsely NOMINAL confidence).
+
+**Real, live, follow-up finding caught only by testing this fix against
+real data (Fantasy Gamers' real Week 2 roster):** a naive
+`identity_match != "MATCHED"` check flagged K and DST as
+"UNRESOLVED_IDENTITY" on EVERY real request, because NWR's governed
+ranking has ZERO K/DST rows BY DESIGN (matching an already-established
+distinction elsewhere in this codebase, `waiver_engine_service.py`'s own
+`_OUT_OF_RANKED_MODEL_SCOPE_POSITIONS`) -- not a real identity failure.
+Left unfixed, this would have made confidence permanently LOW for nearly
+every real league (any league starting a K or DST). Fixed with the same
+carve-out (`_OUT_OF_RANKED_MODEL_SCOPE_POSITIONS = {"K", "DST"}`, defined
+locally in `weekly_lineup_optimizer_service.py` to avoid a cross-service
+import for two literal strings). Re-verified live after the fix: Fantasy
+Gamers' real K (Ka'imi Fairbairn) and DST (NE D/ST) both show `status:
+"OK"`, `unresolvedIdentityStarterCount: 0`, `confidenceState: "NOMINAL"`.
+
+### W4 — swap-set correctness, Already-optimal derivation — INSPECTED CODE
++ ACTUAL TEST RESULT + LIVE OBSERVATION
+
+Replaced the old per-slot-type `_swap_reasons` heuristic (which searched
+the WHOLE bench independently for each new starter's slot type, causing
+both the duplicate-sit bug and the disappearing-FLEX-swap bug) with a
+real before/after starter-ID-set diff: `newly_started_ids = after - before`,
+`benched_pool = before - after` (each real former starter used at most
+once, removed from the pool once matched), same-slot-type preferred for
+the pairing, falling back to whichever real former starter is still
+unaccounted for otherwise (the exact FLEX-rearrangement case). "Already
+optimal" is now structurally correct: it is exactly the case where
+`newly_started_ids` is empty (no real membership change in the starting
+SET), never just "the old heuristic happened to emit nothing."
+
+**Real, live proof:** Fantasy Gamers' real Week 2 lineup showed exactly 1
+real, correctly-computed swap ("START Michael Pittman over Zay Flowers,
++11.7 projected"), rendered correctly in the browser's "Recommended
+changes" panel.
+
+### A second real bug found + fixed while verifying live (not in the
+original W1-W4 list) — INSPECTED CODE + ACTUAL TEST RESULT + LIVE
+OBSERVATION
+
+The new `gameLock.kickoffUtcByTeam` field, first shipped as a
+`dict[team_code, kickoff_iso]`, was silently corrupted by the shared
+desktop API camelCase JSON-key transform (`camel_case_key` in
+`src/application/contracts.py`), which treats EVERY dict key as a schema
+field name and lowercases its first character -- "BUF" became "bUF" in
+the real live API response, confirmed by a real curl against the running
+backend. This is the SAME already-documented hazard this codebase has hit
+before (see `desktop_facade.py`'s own K/DST `positions`-flattening
+comments) -- fixed the same established way: `kickoffUtcByTeam` is now a
+flat list of `{team, kickoffUtc}` objects, not a dict keyed by team code.
+Regression test added (`test_to_dict_kickoff_map_is_a_flat_list_not_a_
+team_keyed_dict`). Re-verified live after the fix: real team codes
+(`ARI`, `ATL`, `BAL`, ...) now render correctly.
+
+### The 5 regression fixtures — ACTUAL TEST RESULT (failing-before,
+documented in each test's own comment against the pre-fix source;
+passing-after, actually run)
+
+All 5 written exactly as the brief specified, plus 3 extra sub-case tests
+(catalog-name-resolution for a missing-projection player, locked-bench
+exclusion, and the K/DST carve-out), in
+`tests/test_weekly_lineup_optimizer_service.py`:
+
+1. `test_regression_fixture_1_duplicate_sits_produces_one_correct_swap_set`
+   -- A=10/B=9 starting, C=20/D=19 bench, 2 RB slots. PASSES: started set
+   {C,D}, total 39.0, exactly one swap per real displaced player (A and B
+   each named once, never duplicated), summed displayed deltas = 20.0
+   (real total gain), matching the brief's exact numbers.
+2. `test_regression_fixture_2_flex_rearrangement_no_longer_disappears` --
+   RB10/WR20/WR5(FLEX) starting, RB15 bench, RB/WR/FLEX slots. PASSES:
+   started set {WR20,RB15,RB10}, total 45.0, >=1 real swap emitted
+   (RB15 over WR5), never "Already optimal."
+3. `test_regression_fixture_3_missing_starter_counts_as_unprojected_not_
+   silently_dropped` -- a starter id with zero rows anywhere in
+   `projection_rows`. PASSES: candidate is kept (not silently dropped),
+   slot status EMPTY, `unprojected_starter_count == 1` (was 0 before the
+   fix).
+4. `test_regression_fixture_4_unmatched_identity_not_promoted_to_ok` -- an
+   UNMATCHED RB with 10 projected points, only candidate for 1 RB slot.
+   PASSES: `status == "UNRESOLVED_IDENTITY"`, never `"OK"`,
+   `unresolved_identity_starter_count == 1`, points still counted
+   (10.0) -- a status-label fix, not a silent zeroing.
+5. `test_regression_fixture_5a/5b/5c_...` -- 5a: a 20-pt reserve candidate
+   does NOT beat a 10-pt active starter (reserve excluded from normal
+   selection). 5b: a 10-pt LOCKED starter is NOT swapped for a 20-pt bench
+   candidate (locked starters pinned). 5c: a locked, non-starting bench
+   player is NOT newly started even as the only candidate for an open slot
+   (slot stays real, visible EMPTY). All PASS.
+
+### TESTS — ACTUAL TEST RESULT
+
+- `tests/test_weekly_lineup_optimizer_service.py`: **7 -> 16 tests, all
+  pass** (7 pre-existing unchanged + 1 K/DST-carve-out regression + 8 new
+  fixture/sub-case regressions).
+- New `tests/test_weekly_game_lock_service.py`: **4 tests, all pass**
+  (real kickoff-lock computation, fetch-failure honesty, missing-gametime
+  honesty, the camelCase flat-list regression).
+- Full brief-listed backend suite re-run after every change (262 tests
+  total across `test_weekly_lineup_optimizer_service`,
+  `test_weekly_game_lock_service`, `test_weekly_projection_service`,
+  `test_weekly_projection_provider_service`,
+  `test_fantasypros_kdst_consensus_service`,
+  `test_redraft_waivers_ir_reserve_drop_exclusion_fix`,
+  `test_redraft_waivers_faab_context_fix`,
+  `test_redraft_waivers_open_slot_and_same_context_fix`,
+  `test_weekly_home_single_snapshot`, `test_weekly_home_sleeper_fetch_
+  caching`, `test_desktop_facade_architecture_wiring`,
+  `test_player_availability_status_consumer_consistency`,
+  `test_dynasty_sleeper_league_service`, `test_dynasty_league_import_
+  facade_wiring`, `test_boundary_property_reliability_pack_v1`,
+  `test_prospective_outcome_ingestion_orchestrator_v1_service`): **262
+  passed, 0 failed.**
+- Frontend: `npm run typecheck` (both apps) -- clean, 0 errors. Full
+  `npx vitest run` (desktop workspace, all 30 test files): **492 passed,
+  0 failed** (up from the pre-existing baseline by the new/modified
+  assertions in `weekly-shared.test.ts`; no other file's test count
+  changed).
+- A benign, unrelated side effect of running the full vitest suite
+  (`docs/codex/prospective_outcomes_v1/multi_league_scale_v1/frontend_
+  bench_results.json`, a perf-benchmark's own timing-noise output file)
+  was reverted with `git checkout --` before committing -- not a real
+  change, not part of this pass.
+
+### LIVE VERIFICATION -- LIVE OBSERVATION
+
+Restarted the Redraft dev pair TWICE this pass (once after the initial
+W1-W4 code changes, once more after the K/DST-carve-out + camelCase-map
+fixes) -- the pre-existing PIDs (31352/16376, confirmed pre-HEAD-code by
+Worker 1) were stopped, a real `npm run build` was run for
+`desktop/apps/redraft`, and a fresh backend+`vite preview` pair was
+started on the same ports (18742/1422). Also ran the repo's own
+`desktop/scripts/nwr_release_gate_smoke.ps1 -Mode redraft -KeepRunning
+-SleeperLeagueId 1312983576827920384 -SleeperUsername scolety` once (real
+`check:resources` PASS, real `cargo check` PASS, real production build,
+real read-only Sleeper before/after byte-diff -- IDENTICAL, 0 writes
+confirmed, all surface-smoke endpoints 200 including `weekly_lineup_week1`
+and `weekly_home_actions_week1`).
+
+Real Chrome MCP browser session against the rebuilt+restarted app,
+active profile Fantasy Gamers:
+- Start/Sit (`#/league/941b.../lineup`): "NFL WEEK (AUTO)" showed `2`
+  immediately; title "Start / Sit — THIS WEEK (Week 2)"; "1 CHANGE vs.
+  Sleeper's current starters" -- "Start Michael Pittman over Zay Flowers,
+  +11.7 projected points," correctly rendered; all 9 starters showed
+  status OK (including K/DST, post-carve-out-fix); bench showed 6 real
+  players. No console errors.
+- Improve Team Targets tab, THIS_WEEK mode: "NFL WEEK" auto-populated to
+  `2`; "LIVE · Weekly projections: SLEEPER · Week 2."
+- Improve Team Streamers tab: "NFL WEEK" also auto-populated to `2`.
+- Confirmed via the real "Switch league" dropdown that Las Vegas
+  Enginerds is genuinely NOT a Redraft profile (only 5: 10-team 1QB
+  Standard, KHA, 403 N 18th, Fantasy Gamers, Isolation Check Local) --
+  matches Worker 1's finding exactly; making Enginerds usable in Redraft
+  is brief section 4, explicitly out of this Worker's scope, not
+  attempted.
+- Zero writes: every live call this pass was a plain GET (schedules,
+  Sleeper league/rosters/users/players/projections) or a read against the
+  local backend's own read-only endpoints; the smoke script's own
+  before/after Sleeper byte-diff independently confirms zero writes.
+
+### SCHEDULE/LOCK DATA -- INSPECTED CODE + LIVE OBSERVATION
+
+`nflreadpy.load_schedules(seasons=[season])` real columns confirmed this
+pass (not assumed): `game_id`, `home_team`, `away_team`, `gameday` (date),
+`gametime` (Eastern Time local kickoff, e.g. "13:00"), `weekday`,
+`game_type`. Real live pull, real Week 2 2026 data, real spot-check:
+Thursday's BUF@DET game (2026-09-17 20:15 ET) correctly computed as
+already-locked as of this pass's real wall-clock time; Sunday's games
+(2026-09-20) correctly computed as not yet locked. `injury_availability_
+context_service.py`'s own separate next-game/opponent/bye gate was
+deliberately left untouched -- not opened, not needed for this narrow
+lock-state requirement.
+
+### REDRAFT PROCESSES STATUS
+
+Currently running (as of this entry): backend on port 18742, `vite
+preview` on port 1422, both serving this pass's final HEAD (verified via
+a fresh `npm run build` + restart, not just a process check). Dynasty's
+backend/frontend were NOT touched this pass (per this Worker's own scope
+-- Redraft only); still the pre-HEAD processes Worker 1 flagged, still
+need a restart before any worker relies on Dynasty's live HEAD parity.
+
+### FILES CHANGED
+
+- `src/services/weekly_lineup_optimizer_service.py` (rewritten: reserve/
+  taxi/lock inputs, missing-projection-row retention, K/DST identity
+  carve-out, diff-based swap reasons).
+- `src/services/weekly_game_lock_service.py` (new).
+- `src/application/desktop_facade.py` (`redraft_weekly_lineup`: game-lock
+  call, reserve/taxi/catalog wiring, confidence gate, new response
+  fields).
+- `desktop/apps/redraft/src/weekly-shared.tsx` (`useProviderWeek`/
+  `useWeekSelection` hooks, `statusTone` UNRESOLVED_IDENTITY fix).
+- `desktop/apps/redraft/src/in-season.tsx` (`WeeklyHomePage` refactored
+  onto the shared hooks; `LineupPage` W1 fix + reserve/locked-unavailable
+  panels).
+- `desktop/apps/redraft/src/improve-team.tsx` (waiver week + streamer
+  week W1 fix).
+- `desktop/packages/contracts/src/index.ts` (new `WeeklyLineupCoverageEntry`/
+  `WeeklyGameLockInfo` types, `WeeklyLineupResult` additive fields).
+- `tests/test_weekly_lineup_optimizer_service.py` (9 new tests).
+- `tests/test_weekly_game_lock_service.py` (new, 4 tests).
+- `desktop/apps/redraft/src/weekly-shared.test.ts` (1 new assertion).
+
+### OPEN ISSUES FOR WORKER 3 (W5-W7: waivers/streamers/K-DST scoring)
+
+1. **The real `waiver_type` FAAB-detection bug Worker 1 flagged is still
+   unfixed** (`desktop_facade.py` checks `raw_waiver_type == 1`; strong
+   third-party evidence says real Sleeper FAAB is `waiver_type == 2` --
+   backwards for both Fantasy Gamers (`waiver_type=1`) and Enginerds
+   (`waiver_type=2`) specifically). Not touched this pass (out of W1-W4
+   scope) -- needs a deliberate, verified decision before/alongside W5/W7.
+2. **W5 (THIS_WEEK sort authority) and W7 (K/DST league-specific scoring)
+   are untouched** -- this pass only fixed the LINEUP optimizer's own
+   internal correctness; `waiver_engine_service.py`'s season-based sort
+   and `weekly_projection_service.py`'s provider-points-only K/DST scoring
+   are real, separate, already-diagnosed gaps for Worker 3.
+3. **`redraft_weekly_lineup`'s new `unresolvedIdentityStarterCount` /
+   `reserve` / `lockedUnavailable` fields are additive-only in the
+   `WeeklyLineupResult` contract** (`?:` optional) -- any NEW consumer
+   Worker 3 builds (e.g. a THIS_WEEK waiver evaluation that calls into
+   this same lineup optimizer per the brief's W5 fix) should read them,
+   not silently ignore them, per the same distinctness principle this
+   pass established.
+4. **This pass's live verification used Fantasy Gamers only** (real
+   browser session). Enginerds is NOT a Redraft profile at all yet
+   (confirmed live this pass) -- Worker 3/4 building Enginerds' Redraft
+   weekly-decision surface (brief section 4) will need to exercise this
+   same lineup-optimizer path fresh against Enginerds' real non-PPR,
+   no-DST scoring once that profile exists; not verified this pass.
+5. **`weekly_game_lock_service.py` is new and only consumed by
+   `redraft_weekly_lineup` so far** -- if Worker 3's W5 THIS_WEEK
+   evaluation needs lock state too (the brief asks for "the same inputs
+   and locks" as Start/Sit), reuse this same module/result rather than
+   building a second kickoff lookup.
+6. **KHA and 403 N 18th remain BLOCKED** for any current-state Sunday
+   tool (unchanged from Worker 1 -- no ESPN client exists). Not this
+   Worker's concern, re-confirmed only incidentally via the live "Switch
+   league" dropdown screenshot.
