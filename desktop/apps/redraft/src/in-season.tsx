@@ -30,7 +30,7 @@ import { DecisionExplain } from "./decision-explain";
 import { explainHomeAction } from "./home-action-explain";
 import { explainLineupSwap, findResultingSlot } from "./lineup-explain";
 import { addUniqueTradeSideCandidate, tradeFinderAnalysisLinkTarget } from "./trades-explain";
-import { leagueFormat, resolveLeagueLifecycle } from "./league-context";
+import { leagueFormat, resolveDisplayLifecycle, resolveLeagueLifecycle } from "./league-context";
 import {
   describeOwnerBracketEntry,
   formatRecord,
@@ -154,7 +154,24 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
     : null;
 
   const activeName = data.activeProfile?.leagueName ?? "Choose a league";
-  const lifecycle = data.activeProfile ? resolveLeagueLifecycle(data.activeProfile, data.draftBoard) : null;
+  // NWR Sunday Readiness overnight cycle, Worker 5: real, pre-existing
+  // display bug fixed (flagged by Worker 4) -- this "Stage" row previously
+  // called ONLY the local, bootstrap-only `resolveLeagueLifecycle` heuristic,
+  // which has no live provider-status read (see that function's own
+  // docstring) and returns PRE_DRAFT for any real Sleeper league that was
+  // never drafted inside this app's own Draft Room (both real leagues,
+  // Fantasy Gamers and Enginerds, drafted on Sleeper itself) -- confirmed
+  // live this pass: both showed "PRE-DRAFT" despite real IN_SEASON data.
+  // `context` (already fetched above via `useProviderWeek` ->
+  // `useLeagueWorkspaceContext` -> `/api/v1/redraft/league-workspace-context`,
+  // NO new network call added) already carries the correct, live,
+  // provider-status-aware `lifecycle` field -- prefer it, falling back to
+  // the local heuristic only while that request hasn't resolved yet (or
+  // for a non-Sleeper profile, where the workspace-context loader
+  // deliberately returns null -- see `useLeagueWorkspaceContext`).
+  const lifecycle = data.activeProfile
+    ? resolveDisplayLifecycle(resolveLeagueLifecycle(data.activeProfile, data.draftBoard), context?.lifecycle)
+    : null;
   // NWR UI foundation pass (directive Phase 4): only 3-5 meaningful
   // prioritized actions, never a dumped full list -- `actions.actions` is
   // already priority-sorted server-side (see redraft_weekly_home_actions),

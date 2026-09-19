@@ -1888,3 +1888,380 @@ token + matching Origin header), both frontends `GET /` -> `200`.
    pass** (only Start/Sit + all 4 Improve Team tabs, per this pass's
    explicit scope) -- worth a quick check in Worker 5's dogfood pass
    since Trades is a real, routed surface for every Sleeper profile.
+
+## Worker 5 -- Full required-verification test pass + dogfood + lifecycle-display fix
+(2026-09-18, ~9:19-9:37 PM Mountain)
+
+Time check: started 9:19 PM Mountain (~14h41m remaining to the Saturday
+noon deadline). This entry written ~9:37 PM (~14h23m remaining). No
+deadline risk.
+
+### 1. Required backend test suite -- ACTUAL TEST RESULT
+
+Ran the brief's exact required list plus D2's file:
+`test_weekly_lineup_optimizer_service.py`, `test_weekly_projection_
+service.py`, `test_weekly_projection_provider_service.py`, `test_
+fantasypros_kdst_consensus_service.py`, `test_redraft_waivers_ir_reserve_
+drop_exclusion_fix.py`, `test_redraft_waivers_faab_context_fix.py`, `test_
+redraft_waivers_open_slot_and_same_context_fix.py`, `test_weekly_home_
+single_snapshot.py`, `test_weekly_home_sleeper_fetch_caching.py`, `test_
+dynasty_sleeper_league_service.py`, `test_dynasty_league_import_facade_
+wiring.py`, `test_league_lifecycle_service.py`:
+
+**155 passed, 0 failed.** Re-ran a second time after this pass's frontend-
+only changes (which touch zero Python) -- identical, 155 passed.
+
+Also ran the same broader combined suite Worker 3/4 used (adds `test_
+waiver_engine_service`, `test_redraft_kdst_streamer_keep_current_fix`,
+`test_weekly_game_lock_service`, `test_desktop_application_api`, `test_
+desktop_facade_architecture_wiring`): **253 passed, 4 failed** -- the same
+4 named failures Worker 3/4 already documented (`test_dynasty_facade_
+composes_real_governed_workflows`, `test_desktop_rookie_veteran_bridge_is_
+source_separated_and_trade_aware`, `test_redraft_bootstrap_seeds_once_and_
+matches_desktop_contract`, `test_facade_has_no_streamlit_or_app_component_
+dependency`).
+
+**Proved pre-existing via git-stash-equivalent, not assumed:** rather than
+trust the prior workers' own stash comparison alone, created a real,
+separate detached-HEAD worktree at the brief's audited baseline commit
+`3ea72fbc` (`git worktree add --detach /c/NWR/_tmp_baseline_check_w5
+3ea72fbc`) and ran the same 4 tests there directly, independent of any
+stash. **Identical 4 failures, same names, same assertion messages**
+(a real local FantasyPros API key configured in this dev environment
+changes `externalConsensus.configured`/`message` away from the test's
+hardcoded expectation; a `not name.startswith("app")` import-naming
+assertion fails for an unrelated reason) -- confirms these are genuinely
+pre-existing/environment-dependent, not caused by any commit on this
+branch. Worktree cleaned up (`git worktree remove --force`) immediately
+after.
+
+(A separate `git stash -u` + restore was also attempted first, then
+abandoned in favor of the cleaner baseline-worktree approach above --
+correctly popped and dropped, verified `git status --short` identical
+before/after, no data lost; noted here only for methodology transparency.)
+
+### 2. Frontend tests + typecheck -- ACTUAL TEST RESULT
+
+- Confirmed all 4 brief-named test files exist and are current:
+  `in-season.test.ts`, `weekly-shared.test.ts`, `lineup-explain.test.ts`,
+  `improve-team-explain.test.ts` (Improve Team coverage). Ran just these
+  4: **64 passed, 0 failed.**
+- `npm run typecheck` (both apps): clean, 0 errors -- checked before and
+  after this pass's edits.
+- Full `npx vitest run` (30 files): **497 passed, 0 failed** before this
+  pass's edits (matches Worker 4's exact baseline); **501 passed, 0
+  failed** after (4 new tests added for the lifecycle-display fix, see
+  below). `frontend_bench_results.json`'s own benign perf-timing churn
+  (same known side effect every prior worker hit) reverted with `git
+  checkout --` before committing.
+
+### 3. Lifecycle-display bug -- FIXED this pass (INSPECTED CODE + ACTUAL
+TEST RESULT + LIVE OBSERVATION)
+
+Worker 4 flagged, but deliberately did not fix, a real pre-existing bug:
+Weekly Home's "Stage" row and the sidebar lifecycle badge
+(`in-season.tsx`'s `WeeklyHomePage`, `shell-identity.tsx`'s
+`ShellIdentity`) both called ONLY the local, bootstrap-only
+`resolveLeagueLifecycle(profile, draftBoard)` heuristic
+(`league-context.ts`), which has no live provider-status read by design
+(see that function's own docstring) and returns `PRE_DRAFT` for any real
+Sleeper league that was never drafted inside this app's own Draft Room --
+both real leagues, Fantasy Gamers and Enginerds, were drafted on Sleeper
+itself. Confirmed, this pass, both showed "PRE-DRAFT" before the fix.
+
+**Root-cause investigation (INSPECTED CODE) found the correct live source
+was already being fetched and just not read:** `/api/v1/redraft/league-
+workspace-context` (`desktop_facade.py`'s `redraft_league_workspace_
+context` -> `league_workspace_context_service.build_league_workspace_
+context` -> `resolve_league_lifecycle`) already computes the CORRECT,
+live, provider-status-aware `lifecycle` field, using Sleeper's own real
+`league.status` (via the already-fetched `league_doc`/`playoff_context`)
+when available, and the SAME backend `resolve_league_lifecycle` D2 ratio
+fix otherwise -- i.e. for non-Sleeper profiles (KHA, 403 N 18th) this
+backend value resolves identically to the local frontend heuristic
+(confirmed by reading `build_league_workspace_context`: `provider_status`
+is only non-None when a real Sleeper `playoff` context was built), so
+preferring it is strictly better or equal for every real league, never
+worse.
+
+**Fix, small and clean, matching the codebase's own established
+"extract a pure, testable helper" pattern (e.g. `resolveWeekDisplay`):**
+added `resolveDisplayLifecycle(localLifecycle, liveLifecycle)` to
+`league-context.ts` (`liveLifecycle ?? localLifecycle` -- prefers the
+live value, falls back to the local heuristic only while the live fetch
+hasn't resolved yet or legitimately returns nothing). `WeeklyHomePage`
+already fetches the live context via the existing `useProviderWeek` ->
+`useLeagueWorkspaceContext` hook chain (W1's own mechanism) -- **zero new
+network calls added there**, just reading a field already in hand.
+`ShellIdentity` did not previously fetch this context at all (it only
+receives the static `RedraftBootstrap` bootstrap payload as a prop), so
+one new call to the existing, already-shared `useLeagueWorkspaceContext`
+hook was added there (same primitive every other in-season surface
+already uses for this exact purpose -- not a new pattern).
+
+**ACTUAL TEST RESULT:** 4 new unit tests in `league-context.test.ts`
+(`resolveDisplayLifecycle` describe block) -- prefers live over local when
+they disagree (the exact real bug shape: local `PRE_DRAFT`, live
+`IN_SEASON`), falls back to local while live is `undefined` (loading) or
+`null` (no active profile), returns the value unchanged when both agree.
+**32 tests total in this file, all pass** (28 pre-existing + 4 new).
+
+**LIVE OBSERVATION, this pass, real rebuild+restart of the Redraft dev
+pair (see Processes below):**
+- Las Vegas Enginerds: sidebar badge and Weekly Home's "Stage" row BOTH
+  now correctly show **"In Season"** (previously "Pre-Draft" on both, per
+  Worker 4's own screenshot-documented finding).
+- Fantasy Gamers: same confirmed fix, both badge and Stage row show
+  "In Season" (briefly showed a stale "Week 1 (MANUAL)"/"Pre-Draft"
+  loading-state flash immediately after a league switch, before the
+  workspace-context fetch resolved -- this is the SAME honest "loading,
+  not fabricated" pattern W1 already established, not a new bug; resolved
+  to the correct Week 2/"In Season" within ~1-2 seconds).
+- 403 N 18th (ESPN, non-Sleeper): sidebar badge correctly still shows
+  "In Season" (D2's ratio fix, unaffected by this change, confirmed live
+  -- see item 5 below).
+- Zero console errors across every page load/switch this pass (`read_
+  console_messages`, `onlyErrors: true`, checked repeatedly).
+
+### 4. W9 (streamer league-switch race) -- best-effort live attempt, LIVE
+OBSERVATION (mechanism-consistent result; adversarial timing not
+provably captured)
+
+Attempted a real live repro twice: triggered a real, multi-week ("Next 3"
+horizon) FantasyPros streamer refresh for one league, then immediately
+(same tight `browser_batch`, no intervening round trip) switched the
+active league via the sidebar's real Switch League control, before
+screenshotting the result.
+
+- **Trial 1** (Fantasy Gamers "Next 3" refresh -> switch to Enginerds):
+  Enginerds' Streamers tab showed "No streamer read yet" / horizon reset
+  to "This Week" -- NOT Fantasy Gamers' stale "ADD Eddy Pineiro (K)"
+  result that had rendered moments earlier in the same tab.
+- **Trial 2** (Enginerds "Next 3" refresh -> switch to Fantasy Gamers):
+  same correct outcome -- "No streamer read yet," no leaked Enginerds
+  result.
+
+**Honest disclosure, matching Worker 4's own:** local network calls
+complete well under a second (confirmed again this pass), so it cannot be
+proven the adversarial mid-flight window was genuinely captured in either
+trial rather than the prior request simply finishing before the switch
+began -- no network-throttling tool was available in this session's
+browser toolset either. Both trials' OBSERVED behavior (no stale-league
+leak) is consistent with the fix working correctly and inconsistent with
+the pre-fix bug shape, which is real evidence, just not a certainty-grade
+adversarial reproduction. The CODE fix and its regression test (proving
+the exact guard mechanism synchronously, no timing dependency) remain the
+primary evidence for W9, as Worker 4 already established.
+
+### 5. 403 N 18th -- independently re-verified live this pass (LIVE
+OBSERVATION, addresses Worker 4's open item)
+
+Activated the real 403 N 18th profile fresh in the browser (not reused
+from a prior worker's session). Confirmed:
+- Sidebar badge: **"In Season"** (D2's backend ratio fix + this pass's
+  lifecycle-display fix both consistent -- non-Sleeper provider_status is
+  None, so the live and local values already agreed here, confirmed by
+  code reading in section 3 above).
+- Weekly Home: honest **"Sleeper league required"** BLOCKED state for
+  weekly tools (Start/Sit, Waivers, Trade, streamers), matching KHA's
+  already-confirmed behavior exactly -- same shared `isSleeper` gate.
+- Zero console errors.
+
+### 6. Enginerds Trades tab -- exercised live for the first time this
+cycle (LIVE OBSERVATION, addresses Worker 4's open item)
+
+Built a real trade on the real Enginerds Trades > Analyze tab: gave
+Daniel Jones (real bench QB, added via the real "Add to Trade Analysis"
+link off My Roster), received Jared Goff (real opponent bench QB, found
+via the real player-search box after confirming his ownership on the
+real, live Opponent Rosters page -- "Golden Boy Productions"). Clicked
+"Analyze trade" and got a real, live-computed result: "IMPROVES MY
+ROSTER," "THIS WEEK: Starting lineup value 1004.4 -> 1004.4 (+0.0),"
+"REST OF SEASON: Net marginal utility +3.1 -- ROS value delta +59.9,"
+"DEPTH: Bench contingency value 327.5 -> 387.4," "POSITION EFFECT:
+Starter holes 1 -> 1 (K 0/1), redundancy qB 2->2, rB 0->0, tE 3->3,
+wR 12->12." Real, live, no errors. This is the SAME `marginal_roster_
+utility_v2`-backed governed evaluator Trades always used -- confirmed via
+code reading that this call path never touches `governed_asset_registry_
+service.py` (that is Dynasty-only); no hard-boundary risk.
+
+### 7. Scoring row -- frozen Dynasty valuation spot-check (INSPECTED CODE
++ LIVE OBSERVATION)
+
+**INSPECTED CODE, the authoritative check:** `git diff 3ea72fbc --
+src/services/governed_asset_registry_service.py` -- **empty.** This file
+has been byte-identical since the brief's own audited baseline across
+every worker this entire cycle (Workers 1-5); no commit on this branch
+has ever touched it. This is stronger evidence than any live spot-check
+could be (a live check can only sample a few players; this proves the
+WHOLE computation is untouched).
+
+**LIVE OBSERVATION, supplementary:** opened Dynasty's real Compare page
+(port 1421, `#/compare`), confirmed the "CONNECTED: LAS VEGAS ENGINERDS"
+badge (D1's real ownership wiring, still live), ran a real comparison
+(Puka Nacua #1 vs Jaxon Smith-Njigba #2, both real governed board ranks)
+and got real, live "MEDIUM TERM"/"LONG TERM" frozen research-neighborhood
+output with real ownership tags ("OWNED BY ROCKY MOUNTAIN HIGH" / "OWNED
+BY THE MIGHTY CANUCKS" -- real Enginerds opponent team names). No errors.
+This confirms D1's Compare-ownership feature still renders correctly and
+the underlying valuation call path is intact; the git-diff check above is
+what actually proves the VALUES themselves are unchanged.
+
+### 8. Cold-start timeout (Worker 4's item 4) -- checked, not reproduced
+this pass (INSPECTED CODE + LIVE OBSERVATION)
+
+**INSPECTED CODE:** the frontend's own request timeout
+(`REQUEST_TIMEOUT_MS` in `desktop/packages/api-client/src/index.ts:58`)
+is **20,000ms** -- already a generous bound, not an obviously-too-
+aggressive one. Worker 4's one-time "Command center unavailable" cold-
+start failure is more likely a real backend cold-cache latency
+characteristic (loading ~9,400 rows of Sleeper weekly projections plus a
+live `nflreadpy` schedule pull, both cold on a freshly-restarted backend)
+than a frontend timeout misconfiguration.
+
+**LIVE OBSERVATION:** this pass's own Redraft backend restart (see
+Processes below) was genuinely cold when Enginerds' Weekly Home and
+Start/Sit pages were first opened (same class of cold request Worker 4
+hit) -- **did not reproduce the timeout** either time; both loaded
+correctly on the first request. Given it did not recur and the brief's
+own guidance not to over-invest here ("worth a quick look if it
+recurs"), not investigated further. Flagged for Worker 6/the owner as a
+real, low-frequency, self-resolving-on-retry characteristic, not a
+confirmed bug with a known fix.
+
+### 9. Additional acceptance-table coverage this pass -- LIVE OBSERVATION
+
+- **Week and league:** Provider Week 2 auto-resolved correctly for both
+  Fantasy Gamers and Enginerds on fresh navigation and after a league
+  switch; header/Stage/data agreed in every screenshot this pass.
+- **Legal lineup (Enginerds, real Week 2 data, strongly covered):** a
+  single live Start/Sit page simultaneously showed all of -- an already-
+  locked bench player excluded from new starts ("Locked -- game already
+  started": Skyler Bell, real past kickoff), a reserve player excluded
+  from unconditional start ("Reserve / taxi (not startable)": Ricky
+  Pearsall), two real missing-projection players shown as "--" rather than
+  silently dropped (Zay Flowers, Brandon Aiyuk), a real sourced SEASON_OUT
+  exclusion shown honestly rather than hidden ("Not included this week":
+  Jayden Higgins), and real multi-position FLEX slots (Chase Brown RB-
+  FLEX, Xavier Worthy WR-FLEX) -- no impossible move was primary advice.
+- **Scoring:** Enginerds' real K partial-scoring disclosure
+  (`nonExactScoringInTotal`) still rendering correctly; no-DST enforcement
+  reconfirmed via the FAAB tab existing already-non-Sleeper-agnostic
+  path (Enginerds has no DST tab options anywhere in this pass's
+  navigation, consistent with Worker 4's direct-API confirmation).
+- **FAAB:** Fantasy Gamers' FAAB tab freshly re-confirmed live this pass:
+  "This is not a FAAB league" / "WAIVER PRIORITY #6" (Worker 3's
+  `waiver_type == 2` fix, live-correct).
+- **Freshness/storage:** W9 (above) and D1's on-disk snapshot proof
+  (Worker 4's own finding, not re-verified byte-for-byte this pass but
+  the code path is untouched since).
+
+Not independently re-covered this pass (already unit-test-verified by
+Workers 2-4, judged sufficient given time budget): the 5 duplicate/cross-
+slot swap-explanation fixtures, the 3 kicker-scoring-boundary fixtures,
+and most individual streamer/waiver edge cells (unavailable acquisition,
+protected drop, truncated provider coverage, etc.) -- these all have
+dedicated, currently-passing regression tests (see section 1) and were
+not re-exercised live a second time in the interest of covering the
+higher-risk items (W9, the lifecycle bug, Trades, 403N18th) this pass's
+time budget prioritized instead, per the brief's own explicit guidance
+("prioritize real risk... you will likely not exhaustively cover every
+single cell").
+
+### 10. Cleanup -- LIVE OBSERVATION
+
+Deleted 7 orphaned scratch files left by Worker 4 that no longer had any
+live process holding them open (Redraft's dev pair was stopped and
+replaced by this pass's own, see Processes below): `.worker4_backend.log`,
+`.worker4_backend.log.err`, `.worker4_backend_creds.json`, `.worker4_
+preview.log`, `.worker4_preview.log.err`, `dynasty_smoke_stderr.log`,
+`dynasty_smoke_stdout.log`. **Left in place, deliberately:**
+`.worker4_dyn_backend.log`/`.log.err`/`_creds.json`, `.worker4_dyn_
+preview.log`/`.log.err` -- the Dynasty dev pair (PIDs 45464/16136, port
+1421/18741) is still Worker 4's own, untouched by this pass (no Dynasty
+code changed), and still holds real open file handles to these -- deleting
+them would either fail or risk the running process; correct to defer to
+whichever worker next restarts Dynasty. Also left in place:
+`local_exports.backup-20260918T230905Z/` (a real, verified-intact backup
+from an earlier cycle, not scratch) and this pass's own `.worker5_*`
+files (in active use by the currently-running Redraft dev pair -- next
+worker to restart Redraft should clean these up the same way this pass
+cleaned up Worker 4's).
+
+### REDRAFT/DYNASTY PROCESSES STATUS
+
+- **Redraft: restarted this pass**, twice was not needed (single restart
+  sufficient) -- stopped Worker 4's PIDs (32460 frontend, 39708 backend),
+  started fresh: backend on port 18742 (`nohup python scripts/run_nwr_
+  desktop_api.py --host 127.0.0.1 --port 18742 --mode redraft --repo-root
+  /c/NWR/prospective-outcomes-v1`, real dev credentials piped via stdin
+  from `.worker5_backend_creds.json`, same established pattern), `vite
+  preview` on port 1422. Rebuilt once more after the lifecycle-display fix
+  landed (`npm run build --workspace @nwr/redraft-desktop`) -- `vite
+  preview` serves `dist/` directly from disk, confirmed via a real hard-
+  reload (`ctrl+shift+r`) picking up the new bundle hash
+  (`index-BVy_paQL.js`) without a server restart. Both `GET /api/v1/
+  bootstrap` -> `401` (healthy-contract) and `GET /` -> `200` confirmed.
+- **Dynasty: NOT restarted this pass** (no Dynasty code touched) --
+  still Worker 4's own dev pair, PIDs 45464 (frontend, port 1421) / 16136
+  (backend, port 18741), confirmed still listening and serving correctly
+  (real Compare page load, section 7 above).
+
+### FILES CHANGED
+
+- `desktop/apps/redraft/src/league-context.ts` (new, pure, tested
+  `resolveDisplayLifecycle` helper).
+- `desktop/apps/redraft/src/in-season.tsx` (`WeeklyHomePage`'s "Stage" row
+  now uses `resolveDisplayLifecycle` with the already-fetched live
+  workspace context -- zero new network calls).
+- `desktop/apps/redraft/src/shell-identity.tsx` (`ShellIdentity` now also
+  fetches `useLeagueWorkspaceContext` and uses `resolveDisplayLifecycle`
+  for the sidebar badge).
+- `desktop/apps/redraft/src/league-context.test.ts` (4 new tests for
+  `resolveDisplayLifecycle`; 32 tests total, up from 28).
+
+No Python/backend file was modified this pass -- every backend test
+result above reflects the exact code Worker 4 left, re-confirmed rather
+than re-derived.
+
+### OPEN ISSUES FOR WORKER 6 (decision sheets, rebuild/restart for final
+delivery, native packaging attempt, push, final report)
+
+1. **Rebuild+restart BOTH dev pairs one more time before final delivery**
+   -- Redraft already reflects this pass's HEAD (rebuilt+restarted
+   already), but Dynasty is still serving Worker 4's build (no functional
+   difference expected since no Dynasty code changed across Workers 4-5,
+   but for exact-SHA-parity discipline, restart it once during final
+   delivery same as every prior worker's own guidance).
+2. **W9's exact real-network race is still not provably captured under
+   real adversarial timing** -- two more live attempts this pass both
+   showed correct behavior (no stale-league leak), consistent with but
+   not conclusive proof of the fix under real race conditions; the code
+   fix and its synchronous regression test remain the primary evidence.
+   No throttling tool has been available in any pass's browser toolset so
+   far -- if a future pass gains one, a true adversarial repro would
+   close this out completely.
+3. **The Enginerds cold-start timeout (Worker 4's finding) did not recur
+   this pass** but was not root-caused either (checked `REQUEST_TIMEOUT_
+   MS = 20000ms`, judged not obviously too aggressive) -- treat as a
+   real, low-frequency, resolves-on-retry characteristic worth a line in
+   the owner's decision sheet ("if a tool briefly errors right after
+   opening the app, wait a moment and retry"), not a blocking bug.
+4. **KHA/403 N 18th remain BLOCKED** for any current-state Sunday tool,
+   unchanged and re-confirmed multiple times across this whole cycle --
+   write their decision sheets as BLOCKED with the exact reason (no ESPN
+   integration exists; historical draft data only), per the brief's own
+   framing, not attempted work.
+5. **`.worker4_dyn_*` and this pass's own `.worker5_*` scratch files**
+   remain in the worktree root, all currently in active use by their
+   respective still-running dev processes -- clean them up the same way
+   this pass cleaned up Worker 4's orphaned Redraft ones, AFTER stopping
+   the processes that hold them open (do not delete live-process log/
+   creds files out from under a running server).
+6. **D1(b)'s native launcher fix (`NWR_DYNASTY_LEAGUE_HOME` env var) is
+   still only `cargo check`-verified, not end-to-end native-verified** --
+   this remains explicitly Worker 6's/the final packaging pass's job per
+   the brief's own time-boxing (60-minute native packaging attempt,
+   11:00 Mountain cutoff). Confirm the Dynasty native app actually
+   persists/reads its per-league Sleeper import from `%LOCALAPPDATA%\
+   com.ninerswarroom.dynasty\state\dynasty\` when that attempt runs.

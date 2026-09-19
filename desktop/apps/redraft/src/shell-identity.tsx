@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { serializeActiveProfileCall } from "./attention-center";
-import { leagueFormat, resolveLeagueLifecycle } from "./league-context";
+import { leagueFormat, resolveDisplayLifecycle, resolveLeagueLifecycle } from "./league-context";
 import { summarizeShellNotices } from "./shell-notices";
+import { useLeagueWorkspaceContext } from "./weekly-shared";
 
 /**
  * NWR UI foundation pass (2026-09-10, directive Phase 3 -- league shell).
@@ -80,6 +81,25 @@ export function ShellIdentity({
   // disabled if a request resolved out of order).
   const switchRequestRef = useRef(0);
 
+  // NWR Sunday Readiness overnight cycle, Worker 5: real, pre-existing
+  // display bug fixed (flagged by Worker 4) -- this sidebar badge previously
+  // called ONLY the local, bootstrap-only `resolveLeagueLifecycle` heuristic
+  // below (line ~150), which has no live provider-status read by design
+  // (see its own docstring) and returns PRE_DRAFT for any real Sleeper
+  // league that was never drafted inside this app's own Draft Room (both
+  // real leagues, Fantasy Gamers and Enginerds, drafted on Sleeper itself)
+  // -- confirmed live this pass: both showed "PRE-DRAFT" despite real
+  // IN_SEASON data. `/api/v1/redraft/league-workspace-context` already
+  // computes the correct, live, provider-status-aware `lifecycle` field
+  // (`build_league_workspace_context` -> `resolve_league_lifecycle`, using
+  // Sleeper's own real `league.status` when available); this hook
+  // (`useLeagueWorkspaceContext`, the SAME primitive Weekly Home/Start-Sit/
+  // Improve Team already use for provider week) fetches it here too. Must
+  // be called unconditionally, before the `if (!active)` early return
+  // below, per the rules of hooks -- it already no-ops (returns null) when
+  // `profileId` is falsy, matching every other call site of this hook.
+  const { result: workspaceContext } = useLeagueWorkspaceContext(client, data.activeProfileId);
+
   const switchLeague = async (profileId: string) => {
     if (!profileId || profileId === data.activeProfileId || working) return;
     setMenuOpen(false);
@@ -132,7 +152,10 @@ export function ShellIdentity({
     );
   }
 
-  const lifecycle = resolveLeagueLifecycle(active, data.draftBoard);
+  // Prefer the live, provider-status-aware value; fall back to the local
+  // heuristic only while the workspace-context request hasn't resolved yet
+  // (or for a profile shape that loader legitimately returns null for).
+  const lifecycle = resolveDisplayLifecycle(resolveLeagueLifecycle(active, data.draftBoard), workspaceContext?.lifecycle);
   const stageClass = lifecycle === "IN_SEASON"
     ? "nwr-shell-identity__stage--season"
     : lifecycle === "OFFSEASON"

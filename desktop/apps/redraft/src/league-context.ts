@@ -88,6 +88,31 @@ export function resolveLeagueLifecycle(
 }
 
 /**
+ * NWR Sunday Readiness overnight cycle, Worker 5: real, pre-existing
+ * display bug fix (flagged by Worker 4) -- `resolveLeagueLifecycle` above
+ * is a purely LOCAL, bootstrap-only heuristic with no live provider-status
+ * read (see its own docstring), and returns PRE_DRAFT for any real Sleeper
+ * league that was never drafted inside this app's own Draft Room -- both
+ * real leagues, Fantasy Gamers and Enginerds, drafted on Sleeper itself.
+ * Confirmed live this pass: both showed "PRE-DRAFT" despite real
+ * IN_SEASON data, in both Weekly Home's "Stage" row and the sidebar
+ * badge. `/api/v1/redraft/league-workspace-context`'s own `lifecycle`
+ * field is the correct, live, provider-status-aware authority (built by
+ * `league_workspace_context_service.build_league_workspace_context` ->
+ * `resolve_league_lifecycle`, using Sleeper's own real `league.status`
+ * when available) -- pure, tiny, and testable in isolation: prefer the
+ * live value when a workspace-context fetch has resolved, fall back to
+ * the local heuristic only while it hasn't (or for a profile shape that
+ * fetch legitimately returns nothing for).
+ */
+export function resolveDisplayLifecycle(
+  localLifecycle: LeagueLifecycle,
+  liveLifecycle: LeagueLifecycle | null | undefined,
+): LeagueLifecycle {
+  return liveLifecycle ?? localLifecycle;
+}
+
+/**
  * Where opening/switching to this league should land the owner (directive
  * section 2, invariant A: "opening an in-season league does not
  * automatically drop the owner into Draft Room"). PRE_DRAFT/LIVE_DRAFT go

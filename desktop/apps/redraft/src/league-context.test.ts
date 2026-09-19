@@ -7,6 +7,7 @@ import {
   leagueKeyFor,
   legacyRedirectTarget,
   resolveActiveNavPath,
+  resolveDisplayLifecycle,
   resolveLeagueHomeSubpath,
   resolveLeagueLifecycle,
 } from "./league-context";
@@ -131,6 +132,39 @@ describe("resolveLeagueLifecycle -- real provider-evidence fixes", () => {
     const partial = board({ configured: true, drafted: new Array(25).fill("p"), updatedAtUtc: "2026-09-01T00:00:00Z" });
     const now = new Date("2026-09-17T00:00:00Z");
     expect(resolveLeagueLifecycle(khaEspn, partial, now)).toBe("LIVE_DRAFT");
+  });
+});
+
+// 2026-09-18/19 fix (Sunday Readiness overnight, Worker 5): a real,
+// pre-existing display bug (flagged by Worker 4) -- Weekly Home's "Stage"
+// row and the sidebar lifecycle badge both called ONLY
+// `resolveLeagueLifecycle` (the local, bootstrap-only heuristic above),
+// which has no live provider-status read by design and returns PRE_DRAFT
+// for any real Sleeper league never drafted inside this app's own Draft
+// Room -- confirmed live for both real leagues, Fantasy Gamers and
+// Enginerds (both drafted on Sleeper itself). `resolveDisplayLifecycle`
+// is the tiny, pure preference rule now used by both real call sites
+// (`in-season.tsx`'s `WeeklyHomePage`, `shell-identity.tsx`'s
+// `ShellIdentity`) to prefer the correct, live
+// `LeagueWorkspaceContext.lifecycle` field over the local heuristic.
+describe("resolveDisplayLifecycle", () => {
+  it("prefers the live workspace-context lifecycle over the local heuristic when both are known and disagree", () => {
+    // The exact real-world shape this bug produced: local heuristic says
+    // PRE_DRAFT (a Sleeper league never drafted in this app's Draft Room),
+    // but the live, provider-status-aware value is IN_SEASON.
+    expect(resolveDisplayLifecycle("PRE_DRAFT", "IN_SEASON")).toBe("IN_SEASON");
+  });
+
+  it("falls back to the local heuristic while the live value is still loading (undefined)", () => {
+    expect(resolveDisplayLifecycle("PRE_DRAFT", undefined)).toBe("PRE_DRAFT");
+  });
+
+  it("falls back to the local heuristic when the live value is explicitly null (e.g. no active profile)", () => {
+    expect(resolveDisplayLifecycle("IN_SEASON", null)).toBe("IN_SEASON");
+  });
+
+  it("returns the live value unchanged when it agrees with the local heuristic", () => {
+    expect(resolveDisplayLifecycle("IN_SEASON", "IN_SEASON")).toBe("IN_SEASON");
   });
 });
 
