@@ -2265,3 +2265,222 @@ delivery, native packaging attempt, push, final report)
    11:00 Mountain cutoff). Confirm the Dynasty native app actually
    persists/reads its per-league Sleeper import from `%LOCALAPPDATA%\
    com.ninerswarroom.dynasty\state\dynasty\` when that attempt runs.
+
+---
+
+## Worker 6 -- CLOSURE: final rebuild/restart, final regression, native
+packaging decision, decision sheets, push, final report (2026-09-18,
+~9:39-?? PM Mountain)
+
+Time check: started 9:39 PM Mountain (~14h21m remaining to the Saturday
+noon deadline). No deadline risk at any point in this pass.
+
+### 1. Final rebuild and restart -- LIVE OBSERVATION + ACTUAL TEST RESULT
+
+**Redraft:** stopped Worker 5's PIDs (38056 backend, 36340 frontend,
+confirmed via `Get-CimInstance Win32_Process` command-line inspection
+before killing, same discipline as every prior worker), ran a real fresh
+`npm run build --workspace @nwr/redraft-desktop` (output hash
+`index-BVy_paQL.js` -- identical to Worker 5's own last build, expected
+and correct since HEAD has not advanced since Worker 5's commit), started
+a fresh backend (port 18742) + `vite preview` (port 1422) pair with new
+credentials (`.worker6_backend_creds.json`). Confirmed: `GET
+/api/v1/bootstrap` -> `401` (healthy-contract), `GET /` -> `200`, served
+bundle hash matches the fresh build on disk.
+
+**Dynasty:** `git diff 3ea72fbc..HEAD --stat` confirmed Dynasty-relevant
+code (`system.tsx`, `lib.rs`) DID change during this cycle (Worker 4's D1
+fix), so a parity rebuild was judged worthwhile despite "no Dynasty code
+changed across Workers 4-5" -- the currently-running Dynasty pair was
+still Worker 4's own process, started before this session, and exact-SHA
+serving discipline was preferred this late in the cycle over assuming
+equivalence. Ran a real fresh `npm run build --workspace @nwr/dynasty-
+desktop`, stopped Worker 4's PIDs (16136 backend, 45464 frontend), started
+a fresh backend (port 18741) + `vite preview` (port 1421) pair. Confirmed:
+`GET /api/v1/bootstrap` -> `401`, `GET /` -> `200`.
+
+**Both apps confirmed serving exact final HEAD `1149b89d`** (git log -1
+re-checked immediately before and after the restart; no commit landed
+during this rebuild).
+
+### 2. Final regression confirmation -- ACTUAL TEST RESULT
+
+Brief's exact required backend list, re-run fresh at final HEAD:
+`test_weekly_lineup_optimizer_service`, `test_weekly_projection_service`,
+`test_weekly_projection_provider_service`, `test_fantasypros_kdst_
+consensus_service`, `test_redraft_waivers_ir_reserve_drop_exclusion_fix`,
+`test_redraft_waivers_faab_context_fix`, `test_redraft_waivers_open_slot_
+and_same_context_fix`, `test_weekly_home_single_snapshot`, `test_weekly_
+home_sleeper_fetch_caching`, `test_dynasty_sleeper_league_service`, `test_
+dynasty_league_import_facade_wiring`, `test_league_lifecycle_service`:
+**155 passed, 0 failed** -- identical to Worker 5's own count, confirming
+no regression.
+
+Broader combined suite (adds `test_waiver_engine_service`, `test_redraft_
+kdst_streamer_keep_current_fix`, `test_weekly_game_lock_service`, `test_
+desktop_application_api`, `test_desktop_facade_architecture_wiring`):
+**253 passed, 4 failed** -- the exact same 4 named pre-existing failures
+every prior worker documented (`test_dynasty_facade_composes_real_
+governed_workflows`, `test_desktop_rookie_veteran_bridge_is_source_
+separated_and_trade_aware`, `test_redraft_bootstrap_seeds_once_and_
+matches_desktop_contract`, `test_facade_has_no_streamlit_or_app_
+component_dependency`), same assertion messages, same root causes (a real
+local FantasyPros API key present in this dev environment; an unrelated
+`not name.startswith("app")` import-naming assertion). Not re-proven via
+a fresh baseline worktree this pass (Worker 5 already did that rigorously
+against the exact audited baseline commit `3ea72fbc` with a real
+detached-HEAD worktree, independent of stash) -- re-running that
+expensive check a second time in the same cycle would be exactly the
+"repeated full runs to inflate a pass count" the brief warns against;
+Worker 5's proof is treated as still valid since no file relevant to
+those 4 tests changed between Worker 5's HEAD and this pass's HEAD
+(confirmed: `git diff` between the two commits touches only
+`league-context.ts`/`in-season.tsx`/`shell-identity.tsx`/`league-context.
+test.ts`, none of which those 4 tests exercise).
+
+Frontend: `npm run typecheck` (both apps) -- clean, 0 errors. Full `npx
+vitest run` (30 files): **501 passed, 0 failed** -- identical to Worker
+5's own count, confirming no regression. `frontend_bench_results.json`'s
+own benign perf-timing-noise churn (same known side effect every prior
+worker hit) reverted with `git checkout --` before finishing; confirmed
+`git status --short` shows no tracked-file changes from this pass, only
+new untracked scratch/decision-sheet files.
+
+**No application, service, or contract code was modified this pass.**
+
+### 3. Native packaging -- INSPECTED CODE + LIVE OBSERVATION -- DECISION:
+SKIPPED for both apps, documented with exact measurement and reasoning
+
+**Memory measured twice, this pass, via `Get-CimInstance
+Win32_OperatingSystem`:**
+- Before any build activity: **3.31 GB free / 15.11 GB total**.
+- After the Redraft+Dynasty frontend rebuilds and the full regression
+  pass above: **3.45 GB free / 15.11 GB total** (stable/slightly up, not
+  trending down under this pass's own light activity).
+
+**Cross-checked against this repo's own real, documented prior native-
+build attempts (not just the dispatching brief's own paraphrase of
+them)** -- `docs/codex/full_cycle_v1/LEDGER.md`: a real 2-attempt native
+build sequence there was killed by a genuine host low-memory event during
+the PyInstaller sidecar stage **at 2.65 GB free** (before attempt 2) and
+**2.08 GB free** (after attempt 2) -- both attempts' `check:resources`
+gate passed cleanly first; the kill happened later, mid-PyInstaller,
+external to this repo's own code. This is materially different evidence
+than the dispatching brief's own summary to this worker ("killed... at
+well under ~1GB free") -- flagged honestly: the real ledger evidence this
+worker found shows kills at a HIGHER free-memory level than that summary
+stated, which is worth the coordinating session knowing about for any
+future packaging attempt's risk calibration.
+
+**Decision: SKIP native packaging for both Redraft and Dynasty this
+pass.** Reasoning: this session's own measured 3.31-3.45 GB free is only
+~800 MB (~30%) above the exact free-memory level (2.65 GB) at which a
+real, documented attempt was killed mid-build in this same repo, on
+(presumably) similar host hardware. That margin is not "several GB," the
+level the brief itself calls out as the real requirement for the
+PyInstaller+Rust/cargo stages, and a repeat OOM kill was judged a real,
+non-trivial risk -- not a certainty, but enough of one that forcing a
+60-minute attempt risked eating time this pass needed for the decision
+sheets, in direct tension with the brief's own explicit priority order
+("do NOT let this consume time needed for the decision sheets"). Checked
+top memory consumers (`Get-Process | Sort-Object WS -Descending`) for any
+safely closable non-session process first -- top entries were `MsMpEng`
+(464 MB, Windows Defender), multiple `claude`/`Orca`/`chrome` processes
+(247-400 MB each) not owned or attributable to this session -- none were
+judged safe or appropriate to close.
+
+**Consequence for both apps:**
+- **Redraft native: NOT ATTEMPTED this pass.** The tested browser build
+  (`http://127.0.0.1:1422/`) remains the verified, working delivery per
+  the brief's own explicit fallback framing ("A tested browser build is
+  the working fallback").
+- **Dynasty native: NOT ATTEMPTED this pass.** Worker 4's D1(b)
+  `NWR_DYNASTY_LEAGUE_HOME` launcher fix therefore remains
+  `cargo check`-verified only, NOT end-to-end native-verified -- this is
+  an honest, disclosed gap carried forward, not resolved this pass. The
+  tested browser build (`http://127.0.0.1:1421/`) remains the verified
+  working delivery for Dynasty.
+
+No installer files were built, touched, or claimed working this pass.
+This is a documented skip, not a failed or partial attempt -- no
+PyInstaller/cargo process was started.
+
+### 4. Sunday decision sheets -- LIVE OBSERVATION (real browser session,
+final HEAD, GET-only calls throughout)
+
+Produced under `docs/codex/sunday_readiness_20260920/decision_sheets/`,
+all 4 required by the brief, using freshly re-verified real data (not
+reused from any prior worker's own capture) pulled live this session
+against the real running Redraft app:
+
+- `01_fantasy_gamers.md` -- READY. Real Week 2 lineup (1 recommended
+  swap, Michael Pittman over Zay Flowers, +11.7 pts), real THIS_WEEK top
+  waiver target (Brock Purdy/drop Marvin Harrison, +2.3 real legal-lineup
+  gain), real non-FAAB waiver-priority #6, real K (Eddy Pineiro ADD over
+  Ka'imi Fairbairn, #3 vs #4 FantasyPros) and DST (San Francisco 49ers ADD
+  over New England, #3 vs #8) streamer comparisons with up to 3 real
+  available alternatives each, real close-call bench options (Trevor
+  Lawrence 0.3 pts behind Caleb Williams; Marvin Harrison 1.7 pts behind
+  Travis Etienne's FLEX).
+- `02_las_vegas_enginerds.md` -- READY. Real Week 2 lineup (1 recommended
+  swap, Jalen Coker over Zay Flowers/Quentin Johnston line, +7.6 pts,
+  LOW CONFIDENCE -- CLOSE CALL), real reserve (Ricky Pearsall) / locked
+  (Skyler Bell, real kickoff already passed) / sourced-excluded (Jayden
+  Higgins, real SEASON_OUT override) buckets all distinct and visible,
+  real honest finding that no genuinely useful non-kicker THIS_WEEK
+  pickup exists this week (every real available WR candidate showed
+  +0.0 usable gain), real FAAB ($100/$100, priority #2, 14 weeks
+  remaining), real K KEEP-current case (Cam Little, FantasyPros #6,
+  genuinely beats every real available alternative including Tyler Bass
+  #9), real, live-confirmed no-DST enforcement (no DST section rendered
+  at all for this league).
+- `03_kha_high_stakes.md` -- BLOCKED, re-confirmed live this session
+  (real "Sleeper league required" message, real IN SEASON badge from
+  this cycle's own D2 fix), exact reason and exact input checklist from
+  Worker 4's documentation reproduced verbatim, no lineup/pickup advice
+  attempted.
+- `04_403_n_18th.md` -- BLOCKED, re-confirmed live this session (same
+  real message), same checklist, plus the standing `provider_league_id:
+  null` gap noted for completeness.
+
+All 4 sheets follow the brief's exact required 6-part structure and
+include the brief's own explicit required sentence about Saturday
+readiness not establishing Sunday's final inactive list.
+
+### 5. Cleanup -- LIVE OBSERVATION
+
+Deleted `.worker4_dyn_*` (5 files) and `.worker5_*` (5 files) scratch
+files once their holding processes (Worker 4's Dynasty pair, Worker 5's
+Redraft pair) were confirmed stopped by this pass's own restarts. This
+pass's own `.worker6_*` scratch files (10 files: Redraft + Dynasty
+backend/preview creds and logs) remain in place, in active use by the
+currently-running final dev-server pairs -- these are the last such files
+this cycle will produce, since no further worker follows this one; the
+owner or a future session can delete them once the dev servers are
+eventually stopped. `local_exports.backup-20260918T230905Z/` (a real,
+independently-verified-intact backup from an earlier cycle, re-confirmed
+present, not scratch) was left untouched.
+
+### 6. Push -- LIVE OBSERVATION
+
+See final report for the exact push command, before/after local HEAD, and
+confirmed remote SHA match.
+
+### FILES CHANGED THIS PASS
+
+- `docs/codex/sunday_readiness_20260920/LEDGER.md` (this entry).
+- `docs/codex/sunday_readiness_20260920/decision_sheets/01_fantasy_
+  gamers.md` (new).
+- `docs/codex/sunday_readiness_20260920/decision_sheets/02_las_vegas_
+  enginerds.md` (new).
+- `docs/codex/sunday_readiness_20260920/decision_sheets/03_kha_high_
+  stakes.md` (new).
+- `docs/codex/sunday_readiness_20260920/decision_sheets/04_403_n_18th.md`
+  (new).
+
+No application, service, test, or config source file was modified this
+pass. No repo data files were written. Every browser/API call this pass
+was a plain GET (Sleeper, FantasyPros, nflverse-derived schedule, or this
+app's own read-only endpoints) -- zero writes to any real provider, zero
+lineup/claim/bid/drop/trade submissions, confirmed by this pass's own
+read-only browsing discipline throughout.
