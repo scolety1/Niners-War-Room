@@ -82,6 +82,142 @@ from src.services.sleeper_import_service import SleeperHttpClient
 WEEKLY_PROJECTION_SOURCE = "SLEEPER_WEEKLY_PROJECTIONS_V1"
 KDST_SCORING_LABEL = "SLEEPER_PROVIDER_SCORING"
 NWR_SCORING_LABEL = "NWR_LEAGUE_SCORING"
+# NWR Sunday Readiness overnight cycle, Worker 3 (W7): real, league-exact
+# weekly K/DST scoring computed directly from Sleeper's own raw per-stat
+# `league.settings.scoring_settings` map (a stat_name -> points_per_unit
+# dict -- the SAME field names Sleeper's own weekly-projection raw stat
+# payload uses, confirmed by a real live pull this pass) multiplied against
+# this row's real raw weekly stat values, wherever both sides genuinely
+# match. `KDST_SCORING_LABEL` (generic provider `pts_ppr` passthrough)
+# remains the honest fallback when the league's raw scoring map is
+# unavailable or has no real K/DST-relevant overlap with the raw stats.
+KDST_SCORING_LABEL_EXACT = "NWR_LEAGUE_SCORING_KDST_WEEKLY"
+KDST_SCORING_LABEL_PARTIAL = "NWR_LEAGUE_SCORING_KDST_WEEKLY_PARTIAL"
+
+# The real, known Sleeper kicker scoring-category field names (verified this
+# pass via a live `GET league/{id}` on both real leagues -- Fantasy Gamers'
+# real tiers run fgm_0_19...fgm_60p; Enginerds' real tiers run
+# fgm_0_19/20_29/30_39/40_49/50p, with an always-zero redundant fgm_50_59
+# key). Sleeper's real weekly-projection payload (verified this pass via a
+# live pull) only ever emits fgm_0_19/20_29/30_39/40_49 and xpm/xpmiss as
+# discrete raw stat fields -- there is NO raw 50-59/60+ yard field-goal
+# breakout anywhere in the projection payload, confirmed by inspecting every
+# key across the entire real payload, not just one kicker's row. Any league
+# scoring a nonzero 50-59/60+ tier therefore has a real, disclosed gap for
+# that tier -- never silently approximated (e.g. by subtracting the other
+# tiers from the overall `fgm` total, which would be a fragile, undisclosed
+# guess this module explicitly avoids).
+_KICKER_KNOWN_SCORING_CATEGORIES: frozenset[str] = frozenset({
+    "fgm_0_19", "fgm_20_29", "fgm_30_39", "fgm_40_49", "fgm_50_59", "fgm_50p", "fgm_60p",
+    "fgmiss", "fgmiss_0_19", "fgmiss_20_29", "fgmiss_30_39", "fgmiss_40_49", "fgmiss_50p",
+    "xpm", "xpmiss",
+})
+# The real, known Sleeper defense/special-teams scoring-category field
+# names, cross-checked against a real live weekly-projection payload for
+# multiple real DST rows this pass (sack/int/fum_rec/ff/safe/blk_kick/def_td
+# and the real `pts_allow_*` points-allowed tier buckets all confirmed
+# present as real raw stat fields).
+_DST_KNOWN_SCORING_CATEGORIES: frozenset[str] = frozenset({
+    "sack", "int", "fum_rec", "ff", "safe", "blk_kick", "def_td", "def_fum_td",
+    "st_td", "pr_td", "kr_td", "pass_int_td", "tkl_loss",
+    "pts_allow_0", "pts_allow_1_6", "pts_allow_7_13", "pts_allow_14_20",
+    "pts_allow_21_27", "pts_allow_28_34", "pts_allow_35p",
+    "yds_allow_0_100", "yds_allow_100_199", "yds_allow_200_299", "yds_allow_300_349",
+    "yds_allow_350_399", "yds_allow_400_449", "yds_allow_450_499", "yds_allow_500_549",
+    "yds_allow_550p",
+})
+# A real, live-confirmed Sleeper convention (verified this pass, multiple
+# real DST rows): only the ONE points/yards-allowed bucket a team's real
+# projection actually lands in appears as a raw stat field at all -- e.g.
+# `pts_allow_21_27: 1.0` with no sibling `pts_allow_*` key anywhere on that
+# same row, not a "some fields missing" gap. Treating every OTHER
+# same-family bucket as individually "unsupported" whenever a league scores
+# more than one bucket would be a false-positive disclosure on every real
+# DST row. These families are checked for AT-LEAST-ONE-MEMBER-present
+# instead: once any one real bucket is confirmed present, every other
+# nonzero-weighted member of the SAME family contributes a real, honest
+# zero (this team simply did not land in that bucket this week) rather than
+# being flagged as a provider gap. A family with ZERO members present at
+# all (the provider genuinely never sent this category for this row) is
+# still a real, disclosed gap -- one unsupported entry per configured
+# member, unchanged.
+_DST_MUTUALLY_EXCLUSIVE_FAMILIES: tuple[frozenset[str], ...] = (
+    frozenset({
+        "pts_allow_0", "pts_allow_1_6", "pts_allow_7_13", "pts_allow_14_20",
+        "pts_allow_21_27", "pts_allow_28_34", "pts_allow_35p",
+    }),
+    frozenset({
+        "yds_allow_0_100", "yds_allow_100_199", "yds_allow_200_299", "yds_allow_300_349",
+        "yds_allow_350_399", "yds_allow_400_449", "yds_allow_450_499", "yds_allow_500_549",
+        "yds_allow_550p",
+    }),
+)
+
+
+def _score_kdst_from_raw_sleeper_scoring(
+    position: str, raw: Mapping[str, Any], league_scoring_settings: Mapping[str, Any] | None
+) -> tuple[float, tuple[str, ...]] | None:
+    """Real, league-exact weekly K/DST points computed directly from
+    Sleeper's own raw `scoring_settings` map (real per-stat point values)
+    multiplied against this row's real raw weekly stat values -- never a
+    recomputed/duplicated formula, just a direct real-data dot product.
+
+    Returns `None` (never a fabricated number) when the league's raw
+    scoring map is unavailable, or has no real nonzero-weighted category
+    that this row's raw stats can actually support -- the caller then falls
+    back to the existing generic provider-points passthrough, honestly
+    labeled. When a real, partial match exists, returns
+    `(points, unsupported_category_names)` -- `unsupported_category_names`
+    lists every real, nonzero-weighted league scoring category for this
+    position that this row's raw stats do NOT support (e.g. a 50+ yard
+    field-goal tier the projection payload never breaks out), so the caller
+    can disclose the exact gap rather than silently presenting a partial sum
+    as a complete one.
+    """
+
+    if not isinstance(league_scoring_settings, Mapping):
+        return None
+    if position == "K":
+        known = _KICKER_KNOWN_SCORING_CATEGORIES
+    elif position == "DST":
+        known = _DST_KNOWN_SCORING_CATEGORIES
+    else:
+        return None
+    # A key's family is present when ANY of its members has a real raw
+    # value on this row -- see `_DST_MUTUALLY_EXCLUSIVE_FAMILIES`'s own
+    # docstring. Irrelevant for K (no families defined there).
+    families = _DST_MUTUALLY_EXCLUSIVE_FAMILIES if position == "DST" else ()
+    family_present: dict[frozenset[str], bool] = {
+        family: any(
+            isinstance(raw.get(member), (int, float)) and not isinstance(raw.get(member), bool)
+            for member in family
+        )
+        for family in families
+    }
+
+    total = 0.0
+    matched_any = False
+    unsupported: list[str] = []
+    for key in sorted(known):
+        weight = league_scoring_settings.get(key)
+        if not isinstance(weight, (int, float)) or isinstance(weight, bool) or weight == 0:
+            continue
+        raw_value = raw.get(key)
+        if isinstance(raw_value, (int, float)) and not isinstance(raw_value, bool):
+            total += float(raw_value) * float(weight)
+            matched_any = True
+            continue
+        owning_family = next((family for family in families if key in family), None)
+        if owning_family is not None and family_present.get(owning_family):
+            # A real sibling bucket in the same family IS present on this
+            # row -- this specific bucket is a real, honest zero (this
+            # team did not land here this week), not a provider gap.
+            matched_any = True
+            continue
+        unsupported.append(key)
+    if not matched_any:
+        return None
+    return round(total, 2), tuple(unsupported)
 
 # Sleeper's raw weekly stat field -> the SAME canonical stat-line field
 # names `score_projection` already expects on a `ProjectionPlayer.stats`
@@ -132,6 +268,12 @@ class WeeklyProjectionRow:
     identity_match: str  # MATCHED | UNMATCHED | AMBIGUOUS
     gp: float | None
     known_simplifications: tuple[str, ...] = field(default_factory=lambda: _KNOWN_SIMPLIFICATIONS)
+    # NWR Sunday Readiness overnight cycle, Worker 3 (W7): populated only for
+    # K/DST rows scored via `KDST_SCORING_LABEL_PARTIAL` -- the real, named
+    # league scoring categories (nonzero weight) this row's raw stats could
+    # NOT support (e.g. a 50+ yard field-goal tier the provider does not
+    # break out). Empty for every other `scoring_context`.
+    unsupported_scoring_categories: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -189,15 +331,31 @@ def _mapped_stats(raw: Mapping[str, Any]) -> dict[str, float]:
     return stats
 
 
-def _score_row(position: str, raw: Mapping[str, Any], scoring: ScoringSettings) -> tuple[float | None, str]:
+def _score_row(
+    position: str,
+    raw: Mapping[str, Any],
+    scoring: ScoringSettings,
+    sleeper_scoring_settings: Mapping[str, Any] | None = None,
+) -> tuple[float | None, str, tuple[str, ...]]:
     if position in {"K", "DST"}:
+        # NWR Sunday Readiness overnight cycle, Worker 3 (W7 fix): try a
+        # real, league-exact score from Sleeper's own raw scoring_settings
+        # map first -- only falls back to the generic provider `pts_ppr`
+        # passthrough when the league's raw scoring map is unavailable or
+        # has no real overlap with this row's raw stats. Never blends the
+        # two into one number silently labeled as exact.
+        custom = _score_kdst_from_raw_sleeper_scoring(position, raw, sleeper_scoring_settings)
+        if custom is not None:
+            points, unsupported = custom
+            label = KDST_SCORING_LABEL_PARTIAL if unsupported else KDST_SCORING_LABEL_EXACT
+            return points, label, unsupported
         points = raw.get("pts_ppr")
         if not isinstance(points, (int, float)):
-            return None, KDST_SCORING_LABEL
-        return round(float(points), 2), KDST_SCORING_LABEL
+            return None, KDST_SCORING_LABEL, ()
+        return round(float(points), 2), KDST_SCORING_LABEL, ()
     mapped = _mapped_stats(raw)
     if not mapped:
-        return None, NWR_SCORING_LABEL
+        return None, NWR_SCORING_LABEL, ()
     player = ProjectionPlayer(
         player_id="weekly-projection-scratch",
         player_name="",
@@ -208,7 +366,7 @@ def _score_row(position: str, raw: Mapping[str, Any], scoring: ScoringSettings) 
         evidence_status="",
         stats=mapped,
     )
-    return score_projection(player, scoring), NWR_SCORING_LABEL
+    return score_projection(player, scoring), NWR_SCORING_LABEL, ()
 
 
 def build_weekly_projection_rows(
@@ -222,6 +380,7 @@ def build_weekly_projection_rows(
     season_type: str,
     league_id: str,
     fetched_at: str | None = None,
+    sleeper_scoring_settings: Mapping[str, Any] | None = None,
 ) -> WeeklyProjectionResult:
     """Join Sleeper's raw weekly stat lines to NWR identity + league scoring.
 
@@ -230,6 +389,17 @@ def build_weekly_projection_rows(
     `_redraft_ranking_payloads(...)`-shaped sequence `sleeper_free_agent_pool`
     already consumes -- reused here for the identical name/position/team
     identity join, not a new resolver.
+
+    NWR Sunday Readiness overnight cycle, Worker 3 (W7 fix):
+    `sleeper_scoring_settings` is the league's own raw
+    `league.settings.scoring_settings` map (optional -- when omitted, K/DST
+    scoring falls back to the pre-existing generic `pts_ppr` passthrough,
+    unchanged). When supplied, K/DST rows are scored league-exactly wherever
+    the raw weekly stats genuinely support it (see
+    `_score_kdst_from_raw_sleeper_scoring`); any real, nonzero-weighted
+    scoring category this row's raw stats could not support is disclosed on
+    the row itself (`unsupported_scoring_categories`), never silently
+    dropped or blended into a falsely-exact total.
     """
 
     if not isinstance(players, Mapping):
@@ -283,7 +453,9 @@ def build_weekly_projection_rows(
             canonical_id = ""
             identity_match = "UNMATCHED"
             unmatched += 1
-        points, scoring_context = _score_row(position, raw, scoring)
+        points, scoring_context, unsupported_categories = _score_row(
+            position, raw, scoring, sleeper_scoring_settings
+        )
         gp = raw.get("gp")
         rows.append(
             WeeklyProjectionRow(
@@ -303,6 +475,7 @@ def build_weekly_projection_rows(
                 raw_stats=_mapped_stats(raw) if position not in {"K", "DST"} else {},
                 identity_match=identity_match,
                 gp=float(gp) if isinstance(gp, (int, float)) else None,
+                unsupported_scoring_categories=unsupported_categories,
             )
         )
 

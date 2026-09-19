@@ -15,6 +15,13 @@ function add(overrides: Partial<WaiverAddCandidate> = {}): WaiverAddCandidate {
     weeklyProjectedPoints: 11.4,
     marginalUtility: 3.1,
     becomesStarter: true,
+    // NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix): a real,
+    // already-evaluated weekly-lineup impact by default -- individual
+    // tests override to exercise the "not evaluated" honest-disclosure
+    // path.
+    becomesStarterBasis: "THIS_WEEK_LINEUP_EVALUATION",
+    thisWeekLineupGain: 6.8,
+    thisWeekEvaluated: true,
     marginalUtilityExplanation: "Clears your weakest starting WR by a real margin.",
     identityStatus: "MATCHED",
     faabBidLowDollars: 14,
@@ -87,14 +94,39 @@ describe("explainWaiverTarget", () => {
     expect(explanation.thisWeekImpact).toBeNull();
   });
 
-  it("reports becomesStarter=true in THIS_WEEK mode with the real projected points", () => {
+  it("reports becomesStarter=true in THIS_WEEK mode with the real legal-lineup gain", () => {
     const explanation = explainWaiverTarget(add(), null, "THIS_WEEK", null);
-    expect(explanation.thisWeekImpact).toBe("Projected to become a starter this week (11.4 pts).");
+    expect(explanation.thisWeekImpact).toBe("Projected to become a starter this week (real legal-lineup gain: 6.8 pts).");
   });
 
   it("honestly reports becomesStarter=false in THIS_WEEK mode", () => {
-    const explanation = explainWaiverTarget(add({ becomesStarter: false }), null, "THIS_WEEK", null);
-    expect(explanation.thisWeekImpact).toBe("Would not become a starter this week under NWR's lineup optimizer.");
+    const explanation = explainWaiverTarget(
+      add({ becomesStarter: false, thisWeekLineupGain: 0.2 }), null, "THIS_WEEK", null,
+    );
+    expect(explanation.thisWeekImpact).toBe(
+      "Would not become a starter this week under NWR's lineup optimizer (real legal-lineup gain: 0.2 pts).",
+    );
+  });
+
+  // NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix): a real,
+  // previously-reproduced bug -- `becomesStarter: null` (not evaluated
+  // this pass) used to be silently treated the same as `false` ("would
+  // not become a starter"), a fabricated negative claim. Must read as
+  // honestly unavailable instead.
+  it("never treats an unevaluated candidate (becomesStarter null) as a false negative", () => {
+    const explanation = explainWaiverTarget(
+      add({
+        becomesStarter: null,
+        becomesStarterBasis: "UNAVAILABLE_NOT_EVALUATED_THIS_PASS",
+        thisWeekLineupGain: null,
+      }),
+      null, "THIS_WEEK", null,
+    );
+    expect(explanation.thisWeekImpact).toBe(
+      "A real weekly-lineup evaluation was not computed for this candidate this pass -- not the same as "
+      + "\"would not start\". Weekly projected points: 11.4.",
+    );
+    expect(explanation.thisWeekImpact).not.toContain("Would not become a starter");
   });
 
   it("leaves bid null when the backend supplied no real FAAB estimate", () => {
@@ -137,7 +169,10 @@ function streamerRow(overrides: Partial<KdstStreamerRow> = {}): KdstStreamerRow 
 describe("explainStreamerPlay", () => {
   it("reads a Tier-based why and recommended tone for a START row", () => {
     const explanation = explainStreamerPlay(streamerRow(), null);
-    expect(explanation.headline).toBe("START Chris Boswell (K)");
+    // NWR Sunday Readiness overnight cycle, Worker 3 (W6 fix): "START" now
+    // renders as "KEEP" so a real keep-current-starter recommendation reads
+    // as one, not as an instruction to take some new action.
+    expect(explanation.headline).toBe("KEEP Chris Boswell (K)");
     expect(explanation.why).toBe("NWR's FantasyPros consensus places Chris Boswell in Tier 1 at K for Week 3.");
     expect(explanation.tone).toBe("recommended");
   });

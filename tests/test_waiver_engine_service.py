@@ -124,6 +124,133 @@ def test_this_week_mode_uses_real_weekly_points_as_tiebreak() -> None:
     assert fa_wr.weekly_projected_points is None  # honestly missing, not fabricated
 
 
+# NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix) -- governing
+# brief's regression fixture 7: "utilities 10 vs 9 and weekly points 1 vs 20
+# sort the 1-point player first in THIS_WEEK (buggy). A season-derived
+# becomesStarter value is unchanged by weekly projections (buggy). Fix must
+# sort by real weekly-usable gain and recompute becomesStarter from a real
+# weekly evaluation." This fixture's own two real free agents (`fa-rb`,
+# `fa-wr`) have real, computed season marginal utilities of 180.0 and 60.0
+# respectively (fa-rb strictly higher) -- the same qualitative shape as the
+# brief's illustrative "10 vs 9" -- with weekly points set to 1.0 vs 20.0 to
+# match the brief's own numbers exactly.
+def _this_week_weekly_rows() -> dict[str, WeeklyProjectionRow]:
+    return {
+        "s-fa-rb": WeeklyProjectionRow(
+            canonical_player_id="fa-rb", sleeper_player_id="s-fa-rb", player_name="FA RB",
+            position="RB", team="AAA", week=1, season=2026, season_type="regular", league_id="lg1",
+            source="SLEEPER_WEEKLY_PROJECTIONS_V1", source_as_of="x", projected_points=1.0,
+            scoring_context="NWR_LEAGUE_SCORING", raw_stats={}, identity_match="MATCHED", gp=1.0,
+        ),
+        "s-fa-wr": WeeklyProjectionRow(
+            canonical_player_id="fa-wr", sleeper_player_id="s-fa-wr", player_name="FA WR",
+            position="WR", team="BBB", week=1, season=2026, season_type="regular", league_id="lg1",
+            source="SLEEPER_WEEKLY_PROJECTIONS_V1", source_as_of="x", projected_points=20.0,
+            scoring_context="NWR_LEAGUE_SCORING", raw_stats={}, identity_match="MATCHED", gp=1.0,
+        ),
+    }
+
+
+def test_regression_fixture_7a_this_week_without_a_real_impact_map_falls_back_to_season_utility_ordering() -> None:
+    """The exact buggy ordering the brief's fixture reproduced is still a
+    real, reachable, HONEST fallback path (never fabricated) when the
+    caller has not computed a real weekly-lineup-gain evaluation --
+    `rank_waiver_candidates`'s own docstring discloses this. The next test
+    (7b) proves the real fix once the facade's real evaluation is
+    supplied."""
+    ranking = _ranking()
+    candidates = rank_waiver_candidates(
+        free_agents=_free_agent_rows(), owner_roster_canonical_ids=_owner_roster_ids(),
+        profile=ranking.profile, ranking=ranking, manual_assets=_manual_assets(), mode="THIS_WEEK",
+        weekly_projections_by_sleeper_id=_this_week_weekly_rows(),
+        # No `this_week_impact_by_sleeper_id` -- the pre-W5-fix code path.
+    )
+    fa_rb = next(c for c in candidates if c.sleeper_player_id == "s-fa-rb")
+    fa_wr = next(c for c in candidates if c.sleeper_player_id == "s-fa-wr")
+    assert fa_rb.marginal_utility == 180.0
+    assert fa_wr.marginal_utility == 60.0
+    assert fa_rb.weekly_projected_points == 1.0
+    assert fa_wr.weekly_projected_points == 20.0
+    # Buggy-documented ordering: season utility dominates -- the real
+    # 1-point fa-rb still sorts ahead of the real 20-point fa-wr.
+    order = [c.sleeper_player_id for c in candidates]
+    assert order.index("s-fa-rb") < order.index("s-fa-wr")
+
+
+def test_regression_fixture_7b_this_week_with_a_real_impact_map_sorts_by_actual_usable_lineup_gain() -> None:
+    """The real fix: once a real, evaluated weekly-lineup-gain map is
+    supplied (as the facade now computes via `weekly_lineup_optimizer_
+    service.simulate_this_week_add_drop`), THIS_WEEK ranking is PRIMARILY
+    ordered by real usable gain, not season marginal utility -- the
+    lower-season-utility, higher-weekly-points fa-wr now correctly sorts
+    ahead of fa-rb."""
+    from src.services.weekly_lineup_optimizer_service import ThisWeekAddDropImpact
+
+    ranking = _ranking()
+    impact_map = {
+        # fa-rb: real season utility 180.0, but a REAL weekly evaluation
+        # says he does not crack the actual starting lineup this week
+        # (e.g. every real RB/FLEX slot is already better-occupied) --
+        # near-zero real usable gain.
+        "s-fa-rb": ThisWeekAddDropImpact(
+            baseline_projected_total=100.0, after_projected_total=100.5, gain=0.5, becomes_starter=False
+        ),
+        # fa-wr: real season utility only 60.0, but a REAL weekly
+        # evaluation says he DOES start this week and meaningfully
+        # improves the real lineup total.
+        "s-fa-wr": ThisWeekAddDropImpact(
+            baseline_projected_total=100.0, after_projected_total=115.0, gain=15.0, becomes_starter=True
+        ),
+    }
+    candidates = rank_waiver_candidates(
+        free_agents=_free_agent_rows(), owner_roster_canonical_ids=_owner_roster_ids(),
+        profile=ranking.profile, ranking=ranking, manual_assets=_manual_assets(), mode="THIS_WEEK",
+        weekly_projections_by_sleeper_id=_this_week_weekly_rows(),
+        this_week_impact_by_sleeper_id=impact_map,
+    )
+    order = [c.sleeper_player_id for c in candidates]
+    # THE FIX: fa-wr (real gain 15.0) now sorts strictly ahead of fa-rb
+    # (real gain 0.5), reversing the buggy fixture-7a ordering above even
+    # though fa-rb still has the higher SEASON utility.
+    assert order.index("s-fa-wr") < order.index("s-fa-rb")
+
+    fa_rb = next(c for c in candidates if c.sleeper_player_id == "s-fa-rb")
+    fa_wr = next(c for c in candidates if c.sleeper_player_id == "s-fa-wr")
+    assert fa_rb.this_week_lineup_gain == 0.5
+    assert fa_wr.this_week_lineup_gain == 15.0
+    # THE FIX for the second half of fixture 7: `this_week_becomes_starter`
+    # is the real, independently-recomputed weekly answer, genuinely
+    # different from (and never silently defaulted to) the season-long
+    # `becomes_starter` flag both these candidates share (both `True` under
+    # the season model -- see the real values printed by
+    # `marginal_roster_utility_v2` for this exact fixture).
+    assert fa_rb.becomes_starter is True  # unchanged season-long flag
+    assert fa_rb.this_week_becomes_starter is False  # real, independently recomputed
+    assert fa_rb.this_week_evaluated is True
+    assert fa_wr.this_week_becomes_starter is True
+    assert fa_wr.this_week_evaluated is True
+
+
+def test_regression_fixture_7c_a_candidate_outside_the_impact_map_is_honestly_not_evaluated_never_defaulted() -> None:
+    """`this_week_becomes_starter`/`this_week_lineup_gain` must be `None`
+    -- never silently reused from the season-long flag -- for a real
+    candidate this pass did not evaluate (e.g. outside a bounded shortlist)
+    even when a real impact map was supplied for OTHER candidates."""
+    ranking = _ranking()
+    candidates = rank_waiver_candidates(
+        free_agents=_free_agent_rows(), owner_roster_canonical_ids=_owner_roster_ids(),
+        profile=ranking.profile, ranking=ranking, manual_assets=_manual_assets(), mode="THIS_WEEK",
+        weekly_projections_by_sleeper_id=_this_week_weekly_rows(),
+        this_week_impact_by_sleeper_id={},  # supplied, but genuinely empty this pass
+    )
+    fa_rb = next(c for c in candidates if c.sleeper_player_id == "s-fa-rb")
+    assert fa_rb.this_week_evaluated is False
+    assert fa_rb.this_week_becomes_starter is None
+    assert fa_rb.this_week_lineup_gain is None
+    # `becomes_starter` (the season-long flag) is untouched and still real.
+    assert fa_rb.becomes_starter is True
+
+
 def test_drop_candidates_ranked_weakest_first_by_real_marginal_utility() -> None:
     ranking = _ranking()
     names = {"qb1": "QB One", "rb1": "RB One", "rb2": "RB Two", "wr1": "WR One", "wr2": "WR Two", "te1": "TE One"}

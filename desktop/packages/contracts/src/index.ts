@@ -1096,6 +1096,20 @@ export interface WeeklyLineupSlotPlayer {
   position: string;
   team: string;
   projectedPoints: number | null;
+  /** NWR Sunday Readiness overnight cycle, Worker 3 (W7 fix): the real
+   * scoring basis `projectedPoints` was computed under --
+   * "NWR_LEAGUE_SCORING" / "NWR_LEAGUE_SCORING_KDST_WEEKLY" (exact) /
+   * "NWR_LEAGUE_SCORING_KDST_WEEKLY_PARTIAL" (some real league scoring
+   * category could not be mapped from the provider's raw stats) /
+   * "SLEEPER_PROVIDER_SCORING" (generic provider passthrough, not this
+   * league's own scoring). `null` only for a player with no real
+   * projection row at all. */
+  scoringContext?: string | null;
+  /** Real, named league scoring categories (nonzero weight) this player's
+   * raw stats could not support -- e.g. a 50+ yard field-goal tier the
+   * provider never breaks out. Empty unless `scoringContext` is the
+   * PARTIAL label above. */
+  unsupportedScoringCategories?: string[];
   /** NWR pre-UI architecture CLOSURE pass (directive section 2): the
    * canonical PlayerAvailabilityStatus authority, `null` when this player
    * carries no known status issue -- see DATA_AUTHORITY.md. */
@@ -1117,6 +1131,9 @@ export interface WeeklyLineupBenchPlayer {
   playerName: string;
   position: string;
   projectedPoints: number | null;
+  /** See `WeeklyLineupSlotPlayer.scoringContext`. */
+  scoringContext?: string | null;
+  unsupportedScoringCategories?: string[];
   playerAvailabilityStatus: PlayerAvailabilityStatus | null;
 }
 
@@ -1202,6 +1219,13 @@ export interface WeeklyLineupResult {
    * canonical mapping -- may still carry a real point value, but that
    * value is not the same confidence as a confirmed identity. */
   unresolvedIdentityStarterCount?: number;
+  /** NWR Sunday Readiness overnight cycle, Worker 3 (W7 fix): `true` when
+   * at least one starter that actually contributed to `projectedTotal` was
+   * scored under a non-exact context (generic provider points, or a
+   * partial league-exact K/DST match) -- so the UI can disclose that the
+   * total is not uniformly exact-league-scored rather than implying it is.
+   */
+  nonExactScoringInTotal?: boolean;
   starters: WeeklyLineupSlot[];
   bench: WeeklyLineupBenchPlayer[];
   excluded: Array<{
@@ -1228,7 +1252,22 @@ export interface WaiverAddCandidate {
   rosOverallRank: number | null;
   weeklyProjectedPoints: number | null;
   marginalUtility: number | null;
-  becomesStarter: boolean;
+  /** NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix): in
+   * THIS_WEEK mode, this now reflects a real, independently-recomputed
+   * weekly-lineup evaluation (`null` when not evaluated this pass --
+   * NEVER silently defaulted to the season-long flag). In REST_OF_SEASON
+   * mode, unchanged: the season-long `marginal_roster_utility_v2` flag.
+   * See `becomesStarterBasis`. */
+  becomesStarter: boolean | null;
+  /** "THIS_WEEK_LINEUP_EVALUATION" | "UNAVAILABLE_NOT_EVALUATED_THIS_PASS"
+   * | "SEASON_MARGINAL_UTILITY" -- which of the two meanings above
+   * `becomesStarter` actually carries for this row. */
+  becomesStarterBasis?: string;
+  /** The real, legal-lineup usable gain THIS_WEEK mode ranks by (see
+   * `rank_waiver_candidates`'s W5 fix) -- `null` for REST_OF_SEASON or a
+   * candidate this pass did not evaluate. */
+  thisWeekLineupGain?: number | null;
+  thisWeekEvaluated?: boolean;
   marginalUtilityExplanation: string;
   identityStatus: string;
   faabBidLowDollars: number | null;

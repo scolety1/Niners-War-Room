@@ -843,3 +843,448 @@ need a restart before any worker relies on Dynasty's live HEAD parity.
    tool (unchanged from Worker 1 -- no ESPN client exists). Not this
    Worker's concern, re-confirmed only incidentally via the live "Switch
    league" dropdown screenshot.
+
+---
+
+## Worker 3 -- Fix W5-W7: pickups and streamers that can help now
+(2026-09-18, ~7:58-8:43 PM Mountain)
+
+Time check: started ~7:58 PM Mountain (~16h02m remaining), finished this
+entry ~8:43 PM (~15h17m remaining). No deadline risk.
+
+### CRITICAL FIRST TASK -- FAAB `waiver_type` verification -- INSPECTED CODE
++ LIVE OBSERVATION (WebFetch/WebSearch, real, this pass)
+
+Independently re-verified Worker 1's flag before touching any code, per the
+brief's explicit instruction not to flip the check on unverified third-party
+claims alone:
+
+- **Sleeper's own official docs (`docs.sleeper.com`) do not document
+  `waiver_type` at all** -- confirmed fresh via a real `WebFetch` this pass
+  (not just cited from Worker 1).
+- **Independent source 1 (third-party code, re-confirmed):**
+  `github.com/jdguggs10/flaim` PR #294 defines `SLEEPER_WAIVER_TYPE_FAAB = 2`
+  with an explicit comment: "0 = rolling waivers, 1 = reverse standings,
+  2 = FAAB (undocumented community convention)."
+- **Independent source 2 (NEW this pass, not in Worker 1's citation):**
+  Sleeper's own real, public support article ("What types of waivers do you
+  support?", `support.sleeper.com/en/articles/1876041`) lists the three real
+  waiver systems in this exact order -- Rolling Waivers ("the default
+  setting"), Reverse Standings, then FAAB Bidding -- independently matching
+  the third-party enum's 0/1/2 ordering. Two independent sources converging
+  on the same three-way ordering is real corroboration, though neither
+  alone is an explicit official "waiver_type: 2 = FAAB" statement -- this is
+  high-confidence verified evidence, not absolute certainty.
+- **Verdict: the code WAS backwards.** Fixed `desktop_facade.py`'s
+  `is_faab_league = raw_waiver_type == 1` to `== 2`. Real consequence for
+  both actual leagues: Fantasy Gamers (`waiver_type=1`, real reverse-
+  standings-priority, NOT FAAB) was wrongly computed as FAAB before this
+  fix; Enginerds (`waiver_type=2`, real FAAB) was wrongly computed as NOT
+  FAAB. Both now correct.
+- **LIVE OBSERVATION, this pass:** a real `redraft_waivers(mode="THIS_WEEK")`
+  call against the real running Fantasy Gamers league returned
+  `"isFaabLeague": false` (previously would have been `true`) -- confirmed
+  directly, not just unit-tested.
+- Updated 6 pre-existing test fixtures across `test_redraft_waivers_faab_
+  context_fix.py` and `test_redraft_waivers_decision_trace_completeness_
+  fix.py` that had encoded the same backwards assumption (`waiver_type: 1`
+  meaning FAAB); added a new regression test
+  (`test_faab_context_treats_reverse_standings_waiver_type_as_non_faab_too`)
+  locking in the corrected 3-value enum.
+
+### W5 -- wrong weekly authority -- INSPECTED CODE + ACTUAL TEST RESULT +
+LIVE OBSERVATION
+
+Root cause confirmed exactly as the brief described:
+`waiver_engine_service.rank_waiver_candidates`'s THIS_WEEK sort key was
+`(marginal_utility is None, -marginal_utility, weekly_points is None,
+-weekly_points)` -- season utility primary, weekly points only a tiebreak.
+`becomes_starter` on `WaiverCandidate` was always `marginal_roster_
+utility_v2`'s own season-long flag, never recomputed from any real weekly
+lineup evaluation, while the frontend (`AddDropDetail`, `explainWaiverTarget`)
+claimed it reflected "this week."
+
+**Fix:** new `weekly_lineup_optimizer_service.simulate_this_week_add_drop`
+(+ `ThisWeekAddDropImpact`) evaluates one real candidate acquisition (paired
+with the SAME real weakest-drop candidate the ROS Add/Drop pairing already
+computes, or no drop when a real open non-reserve slot exists) by calling
+the UNMODIFIED `optimize_weekly_lineup` (W2-W4's own fixed optimizer) TWICE
+-- once against the roster as-is, once against the roster after the
+hypothetical transaction -- and diffing `projected_total`. `desktop_facade.
+py`'s `redraft_waivers` THIS_WEEK branch now builds the owner's real roster
+candidates (same `build_roster_candidates` call shape as `redraft_weekly_
+lineup`, reusing `weekly_game_lock_service.compute_weekly_game_lock` for
+locks -- not re-derived) and runs this evaluation for a real, disclosed,
+bounded shortlist (top 60 free agents by raw weekly points -- raw points
+used ONLY to pick which candidates get a real full evaluation, never as the
+final ranking signal). `rank_waiver_candidates` gained an optional
+`this_week_impact_by_sleeper_id` map: when supplied, THIS_WEEK sorts
+PRIMARILY by real `.gain`, falling back to the old utility-based order for
+any candidate outside the evaluated shortlist (never a fabricated gain).
+`WaiverCandidate` gained `this_week_lineup_gain` / `this_week_becomes_
+starter` / `this_week_evaluated` -- the season-long `becomes_starter` field
+is preserved unchanged for REST_OF_SEASON. The facade's `_candidate_payload`
+now emits `becomesStarter` = the real weekly-evaluated flag (or `null`,
+never silently defaulted) in THIS_WEEK mode, plus a new `becomesStarterBasis`
+field consumers can check. Frontend (`in-season.tsx`'s `AddDropDetail`,
+`improve-team.tsx`'s real `addColumns` -- see live-verification note below
+-- and `improve-team-explain.ts`'s `explainWaiverTarget`) updated to read
+`becomesStarterBasis` and never treat a `null` `becomesStarter` as a false
+"would not start."
+
+**A real, live-caught bug in my own first pass, found only by browser-
+verifying, not just unit-testing:** I initially edited `addColumns`/
+`AddDropDetail`-adjacent text in `in-season.tsx`'s `WaiversPage` -- but that
+page is explicitly documented in its own comments as "an unrouted legacy
+fallback (superseded by Improve Team's FAAB tab)." The REAL, routed surface
+the owner uses is `improve-team.tsx`'s own separate `addColumns`/caption
+text, which I had NOT yet fixed. Caught this by live-browsing the actual
+Improve Team page and seeing the old "MARGINAL UTILITY" column label /
+season-utility-scrambled row order still rendering despite my backend fix
+being live and correct. Fixed `improve-team.tsx`'s real `addColumns` (added
+a "This week usable gain" column, relabeled "Marginal utility" ->
+"Season utility (long-term)" in THIS_WEEK mode, fixed the `becomesStarter`
+Yes/No/Unknown rendering) and `improve-team-explain.ts`'s `explainWaiverTarget`
+(the real Targets-tab card generator -- same null-treated-as-false bug,
+now fixed with the same three-way basis check). Kept the `in-season.tsx`
+edits too (harmless, consistent, still dead code).
+
+**Preserved, LEDGER-relevant, HARD BOUNDARY respected:** `marginal_roster_
+utility_v2` itself and its weights were never touched -- `simulate_this_
+week_add_drop` only calls the pre-existing, unmodified `optimize_weekly_
+lineup`.
+
+### W6 -- streamer downgrade bug -- INSPECTED CODE + ACTUAL TEST RESULT +
+LIVE OBSERVATION
+
+Root cause confirmed exactly as the brief described: `desktop_facade.py`'s
+`redraft_kdst_streamer` picked `top_action = add_action or (actions[0] if
+actions else None)` -- ALWAYS preferring the best-ECR unrostered ("ADD")
+row over the owner's own better-ranked starter, regardless of relative
+merit. **Fix:** since `sleeper_streamer_actions`' own output is already
+ECR-sorted ascending, `top_action` is now the FIRST row whose
+`recommendation` is genuinely actionable (`START` / `HOLD` / `ADD` --
+`ROSTERED_ELSEWHERE`, an opponent's real roster, correctly still excluded,
+unchanged). This makes KEEP CURRENT (`START`) a genuinely reachable primary
+result whenever the owner's own starter really is the best real, accessible
+option -- verified by a dedicated regression test constructing exactly the
+brief's fixture (owned ECR1 vs free ECR10) and asserting `START`/
+`YOUR_STARTER` wins, plus a companion test proving a genuine upgrade still
+recommends `ADD` (no overcorrection), plus a test proving an opponent's
+best-ECR row is never primary.
+
+**Second real bug in the same function, also fixed:** `redraft_weekly_home_
+actions`' own STREAMER action-board loop independently re-derived "first ADD
+row" from the flat `positions` list (a SEPARATE manifestation of the same
+downgrade bug, since it never checked ownership either) -- fixed by having
+it reuse `redraft_kdst_streamer`'s own already-corrected `decisionEnvelopes[]
+.decisionEnvelope.primaryRecommendation` instead of re-deriving. Updated
+2 existing tests in `test_weekly_home_single_snapshot.py` whose fixtures
+had `decisionEnvelopes: []` (never realistic) while `positions` carried the
+real payload -- now the reverse, matching what this loop actually reads.
+
+**Position-configuration enforcement (also W7-adjacent, "never recommend a
+DST pickup for Enginerds"):** `redraft_kdst_streamer` never checked
+`selected.roster.k`/`selected.roster.dst` at all before this pass -- it
+always queried and offered both K and DST regardless of real league roster
+shape. Fixed: a position with `0` real roster slots is skipped entirely
+(FantasyPros consensus for that position is never even requested), and the
+decision envelope honestly reports "This league has no {position} roster
+slot" rather than a generic "no candidates" message. **Verified via a
+dedicated test** (`test_never_recommends_a_dst_pickup_for_a_league_with_no_
+dst_slot`) that DST consensus is literally never called when `roster.dst
+== 0`. Las Vegas Enginerds itself is NOT YET a Redraft profile (Worker 2
+reconfirmed this live), so this guard could not be live-verified against
+Enginerds directly this pass -- **Worker 4, when building the Enginerds
+Redraft surface, should live-verify this guard fires for Enginerds' real
+`roster.dst == 0`** once that profile exists.
+
+**3 existing tests broke and were fixed, not papered over:** `test_kdst_
+streamer_returns_a_real_decision_envelope_per_position` (`test_decision_
+envelope_consumer_migration.py`), `test_kdst_streamer_response_carries_
+trace_ids_and_league_snapshot_id` (`test_desktop_facade_architecture_
+wiring.py`), and `test_redraft_kdst_streamer_records_a_decision_trace_for_
+k_and_dst` (`test_desktop_application_api.py`) all built their synthetic
+profile from a builtin preset whose `RosterSettings` defaults to `k=0,
+dst=0` -- a real, previously-invisible gap the position-config fix exposed.
+Fixed by explicitly setting `roster=replace(profile.roster, k=1, dst=1)`
+in each fixture (matching a real K/DST-using league's actual shape, e.g.
+Fantasy Gamers' real `k=1, dst=1`), not by weakening the new guard.
+
+**Frontend:** `improve-team-explain.ts`'s `STREAMER_VERB` map changed
+`START: "START"` -> `START: "KEEP"` so a real keep-current recommendation
+reads as one in the UI headline ("KEEP Ka'imi Fairbairn (K)", not "START").
+
+### W7 -- K/DST scoring not custom -- INSPECTED CODE + ACTUAL TEST RESULT +
+LIVE OBSERVATION
+
+Root cause confirmed exactly as the brief described:
+`weekly_projection_service._score_row` used `raw.get("pts_ppr")` for every
+K/DST row, unconditionally -- the league's real per-tier scoring settings
+were never read at all for weekly K/DST scoring (contrast: `redraft_engine_
+v1_service.ScoringSettings`, the SEASON-LONG governed formula, has no K/DST
+stat-based scoring concept whatsoever by design -- it expects a governed
+point override -- so this weekly gap was a separate, narrower, genuinely
+new lane, not a duplicate of the frozen season model; the HARD BOUNDARY
+against touching `ScoringSettings`/`score_projection`/`marginal_roster_
+utility_v2` was respected throughout).
+
+**Real raw-data investigation this pass (LIVE OBSERVATION, a real `GET
+projections/nfl/regular/2026/2` pull, ~9400 players, and a real `GET
+players/nfl` pull):** confirmed Sleeper's real weekly-projection payload
+DOES carry real per-tier kicker fields (`fgm_0_19`, `fgm_20_29`,
+`fgm_30_39`, `fgm_40_49`, `xpm`, `xpmiss`) and real DST fields (`sack`,
+`int`, `fum_rec`, `ff`, `safe`, `blk_kick`, `def_td`, and real `pts_allow_*`
+tier buckets) -- confirmed this is genuinely computable, not just a
+disclosed gap. Also confirmed, by scanning EVERY key across the entire real
+payload (not one row): there is NO raw 50-59/60+ yard field-goal breakout
+anywhere in the payload -- a real, structural, permanent gap for any league
+scoring that tier (Enginerds' real `fgm_50p: 4.0`, Fantasy Gamers' real
+`fgm_50_59`/`fgm_60p`), never approximated by subtraction.
+
+**Fix:** new `weekly_projection_service._score_kdst_from_raw_sleeper_
+scoring` computes a real dot product of the league's own raw `scoring_
+settings` map (fetched fresh from `GET league/{id}`, the SAME top-level
+`scoring_settings` field, sibling to `settings` -- confirmed via a real
+live pull this pass, not assumed nested) against this row's real raw stat
+values, for every known K/DST category. A real, nonzero-weighted category
+with no raw support is disclosed (`unsupported_scoring_categories`), never
+silently dropped or approximated -- labeled `NWR_LEAGUE_SCORING_KDST_
+WEEKLY_PARTIAL` (vs. `..._KDST_WEEKLY` when fully exact, vs. unchanged
+`SLEEPER_PROVIDER_SCORING` when the league map is unavailable/has no real
+overlap at all). **A real design bug caught and fixed before it shipped:**
+Sleeper's real DST payload only ever emits the ONE `pts_allow_*`/`yds_
+allow_*` bucket a team's projection actually lands in (e.g. `pts_allow_
+21_27: 1.0` alone, no sibling keys) -- a naive per-key check would have
+flagged every OTHER real bucket as "unsupported" on every real DST row,
+pure false-positive noise. Fixed with family-aware matching
+(`_DST_MUTUALLY_EXCLUSIVE_FAMILIES`): once ANY real bucket in a family is
+confirmed present, every other same-family bucket is a real, honest zero,
+not a gap.
+
+`RosterCandidate` (optimizer), `WeeklyLineupResult`'s starter/bench JSON,
+and the API response gained `scoringContext`/`unsupportedScoringCategories`
+per player, plus a new top-level `nonExactScoringInTotal` flag on `redraft_
+weekly_lineup`'s response (real, true only when a starter that actually
+contributed to `projectedTotal` was scored non-exactly). Frontend (`in-
+season.tsx`'s `LineupPage`) shows a real disclosure caption when true, and
+a `title` tooltip with the real scoring context per starter.
+
+**LIVE OBSERVATION, this pass, against real Fantasy Gamers Week 2 data**
+(via both a direct authenticated API call and the real rendered browser
+page): `nonExactScoringInTotal: true`; Ka'imi Fairbairn (K) scored `7.27`
+under `NWR_LEAGUE_SCORING_KDST_WEEKLY_PARTIAL`, real disclosed gaps
+`['fgm_0_19', 'fgm_50_59', 'fgm_60p', 'fgmiss']` (his real raw projection
+row that week genuinely omitted the `fgm_0_19` key entirely, not just
+valued it zero -- a real, live-confirmed nuance, not a bug); NE D/ST scored
+`8.62` under the same partial label, real disclosed gap `['safe']`. The
+Start/Sit page's real disclosure banner rendered live: "This total includes
+at least one player scored by generic provider points or a partial
+league-scoring match...".
+
+### The 3 mandatory regression fixtures -- ACTUAL TEST RESULT
+
+1. **Fixture 6 (downgrade streamer):** `tests/test_redraft_kdst_streamer_
+   keep_current_fix.py::test_regression_fixture_6_owned_ecr1_starter_beats_
+   a_free_ecr10_kicker_keep_current_wins` -- owned K at real ECR1, free K
+   at real ECR10. PASSES: primary recommendation is `START`/`YOUR_STARTER`
+   (Owned Kicker), not the worse-ranked `ADD`. 3 companion tests also pass
+   (genuine-upgrade-still-works, opponent-never-primary, no-DST-slot
+   enforcement).
+2. **Fixture 7 (wrong weekly authority):** `tests/test_waiver_engine_
+   service.py`'s `test_regression_fixture_7a/7b/7c_*` -- utility 180.0 vs
+   60.0 (same qualitative shape as the brief's "10 vs 9"), weekly points
+   1.0 vs 20.0 exactly as specified. 7a documents the honest pre-fix
+   fallback ordering (utility-primary, still reachable when no real impact
+   map is supplied). 7b PASSES the real fix: with a real impact map
+   supplied (gain 0.5 vs 15.0), the lower-season-utility/higher-weekly-
+   points candidate now sorts first, and `this_week_becomes_starter` is
+   shown to be genuinely independent of (and different from) the unchanged
+   season `becomes_starter` flag for the same candidate. 7c PASSES: a
+   candidate outside the impact map reports `this_week_evaluated=False`/
+   `this_week_becomes_starter=None`, never silently defaulted.
+3. **Fixture 8 (kicker scoring boundary):** `tests/test_weekly_projection_
+   service.py`'s `test_regression_fixture_8a/8b/8c/8d_*` -- 8a documents
+   the honest pre-fix fallback (raw provider 9.0 regardless of league
+   weights, when no league scoring map supplied). 8b PASSES the exact
+   brief number: three made 20-29-yard goals at Enginerds' real captured
+   2.0/each tier score exactly `6.0`, with the real, disclosed
+   `fgm_50p` gap (never silently dropped). 8c PASSES: a fully-supported
+   kicker (Fantasy Gamers-style, no 50+ tier configured at all) reports the
+   EXACT (not partial) label with zero unsupported categories. 8d PASSES:
+   the same real fix applied to DST (sack/int/pts_allow_7_13), including
+   the family-aware points-allowed-tier fix.
+
+### LIVE VERIFICATION -- LIVE OBSERVATION
+
+Rebuilt Redraft frontend twice (`npm run build --workspace @nwr/redraft-
+desktop`) and restarted the backend with real startup credentials
+(`nwr-desktop-development-token-only-000000000000`, matching the frontend's
+own real dev-default, piped via stdin the same way `nwr_release_gate_smoke.
+ps1` does) after the W1-W4-era PIDs Worker 2 left running were stopped.
+Real Chrome MCP session against the rebuilt+restarted app, active profile
+Fantasy Gamers, real Week 2:
+
+- Start/Sit: real `nonExactScoringInTotal` disclosure banner rendered;
+  real K/DST partial-scoring context confirmed via a direct authenticated
+  API call (see W7 above); zero console errors.
+- Improve Team -> Targets (THIS_WEEK): "ADD Brock Purdy / DROP Marvin
+  Harrison" now the real #1 target, "THIS WEEK: Projected to become a
+  starter this week (real legal-lineup gain: 2.3 pts)." -- matches the
+  direct API call's `thisWeekLineupGain: 2.34` exactly.
+- Improve Team -> Add/Drop (THIS_WEEK): real "SEASON UTILITY (LONG-TERM)"
+  and "THIS WEEK USABLE GAIN" columns rendered; row order genuinely
+  gain-sorted (2.3, 1.0, 0.7, 0.5, 0.2, 0.1, 0.0...), NOT utility-sorted
+  (utility column itself jumbled: -1.7, -8.1, 5.4, --, 5.5, 0.0, 5.6...);
+  "BECOMES STARTER" correctly Yes/No per real gain>0; Add/Drop detail
+  drawer text matches the table exactly. **A real bug in my own first
+  implementation pass was caught here** (see W5 above -- initially fixed
+  the wrong, unrouted `in-season.tsx` page instead of the real routed
+  `improve-team.tsx`) and corrected before this entry was written.
+- Improve Team -> Streamers (THIS_WEEK): real "ADD San Francisco 49ers
+  (DST)" / "ADD Eddy Pineiro (K)" primary cards rendered (genuine upgrades
+  over the owner's real, lower-ranked current K/DST this specific week --
+  a live case of the owner's OWN starter beating all options did not occur
+  naturally in this week's real data, so KEEP/START-as-primary was
+  verified by dedicated unit test, not a live screenshot, this pass);
+  "Brandon Aubrey ... ROSTERED ELSEWHERE" confirmed correctly excluded
+  from any primary/ADD selection.
+- Zero console errors across the whole session (checked via `read_console_
+  messages`, `onlyErrors: true`, after page loads/interactions).
+- Zero writes: every call this pass was a plain GET (Sleeper rosters/
+  players/state/league, FantasyPros consensus) or a read against the
+  backend's own read-only endpoints; every response carried
+  `"writeBehavior": "NO_SLEEPER_WRITES"` (or the K/DST-specific
+  `NO_SLEEPER_WRITES_NO_FANTASYPROS_WRITES`).
+
+### TESTS -- ACTUAL TEST RESULT
+
+- Brief-listed suite (`test_weekly_lineup_optimizer_service`, `test_weekly_
+  projection_service`, `test_weekly_projection_provider_service`, `test_
+  fantasypros_kdst_consensus_service`, `test_redraft_waivers_ir_reserve_
+  drop_exclusion_fix`, `test_redraft_waivers_faab_context_fix`, `test_
+  redraft_waivers_open_slot_and_same_context_fix`) plus this pass's own
+  additions/touched files (`test_waiver_engine_service`, new `test_redraft_
+  kdst_streamer_keep_current_fix`, `test_weekly_home_single_snapshot`,
+  `test_weekly_home_sleeper_fetch_caching`, `test_decision_envelope_
+  consumer_migration`, `test_desktop_facade_architecture_wiring`, `test_
+  redraft_waivers_decision_trace_completeness_fix`, `test_redraft_waivers_
+  unmatched_identity_rationale_fix`, `test_dynasty_sleeper_league_service`,
+  `test_dynasty_league_import_facade_wiring`, `test_desktop_application_
+  api`): **235 passed, 4 failed** -- the failures are the SAME 4 pre-
+  existing, HEAD-baseline failures confirmed via a real `git stash`/re-run
+  comparison this pass (`test_dynasty_facade_composes_real_governed_
+  workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_
+  trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_
+  contract`, `test_facade_has_no_streamlit_or_app_component_dependency`),
+  unrelated to this pass's changes, not waived without evidence.
+- Frontend: `npm run typecheck` (both apps) -- clean, 0 errors, checked
+  after every meaningful edit round. Full `npx vitest run`: **493 passed,
+  0 failed** (up from Worker 2's 492 baseline by 1 new regression test in
+  `improve-team-explain.test.ts`).
+- `docs/codex/prospective_outcomes_v1/multi_league_scale_v1/frontend_bench_
+  results.json`'s own benign perf-timing-noise churn (same known side
+  effect Worker 2 also hit) was reverted with `git checkout --` before
+  finishing -- not a real change.
+
+### REDRAFT PROCESSES STATUS
+
+Restarted twice this pass (once for the backend/first frontend build, once
+more after catching and fixing the `improve-team.tsx` bug found during live
+verification): backend on port 18742 (fresh PID, real startup credentials),
+`vite preview` on port 1422, both confirmed serving this pass's final HEAD
+via a live browser session immediately before this entry was written.
+Dynasty's dev pair was NOT touched this pass (out of scope; still whatever
+state Worker 1/2 left it in -- see their own entries).
+
+### FILES CHANGED
+
+- `src/application/desktop_facade.py` (FAAB `waiver_type` fix; W5 THIS_WEEK
+  impact-evaluation wiring in `redraft_waivers`, moved `drop_candidates`
+  computation earlier for reuse; W6 `top_action`/position-config fix and
+  Weekly Home STREAMER-loop fix in `redraft_kdst_streamer`/`redraft_
+  weekly_home_actions`; W7 `sleeper_scoring_settings` wiring in both
+  `redraft_weekly_lineup` and `redraft_waivers`, new `nonExactScoringInTotal`
+  / per-player `scoringContext` response fields).
+- `src/services/waiver_engine_service.py` (W5: `this_week_impact_by_sleeper_
+  id` param + new sort key on `rank_waiver_candidates`; new `WaiverCandidate`
+  fields).
+- `src/services/weekly_lineup_optimizer_service.py` (W5: new `simulate_
+  this_week_add_drop`/`ThisWeekAddDropImpact`; W7: `scoring_context`/
+  `unsupported_scoring_categories` threaded onto `RosterCandidate`).
+- `src/services/weekly_projection_service.py` (W7: new `_score_kdst_from_
+  raw_sleeper_scoring`, `_KICKER_KNOWN_SCORING_CATEGORIES`, `_DST_KNOWN_
+  SCORING_CATEGORIES`, `_DST_MUTUALLY_EXCLUSIVE_FAMILIES`; `_score_row`/
+  `build_weekly_projection_rows` gained `sleeper_scoring_settings` param;
+  `WeeklyProjectionRow` gained `unsupported_scoring_categories`).
+- `desktop/packages/contracts/src/index.ts` (new optional fields on
+  `WeeklyLineupSlotPlayer`/`WeeklyLineupBenchPlayer`/`WeeklyLineupResult`/
+  `WaiverAddCandidate`).
+- `desktop/apps/redraft/src/improve-team.tsx` (real, routed `addColumns`
+  W5 fix; THIS_WEEK caption text fix).
+- `desktop/apps/redraft/src/improve-team-explain.ts` (`explainWaiverTarget`
+  W5 null-safety fix; `STREAMER_VERB` W6 KEEP label).
+- `desktop/apps/redraft/src/in-season.tsx` (`AddDropDetail` W5 null-safety
+  fix; `LineupPage` W7 disclosure banner + per-player scoring-context
+  tooltip; legacy/unrouted `WaiversPage`'s `addColumns`/caption kept
+  consistent though dead code).
+- `tests/test_redraft_waivers_faab_context_fix.py`,
+  `tests/test_redraft_waivers_decision_trace_completeness_fix.py` (waiver_
+  type 1->2 fixture corrections + 1 new reverse-standings regression test).
+- `tests/test_waiver_engine_service.py` (3 new W5 fixture-7 regression
+  tests).
+- `tests/test_redraft_kdst_streamer_keep_current_fix.py` (new -- 4 W6
+  tests, including fixture 6).
+- `tests/test_weekly_projection_service.py` (4 new W7 fixture-8 regression
+  tests).
+- `tests/test_weekly_home_single_snapshot.py` (2 fixtures corrected to the
+  real `decisionEnvelopes` shape the fixed STREAMER loop actually reads).
+- `tests/test_decision_envelope_consumer_migration.py`, `tests/test_
+  desktop_facade_architecture_wiring.py`, `tests/test_desktop_application_
+  api.py` (3 fixtures given real `k=1, dst=1` roster shape, exposed by the
+  new position-config guard).
+- `desktop/apps/redraft/src/improve-team-explain.test.ts` (1 existing
+  assertion updated for the KEEP label; 3 new W5 null-safety tests).
+
+### OPEN ISSUES FOR WORKER 4 (Enginerds Sunday surface + W8 + D1 + ESPN +
+W9 + D2)
+
+1. **The position-config no-DST-slot guard (`redraft_kdst_streamer`) is
+   unit-tested but NOT live-verified against Enginerds itself**, since
+   Enginerds is still not a Redraft profile (confirmed unchanged this
+   pass). Once Worker 4 builds that surface, live-verify a real DST
+   consensus request is never made for Enginerds' real `roster.dst == 0`.
+2. **W5's THIS_WEEK evaluation is bounded to the top 60 free agents by raw
+   weekly points** (a real, disclosed scope decision, not a hidden
+   limitation) -- a genuinely great streaming option ranked outside the
+   raw-points top 60 would not get a real gain evaluation this pass (falls
+   back honestly to the old ordering for that one candidate, never a
+   fabricated gain). If Enginerds' real free-agent pool behaves
+   differently (e.g. genuinely deep at a scarce position), consider
+   whether 60 is still a reasonable bound there.
+3. **W7's K/DST custom scoring was live-verified against Fantasy Gamers'
+   real, standard-ish PPR scoring (has DST, real pts_allow tiers) -- NOT
+   against Enginerds' real non-PPR/no-DST/first-down-bonus scoring**, since
+   Enginerds isn't a Redraft profile yet. The kicker-tier fix specifically
+   targets Enginerds' real captured tiers (2/2/2/3/4) per the brief, but
+   this pass could only unit-test that exact scenario (`test_regression_
+   fixture_8b`), not live-verify it against a real running Enginerds
+   weekly-lineup/waivers call. Worker 4 should do that live check once
+   Enginerds is wired in.
+4. **`weekly_lineup_optimizer_service.simulate_this_week_add_drop` and
+   `weekly_projection_service._score_kdst_from_raw_sleeper_scoring` are
+   both new, real, reusable primitives** -- if Worker 4's Enginerds Sunday
+   surface (or W8's Dynasty-mode weekly tools) needs either "real before/
+   after lineup-gain simulation" or "real league-exact K/DST scoring",
+   reuse these, don't re-derive.
+5. **A real, general lesson from this pass's own live-verification catch:**
+   this codebase has at least one other unrouted-but-still-present legacy
+   page (`in-season.tsx`'s `WaiversPage`) whose code can look identical to
+   the real routed surface (`improve-team.tsx`) at a glance, including
+   sharing some component names/patterns. Grep hits alone were NOT
+   sufficient to confirm a fix landed on the real, owner-facing surface
+   this pass -- a live browser check caught the gap. Future workers editing
+   `in-season.tsx`/`improve-team.tsx` should confirm which file the actual
+   route (`RedraftApp.tsx`) wires to before trusting a source-only fix.
+6. **KHA and 403 N 18th remain BLOCKED** for any current-state Sunday tool
+   (unchanged, re-confirmed only incidentally, not this Worker's focus).

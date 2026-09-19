@@ -147,6 +147,15 @@ class RosterCandidate:
     is_reserve: bool = False
     is_taxi: bool = False
     is_locked: bool = False
+    # Worker 3 (Sunday Readiness overnight cycle, W7 fix): the real scoring
+    # basis this player's `projected_points` was computed under (see
+    # `weekly_projection_service.WeeklyProjectionRow.scoring_context`) --
+    # threaded through so the lineup total no longer silently blends
+    # league-exact and generic-provider points with no visible distinction.
+    # `None` only for a candidate with no real projection row at all
+    # (`UNMATCHED_NO_PROJECTION_ROW`).
+    scoring_context: str | None = None
+    unsupported_scoring_categories: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -238,6 +247,8 @@ def build_roster_candidates(
             team = row.team
             projected_points = row.projected_points
             identity_match = row.identity_match
+            scoring_context = row.scoring_context
+            unsupported_scoring_categories = row.unsupported_scoring_categories
         else:
             # W3 fix (Sunday Readiness overnight cycle, Worker 2): a real
             # roster/starter id with NO matching weekly-projection row
@@ -260,6 +271,8 @@ def build_roster_candidates(
             projected_points = None
             identity_match = "UNMATCHED_NO_PROJECTION_ROW"
             canonical_player_id = f"sleeper:{sleeper_id}"
+            scoring_context = None
+            unsupported_scoring_categories = ()
         candidates.append(
             RosterCandidate(
                 sleeper_player_id=sleeper_id,
@@ -273,6 +286,8 @@ def build_roster_candidates(
                 is_reserve=sleeper_id in reserve_set,
                 is_taxi=sleeper_id in taxi_set,
                 is_locked=bool(team) and team.upper() in locked_team_set,
+                scoring_context=scoring_context,
+                unsupported_scoring_categories=unsupported_scoring_categories,
             )
         )
     return tuple(candidates)
@@ -438,6 +453,73 @@ def optimize_weekly_lineup(
         unprojected_starter_count=unprojected_count,
         unresolved_identity_starter_count=unresolved_identity_count,
         swaps_vs_current=swaps,
+    )
+
+
+@dataclass(frozen=True)
+class ThisWeekAddDropImpact:
+    """NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix): the real,
+    legal-lineup before/after impact of one candidate acquisition (and, when
+    a drop is required, one real paired drop) for THIS week -- computed by
+    calling `optimize_weekly_lineup` (the SAME, unmodified optimizer W2-W4
+    already fixed) twice: once against the roster as it stands today, once
+    against the roster after the hypothetical transaction. This is the real
+    "actual usable lineup gain" signal the governing brief asks for, in
+    place of a raw-point or season-marginal-utility proxy that ignores
+    whether the add can actually crack this week's real starting lineup.
+    """
+
+    baseline_projected_total: float
+    after_projected_total: float
+    # Rounded `after - baseline`; can be exactly 0.0 for a real, evaluated
+    # non-improvement (never confused with "not evaluated" -- see
+    # `evaluated` on the caller's own wrapping type).
+    gain: float
+    # Whether the add candidate himself appears in a real starting slot in
+    # the AFTER lineup -- the real, recomputed replacement for the old
+    # season-based `becomes_starter` flag this same-named concept used to
+    # borrow from `marginal_roster_utility_v2`.
+    becomes_starter: bool
+
+
+def simulate_this_week_add_drop(
+    *,
+    own_roster_candidates: Sequence[RosterCandidate],
+    add_candidate: RosterCandidate,
+    drop_sleeper_player_id: str | None,
+    roster: RosterSettings,
+    status_overrides: Sequence[StatusOverride],
+) -> ThisWeekAddDropImpact:
+    """Evaluate one real THIS-WEEK acquisition (`add_candidate`, built the
+    SAME way as any other `RosterCandidate` -- e.g. via `build_roster_
+    candidates` for a single free agent) against the owner's real current
+    roster, optionally pairing it with one real drop
+    (`drop_sleeper_player_id`, `None` when a real open non-reserve roster
+    slot means no drop is required). Never re-derives roster legality --
+    both the BEFORE and AFTER lineups are produced by the SAME `optimize_
+    weekly_lineup` this module already exposes, with the SAME locks/
+    reserve/taxi/status-override inputs on both sides (only the roster pool
+    itself changes)."""
+
+    baseline = optimize_weekly_lineup(
+        candidates=own_roster_candidates, roster=roster, status_overrides=status_overrides
+    )
+    after_pool = [
+        candidate
+        for candidate in own_roster_candidates
+        if drop_sleeper_player_id is None or candidate.sleeper_player_id != drop_sleeper_player_id
+    ]
+    after_pool.append(add_candidate)
+    after = optimize_weekly_lineup(candidates=after_pool, roster=roster, status_overrides=status_overrides)
+    becomes_starter = any(
+        slot.player is not None and slot.player.sleeper_player_id == add_candidate.sleeper_player_id
+        for slot in after.starters
+    )
+    return ThisWeekAddDropImpact(
+        baseline_projected_total=baseline.projected_total,
+        after_projected_total=after.projected_total,
+        gain=round(after.projected_total - baseline.projected_total, 2),
+        becomes_starter=becomes_starter,
     )
 
 

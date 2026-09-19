@@ -147,7 +147,17 @@ def test_kdst_streamer_response_carries_trace_ids_and_league_snapshot_id(
     profile_id = created.data["profile"]["profileId"]
     facade.activate_redraft_profile(profile_id)
     profile = load_profile(store, profile_id)
-    save_profile(store, replace(profile, provider="sleeper", provider_league_id="9999"))
+    # NWR Sunday Readiness overnight cycle, Worker 3 (W7, position-
+    # configuration enforcement): `redraft_kdst_streamer` now honors the
+    # league's real roster.k/roster.dst slot counts -- this preset defaults
+    # to 0/0, so a real K/DST-using league must set them explicitly here.
+    save_profile(
+        store,
+        replace(
+            profile, provider="sleeper", provider_league_id="9999",
+            roster=replace(profile.roster, k=1, dst=1),
+        ),
+    )
 
     receipt_dir = store / "sleeper_imports"
     receipt_dir.mkdir(parents=True, exist_ok=True)

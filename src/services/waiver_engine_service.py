@@ -208,9 +208,27 @@ class WaiverCandidate:
     ros_overall_rank: int | None
     weekly_projected_points: float | None
     marginal_utility: float | None
+    # Season-long (`marginal_roster_utility_v2`'s own, UNCHANGED) "would this
+    # add become a starter under the closed ROS valuation" flag -- kept
+    # exactly as before for REST_OF_SEASON callers. NWR Sunday Readiness
+    # overnight cycle, Worker 3 (W5 fix): THIS_WEEK callers should prefer
+    # `this_week_becomes_starter` below instead, which is a real,
+    # independently-computed weekly-lineup-legality answer, not this one.
     becomes_starter: bool
     marginal_utility_explanation: str
     identity_status: str  # MATCHED | UNMATCHED_IDENTITY
+    # NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix): the real,
+    # legal-before/after weekly lineup gain from adding this candidate (and,
+    # when required, dropping the paired weakest roster piece) THIS week --
+    # see `weekly_lineup_optimizer_service.simulate_this_week_add_drop`.
+    # `None` when not evaluated (REST_OF_SEASON mode, or a candidate this
+    # pass could not evaluate -- e.g. no real weekly projection row).
+    this_week_lineup_gain: float | None = None
+    # The real, independently-recomputed "does this candidate crack a real
+    # starting slot THIS week" answer -- `None` (never silently defaulted to
+    # the season-based `becomes_starter` above) when not evaluated.
+    this_week_becomes_starter: bool | None = None
+    this_week_evaluated: bool = False
 
 
 @dataclass(frozen=True)
@@ -274,7 +292,26 @@ def rank_waiver_candidates(
     mode: WaiverMode,
     weekly_projections_by_sleeper_id: Mapping[str, WeeklyProjectionRow] | None = None,
     limit: int = 25,
+    this_week_impact_by_sleeper_id: Mapping[str, Any] | None = None,
 ) -> tuple[WaiverCandidate, ...]:
+    """NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix):
+    `this_week_impact_by_sleeper_id` (optional; THIS_WEEK mode only) maps a
+    free agent's real Sleeper player id to a real, already-computed
+    `weekly_lineup_optimizer_service.ThisWeekAddDropImpact` (the caller
+    evaluates this -- this module has no lineup-optimizer dependency of its
+    own, and none is added here). When supplied, THIS_WEEK ranking is
+    PRIMARILY ordered by each candidate's real `.gain` (actual usable
+    weekly lineup improvement), never by raw weekly points or season
+    marginal utility alone -- exactly the governing brief's W5 fix. A
+    candidate absent from this map (not evaluated this pass -- e.g. outside
+    the bounded evaluation pool, or no real weekly projection row at all)
+    sorts after every real evaluated candidate, using the pre-existing
+    marginal-utility/weekly-points ordering as an honest fallback, never a
+    fabricated gain. When `this_week_impact_by_sleeper_id` is omitted
+    entirely (REST_OF_SEASON mode, or a THIS_WEEK caller that has not yet
+    computed it), behavior is BYTE-IDENTICAL to before this pass.
+    """
+
     if mode == "THIS_WEEK" and weekly_projections_by_sleeper_id is None:
         raise ValueError(
             "THIS_WEEK mode requires real weekly projections; the caller must disable this "
@@ -296,6 +333,7 @@ def rank_waiver_candidates(
         else:
             utility_result = None
             identity_status = "UNMATCHED_IDENTITY"
+        impact = this_week_impact_by_sleeper_id.get(sleeper_id) if this_week_impact_by_sleeper_id else None
         candidates.append(
             WaiverCandidate(
                 sleeper_player_id=sleeper_id,
@@ -312,14 +350,29 @@ def rank_waiver_candidates(
                     utility_result.explanation if utility_result else "MARGINAL_UTILITY_UNAVAILABLE_UNMATCHED_IDENTITY"
                 ),
                 identity_status=identity_status,
+                this_week_lineup_gain=impact.gain if impact is not None else None,
+                this_week_becomes_starter=impact.becomes_starter if impact is not None else None,
+                this_week_evaluated=impact is not None,
             )
         )
 
     def sort_key(candidate: WaiverCandidate) -> tuple:
+        if mode == "THIS_WEEK" and this_week_impact_by_sleeper_id is not None:
+            # W5 fix: real usable weekly lineup gain is primary. A
+            # candidate this pass did not evaluate (`this_week_evaluated`
+            # False) sorts after every real evaluated candidate -- never
+            # treated as a real zero gain.
+            gain_missing = not candidate.this_week_evaluated
+            gain = -(candidate.this_week_lineup_gain or 0.0)
+            fallback_missing = candidate.marginal_utility is None
+            fallback = -(candidate.marginal_utility or 0.0)
+            return (gain_missing, gain, fallback_missing, fallback)
         # Primary: real marginal roster utility (the same promoted, closed
         # signal live drafting already uses) -- never fabricated when
-        # unmatched, which sorts last. THIS_WEEK mode breaks ties with real
-        # weekly points when two candidates have equal/near-equal utility.
+        # unmatched, which sorts last. THIS_WEEK mode (without a real
+        # impact map supplied) breaks ties with real weekly points when two
+        # candidates have equal/near-equal utility -- unchanged from before
+        # this pass.
         primary = candidate.marginal_utility
         secondary = candidate.weekly_projected_points if mode == "THIS_WEEK" else candidate.ros_replacement_value
         return (

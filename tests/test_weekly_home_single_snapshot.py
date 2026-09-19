@@ -146,7 +146,35 @@ _REAL_SHAPE_KDST_PAYLOAD = {
     "leagueId": "9999",
     "traceIds": [{"position": "K", "traceId": "trace-k-1"}, {"position": "DST", "traceId": "trace-dst-1"}],
     "leagueSnapshotId": _FAKE_SNAPSHOT_ID,
-    "decisionEnvelopes": [],
+    # NWR Sunday Readiness overnight cycle, Worker 3 (W6 fix): `redraft_
+    # weekly_home_actions`'s own STREAMER action loop now reads
+    # `decisionEnvelopes[].decisionEnvelope.primaryRecommendation` (the
+    # SAME already-corrected primary recommendation `redraft_kdst_
+    # streamer` itself computes) instead of independently re-deriving
+    # "first ADD row" from the flat `positions` list below -- this fixture
+    # now carries the real shape that call site actually consumes.
+    "decisionEnvelopes": [
+        {
+            "position": "K",
+            "decisionEnvelope": {
+                "primaryRecommendation": {
+                    "playerName": "Real Kicker One", "position": "K", "team": "SF", "ecr": 3.0,
+                    "tier": 1, "week": 1, "authority": "fantasypros", "rosterStatus": "AVAILABLE",
+                    "recommendation": "ADD",
+                },
+            },
+        },
+        {
+            "position": "DST",
+            "decisionEnvelope": {
+                "primaryRecommendation": {
+                    "playerName": "Real Defense Two", "position": "DST", "team": "BUF", "ecr": 4.0,
+                    "tier": 1, "week": 1, "authority": "fantasypros", "rosterStatus": "AVAILABLE",
+                    "recommendation": "ADD",
+                },
+            },
+        },
+    ],
     "positions": [
         {
             "playerName": "Real Kicker One", "position": "K", "team": "SF", "ecr": 3.0,
@@ -236,10 +264,11 @@ def test_weekly_home_actions_does_not_500_on_the_real_kdst_flat_list_shape(
 def test_weekly_home_actions_degrades_streamer_honestly_on_a_genuinely_malformed_payload(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """If `positions` is ever some OTHER unexpected shape again (not the
-    real list, not the old dict), the endpoint must still return 200 with
-    every other real action intact, and disclose STREAMER as degraded --
-    never a bare 500, and never a silently-empty Home."""
+    """If `decisionEnvelopes` (the real shape the STREAMER action loop reads
+    -- NWR Sunday Readiness overnight cycle, Worker 3, W6 fix) is ever some
+    OTHER unexpected shape, the endpoint must still return 200 with every
+    other real action intact, and disclose STREAMER as degraded -- never a
+    bare 500, and never a silently-empty Home."""
     facade, _profile_id = _fresh_local_facade(tmp_path)
 
     lineup_payload = {
@@ -251,7 +280,7 @@ def test_weekly_home_actions_degrades_streamer_honestly_on_a_genuinely_malformed
         "starters": [], "bench": [], "excluded": [], "swaps": [],
         "writeBehavior": "NO_SLEEPER_WRITES",
     }
-    malformed_kdst_payload = {**_REAL_SHAPE_KDST_PAYLOAD, "positions": "not-a-list-or-dict"}
+    malformed_kdst_payload = {**_REAL_SHAPE_KDST_PAYLOAD, "decisionEnvelopes": "not-a-list-or-dict"}
 
     monkeypatch.setattr(
         facade, "redraft_weekly_lineup", lambda *, week: FacadePayload(data=lineup_payload)

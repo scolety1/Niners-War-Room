@@ -398,15 +398,18 @@ function TargetsTab({
       <SelectField label="Position" value={position} onChange={setPosition} options={positions.map((value) => ({ value, label: value }))} />
       <Button icon="activity" variant="secondary" onClick={reload} disabled={working}>{working ? "Reading…" : "Refresh"}</Button>
     </div>
-    {/* Waiver Night V1 (Section 5, THIS_WEEK honesty): both modes rank
-        targets by the SAME real marginal roster utility -- THIS_WEEK does
-        not re-sort by this week's projected points, it only adds them as
-        real display context and a secondary tie-break. Said explicitly
-        here rather than left implied by the Mode toggle's raw labels. */}
+    {/* NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix): THIS_WEEK
+        no longer shares REST_OF_SEASON's ranking -- it is now PRIMARILY
+        ranked by each candidate's real, legal-lineup usable gain (see
+        `rank_waiver_candidates`'s own W5 fix), computed by actually
+        simulating the roster before/after the acquisition through the
+        same optimizer Start/Sit uses. Long-term season value remains
+        visible as a separate column/field, never re-blended into the
+        ranking itself. */}
     <p className="copy-muted">
       {mode === "THIS_WEEK"
-        ? "THIS WEEK shows the same real marginal-roster-utility ranking as REST OF SEASON, plus this week's real projected points and starter impact -- weekly points only break near-ties, they don't re-sort the list."
-        : "Ranked by real marginal roster utility (rest-of-season oriented). Switch to THIS WEEK to also see real weekly projections and starter impact for the same ranking."}
+        ? "THIS WEEK ranks candidates by real, legal-lineup usable gain this week (an actual before/after roster simulation) -- long-term season value is shown separately, it does not drive this ranking."
+        : "Ranked by real marginal roster utility (rest-of-season oriented). Switch to THIS WEEK to rank by real usable weekly-lineup gain instead."}
     </p>
     {/* Full Cycle V1, Worker 4 (Section 3C): the marginal utility driving
         BOTH modes above is itself built from NWR's season-level governed
@@ -495,8 +498,27 @@ function AddDropTab({
     { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
     { key: "rosOverallRank", label: "ROS rank", sort: "number", align: "right", render: (row) => row.rosOverallRank == null ? "Unranked" : `#${String(row.rosOverallRank)}` },
     { key: "weeklyProjectedPoints", label: mode === "THIS_WEEK" ? "This week pts" : "Weekly pts", sort: "number", align: "right", render: (row) => row.weeklyProjectedPoints == null ? "—" : formatNumber(Number(row.weeklyProjectedPoints), 1) },
-    { key: "marginalUtility", label: "Marginal utility", sort: "number", align: "right", render: (row) => row.marginalUtility == null ? "—" : formatNumber(Number(row.marginalUtility), 1) },
-    { key: "becomesStarter", label: "Becomes starter", sort: "text", render: (row) => row.becomesStarter ? <StatusBadge tone="safe" label="Yes" /> : "No" },
+    { key: "marginalUtility", label: mode === "THIS_WEEK" ? "Season utility (long-term)" : "Marginal utility", sort: "number", align: "right", render: (row) => row.marginalUtility == null ? "—" : formatNumber(Number(row.marginalUtility), 1) },
+    // NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix): THIS_WEEK
+    // now ranks by this real, legal-lineup usable gain (see
+    // `rank_waiver_candidates`'s own W5 fix) -- surfaced as its own column,
+    // not just implied by row order.
+    ...(mode === "THIS_WEEK"
+      ? [{
+          key: "thisWeekLineupGain", label: "This week usable gain", sort: "number" as const, align: "right" as const,
+          render: (row: Record<string, unknown>) => row.thisWeekLineupGain == null ? "Not evaluated" : formatNumber(Number(row.thisWeekLineupGain), 1),
+        }]
+      : []),
+    {
+      key: "becomesStarter", label: "Becomes starter", sort: "text",
+      render: (row) => (
+        row.becomesStarterBasis === "UNAVAILABLE_NOT_EVALUATED_THIS_PASS"
+          ? <StatusBadge tone="review" label="Unknown" />
+          : row.becomesStarter
+            ? <StatusBadge tone="safe" label="Yes" />
+            : "No"
+      ),
+    },
     {
       key: "faabBidLowDollars",
       label: "Suggested FAAB",

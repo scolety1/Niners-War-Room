@@ -98,7 +98,7 @@ def test_faab_context_reads_real_remaining_budget_for_a_real_faab_league(
     monkeypatch.setattr(
         desktop_facade_module.SleeperHttpClient,
         "get_json",
-        _make_fake_get_json({"waiver_type": 1, "waiver_budget": 100, "playoff_week_start": 15}),
+        _make_fake_get_json({"waiver_type": 2, "waiver_budget": 100, "playoff_week_start": 15}),
     )
 
     result = facade.redraft_waivers(mode="REST_OF_SEASON")
@@ -131,7 +131,7 @@ def test_faab_context_derives_live_weeks_remaining_from_real_current_week_and_pl
         desktop_facade_module.SleeperHttpClient,
         "get_json",
         _make_fake_get_json(
-            {"waiver_type": 1, "waiver_budget": 100, "playoff_week_start": 15}, current_week=10
+            {"waiver_type": 2, "waiver_budget": 100, "playoff_week_start": 15}, current_week=10
         ),
     )
 
@@ -153,7 +153,7 @@ def test_faab_context_defaults_weeks_remaining_honestly_when_playoff_week_start_
     monkeypatch.setattr(
         desktop_facade_module.SleeperHttpClient,
         "get_json",
-        _make_fake_get_json({"waiver_type": 1, "waiver_budget": 100}),
+        _make_fake_get_json({"waiver_type": 2, "waiver_budget": 100}),
     )
 
     result = facade.redraft_waivers(mode="REST_OF_SEASON")
@@ -196,6 +196,39 @@ def test_faab_context_never_fabricates_a_budget_for_a_non_faab_league(
     assert all(row["faabBidLowDollars"] is None for row in add_candidates)
     assert all(row["faabBidHighDollars"] is None for row in add_candidates)
     assert all(row["faabUrgency"] is None for row in add_candidates)
+
+
+def test_faab_context_treats_reverse_standings_waiver_type_as_non_faab_too(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """NWR Sunday Readiness overnight cycle, Worker 3 (CRITICAL FIRST TASK):
+    the real Sleeper `waiver_type` enum has THREE values, not two --
+    0=rolling waivers, 1=reverse-standings priority, 2=FAAB (see the real
+    evidence cited on `desktop_facade.py`'s `is_faab_league` assignment:
+    independent corroboration from a third-party open-source enum
+    definition AND Sleeper's own public support-article ordering of the
+    three real waiver systems). Before this pass, `waiver_type == 1` was
+    read as FAAB -- backwards for Fantasy Gamers (real `waiver_type=1`,
+    genuinely a reverse-standings-priority league, NOT FAAB) and for
+    Enginerds (real `waiver_type=2`, genuinely FAAB, previously computed as
+    NOT FAAB). This regression fixture locks in `waiver_type=1` as non-FAAB,
+    matching Fantasy Gamers' own real, live-confirmed league settings."""
+
+    facade, _profile_id = _facade_with_sleeper_league(tmp_path)
+    monkeypatch.setattr(
+        desktop_facade_module.SleeperHttpClient,
+        "get_json",
+        _make_fake_get_json({"waiver_type": 1, "waiver_budget": 100}),
+    )
+
+    result = facade.redraft_waivers(mode="REST_OF_SEASON")
+    ctx = result.data["faabContext"]
+    assert ctx["isFaabLeague"] is False
+    assert ctx["totalBudgetDollars"] is None
+    assert ctx["remainingBudgetDollars"] is None
+    add_candidates = result.data["addCandidates"]
+    assert add_candidates
+    assert all(row["faabBidLowDollars"] is None for row in add_candidates)
 
 
 def test_faab_context_is_honestly_unavailable_when_league_settings_cannot_be_read(
@@ -243,7 +276,7 @@ def test_budget_scenario_is_explicitly_labeled_and_actually_fed_to_the_pricing_f
     monkeypatch.setattr(
         desktop_facade_module.SleeperHttpClient,
         "get_json",
-        _make_fake_get_json({"waiver_type": 1, "waiver_budget": 100, "playoff_week_start": 15}),
+        _make_fake_get_json({"waiver_type": 2, "waiver_budget": 100, "playoff_week_start": 15}),
     )
 
     # Spy on the real, UNCHANGED `suggest_faab_bids` (imported into
@@ -346,7 +379,7 @@ def test_budget_scenario_rejects_a_partial_or_malformed_hypothetical(
     monkeypatch.setattr(
         desktop_facade_module.SleeperHttpClient,
         "get_json",
-        _make_fake_get_json({"waiver_type": 1, "waiver_budget": 100}),
+        _make_fake_get_json({"waiver_type": 2, "waiver_budget": 100}),
     )
 
     with pytest.raises(FacadeError) as excinfo:
@@ -361,7 +394,7 @@ def test_faab_trace_and_waiver_trace_record_which_budget_mode_actually_ran(
     monkeypatch.setattr(
         desktop_facade_module.SleeperHttpClient,
         "get_json",
-        _make_fake_get_json({"waiver_type": 1, "waiver_budget": 100, "playoff_week_start": 15}),
+        _make_fake_get_json({"waiver_type": 2, "waiver_budget": 100, "playoff_week_start": 15}),
     )
 
     facade.redraft_waivers(

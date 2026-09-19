@@ -89,7 +89,12 @@ def _fake_get_json(self: Any, path: str) -> Any:
     if path == "players/nfl":
         return _PLAYERS
     if path == "league/9999":
-        return {"settings": {"waiver_type": 1, "waiver_budget": 100}}
+        # NWR Sunday Readiness overnight cycle, Worker 3 (CRITICAL FIRST
+        # TASK): real Sleeper `waiver_type` is 2=FAAB, not 1 (see the real
+        # evidence on `desktop_facade.py`'s `is_faab_league` assignment) --
+        # this fixture wants a real FAAB league for its FAAB-trace
+        # assertions below.
+        return {"settings": {"waiver_type": 2, "waiver_budget": 100}}
     if path == "state/nfl":
         # NWR Waiver Night V1 (Worker 4, LIVE/SCENARIO budget separation):
         # `redraft_waivers` also now reads the real current NFL week.

@@ -473,6 +473,19 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
         <Panel title="Recommended changes" eyebrow="0 changes"><EmptyState title="Already optimal" message="Sleeper's current starters already match NWR's optimal lineup for this week." /></Panel>
       )}
       <Panel title="Starting lineup" eyebrow={`Projected total ${formatNumber(result.projectedTotal, 1)} pts`}>
+        {result.nonExactScoringInTotal ? (
+          // NWR Sunday Readiness overnight cycle, Worker 3 (W7 fix): a
+          // real, previously-undisclosed gap -- the projected total above
+          // can genuinely blend league-exact points with generic
+          // provider-scored K/DST points (or a partial league-exact K/DST
+          // match) with no visible distinction. Hover a player's points
+          // below for its real scoring basis.
+          <p className="copy-muted">
+            This total includes at least one player scored by generic provider points or a partial
+            league-scoring match, not this league&apos;s exact scoring -- hover a player&apos;s points for its
+            real basis.
+          </p>
+        ) : null}
         <div className="tier-player-grid">
           {result.starters.map((slot, index) => (
             <article key={index} className={slot.closeCall ? "tier-player-grid__article--close-call" : undefined}>
@@ -481,7 +494,9 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
                 <strong>{slot.player?.playerName ?? "Empty slot"}</strong>
                 <small>{slot.player ? `${slot.player.team} · ${slot.player.position}` : "No eligible player"}</small>
               </div>
-              <b>{slot.player?.projectedPoints == null ? "—" : formatNumber(slot.player.projectedPoints, 1)}</b>
+              <b title={slot.player?.scoringContext ?? undefined}>
+                {slot.player?.projectedPoints == null ? "—" : formatNumber(slot.player.projectedPoints, 1)}
+              </b>
               <StatusBadge
                 tone={slot.closeCall ? "review" : statusTone(slot.status)}
                 label={slot.closeCall ? `CLOSE CALL vs ${slot.closeCallAlternative ?? "alt"} (${formatNumber(slot.closeCallMargin ?? 0, 1)})` : slot.status}
@@ -583,7 +598,24 @@ export function AddDropDetail({
         <div>
           <h3>Weekly-lineup impact</h3>
           {mode === "THIS_WEEK" ? (
-            <p>{add.becomesStarter ? `Projected to become a starter this week (${formatNumber(add.weeklyProjectedPoints ?? 0, 1)} pts).` : "Would not become a starter this week under NWR's lineup optimizer."}</p>
+            // NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix):
+            // `add.becomesStarter` now carries a REAL, independently
+            // recomputed weekly-lineup answer (see `becomesStarterBasis`),
+            // never the season-long flag it used to silently borrow --
+            // and it can genuinely be `null` (not evaluated this pass),
+            // which must read as "unavailable", never as a false "no".
+            add.becomesStarterBasis === "THIS_WEEK_LINEUP_EVALUATION" ? (
+              <p>
+                {add.becomesStarter
+                  ? `Projected to become a starter this week (real legal-lineup gain: ${formatNumber(add.thisWeekLineupGain ?? 0, 1)} pts).`
+                  : `Would not become a starter this week under NWR's lineup optimizer (real legal-lineup gain: ${formatNumber(add.thisWeekLineupGain ?? 0, 1)} pts).`}
+              </p>
+            ) : (
+              <p className="copy-muted">
+                A real weekly-lineup evaluation was not computed for this candidate this pass -- this is
+                NOT the same as "would not start". Weekly projected points: {formatNumber(add.weeklyProjectedPoints ?? 0, 1)}.
+              </p>
+            )
           ) : <p className="copy-muted">Switch to THIS WEEK mode above for a weekly-lineup estimate.</p>}
           <h3>Rest-of-season impact</h3>
           <p>
@@ -676,8 +708,26 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
     { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
     { key: "rosOverallRank", label: "ROS rank", sort: "number", align: "right", render: (row) => row.rosOverallRank == null ? "Unranked" : `#${String(row.rosOverallRank)}` },
     { key: "weeklyProjectedPoints", label: mode === "THIS_WEEK" ? "This week pts" : "Weekly pts", sort: "number", align: "right", render: (row) => row.weeklyProjectedPoints == null ? "—" : formatNumber(Number(row.weeklyProjectedPoints), 1) },
-    { key: "marginalUtility", label: "Marginal utility", sort: "number", align: "right", render: (row) => row.marginalUtility == null ? "—" : formatNumber(Number(row.marginalUtility), 1) },
-    { key: "becomesStarter", label: "Becomes starter", sort: "text", render: (row) => row.becomesStarter ? <StatusBadge tone="safe" label="Yes" /> : "No" },
+    { key: "marginalUtility", label: mode === "THIS_WEEK" ? "Season utility (long-term)" : "Marginal utility", sort: "number", align: "right", render: (row) => row.marginalUtility == null ? "—" : formatNumber(Number(row.marginalUtility), 1) },
+    // NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix): THIS_WEEK
+    // now ranks by this real, legal-lineup usable gain -- surfaced as its
+    // own column rather than only implied by row order.
+    ...(mode === "THIS_WEEK"
+      ? [{
+          key: "thisWeekLineupGain", label: "This week usable gain", sort: "number" as const, align: "right" as const,
+          render: (row: Record<string, unknown>) => row.thisWeekLineupGain == null ? "Not evaluated" : formatNumber(Number(row.thisWeekLineupGain), 1),
+        }]
+      : []),
+    {
+      key: "becomesStarter", label: "Becomes starter", sort: "text",
+      render: (row) => (
+        row.becomesStarterBasis === "UNAVAILABLE_NOT_EVALUATED_THIS_PASS"
+          ? <StatusBadge tone="review" label="Unknown" />
+          : row.becomesStarter
+            ? <StatusBadge tone="safe" label="Yes" />
+            : "No"
+      ),
+    },
     {
       key: "faabBidLowDollars",
       label: "Suggested FAAB",
@@ -727,14 +777,15 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
       <SegmentedControl label="View" options={["Available to add", "Add/Drop pairings", "Consider dropping"]} value={view} onChange={setView} />
       <Button icon="activity" variant="secondary" onClick={reload} disabled={working}>{working ? "Reading…" : "Refresh"}</Button>
     </div>
-    {/* Waiver Night V1 (Section 5, THIS_WEEK honesty): see the same caption
-        on Improve Team's Targets tab -- both modes rank by the same real
-        marginal roster utility; THIS_WEEK only adds real display context
-        and a secondary tie-break, it never re-sorts by weekly points. */}
+    {/* NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix): see the
+        same caption on Improve Team's Targets tab (the real, routed
+        surface -- this page is an unrouted legacy fallback, kept
+        consistent anyway). THIS_WEEK now ranks by real, legal-lineup
+        usable gain, not season marginal utility. */}
     <p className="copy-muted">
       {mode === "THIS_WEEK"
-        ? "THIS WEEK shows the same real marginal-roster-utility ranking as REST OF SEASON, plus this week's real projected points and starter impact -- weekly points only break near-ties, they don't re-sort the list."
-        : "Ranked by real marginal roster utility (rest-of-season oriented). Switch to THIS WEEK to also see real weekly projections and starter impact for the same ranking."}
+        ? "THIS WEEK ranks candidates by real, legal-lineup usable gain this week (an actual before/after roster simulation) -- long-term season value is shown separately, it does not drive this ranking."
+        : "Ranked by real marginal roster utility (rest-of-season oriented). Switch to THIS WEEK to rank by real usable weekly-lineup gain instead."}
     </p>
     {result?.faabContext ? (
       <Panel title="FAAB (live)" eyebrow="Real, live Sleeper budget -- plan scenarios on the Improve Team FAAB tab instead">

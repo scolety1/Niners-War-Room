@@ -209,6 +209,8 @@ from src.services.redraft_engine_v1_service import (
 )
 from src.services.redraft_roster_legality_service import evaluate_draft_pick_legality
 from src.services.weekly_projection_service import (
+    KDST_SCORING_LABEL_EXACT,
+    NWR_SCORING_LABEL,
     WeeklyProjectionError,
     build_weekly_projection_rows,
 )
@@ -219,6 +221,7 @@ from src.services.weekly_projection_provider_service import (
 from src.services.weekly_lineup_optimizer_service import (
     build_roster_candidates,
     optimize_weekly_lineup,
+    simulate_this_week_add_drop,
 )
 from src.services.weekly_game_lock_service import compute_weekly_game_lock
 from src.services.waiver_engine_service import (
@@ -2752,7 +2755,22 @@ class DesktopBackendFacade:
             consensus = FantasyProsConsensusClient()
             positions: dict[str, list[dict[str, Any]]] = {}
             unmatched: dict[str, list[str]] = {}
+            # NWR Sunday Readiness overnight cycle, Worker 3 (W7, position-
+            # configuration enforcement): a real, previously-unenforced gap
+            # -- this loop always queried and offered BOTH K and DST
+            # regardless of the league's own real roster configuration. A
+            # league with no DST slot at all (e.g. Las Vegas Enginerds' real
+            # roster: QB/RB/RB/WR/WR/WR/TE/FLEX/FLEX/K/BN -- no DEF/DST
+            # anywhere) must never be offered a DST pickup; symmetric
+            # handling for a league with no K slot. `selected.roster` is the
+            # SAME governed roster-shape record every other tool already
+            # reads -- no new source of truth.
+            _STREAMER_POSITION_SLOT_COUNT = {"K": selected.roster.k, "DST": selected.roster.dst}
             for position in ("K", "DST"):
+                if _STREAMER_POSITION_SLOT_COUNT[position] <= 0:
+                    positions[position] = []
+                    unmatched[position] = []
+                    continue
                 rows = consensus.consensus_rankings(
                     season=selected.season,
                     position=position,
@@ -2802,12 +2820,34 @@ class DesktopBackendFacade:
         trace_ids: list[dict[str, str]] = []
         top_actions_by_position: dict[str, dict[str, Any] | None] = {}
         alternatives_by_position: dict[str, list[dict[str, Any]]] = {}
+        # NWR Sunday Readiness overnight cycle, Worker 3 (W6 fix): this used
+        # to ALWAYS prefer the best-ECR unrostered ("ADD") row as the
+        # primary recommendation, even when the owner's own current starter
+        # ranked better by real FantasyPros ECR -- a real, reproduced
+        # unnecessary-downgrade bug (owned starting K at ECR1, a free K at
+        # ECR10 -- old code recommended the ADD anyway). `actions` is
+        # already sorted ascending by real ECR (`streamer_actions`'s own
+        # sort), so the correct primary is simply the FIRST row whose
+        # recommendation is genuinely actionable by the owner today --
+        # START (keep the current starter), HOLD (already owned, not
+        # currently starting), or ADD (a real available upgrade) --
+        # ROSTERED_ELSEWHERE (an opponent's real roster) is never
+        # actionable and is correctly skipped, same as before. Because
+        # `actions` is ECR-sorted, the first actionable match is the real
+        # best-ECR reachable option -- KEEP CURRENT (START) is therefore a
+        # genuinely reachable primary recommendation whenever the owner's
+        # own starter really is the best real, accessible option.
+        _STREAMER_ACTIONABLE_RECOMMENDATIONS = {"START", "HOLD", "ADD"}
         for position, tool_name in (("K", "K_STREAMER"), ("DST", "DST_STREAMER")):
             actions = positions.get(position) or []
-            add_action = next(
-                (action for action in actions if action.get("recommendation") == "ADD"), None
+            top_action = next(
+                (
+                    action
+                    for action in actions
+                    if action.get("recommendation") in _STREAMER_ACTIONABLE_RECOMMENDATIONS
+                ),
+                actions[0] if actions else None,
             )
-            top_action = add_action or (actions[0] if actions else None)
             top_actions_by_position[position] = top_action
             alternatives_by_position[position] = [
                 action for action in actions[:6] if action is not top_action
@@ -2854,6 +2894,11 @@ class DesktopBackendFacade:
         decision_envelopes: list[dict[str, Any]] = []
         for position, tool_name in (("K", "K_STREAMER"), ("DST", "DST_STREAMER")):
             top_action = top_actions_by_position.get(position)
+            # W7 (position-configuration enforcement): distinguish "this
+            # league genuinely does not use this position" from "no data
+            # came back" -- a real, disclosed reason, not a generic
+            # unavailable that reads like a provider/data problem.
+            position_not_used = _STREAMER_POSITION_SLOT_COUNT.get(position, 0) <= 0
             envelope = build_decision_envelope(
                 task=tool_name,
                 profile_id=selected.profile_id,
@@ -2864,13 +2909,22 @@ class DesktopBackendFacade:
                     f"{top_action.get('playerName')} ({top_action.get('team')}): "
                     f"{top_action.get('recommendation')} per FantasyPros consensus ECR."
                     if top_action is not None
-                    else f"No {position} streamer candidate was found this week."
+                    else (
+                        f"This league has no {position} roster slot; {position} pickups are never "
+                        "recommended."
+                        if position_not_used
+                        else f"No {position} streamer candidate was found this week."
+                    )
                 ),
                 confidence_state="NOMINAL" if top_action is not None else "UNAVAILABLE",
                 confidence_basis=(
                     "Ranked from live FantasyPros consensus ECR and a live Sleeper roster read."
                     if top_action is not None
-                    else f"No {position} rows were returned by the FantasyPros consensus read."
+                    else (
+                        f"Position not used: this league's real roster configuration has 0 {position} slots."
+                        if position_not_used
+                        else f"No {position} rows were returned by the FantasyPros consensus read."
+                    )
                 ),
                 data_health=None,
                 trace_id=trace_id_by_position.get(position),
@@ -3261,6 +3315,26 @@ class DesktopBackendFacade:
                 "The owner's Sleeper roster could not be found in this league.",
                 status=409,
             )
+        # NWR Sunday Readiness overnight cycle, Worker 3 (W7): the league's
+        # own raw `scoring_settings` (a real Sleeper stat_name -> points map)
+        # is a purely additive read used only to score K/DST rows
+        # league-exactly wherever the raw weekly stats support it (see
+        # `weekly_projection_service._score_kdst_from_raw_sleeper_scoring`).
+        # A failed fetch degrades honestly to `None` -- `build_weekly_
+        # projection_rows` then falls back to the pre-existing generic
+        # provider-points passthrough for K/DST, unchanged; it never fails
+        # the whole lineup request over this one optional enhancement.
+        try:
+            weekly_lineup_league_settings_raw = self._sleeper_get_json(sleeper, f"league/{league_id}")
+        except (OSError, ValueError):
+            weekly_lineup_league_settings_raw = None
+        weekly_lineup_scoring_settings = (
+            weekly_lineup_league_settings_raw.get("scoring_settings")
+            if isinstance(weekly_lineup_league_settings_raw, Mapping)
+            else None
+        )
+        if not isinstance(weekly_lineup_scoring_settings, Mapping):
+            weekly_lineup_scoring_settings = None
         projection_result = build_weekly_projection_rows(
             raw_projections=raw_projections,
             players=players,
@@ -3271,6 +3345,7 @@ class DesktopBackendFacade:
             season_type="regular",
             league_id=league_id,
             fetched_at=weekly_health.retrieved_at,
+            sleeper_scoring_settings=weekly_lineup_scoring_settings,
         )
         status_overrides = load_status_overrides(self.repo_root)
         # NWR Sunday Readiness overnight cycle, Worker 2 (W2): real,
@@ -3402,6 +3477,23 @@ class DesktopBackendFacade:
                 "projectedTotal": lineup.projected_total,
                 "unprojectedStarterCount": lineup.unprojected_starter_count,
                 "unresolvedIdentityStarterCount": lineup.unresolved_identity_starter_count,
+                # NWR Sunday Readiness overnight cycle, Worker 3 (W7 fix): a
+                # real, previously-undisclosed gap -- `projectedTotal` above
+                # can genuinely blend league-exact points (skill positions,
+                # and now K/DST wherever the raw stats support it) with
+                # generic provider-scored points (K/DST when the league's
+                # raw scoring settings could not be read or matched at all)
+                # with NO visible distinction anywhere in this response.
+                # True only when at least one starter that actually
+                # contributed to `projectedTotal` was scored under a
+                # non-exact context -- never fabricated, and never implying
+                # a problem when every real contributing starter is exact.
+                "nonExactScoringInTotal": any(
+                    slot.player is not None
+                    and slot.player.projected_points is not None
+                    and slot.player.scoring_context not in (NWR_SCORING_LABEL, KDST_SCORING_LABEL_EXACT)
+                    for slot in lineup.starters
+                ),
                 "starters": [
                     {
                         "slotType": slot.slot_type,
@@ -3413,6 +3505,16 @@ class DesktopBackendFacade:
                                 "position": slot.player.position,
                                 "team": slot.player.team,
                                 "projectedPoints": slot.player.projected_points,
+                                # W7 fix: the real scoring basis this
+                                # player's own points were computed under
+                                # (NWR_LEAGUE_SCORING /
+                                # NWR_LEAGUE_SCORING_KDST_WEEKLY[_PARTIAL] /
+                                # SLEEPER_PROVIDER_SCORING) -- no longer
+                                # dropped before reaching Start/Sit.
+                                "scoringContext": slot.player.scoring_context,
+                                "unsupportedScoringCategories": list(
+                                    slot.player.unsupported_scoring_categories
+                                ),
                                 "playerAvailabilityStatus": availability_status_by_id.get(
                                     slot.player.canonical_player_id
                                 ),
@@ -3434,6 +3536,8 @@ class DesktopBackendFacade:
                         "playerName": candidate.player_name,
                         "position": candidate.position,
                         "projectedPoints": candidate.projected_points,
+                        "scoringContext": candidate.scoring_context,
+                        "unsupportedScoringCategories": list(candidate.unsupported_scoring_categories),
                         "playerAvailabilityStatus": availability_status_by_id.get(
                             candidate.canonical_player_id
                         ),
@@ -3622,7 +3726,31 @@ class DesktopBackendFacade:
             raw_waiver_position = (
                 roster_settings.get("waiver_position") if isinstance(roster_settings, Mapping) else None
             )
-            is_faab_league = raw_waiver_type == 1
+            # NWR Sunday Readiness overnight cycle, Worker 3 (CRITICAL FIRST
+            # TASK): this was `raw_waiver_type == 1` -- backwards for BOTH
+            # real leagues (Fantasy Gamers waiver_type=1, Enginerds
+            # waiver_type=2). Independently verified this pass, not just
+            # taken from Worker 1's flag: (1) Sleeper's own official docs
+            # (docs.sleeper.com) do not enumerate this field at all --
+            # confirmed via a fresh WebFetch this pass, still true; (2) a
+            # real, independent third-party source
+            # (github.com/jdguggs10/flaim, PR #294) defines
+            # `SLEEPER_WAIVER_TYPE_FAAB = 2` with an explicit comment "0 =
+            # rolling waivers, 1 = reverse standings, 2 = FAAB (undocumented
+            # community convention)"; (3) Sleeper's own real, public support
+            # article ("What types of waivers do you support?",
+            # support.sleeper.com/en/articles/1876041) independently lists
+            # the three real waiver systems in this exact order -- Rolling
+            # Waivers ("the default setting"), Reverse Standings, then FAAB
+            # Bidding -- matching the third-party enum's ordering (0, 1, 2)
+            # with no numeric value stated by either source alone, but two
+            # independent sources converging on the same three-way ordering
+            # is real corroboration. No single source is an official,
+            # explicit "waiver_type: 2 = FAAB" statement, so this is
+            # high-confidence verified evidence, not a certainty -- but it is
+            # independently verified, not merely carried over from Worker 1's
+            # own citation.
+            is_faab_league = raw_waiver_type == 2
             if is_faab_league and isinstance(raw_total_budget, int) and isinstance(raw_budget_used, int):
                 live_total_budget = raw_total_budget
                 live_remaining_budget = raw_total_budget - raw_budget_used
@@ -3735,6 +3863,25 @@ class DesktopBackendFacade:
             if str(raw_id) in resolved.canonical_id_by_sleeper_id
         }
 
+        # NWR Sunday Readiness overnight cycle, Worker 3: moved up from just
+        # after `add_candidates` (unchanged logic/inputs, neither depends on
+        # `add_candidates`) so the THIS_WEEK weekly-lineup-gain evaluation
+        # below can reuse the SAME real weakest-drop candidate the ROS
+        # Add/Drop pairing already computes -- one real drop story per
+        # request, not two independently-computed ones.
+        drop_candidates_all = rank_drop_candidates(
+            roster_canonical_ids=resolved.canonical_player_ids, profile=selected, ranking=ranking,
+            manual_assets=manual_assets, player_names=resolved.player_names_by_canonical_id,
+            player_positions=resolved.player_positions_by_canonical_id,
+        )
+        drop_candidates = tuple(
+            candidate for candidate in drop_candidates_all
+            if candidate.canonical_player_id not in reserve_canonical_ids
+        )
+        sleeper_id_by_canonical_id = {
+            canonical_id: sleeper_id for sleeper_id, canonical_id in resolved.canonical_id_by_sleeper_id.items()
+        }
+
         # Waiver Night V1 (Section 4, open-slot handling): an add can be
         # LEGAL without a forced drop when the owner has a real open
         # non-reserve roster slot. Uses the league's own real
@@ -3781,7 +3928,14 @@ class DesktopBackendFacade:
         weekly_by_sleeper_id = None
         weekly_source_status = None
         weekly_provider_health = None
+        # NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix): the real,
+        # legal-lineup-gain evaluation for each THIS_WEEK candidate, keyed
+        # by real Sleeper player id. Empty (not `None`) whenever not
+        # evaluated -- `rank_waiver_candidates` treats an absent key as
+        # honestly "not evaluated this pass", never a fabricated zero gain.
+        this_week_impact_by_sleeper_id: dict[str, Any] = {}
         if mode == "THIS_WEEK":
+            status_overrides = load_status_overrides(self.repo_root)
             try:
                 raw_projections, weekly_health = get_weekly_projections(
                     provider=default_weekly_projection_provider(),
@@ -3795,6 +3949,16 @@ class DesktopBackendFacade:
                     raw_projections=raw_projections, players=players, ranking_rows=ranking_rows,
                     scoring=selected.scoring, season=selected.season, week=week,
                     season_type="regular", league_id=league_id, fetched_at=weekly_health.retrieved_at,
+                    # W7 fix: same real, league-exact K/DST scoring path as
+                    # `redraft_weekly_lineup` -- `league_settings_raw` was
+                    # already fetched above for FAAB/waiver-type context, no
+                    # second Sleeper call.
+                    sleeper_scoring_settings=(
+                        league_settings_raw.get("scoring_settings")
+                        if isinstance(league_settings_raw, Mapping)
+                        and isinstance(league_settings_raw.get("scoring_settings"), Mapping)
+                        else None
+                    ),
                 )
                 weekly_by_sleeper_id = {row.sleeper_player_id: row for row in projection_result.rows}
                 weekly_source_status = projection_result.source_status
@@ -3807,25 +3971,83 @@ class DesktopBackendFacade:
                     status=503,
                 ) from exc
 
+            # W5 fix: evaluate the REAL before/after legal-lineup impact of
+            # each candidate acquisition (paired with the SAME real weakest
+            # drop the ROS Add/Drop pairing already computed above, or no
+            # drop when a real open non-reserve roster slot exists) using
+            # the SAME optimizer W2-W4 already fixed (`weekly_game_lock_
+            # service` reused for locks, not re-derived). Bounded to the
+            # real top `_THIS_WEEK_IMPACT_EVAL_LIMIT` free agents by raw
+            # weekly points -- raw points are used ONLY to pick which
+            # candidates get a real full lineup-gain evaluation, never as
+            # the final ranking signal (that is `this_week_lineup_gain`,
+            # consumed by `rank_waiver_candidates` below). A real, disclosed
+            # scope decision to bound this endpoint's own latency; a
+            # candidate outside this shortlist is honestly "not evaluated",
+            # never silently zeroed.
+            _THIS_WEEK_IMPACT_EVAL_LIMIT = 60
+            try:
+                game_lock = compute_weekly_game_lock(season=selected.season, week=week)
+                locked_teams = sorted(game_lock.locked_teams) if game_lock.source_status == "OK" else ()
+                own_roster_weekly_candidates = build_roster_candidates(
+                    roster_sleeper_player_ids=raw_player_ids,
+                    starter_sleeper_player_ids=[str(value) for value in own_roster.get("starters") or []],
+                    projection_rows=projection_result.rows,
+                    status_overrides=status_overrides,
+                    reserve_sleeper_player_ids=raw_reserve_ids,
+                    taxi_sleeper_player_ids=raw_taxi_ids,
+                    locked_teams=locked_teams,
+                    player_catalog=players,
+                )
+                weakest_drop_sleeper_id = (
+                    sleeper_id_by_canonical_id.get(drop_candidates[0].canonical_player_id)
+                    if drop_candidates
+                    else None
+                )
+                evaluation_drop_sleeper_id = None if open_slot_available is True else weakest_drop_sleeper_id
+                free_agent_sleeper_ids = {str(row.get("sleeperPlayerId") or "") for row in free_agents}
+                shortlist = sorted(
+                    (
+                        (sleeper_id, row)
+                        for sleeper_id, row in weekly_by_sleeper_id.items()
+                        if sleeper_id in free_agent_sleeper_ids and row.projected_points is not None
+                    ),
+                    key=lambda item: item[1].projected_points,
+                    reverse=True,
+                )[:_THIS_WEEK_IMPACT_EVAL_LIMIT]
+                for sleeper_id, weekly_row in shortlist:
+                    add_roster_candidate = build_roster_candidates(
+                        roster_sleeper_player_ids=[sleeper_id],
+                        starter_sleeper_player_ids=[],
+                        projection_rows=[weekly_row],
+                        status_overrides=status_overrides,
+                        locked_teams=locked_teams,
+                        player_catalog=players,
+                    )[0]
+                    this_week_impact_by_sleeper_id[sleeper_id] = simulate_this_week_add_drop(
+                        own_roster_candidates=own_roster_weekly_candidates,
+                        add_candidate=add_roster_candidate,
+                        drop_sleeper_player_id=evaluation_drop_sleeper_id,
+                        roster=selected.roster,
+                        status_overrides=status_overrides,
+                    )
+            except (OSError, ValueError):
+                # Honest degradation only: THIS_WEEK ranking falls back to
+                # the pre-existing marginal-utility/weekly-points ordering
+                # (see `rank_waiver_candidates`'s own fallback) rather than
+                # failing the whole endpoint over this additive evaluation.
+                this_week_impact_by_sleeper_id = {}
+
         add_candidates = rank_waiver_candidates(
             free_agents=free_agents, owner_roster_canonical_ids=resolved.canonical_player_ids,
             profile=selected, ranking=ranking, manual_assets=manual_assets, mode=mode,
             weekly_projections_by_sleeper_id=weekly_by_sleeper_id, limit=25,
+            this_week_impact_by_sleeper_id=this_week_impact_by_sleeper_id if mode == "THIS_WEEK" else None,
         )
-        # The FULL roster (including any reserve/IR player) is still passed
-        # in here so every OTHER candidate's own marginal-utility
-        # computation continues to reflect the real, actual roster
-        # composition -- only the reserve player himself is filtered out of
-        # the returned candidate/pairing list, immediately below.
-        drop_candidates_all = rank_drop_candidates(
-            roster_canonical_ids=resolved.canonical_player_ids, profile=selected, ranking=ranking,
-            manual_assets=manual_assets, player_names=resolved.player_names_by_canonical_id,
-            player_positions=resolved.player_positions_by_canonical_id,
-        )
-        drop_candidates = tuple(
-            candidate for candidate in drop_candidates_all
-            if candidate.canonical_player_id not in reserve_canonical_ids
-        )
+        # The FULL roster (including any reserve/IR player) already went
+        # into `drop_candidates`/`drop_candidates_all` above (computed
+        # earlier so the THIS_WEEK weekly-gain evaluation could reuse the
+        # same real weakest-drop candidate) -- reused here unchanged.
         pairings = pair_add_drop(
             add_candidates=add_candidates,
             drop_candidates=drop_candidates,
@@ -3970,6 +4192,26 @@ class DesktopBackendFacade:
 
         def _candidate_payload(candidate):
             bid = faab_by_id.get(candidate.canonical_player_id)
+            # NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix):
+            # `becomesStarter` used to always be the season-long
+            # `marginal_roster_utility_v2` flag, even in THIS_WEEK mode,
+            # while Add/Drop's own explanation text claimed it reflected
+            # "this week". In THIS_WEEK mode, `becomesStarter` now reflects
+            # the real, independently-recomputed weekly-lineup evaluation
+            # (`None`, never the season flag, when this pass did not
+            # evaluate this specific candidate -- see
+            # `becomesStarterBasis`). REST_OF_SEASON is unchanged: the
+            # season-long flag, unambiguously labeled as such.
+            if mode == "THIS_WEEK":
+                becomes_starter = candidate.this_week_becomes_starter if candidate.this_week_evaluated else None
+                becomes_starter_basis = (
+                    "THIS_WEEK_LINEUP_EVALUATION"
+                    if candidate.this_week_evaluated
+                    else "UNAVAILABLE_NOT_EVALUATED_THIS_PASS"
+                )
+            else:
+                becomes_starter = candidate.becomes_starter
+                becomes_starter_basis = "SEASON_MARGINAL_UTILITY"
             return {
                 "sleeperPlayerId": candidate.sleeper_player_id,
                 "canonicalPlayerId": candidate.canonical_player_id,
@@ -3980,7 +4222,14 @@ class DesktopBackendFacade:
                 "rosOverallRank": candidate.ros_overall_rank,
                 "weeklyProjectedPoints": candidate.weekly_projected_points,
                 "marginalUtility": candidate.marginal_utility,
-                "becomesStarter": candidate.becomes_starter,
+                "becomesStarter": becomes_starter,
+                "becomesStarterBasis": becomes_starter_basis,
+                # The real, legal-lineup usable gain THIS_WEEK mode ranks
+                # by (see `rank_waiver_candidates`'s own W5 fix); `None`
+                # for REST_OF_SEASON or a candidate this pass did not
+                # evaluate -- never a fabricated number.
+                "thisWeekLineupGain": candidate.this_week_lineup_gain,
+                "thisWeekEvaluated": candidate.this_week_evaluated,
                 "marginalUtilityExplanation": candidate.marginal_utility_explanation,
                 "identityStatus": candidate.identity_status,
                 "faabBidLowDollars": bid.bid_low_dollars if bid else None,
@@ -5442,31 +5691,38 @@ class DesktopBackendFacade:
             # self-identifies its own "position" key), not a
             # {"K": [...], "DST": [...]} dict -- the same camelCase-key-
             # mangling hazard already documented on `redraft_kdst_streamer`
-            # itself (see its own `positions`/`traceIds` comments). This call
-            # site still assumed the old dict shape and called `.items()` on
-            # a list, raising an uncaught `AttributeError` that propagated
-            # past this method's `except FacadeError` handlers into a bare
-            # HTTP 500 -- reproduced against a real Sleeper-imported active
-            # roster. Fixed by iterating the real list shape directly; a
-            # position's first "ADD" row is still its one top streamer
-            # suggestion (matches the prior per-position `break` exactly,
-            # since `streamer_actions` only ever marks one row per position
-            # as "ADD").
-            seen_streamer_positions: set[str] = set()
-            for row in kdst_payload.get("positions") or []:
-                row_position = row.get("position")
-                if row_position in seen_streamer_positions:
+            # itself (see its own `positions`/`traceIds` comments).
+            #
+            # NWR Sunday Readiness overnight cycle, Worker 3 (W6 fix): this
+            # loop used to surface a "Stream {position}" action whenever ANY
+            # row in that position's list was marked "ADD", regardless of
+            # whether the owner's own current starter actually ranked
+            # better -- the same unnecessary-downgrade bug as
+            # `redraft_kdst_streamer`'s own primary-recommendation
+            # selection, manifesting a second time here. Fixed the same
+            # way, by REUSING that endpoint's own already-corrected primary
+            # recommendation (`decisionEnvelopes[].decisionEnvelope.
+            # primaryRecommendation`) instead of independently re-deriving
+            # "first ADD row" from the flat `positions` list -- a genuine
+            # upgrade is only ever surfaced here when the real, ECR-ranked,
+            # actionable-first primary recommendation IS an ADD.
+            for envelope_row in kdst_payload.get("decisionEnvelopes") or []:
+                row_position = envelope_row.get("position")
+                envelope = envelope_row.get("decisionEnvelope") or {}
+                primary = envelope.get("primaryRecommendation")
+                if not isinstance(primary, Mapping) or primary.get("recommendation") != "ADD":
                     continue
-                if row.get("recommendation") == "ADD":
-                    actions.append(
-                        {
-                            "category": "STREAMER",
-                            "priority": 5,
-                            "summary": f"Stream {row_position}: {row.get('playerName', row.get('player_name', ''))}",
-                            "detail": row,
-                        }
-                    )
-                    seen_streamer_positions.add(row_position)
+                actions.append(
+                    {
+                        "category": "STREAMER",
+                        "priority": 5,
+                        "summary": (
+                            f"Stream {row_position}: "
+                            f"{primary.get('playerName', primary.get('player_name', ''))}"
+                        ),
+                        "detail": primary,
+                    }
+                )
         except FacadeError as exc:
             unavailable.append({"section": "STREAMER", "reason": exc.message})
         except (AttributeError, TypeError, KeyError) as exc:

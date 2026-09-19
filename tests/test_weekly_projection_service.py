@@ -108,11 +108,141 @@ def test_kdst_uses_sleeper_provider_points_not_a_fabricated_formula() -> None:
     result = build_weekly_projection_rows(
         raw_projections=_raw_projections(), players=_players(), ranking_rows=_ranking_rows(),
         scoring=scoring, season=2026, week=1, season_type="regular", league_id="league-1",
+        # No `sleeper_scoring_settings` -- the pre-W7-fix, still-honest
+        # generic fallback path, unchanged.
     )
     kicker = next(row for row in result.rows if row.sleeper_player_id == "11533")
     assert kicker.scoring_context == KDST_SCORING_LABEL
     assert kicker.projected_points == 6.84
     assert kicker.raw_stats == {}  # never presented as NWR-scored raw stats
+
+
+# NWR Sunday Readiness overnight cycle, Worker 3 (W7 fix) -- governing
+# brief regression fixture 8 ("Kicker scoring boundary"): "raw provider
+# points 9 with three short field goals returns 9 regardless of custom
+# league weights (buggy). Three made 20-29-yard goals at Enginerds' real
+# captured 2-points-each should contribute 6 (assuming no other scoring
+# events) if custom scoring is properly applied where the raw stats support
+# it -- or the gap must be explicitly disclosed if raw stats don't support
+# exact mapping." `_ENGINERDS_REAL_KICKER_SCORING` below is Las Vegas
+# Enginerds' own real, live-captured kicker scoring map (see the Sunday
+# Readiness LEDGER): fgm_0_19/20_29/30_39 = 2.0, fgm_40_49 = 3.0,
+# fgm_50p = 4.0, with a real, always-zero redundant fgm_50_59 = 0.0 key.
+_ENGINERDS_REAL_KICKER_SCORING = {
+    "fgm_0_19": 2.0, "fgm_20_29": 2.0, "fgm_30_39": 2.0, "fgm_40_49": 3.0,
+    "fgm_50_59": 0.0, "fgm_50p": 4.0, "xpm": 1.0,
+}
+
+
+def _kicker_raw_projections(*, fgm_20_29: float) -> dict:
+    return {
+        "11533": {
+            "fga": fgm_20_29, "fgm": fgm_20_29,
+            "fgm_0_19": 0.0, "fgm_20_29": fgm_20_29, "fgm_30_39": 0.0, "fgm_40_49": 0.0,
+            "xpm": 0.0, "xpmiss": 0.0,
+            # The real generic provider total this fixture must NOT fall
+            # back to once custom scoring genuinely applies -- exactly the
+            # brief's own "9 regardless of custom league weights" bug.
+            "pts_ppr": 9.0, "gp": 1.0,
+        },
+    }
+
+
+def test_regression_fixture_8a_generic_provider_points_ignore_custom_league_weights_documented_fallback() -> None:
+    """Buggy-documented (still-honest fallback) behavior: with no real
+    league scoring map supplied, raw provider points (9.0) are used
+    regardless of the league's own real per-tier weights -- exactly the
+    brief's own fixture number. The next test proves the real fix."""
+    result = build_weekly_projection_rows(
+        raw_projections=_kicker_raw_projections(fgm_20_29=3.0), players=_players(),
+        ranking_rows=_ranking_rows(), scoring=ScoringSettings(), season=2026, week=1,
+        season_type="regular", league_id="league-1",
+    )
+    kicker = next(row for row in result.rows if row.sleeper_player_id == "11533")
+    assert kicker.scoring_context == KDST_SCORING_LABEL
+    assert kicker.projected_points == 9.0
+
+
+def test_regression_fixture_8b_three_made_20_29_yard_goals_at_enginerds_real_tiers_score_exactly_6() -> None:
+    """THE FIX, the brief's own exact number: three made 20-29-yard field
+    goals at Las Vegas Enginerds' real captured 2-points-each tier
+    contribute exactly 6.0 -- computed from the real raw stat
+    (`fgm_20_29: 3.0`) times the league's real per-unit weight (`2.0`),
+    never the generic provider `pts_ppr` (9.0) the pre-fix code always
+    returned."""
+    result = build_weekly_projection_rows(
+        raw_projections=_kicker_raw_projections(fgm_20_29=3.0), players=_players(),
+        ranking_rows=_ranking_rows(), scoring=ScoringSettings(), season=2026, week=1,
+        season_type="regular", league_id="league-1",
+        sleeper_scoring_settings=_ENGINERDS_REAL_KICKER_SCORING,
+    )
+    kicker = next(row for row in result.rows if row.sleeper_player_id == "11533")
+    assert kicker.projected_points == 6.0
+    # A real, nonzero-weighted category this league scores (fgm_50p = 4.0)
+    # has NO raw breakout anywhere in Sleeper's real weekly-projection
+    # payload -- disclosed explicitly, never silently dropped or
+    # approximated by subtracting the other tiers from the overall `fgm`.
+    assert kicker.scoring_context == "NWR_LEAGUE_SCORING_KDST_WEEKLY_PARTIAL"
+    assert "fgm_50p" in kicker.unsupported_scoring_categories
+    # The real, always-zero redundant fgm_50_59 key is correctly never
+    # flagged as a gap (a zero-weighted category needs no raw support).
+    assert "fgm_50_59" not in kicker.unsupported_scoring_categories
+
+
+def test_regression_fixture_8c_fully_supported_kicker_tiers_report_the_exact_not_partial_label() -> None:
+    """When every real, nonzero-weighted league scoring category this
+    kicker's raw stats could contain IS present (Fantasy Gamers' real
+    tiers run the full fgm_0_19...fgm_40_49 + xpm set with no 50+ weight at
+    all), the label is the EXACT context, not the partial one -- the
+    partial label is reserved for a genuine, disclosed gap, never applied
+    when there isn't one."""
+    fantasy_gamers_style_scoring = {
+        "fgm_0_19": 3.0, "fgm_20_29": 3.0, "fgm_30_39": 3.0, "fgm_40_49": 4.0,
+        "xpm": 1.0,
+        # No 50+ tier weight configured at all by this league -- correctly
+        # never checked/flagged (a real `None`/absent weight, not a real
+        # nonzero one).
+    }
+    result = build_weekly_projection_rows(
+        raw_projections=_kicker_raw_projections(fgm_20_29=2.0), players=_players(),
+        ranking_rows=_ranking_rows(), scoring=ScoringSettings(), season=2026, week=1,
+        season_type="regular", league_id="league-1",
+        sleeper_scoring_settings=fantasy_gamers_style_scoring,
+    )
+    kicker = next(row for row in result.rows if row.sleeper_player_id == "11533")
+    assert kicker.projected_points == 6.0  # 2 made * 3.0/each, 0 elsewhere
+    assert kicker.scoring_context == "NWR_LEAGUE_SCORING_KDST_WEEKLY"
+    assert kicker.unsupported_scoring_categories == ()
+
+
+def test_regression_fixture_8d_dst_points_allowed_tier_also_scored_league_exactly() -> None:
+    """The same real fix applies to DST -- a real points-allowed-tier
+    weight times the real raw `pts_allow_*` bucket field, plus real
+    sack/int/fum_rec/safe/blk_kick/def_td categories, never the generic
+    provider passthrough once the league's real scoring map is supplied."""
+    dst_raw = {
+        "99998": {
+            "sack": 2.0, "int": 1.0, "fum_rec": 0.0, "safe": 0.0, "blk_kick": 0.0, "def_td": 0.0,
+            "pts_allow": 10.0, "pts_allow_7_13": 1.0,
+            "pts_ppr": 4.0, "gp": 1.0,
+        },
+    }
+    players = {**_players(), "99998": {"full_name": "Cowboys", "position": "DEF", "team": "DAL", "active": True}}
+    league_scoring = {
+        "sack": 1.0, "int": 2.0, "fum_rec": 2.0, "safe": 2.0, "blk_kick": 2.0, "def_td": 6.0,
+        "pts_allow_0": 10.0, "pts_allow_1_6": 7.0, "pts_allow_7_13": 4.0, "pts_allow_14_20": 1.0,
+        "pts_allow_21_27": 0.0, "pts_allow_28_34": -1.0, "pts_allow_35p": -4.0,
+    }
+    result = build_weekly_projection_rows(
+        raw_projections=dst_raw, players=players, ranking_rows=_ranking_rows(),
+        scoring=ScoringSettings(), season=2026, week=1, season_type="regular",
+        league_id="league-1", sleeper_scoring_settings=league_scoring,
+    )
+    dst = next(row for row in result.rows if row.sleeper_player_id == "99998")
+    # sack 2.0*1.0 + int 1.0*2.0 + pts_allow_7_13 1.0*4.0 = 2 + 2 + 4 = 8.0
+    assert dst.projected_points == 8.0
+    assert dst.scoring_context == "NWR_LEAGUE_SCORING_KDST_WEEKLY"
+    assert dst.unsupported_scoring_categories == ()
 
 
 def test_unmatched_and_malformed_rows_are_reported_not_dropped_silently() -> None:

@@ -59,10 +59,18 @@ export function explainWaiverTarget(
     ? `$${add.faabBidLowDollars}–${add.faabBidHighDollars}${add.faabUrgency ? ` · ${add.faabUrgency} urgency` : ""}`
     : null;
 
+  // NWR Sunday Readiness overnight cycle, Worker 3 (W5 fix): `add.
+  // becomesStarter` now carries a REAL, independently recomputed weekly
+  // evaluation in THIS_WEEK mode (see `becomesStarterBasis`), and can
+  // genuinely be `null` when this pass did not evaluate this candidate --
+  // that must read as "unavailable", never as a false "would not start"
+  // (the old ternary silently treated `null` the same as `false`).
   const thisWeekImpact = mode === "THIS_WEEK"
-    ? (add.becomesStarter
-      ? `Projected to become a starter this week${add.weeklyProjectedPoints != null ? ` (${add.weeklyProjectedPoints.toFixed(1)} pts)` : ""}.`
-      : "Would not become a starter this week under NWR's lineup optimizer.")
+    ? (add.becomesStarterBasis === "THIS_WEEK_LINEUP_EVALUATION"
+      ? (add.becomesStarter
+        ? `Projected to become a starter this week (real legal-lineup gain: ${(add.thisWeekLineupGain ?? 0).toFixed(1)} pts).`
+        : `Would not become a starter this week under NWR's lineup optimizer (real legal-lineup gain: ${(add.thisWeekLineupGain ?? 0).toFixed(1)} pts).`)
+      : `A real weekly-lineup evaluation was not computed for this candidate this pass -- not the same as "would not start". Weekly projected points: ${add.weeklyProjectedPoints != null ? add.weeklyProjectedPoints.toFixed(1) : "unavailable"}.`)
     : null;
 
   const rosParts: string[] = [];
@@ -158,8 +166,14 @@ export interface StreamerExplanation {
   tone: DecisionExplainTone;
 }
 
+// NWR Sunday Readiness overnight cycle, Worker 3 (W6 fix): "START" here
+// means the owner's own current starter is genuinely the best reachable
+// option this week (per the backend's own corrected primary-recommendation
+// selection -- see `desktop_facade.py`'s `redraft_kdst_streamer`) -- labeled
+// "KEEP" so a real KEEP-CURRENT recommendation reads as one, not as an
+// instruction to take some new action.
 const STREAMER_VERB: Record<KdstStreamerRow["recommendation"], string> = {
-  START: "START",
+  START: "KEEP",
   ADD: "ADD",
   HOLD: "HOLD",
   ROSTERED_ELSEWHERE: "NOTE",
