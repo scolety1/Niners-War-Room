@@ -1,6 +1,7 @@
 import type {
   DataHealthReport,
   DraftBoard,
+  LeagueCapabilities,
   LeagueProfile,
   LeagueWorkspaceContext,
   RedraftBootstrap,
@@ -64,6 +65,29 @@ function workspaceContext(overrides: Partial<LeagueWorkspaceContext> = {}): Leag
     scoringProfileHash: "h", rosterStateHash: "r", leagueSnapshotId: "s",
     syncStatus: "LIVE", syncAsOf: "2026-09-12T00:00:00Z", issues: [],
     matchup: null, standings: null, playoff: null,
+    ...overrides,
+  };
+}
+
+// Flaim-integration cycle (2026-09-19), Worker 4: fixture for the new
+// provider-agnostic capability gate `attention-center.ts` now reads
+// (`bootstrap.leagueCapabilities.hasVerifiedIdentity`) instead of
+// `profile.provider === "sleeper"`. Defaults to `NO_CAPABILITIES`-shaped
+// (everything false/NONE/UNKNOWN), matching `league_capability_service.py`'s
+// real default for a profile with no receipt/snapshot -- tests that need a
+// verified-identity league override `hasVerifiedIdentity` explicitly.
+function capabilities(overrides: Partial<LeagueCapabilities> = {}): LeagueCapabilities {
+  return {
+    hasVerifiedIdentity: false,
+    hasRosterData: false,
+    hasLineupEligibility: false,
+    hasScoringSettings: "UNKNOWN",
+    hasAvailablePlayerPool: "NONE",
+    hasStandings: "NONE",
+    transactionDirection: "NOT_ENABLED",
+    retrievedAtUtc: null,
+    providerAsOfUtc: null,
+    disclosures: [],
     ...overrides,
   };
 }
@@ -247,7 +271,13 @@ describe("buildLeagueOwnershipEntries", () => {
       leagueId: "L1", rankingWarning: "", writeBehavior: "NO_SLEEPER_WRITES",
       freeAgents: [{ sleeperPlayerId: "9", playerId: "9", playerName: "Open Player", position: "TE", team: "DAL", overallRank: 80, positionRank: 12, projectedPoints: 4, replacementAdjustedValue: 1, valueLabel: "v", rankingAuthority: "NWR REDRAFT RANKING", rosterStatus: "AVAILABLE" }],
     };
-    const entries = buildLeagueOwnershipEntries(sleeperProfile, bootstrap({}, sleeperProfile), myRoster, freeAgents, opponents);
+    const entries = buildLeagueOwnershipEntries(
+      sleeperProfile,
+      bootstrap({ leagueCapabilities: capabilities({ hasVerifiedIdentity: true }) }, sleeperProfile),
+      myRoster,
+      freeAgents,
+      opponents,
+    );
     expect(entries).toEqual([
       { playerName: "Owner Player", status: "ROSTERED_BY_YOU", teamName: null },
       { playerName: "Rival Player", status: "ROSTERED_BY_OPPONENT", teamName: "Rival Team" },
@@ -346,7 +376,20 @@ function buildFakeClient(profileIds: string[]) {
       currentActive = profileId;
       activateCalls.push(profileId);
       const activeProfile = profile({ profileId, leagueName: `League ${profileId}`, provider: "sleeper", providerLeagueId: profileId });
-      return bootstrap({ activeProfileId: profileId, profiles: profileIds.map((id) => profile({ profileId: id })) }, activeProfile);
+      return bootstrap(
+        {
+          activeProfileId: profileId,
+          profiles: profileIds.map((id) => profile({ profileId: id })),
+          // Flaim-integration cycle (2026-09-19), Worker 4: this fake client
+          // models a real, verified Sleeper league -- must set the new
+          // capability field so `fetchLeagueAttention`'s
+          // `hasVerifiedIdentity` gate (no longer `provider === "sleeper"`)
+          // still drives the my-roster/free-agents/opponent-rosters reads
+          // these tests assert on.
+          leagueCapabilities: capabilities({ hasVerifiedIdentity: true }),
+        },
+        activeProfile,
+      );
     },
     async redraftDataHealth(): Promise<DataHealthReport> {
       recordRead("dataHealth");

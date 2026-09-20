@@ -123,7 +123,12 @@ export function LeagueWorkspacePage({
  * dominating the primary view. */
 function LeagueOverviewTab({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const profile = data.activeProfile;
-  const isSleeper = profile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: converted from a
+  // blanket `provider === "sleeper"` check to the provider-agnostic
+  // capability gate (`data.leagueCapabilities.hasVerifiedIdentity`), the
+  // same field/precedent the backend's `_active_sleeper_context` guard now
+  // uses. See docs/codex/flaim_integration_20260919/LEDGER.md.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   const contextLoader = useCallback(() => client.redraftLeagueWorkspaceContext(), [client, data.activeProfileId]);
   const { result: context, error: contextError } = useAsync<LeagueWorkspaceContext>(contextLoader, [client, data.activeProfileId]);
   const rosterLoader = useCallback(() => (isSleeper ? client.redraftMyRoster() : null), [client, isSleeper]);
@@ -132,7 +137,7 @@ function LeagueOverviewTab({ client, data }: { client: NwrApiClient; data: Redra
   if (!profile) return null;
 
   const myRosterSummary = !isSleeper
-    ? "Not tracked for a Local/ESPN profile"
+    ? "No verified league data for this profile yet"
     : myRoster
       ? `${myRoster.roster.length} rostered player${myRoster.roster.length === 1 ? "" : "s"}`
       : "Reading your current roster…";

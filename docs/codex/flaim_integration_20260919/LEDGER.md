@@ -1046,3 +1046,323 @@ verified. This pass's commit sits on top of `a774b94e`.
 5. **Do not push.** Per this cycle's instructions, a later worker pushes
    once everything is verified. This pass's commit sits on top of
    `a774b94e`.
+
+---
+
+## Worker 4 (2026-09-19, continuing this ledger)
+
+Starting HEAD `dfae041b` (Worker 3's commit). Task: convert the frontend's
+23-ish `provider === "sleeper"` call sites Worker 1 catalogued to the
+provider-agnostic `data.leagueCapabilities.hasVerifiedIdentity` field
+Worker 2 wired live, following the exact backend precedent Workers 2/3
+established. Dev processes verified running at dispatch (LIVE OBSERVATION,
+`netstat -ano` + `Get-CimInstance Win32_Process` command-line match against
+`--repo-root C:/NWR/prospective-outcomes-v1`): Redraft backend pid `21960`
+(port 18742), Redraft preview pid `11932` (port 1422), Dynasty backend pid
+`46892` (port 18741), Dynasty preview pid `37692` (port 1421) — none
+restarted this pass (no backend/Dynasty code touched).
+
+### 1. Re-verified call-site count — INSPECTED CODE (fresh grep, not trusted from Worker 1's catalogue)
+
+`grep -rn '\.provider\s*[!=]==\s*"sleeper"' desktop/apps/redraft/src/`
+found **27** occurrences (not Worker 1's documented 23) — 24 using
+`=== "sleeper"`, 3 using `!== "sleeper"` (`pages.tsx:629`, `pages.tsx:672`,
+`profile.tsx:142`) that a bare `=== "sleeper"` grep misses. `git diff
+ca080a2e..HEAD -- desktop/` confirmed **zero frontend changes across
+Workers 1-3** (backend-only passes, as their own ledger sections state),
+so this is Worker 1's own original count being imprecise, not drift across
+the cycle. By file: `in-season.tsx` ×7, `pages.tsx` ×7 (350, 590, 591,
+629, 635, 672, 680 — Worker 1's catalogue said ×4), `trades.tsx` ×2,
+`league.tsx` ×2, `league-context.ts` ×3, `attention-center.ts` ×2,
+`improve-team.tsx` ×1, `profile.tsx` ×2 (Worker 1's catalogue implied ×1),
+`adp-providers.tsx` ×1.
+
+### 2. Converted — 20 of 27, grouped by surface
+
+All 20 use the identical pattern: `Boolean(data.leagueCapabilities?.
+hasVerifiedIdentity)` (or `bootstrap.leagueCapabilities?.hasVerifiedIdentity`
+where the local variable is `bootstrap`, not `data`) in place of
+`profile.provider === "sleeper"` / `data.activeProfile?.provider ===
+"sleeper"`. **Verified empirically, not assumed from the backend's own
+lesson**: gated on `hasVerifiedIdentity`, not `hasRosterData` — confirmed
+via the same real Fantasy-Gamers-null-`roster_snapshot`-shaped edge case
+Worker 2 found (live curl this pass: Fantasy Gamers has
+`hasVerifiedIdentity: true, hasRosterData: false` — gating the frontend on
+`hasRosterData` would have incorrectly blocked a real, currently-working
+league). Internal variable names (`isSleeper`) were deliberately KEPT
+as-is (not renamed) to minimize diff/risk — the task only asks for honest,
+non-Sleeper-specific USER-FACING wording, which was changed; renaming a
+purely-internal local `const` is not a behavior or user-facing concern and
+each site now carries an explicit code comment stating what the variable
+actually now means.
+
+- **Weekly Home / Start-Sit / Waivers / My Roster / Trade Analysis / Trade
+  Finder** (`in-season.tsx`, all 7 sites: `WeeklyHomePage` L102,
+  `LineupPage` L367, `WaiversPage` L696, `MyRosterContent` L859,
+  `MyRosterPage` L917, `TradeAnalysisPage` L992, `TradeFinderPage` L1188 —
+  line numbers post-edit) — every `EmptyState`/`StatusBadge` message tied to
+  the gate reworded from "Sleeper league required" / "needs a live Sleeper
+  roster" to "Verified league data required" / "needs a live roster ...
+  Import league data (e.g. via Sleeper) to continue", matching the
+  backend's own established wording pattern exactly.
+- **Improve Team** (`improve-team.tsx` L78, `ImproveTeamPage`) — same
+  pattern; message reworded.
+- **Trades** (`trades.tsx` L49 `TradesPage`, L385 `FindTradesTab`) — same
+  pattern; `TradesPage`'s `EmptyState`/`StatusBadge` reworded.
+- **League workspace** (`league.tsx` L126 `LeagueOverviewTab` only — see
+  section 3 for why `LeagueSyncTab`'s own separate `isSleeper` at L319 was
+  deliberately NOT converted) — "My roster" summary line reworded from
+  "Not tracked for a Local/ESPN profile" to "No verified league data for
+  this profile yet".
+- **Attention Center** (`attention-center.ts` L275
+  `buildLeagueOwnershipEntries`, L374 `fetchLeagueAttention`) — both
+  already received a `bootstrap: RedraftBootstrap` parameter, so no
+  signature change was needed; `buildLeagueOwnershipEntries`'s `profile`
+  parameter is now genuinely unused inside the function body (kept — it's
+  part of a 3-call-site public signature, and `desktop/tsconfig.base.json`
+  has no `noUnusedParameters`, confirmed by inspection).
+- **Player Compare / Free Agents / Opponent Rosters** (`pages.tsx`, all 7
+  sites: `CompareContent` L339, `FreeAgentsPage` L594/596, `OpponentRostersContent`
+  L633/639 (the `useEffect` gate + the render-time `const`), `OpponentRostersContent`'s
+  own `EmptyState` L678, `OpponentRostersPage` L686) — messages reworded
+  the same way; two purely-informational (non-gate) copy references to
+  "Sleeper" in `CompareContent`'s static Trade-mode note were also softened
+  to "your live roster" (not a gate, but the same honesty spirit).
+
+### 3. Deliberately NOT converted — 7 of 27, real Sleeper-specific semantics, not a gap
+
+Re-verified each one individually rather than converting everything
+mechanically:
+
+- **`league-context.ts:77` (`resolveLeagueLifecycle`'s `liveSyncCapable`)**
+  — this is NOT a "can this tool run" gate; it is specifically "does a
+  live re-sync path exist for this league" (its own docstring already says
+  so: "no live re-sync path in this app: `provider !== 'sleeper'`"). The
+  `LeagueCapabilities` model has no "can live-resync" field, and this
+  function only receives a bare `LeagueProfile` (no `RedraftBootstrap`/
+  `leagueCapabilities` in scope) — converting it would require a signature
+  change with no real capability field to back it. Left unconverted,
+  correctly.
+- **`league-context.ts:265`/`279` (`providerFormat`/`leagueIdentityFormat`)**
+  — pure display-label helpers that print the LITERAL provider name
+  ("Sleeper" vs. "Local"); an ESPN league will correctly need its own
+  literal "ESPN" label here once real, not a capability check. Not a gate.
+- **`league.tsx:319` (`LeagueSyncTab`)** — gates the "Refresh from Sleeper"
+  button, which calls `client.resyncSleeperRedraftProfile(...)` — a
+  literal, Sleeper-only live-resync endpoint with no ESPN/Flaim equivalent
+  (per this ledger's own Open Issue #2, building one is a materially
+  bigger, separate task). Converting this to `hasVerifiedIdentity` would be
+  WRONG: once a real ESPN snapshot exists, `hasVerifiedIdentity` would flip
+  true for KHA/403N18th while this specific resync action still has no
+  real backing, surfacing a broken button instead of an honest gap. Left
+  unconverted, deliberately, with reasoning — this is exactly the kind of
+  "verify empirically, don't convert mechanically" case the task asked for.
+- **`profile.tsx:142`/`181`** — same reasoning as `league.tsx:319`: gates
+  the identical "Refresh from Sleeper" resync action (`refreshSleeper()`),
+  genuinely Sleeper-only. Left unconverted.
+- **`adp-providers.tsx:68`** — pure display-label helper (`"Sleeper"` vs.
+  a generic fallback), same class as `providerFormat` above. Not a gate.
+
+### 4. Fixture regressions found and fixed — frontend test suite, not backend
+
+Two real, verified-live regressions (not assumed from the backend
+precedent) surfaced when the attention-center capability gate flipped from
+reading `profile.provider` (present on every test's `LeagueProfile`
+fixture) to reading `bootstrap.leagueCapabilities` (a field NO existing
+test fixture ever set, since it didn't exist before Worker 2):
+
+- `attention-center.test.ts`'s own `bootstrap()` helper never set
+  `leagueCapabilities` at all. Fixed by adding a new `capabilities()`
+  fixture helper (defaults to the real `NO_CAPABILITIES` shape
+  `league_capability_service.py` itself returns for an absent
+  receipt/snapshot) and passing `capabilities({ hasVerifiedIdentity: true
+  })` explicitly into the one test
+  (`"builds a Sleeper league's ownership from my-roster/opponent-rosters/
+  free-agents"`) that needs a verified-identity league. Re-ran: passes,
+  same assertions as before.
+- `buildFakeClient`'s `activateRedraftProfile` (used by the 6
+  `runAttentionCenterAggregation` state-leakage regression tests) modeled
+  a real Sleeper league via `provider: "sleeper"` but likewise never set
+  `leagueCapabilities` on the bootstrap it returns — would have silently
+  flipped `fetchLeagueAttention`'s `isSleeper` to `false`, causing the
+  "every read for a given league happened while THAT league was active"
+  test to stop seeing `myRoster`/`freeAgents`/`opponentRosters` reads at
+  all (a false pass by omission, not a loud failure — the exact
+  false-negative class this cycle's brief has repeatedly warned about).
+  Fixed by adding `leagueCapabilities: capabilities({ hasVerifiedIdentity:
+  true })` to the bootstrap this fake client returns. Re-ran: all 6 tests
+  in `describe("runAttentionCenterAggregation ...")` pass, same
+  assertions as before.
+- **Checked, not just assumed clean:** `attention-center-scale-benchmark.
+  test.ts`'s own separate `profile()`/`bootstrap()` fixtures default
+  `provider: "local"` (confirmed by reading the file) — this benchmark
+  suite was ALREADY exercising the non-Sleeper/local-rankings branch
+  before this pass (since `"local" !== "sleeper"` was already false), so
+  the capability-gate switch changes nothing for it; no fixture fix
+  needed, verified by inspection rather than by guessing it was fine.
+
+### 5. TESTS — ACTUAL TEST RESULT
+
+- `npm run typecheck` (`desktop/`): clean, zero errors, run AFTER all 20
+  conversions plus both test-fixture fixes.
+- `npx vitest run` (`desktop/`): **30 files, 503 tests, all passed** —
+  identical count to Worker 2/3's own documented baseline (503/503),
+  confirming zero regression despite touching 6 source files + 1 test
+  file. `frontend_bench_results.json`'s incidental regeneration reverted
+  via `git checkout --`, per this saga's established convention.
+- `npm run build` (`desktop/`, both apps): clean; `check:resources` /
+  `typecheck` / `build:dynasty` / `build:redraft` all succeeded. Real,
+  fresh production bundle: `apps/redraft/dist/assets/index-QYx0P5sG.js`.
+
+### 6. LIVE VERIFICATION — real running backend + real built frontend, with an honest disclosed limitation
+
+**Disclosed limitation, not hidden:** the Chrome-in-browser MCP extension
+was NOT connected in this session (`tabs_context_mcp` returned "Browser
+extension is not connected"), unlike Workers 2/3's passes. No pixel-level
+screenshot/render verification was possible this pass. The verification
+below is real, but it is curl + build-artifact inspection, not a rendered
+screenshot — flagged honestly rather than claiming a Chrome MCP check that
+did not happen.
+
+**What WAS verified, real and live:**
+
+- **Dev process identity** — `Get-CimInstance Win32_Process` confirmed pid
+  `21960` (`python scripts/run_nwr_desktop_api.py ... --repo-root
+  C:/NWR/prospective-outcomes-v1 --mode redraft`, port 18742) and pid
+  `11932` (`vite preview --port 1422`) are this exact checkout's real,
+  currently-running processes — before touching either.
+- **`npm run build` output IS what the preview serves** — `curl
+  http://127.0.0.1:1422/` returns `assets/index-QYx0P5sG.js`, exactly
+  matching the just-built `apps/redraft/dist/assets/index-QYx0P5sG.js` on
+  disk (same content hash) — confirms `vite preview` serves fresh-off-disk
+  static files with no restart needed (consistent with Worker 1/2/3's own
+  documented fact that only the PYTHON backend needs an explicit restart,
+  never re-verified for the STATIC preview until now). `curl` on that
+  served JS bundle confirms the real strings `"Verified league data
+  required"` and `"hasVerifiedIdentity"` are present in the deployed
+  bundle, not stale.
+- **Real `leagueCapabilities.hasVerifiedIdentity` value for all 4 real
+  profiles, live-activated and read via authenticated curl against the
+  real running backend this pass** (not reused from Workers 2/3's own
+  numbers):
+  - Fantasy Gamers (sleeper): `hasVerifiedIdentity: true`.
+  - Las Vegas Enginerds (sleeper): `hasVerifiedIdentity: true`.
+  - KHA (espn, no snapshot): `hasVerifiedIdentity: false`.
+  - 403 N 18th (espn, no snapshot): `hasVerifiedIdentity: false`.
+  For all 4, this is IDENTICAL to what the OLD `provider === "sleeper"`
+  check would have produced (`true`/`true`/`false`/`false`) — since every
+  converted component's render output is a deterministic function of this
+  one boolean (plus already-unchanged data), this proves the rendered
+  output is unchanged for all 4 real profiles today, without needing a
+  screenshot. This is a real logical proof anchored in real curl-observed
+  data, not an assumption.
+- **End-to-end data-fetch honesty re-confirmed** (belt-and-suspenders,
+  since the backend itself was untouched this pass): live curl against the
+  real running backend for the exact endpoints the 7 converted `in-season.
+  tsx` pages call when `isSleeper` is true --
+  Las Vegas Enginerds: `weekly-lineup` 200, `waivers` 200, `trade-finder`
+  200. KHA: `weekly-lineup` 409, `waivers` 409, `trade-finder` 409. 403 N
+  18th: `weekly-lineup` 409. Byte-identical in kind to Worker 3's own
+  documented matrix (unsurprising, since zero backend files changed this
+  pass — `git diff --stat` shows only `desktop/apps/redraft/src/*`
+  touched).
+- **Active profile restored** to Las Vegas Enginerds (re-activated via
+  curl at the end of this pass, matching the profile this pass found
+  active at dispatch and confirmed via `git diff --stat` / process
+  inspection before/after) after cycling through all 4 profiles for the
+  capability-value checks above.
+
+**What was NOT done, disclosed:** no visual screenshot, no clicked-through
+browser interaction, no browser console-error check. A future worker (or
+this same worker if the Chrome extension reconnects) should still do a
+real rendered pass before this is treated as fully dogfood-verified in the
+visual sense — the proof above is sound but is a different KIND of
+evidence than a screenshot, and that difference should not be
+papered over.
+
+### 7. Files changed this pass
+
+- `desktop/apps/redraft/src/in-season.tsx` — 7 call sites converted
+  (`WeeklyHomePage`, `LineupPage`, `WaiversPage`, `MyRosterContent`,
+  `MyRosterPage`, `TradeAnalysisPage`, `TradeFinderPage`); tied
+  `EmptyState`/`StatusBadge` messages reworded to capability-based wording.
+- `desktop/apps/redraft/src/improve-team.tsx` — 1 call site converted
+  (`ImproveTeamPage`); message reworded.
+- `desktop/apps/redraft/src/trades.tsx` — 2 call sites converted
+  (`TradesPage`, `FindTradesTab`); message/status label reworded.
+- `desktop/apps/redraft/src/pages.tsx` — 7 call sites converted
+  (`CompareContent`, `FreeAgentsPage` ×2, `OpponentRostersContent` ×3,
+  `OpponentRostersPage`); messages reworded, 2 informational Compare-mode
+  copy references softened.
+- `desktop/apps/redraft/src/league.tsx` — 1 call site converted
+  (`LeagueOverviewTab`); message reworded. `LeagueSyncTab`'s own separate
+  `isSleeper` (L319) deliberately left unconverted (section 3).
+- `desktop/apps/redraft/src/attention-center.ts` — 2 call sites converted
+  (`buildLeagueOwnershipEntries`, `fetchLeagueAttention`).
+- `desktop/apps/redraft/src/attention-center.test.ts` — new `capabilities()`
+  fixture helper; `leagueCapabilities` threaded into the one
+  `buildLeagueOwnershipEntries` Sleeper-path test and into
+  `buildFakeClient`'s `activateRedraftProfile` (both real, verified-live
+  fixture fixes, section 4).
+- `docs/codex/flaim_integration_20260919/LEDGER.md` (this section).
+
+**Not touched:** any backend file (`src/`, `desktop_facade.py`,
+`league_capability_service.py`, `espn_flaim_snapshot_service.py`),
+`local_exports/`, any profile JSON, Dynasty's dev processes,
+`marginal_roster_utility_v2`, governed Redraft valuation, Dynasty's
+`governed_asset_registry_service.py`. No Flaim MCP tool was called (this
+worker has no Flaim access, unchanged from Workers 1-3).
+
+### 8. Not pushed
+
+Per this cycle's instructions, a later worker pushes once everything is
+verified. This pass's commit sits on top of `dfae041b`.
+
+## OPEN ISSUES FOR NEXT WORKER (Worker 4's additions, on top of Workers 1-3's above)
+
+0. **7 of 27 frontend `.provider [!=]== "sleeper"` sites remain
+   unconverted, deliberately** — `league-context.ts:77/265/279`,
+   `league.tsx:319`, `profile.tsx:142/181`, `adp-providers.tsx:68`. All 7
+   are either pure display-label helpers (print the literal provider name)
+   or gate a genuinely Sleeper-only live-resync action
+   (`resyncSleeperRedraftProfile`) with no ESPN/Flaim equivalent yet — see
+   section 3 for the exact reasoning per site. Do not convert these
+   mechanically; if a future worker builds a real ESPN live-resync path,
+   `league.tsx:319`/`profile.tsx:142`/`:181` become real conversion
+   candidates at that point, not before.
+1. **No visual/screenshot browser verification was possible this pass** —
+   the Chrome-in-browser MCP extension was not connected in this session.
+   The live verification this pass did (section 6) is real (live capability
+   values + endpoint status codes + served-bundle content, all via curl/
+   process inspection) but is not a substitute for an actual rendered
+   check. A future worker with a working Chrome MCP connection should do a
+   real click-through pass across Weekly Home/Start-Sit/Waivers/Trades/
+   Improve Team/Compare/Free Agents/Opponent Rosters for at least one real
+   Sleeper league and one real ESPN league before this is treated as fully
+   dogfood-verified.
+2. **Flaim OAuth status is still the hard gate for any real ESPN
+   snapshot.** Unchanged from Workers 1-3's own finding — check with the
+   coordinating session before assuming a real Flaim fetch is possible.
+3. **Once a real Flaim connection exists and a real ESPN snapshot is
+   written** (per `scripts/refresh_espn_flaim_snapshot.py`'s docstring,
+   still the documented process, unchanged), `hasVerifiedIdentity` will
+   flip `true` for that profile automatically — the 20 converted frontend
+   call sites will then attempt their real data fetches (`redraftMyRoster`,
+   `redraftWaivers`, etc.), which will honestly 409
+   (`SLEEPER_REDRAFT_CONTEXT_REQUIRED`) via the backend's OWN still-Sleeper-
+   specific second-stage check (Worker 3's Open Issue #2, unchanged) until
+   a real ESPN live-fetch path is built for each of those 11 backend
+   methods. The frontend will show its existing `ErrorState` for that 409
+   (not a crash) — an honest interim state, not a new bug, but worth
+   knowing in advance rather than being surprised by it.
+4. **Dev processes at the end of this pass**: Redraft backend pid `21960`
+   (unchanged, not restarted — no backend code touched), Redraft preview
+   pid `11932` (unchanged, not restarted — `vite preview` serves the fresh
+   `npm run build` output directly from disk with no restart needed,
+   confirmed this pass), Dynasty backend pid `46892`/preview pid `37692`
+   (untouched). Active profile: **Las Vegas Enginerds** (restored at the
+   end of this pass after cycling through all 4 profiles for capability
+   verification).
+5. **Do not push.** Per this cycle's instructions, a later worker pushes
+   once everything is verified. This pass's commit sits on top of
+   `dfae041b`.

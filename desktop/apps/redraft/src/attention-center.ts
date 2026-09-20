@@ -272,7 +272,12 @@ export function buildLeagueOwnershipEntries(
   opponents: RedraftOpponentRostersResult | null,
 ): LeagueOwnershipEntry[] {
   const entries: LeagueOwnershipEntry[] = [];
-  if (profile.provider === "sleeper") {
+  // Flaim-integration cycle (2026-09-19), Worker 4: converted from a
+  // blanket `provider === "sleeper"` check to the provider-agnostic
+  // capability gate (`bootstrap.leagueCapabilities.hasVerifiedIdentity`),
+  // the same field/precedent the backend's `_active_sleeper_context` guard
+  // now uses. See docs/codex/flaim_integration_20260919/LEDGER.md.
+  if (bootstrap.leagueCapabilities?.hasVerifiedIdentity) {
     for (const player of myRoster?.roster ?? []) {
       entries.push({ playerName: player.playerName, status: "ROSTERED_BY_YOU", teamName: null });
     }
@@ -366,7 +371,9 @@ async function fetchLeagueAttention(
 ): Promise<LeagueFetchResult> {
   try {
     const bootstrap = await client.activateRedraftProfile(profile.profileId);
-    const isSleeper = (bootstrap.activeProfile ?? profile).provider === "sleeper";
+    // Flaim-integration cycle (2026-09-19), Worker 4: capability gate, see
+    // buildLeagueOwnershipEntries above.
+    const isSleeper = Boolean(bootstrap.leagueCapabilities?.hasVerifiedIdentity);
     const [dataHealth, workspaceContext] = await Promise.all([
       client.redraftDataHealth().catch(() => null),
       client.redraftLeagueWorkspaceContext().catch(() => null),

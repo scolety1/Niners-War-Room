@@ -76,7 +76,17 @@ const TARGETS_DISPLAY_CAP = 10;
 type PlayerViewer = (player: { playerId: string; playerName: string; position?: string; team?: string }) => void;
 
 export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: converted from a
+  // blanket `provider === "sleeper"` check to the provider-agnostic
+  // capability gate (`data.leagueCapabilities.hasVerifiedIdentity`), the
+  // same field/precedent the backend's `_active_sleeper_context` guard now
+  // uses. Behavior for today's two real data sources is unchanged (both
+  // real Sleeper leagues have `hasVerifiedIdentity: true`; both real ESPN
+  // leagues have no receipt/snapshot yet, so `false`) -- this only changes
+  // the QUESTION being asked, so the tool lights up automatically the
+  // moment a real ESPN/Flaim snapshot exists, without another guard-hunting
+  // pass. See docs/codex/flaim_integration_20260919/LEDGER.md.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const tab: ImproveTeamTab = IMPROVE_TEAM_TABS.some((item) => item.key === tabParam) ? (tabParam as ImproveTeamTab) : "targets";
@@ -263,7 +273,7 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
       description="How can I improve my roster? Targets, Add/Drop, FAAB, Streamers, and the full free agent pool -- one workspace, ranked by NWR's real marginal roster utility."
       status={waivers ? <StatusBadge tone="safe" label={`${waivers.addCandidates.length} targets`} /> : undefined}
     />
-    {!isSleeper ? <EmptyState title="Sleeper league required" message="Improve Team needs a live Sleeper roster and the governed NWR ranking." /> : null}
+    {!isSleeper ? <EmptyState title="Verified league data required" message="Improve Team needs a live roster and the governed NWR ranking. Import league data (e.g. via Sleeper) to continue." /> : null}
     {/* W1 fix: an honest loading state while the real provider week is
         still resolving, instead of silently requesting Week 1. Only
         matters for THIS_WEEK-scoped reads (Targets/Add-Drop THIS_WEEK

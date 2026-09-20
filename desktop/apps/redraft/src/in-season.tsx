@@ -99,7 +99,12 @@ const STANDINGS_COLUMNS: TableColumn[] = [
 // ---------------------------------------------------------------------------
 
 export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: gate on the
+  // provider-agnostic capability flag instead of a blanket
+  // `provider === "sleeper"` check -- same field/precedent as the backend's
+  // `_active_sleeper_context` guard. See
+  // docs/codex/flaim_integration_20260919/LEDGER.md.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   const profileId = isSleeper ? data.activeProfileId : null;
 
   // P1-1 (2026-09-12): the provider-known current NFL week (from Sleeper's
@@ -207,7 +212,7 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
         ) : null}
       </div>}
     />
-    {!isSleeper ? <EmptyState title="Sleeper league required" message="Weekly in-season tools (Start/Sit, Waivers, Trade, streamers) require an active Sleeper-imported league. Choose or import one." action={<Link to="/leagues">Open league chooser</Link>} /> : null}
+    {!isSleeper ? <EmptyState title="Verified league data required" message="Weekly in-season tools (Start/Sit, Waivers, Trade, streamers) require verified league data. Import league data (e.g. via Sleeper), then choose it here." action={<Link to="/leagues">Open league chooser</Link>} /> : null}
     {isSleeper ? <>
       {/* THIS WEEK strip (Phase 4 top block, extended by P1-1): only real,
           already-available signals -- league/team identity, week,
@@ -359,7 +364,9 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
 // ---------------------------------------------------------------------------
 
 export function LineupPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: capability gate, see
+  // WeeklyHomePage above.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   const profileId = isSleeper ? data.activeProfileId : null;
   // NWR Sunday Readiness overnight cycle, Worker 2 (W1 fix): this page
   // used to `useState(1)` -- a hardcoded Week 1 default that could serve
@@ -420,7 +427,7 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
         <RefreshProjectionsButton onRefresh={reload} working={working} />
       </div>}
     />
-    {!isSleeper ? <EmptyState title="Sleeper league required" message="Start/Sit needs a live Sleeper roster and the real weekly-projection source." /> : null}
+    {!isSleeper ? <EmptyState title="Verified league data required" message="Start/Sit needs a live roster and the real weekly-projection source. Import league data (e.g. via Sleeper) to continue." /> : null}
     {/* W1 fix: while the real provider week is still resolving, show an
         honest loading state instead of silently requesting Week 1. */}
     {isSleeper && resolvingWeek ? (
@@ -686,7 +693,9 @@ export function AddDropDetail({
 }
 
 export function WaiversPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: capability gate, see
+  // WeeklyHomePage above.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   const [mode, setMode] = useState<"THIS_WEEK" | "REST_OF_SEASON">("REST_OF_SEASON");
   const [week, setWeek] = useState(1);
   const [position, setPosition] = useState("ALL");
@@ -786,7 +795,7 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
       description="Who should I add? Ranked by real marginal roster utility -- never a generic external ranking dump."
       status={result ? <StatusBadge tone="safe" label={`${result.addCandidates.length} candidates`} /> : undefined}
     />
-    {!isSleeper ? <EmptyState title="Sleeper league required" message="Waivers needs a live Sleeper roster and the governed NWR ranking." /> : null}
+    {!isSleeper ? <EmptyState title="Verified league data required" message="Waivers needs a live roster and the governed NWR ranking. Import league data (e.g. via Sleeper) to continue." /> : null}
     <div className="toolbar">
       <SegmentedControl label="Mode" options={["REST_OF_SEASON", "THIS_WEEK"]} value={mode} onChange={(value) => setMode(value as "THIS_WEEK" | "REST_OF_SEASON")} />
       {mode === "THIS_WEEK" ? <WeekControl week={week} onChange={setWeek} /> : null}
@@ -847,7 +856,9 @@ export function WaiversPage({ client, data }: { client: NwrApiClient; data: Redr
 // unified League workspace's MY ROSTER tab actually renders (league.tsx);
 // `MyRosterPage` is kept as an unrouted legacy fallback.
 export function MyRosterContent({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: capability gate, see
+  // WeeklyHomePage above.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   const loader = useCallback(() => (isSleeper ? client.redraftMyRoster() : null), [client, isSleeper]);
   const { result, error, working } = useAsync(loader, [isSleeper, data.activeProfileId]);
   // Real bug found and fixed (before any live render, by reading this
@@ -888,11 +899,11 @@ export function MyRosterContent({ client, data }: { client: NwrApiClient; data: 
   return <>
     {!isSleeper ? (
       <EmptyState
-        title="Sleeper league required"
+        title="Verified league data required"
         message={
           draftRosterAsOf
-            ? `ESPN and local profiles have no live roster source. NWR's last known roster for this league is from draft results as of ${draftRosterAsOf}; it does not reflect any waiver, trade, or free-agent move since.`
-            : "ESPN and local profiles have no live roster source, and no draft data has been recorded for this profile yet."
+            ? `No live roster source is available for this league yet. NWR's last known roster for this league is from draft results as of ${draftRosterAsOf}; it does not reflect any waiver, trade, or free-agent move since.`
+            : "No live roster source is available for this league yet, and no draft data has been recorded for this profile yet."
         }
         action={<Link to="/draft-room-v2">Open Draft Room (My Team)</Link>}
       />
@@ -905,9 +916,11 @@ export function MyRosterContent({ client, data }: { client: NwrApiClient; data: 
 }
 
 export function MyRosterPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: capability gate, see
+  // WeeklyHomePage above.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   return <>
-    <PageHeader eyebrow="Live Sleeper league state" title="My Roster" description="Your current live Sleeper roster. Read-only." status={<StatusBadge tone={isSleeper ? "safe" : "blocked"} label={isSleeper ? "Live read-only" : "Sleeper profile required"} />} />
+    <PageHeader eyebrow="Live league state" title="My Roster" description="Your current live roster. Read-only." status={<StatusBadge tone={isSleeper ? "safe" : "blocked"} label={isSleeper ? "Live read-only" : "Verified league data required"} />} />
     <MyRosterContent client={client} data={data} />
   </>;
 }
@@ -976,7 +989,9 @@ export function TradeSidePicker({
 }
 
 export function TradeAnalysisPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: capability gate, see
+  // WeeklyHomePage above.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   const [searchParams] = useSearchParams();
   const [gives, setGives] = useState<TradeSide[]>([]);
   const [receives, setReceives] = useState<TradeSide[]>([]);
@@ -1069,8 +1084,8 @@ export function TradeAnalysisPage({ client, data }: { client: NwrApiClient; data
   const verdict = result ? verdictFor(result) : null;
 
   return <>
-    <PageHeader eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"} title="Redraft Trade Analysis" description="I-give / I-receive. Real, structured before/after impact -- never a single opaque trade score. NWR never proposes or accepts a trade on Sleeper." status={isSleeper ? undefined : <StatusBadge tone="blocked" label="Sleeper profile required" />} />
-    {!isSleeper ? <EmptyState title="Sleeper league required" message="Trade Analysis needs your live Sleeper roster and a live opponent roster." /> : null}
+    <PageHeader eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"} title="Redraft Trade Analysis" description="I-give / I-receive. Real, structured before/after impact -- never a single opaque trade score. NWR never proposes or accepts a trade on Sleeper." status={isSleeper ? undefined : <StatusBadge tone="blocked" label="Verified league data required" />} />
+    {!isSleeper ? <EmptyState title="Verified league data required" message="Trade Analysis needs your live roster and a live opponent roster. Import league data (e.g. via Sleeper) to continue." /> : null}
     {isSleeper ? <>
       <Panel title="Build a trade">
         <div className="split-view">
@@ -1170,7 +1185,9 @@ function TradeFinderCard({
 }
 
 export function TradeFinderPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: capability gate, see
+  // WeeklyHomePage above.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   const loader = useCallback(() => (isSleeper ? client.redraftTradeFinder() : null), [client, isSleeper]);
   const { result, error, working, reload } = useAsync(loader, [isSleeper, data.activeProfileId]);
   // NWR pre-UI architecture CLOSURE pass (directive sections 1-2): the
@@ -1186,7 +1203,7 @@ export function TradeFinderPage({ client, data }: { client: NwrApiClient; data: 
       status={result ? <StatusBadge tone="safe" label={`${result.candidates.length} candidates`} /> : undefined}
       actions={<Button icon="activity" onClick={reload} disabled={working} variant="secondary">{working ? "Searching…" : "Refresh"}</Button>}
     />
-    {!isSleeper ? <EmptyState title="Sleeper league required" message="Trade Finder needs your live roster and every live opponent roster." /> : null}
+    {!isSleeper ? <EmptyState title="Verified league data required" message="Trade Finder needs your live roster and every live opponent roster. Import league data (e.g. via Sleeper) to continue." /> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {result && result.candidates.length === 0 ? <EmptyState title="No win-win candidates found" message="NWR's evaluator did not find any 1-for-1 package where both sides' real marginal utility improves right now." /> : null}
     {result && result.candidates.length ? <div className="trade-finder-grid">{result.candidates.map((candidate, index) => <TradeFinderCard key={`${candidate.opponentRosterId}-${candidate.myGivePlayerId}-${index}`} candidate={candidate} onViewPlayer={(player) => openPlayerDetail({ playerId: player.playerId, playerName: player.playerName, position: "" })} />)}</div> : null}

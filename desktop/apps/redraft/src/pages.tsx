@@ -347,7 +347,12 @@ export function CompareContent({ client, data }: { client: NwrApiClient; data: R
   const a = data.rankings.find((row) => row.playerId === left);
   const b = data.rankings.find((row) => row.playerId === right);
   const options = data.rankings.map((row) => ({ value: row.playerId, label: `#${row.overallRank} ${row.playerName} · ${row.position}${row.positionRank}` }));
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: converted from a
+  // blanket `provider === "sleeper"` check to the provider-agnostic
+  // capability gate (`data.leagueCapabilities.hasVerifiedIdentity`), the
+  // same field/precedent the backend's `_active_sleeper_context` guard now
+  // uses. See docs/codex/flaim_integration_20260919/LEDGER.md.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   // NWR pre-UI architecture CLOSURE pass (directive section 1): same
   // global Player Detail primitive as Rankings/Tiers above -- Compare was
   // a real, disclosed remaining adoption gap.
@@ -380,7 +385,7 @@ export function CompareContent({ client, data }: { client: NwrApiClient; data: R
         <SegmentedControl label="Mode" options={COMPARE_MODES as unknown as string[]} value={mode} onChange={(value) => setMode(value as CompareMode)} />
         {mode === "This Week" ? <label className="form-field"><span>NFL week</span><input min={1} max={18} type="number" value={week} onChange={(event) => setWeek(Number(event.target.value))} /></label> : null}
       </div>
-      {!isSleeper && mode !== "Rest of Season" ? <p className="copy-muted">This mode requires an active Sleeper league.</p> : null}
+      {!isSleeper && mode !== "Rest of Season" ? <p className="copy-muted">This mode requires verified league data. Import league data (e.g. via Sleeper) to continue.</p> : null}
       {/* Full Cycle V1, Worker 4 (Section 3C): "Rest of Season" here reads
           the SAME season-level `projectedPoints`/`replacementAdjustedValue`
           Rankings/Cheat Sheet label "Season points"/"Proj pts" -- one
@@ -400,7 +405,7 @@ export function CompareContent({ client, data }: { client: NwrApiClient; data: R
       <div className="compare-card-grid">{[a, b].map((player) => { const fit = rosterFitFor(player.playerId); return <article key={player.playerId}><header><span className="position-pill">{player.position}</span><strong>{player.playerName}</strong></header><div><span>Fit</span><strong>{fit.label}</strong></div><div><span>Detail</span><strong>{fit.detail}</strong></div></article>; })}</div>
     </Panel> : null}
     {a && b && mode === "Trade" ? <Panel title="Trade" eyebrow="Opens the full Trade Analysis workspace">
-      <p className="copy-muted">Compare does not embed a full trade evaluation -- that needs your live Sleeper roster and a specific opponent's roster, which Trade Analysis reads directly. Open it, then search for "{a.playerName}" and "{b.playerName}" there.</p>
+      <p className="copy-muted">Compare does not embed a full trade evaluation -- that needs your live roster and a specific opponent's roster, which Trade Analysis reads directly. Open it, then search for "{a.playerName}" and "{b.playerName}" there.</p>
       <Link to="/trade-analysis">Open Trade Analysis</Link>
     </Panel> : null}
   </>;
@@ -587,8 +592,10 @@ export function WeeklyToolsPage({ client, data }: { client: NwrApiClient; data: 
 }
 
 export function FreeAgentsPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
-  const { result, error, working } = useFreeAgents(client, data.activeProfile?.provider === "sleeper" ? data.activeProfileId : null);
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: capability gate, see
+  // CompareContent above.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
+  const { result, error, working } = useFreeAgents(client, isSleeper ? data.activeProfileId : null);
   // NWR pre-UI architecture CLOSURE pass (directive section 1): the same
   // global Player Detail primitive Lineup/Waivers/Trades use -- Free
   // Agents was a real, disclosed remaining adoption gap, now closed.
@@ -603,8 +610,8 @@ export function FreeAgentsPage({ client, data }: { client: NwrApiClient; data: R
     [openPlayerDetail],
   );
   return <>
-    <PageHeader eyebrow="Live Sleeper league state" title="Free Agents" description="Players currently on no roster in this league. Existing NWR season rank/value is shown when an exact identity match exists; unmatched players stay explicitly unranked." status={<StatusBadge tone={isSleeper ? "safe" : "blocked"} label={isSleeper ? "Live read-only" : "Sleeper profile required"} />} />
-    {!isSleeper ? <EmptyState title="Sleeper league required" message="ESPN and local profiles have no live roster source, so NWR will not fabricate availability." /> : null}
+    <PageHeader eyebrow="Live league state" title="Free Agents" description="Players currently on no roster in this league. Existing NWR season rank/value is shown when an exact identity match exists; unmatched players stay explicitly unranked." status={<StatusBadge tone={isSleeper ? "safe" : "blocked"} label={isSleeper ? "Live read-only" : "Verified league data required"} />} />
+    {!isSleeper ? <EmptyState title="Verified league data required" message="No live roster source is available for this league yet, so NWR will not fabricate availability. Import league data (e.g. via Sleeper) to continue." /> : null}
     {working ? <p className="draft-feedback">Reading current Sleeper rosters…</p> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {result?.rankingWarning ? <div className="alert-strip"><strong>Ranking unavailable</strong><span>{result.rankingWarning}</span></div> : null}
@@ -623,16 +630,21 @@ export function FreeAgentsPage({ client, data }: { client: NwrApiClient; data: R
 export function OpponentRostersContent({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const [result, setResult] = useState<RedraftOpponentRostersResult | null>(null);
   const [error, setError] = useState<NwrApiError | null>(null);
+  // Flaim-integration cycle (2026-09-19), Worker 4: converted from a
+  // blanket `provider === "sleeper"` check to the provider-agnostic
+  // capability gate (`data.leagueCapabilities.hasVerifiedIdentity`), the
+  // same field/precedent the backend's `_active_sleeper_context` guard now
+  // uses. See docs/codex/flaim_integration_20260919/LEDGER.md.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   useEffect(() => {
     let active = true;
     setResult(null); setError(null);
-    if (!data.activeProfileId || data.activeProfile?.provider !== "sleeper") return undefined;
+    if (!data.activeProfileId || !isSleeper) return undefined;
     void client.redraftOpponentRosters().then((value) => { if (active) setResult(value); }).catch((reason) => {
       if (active) setError(reason instanceof NwrApiError ? reason : new NwrApiError("Opponent rosters could not be read."));
     });
     return () => { active = false; };
-  }, [client, data.activeProfileId, data.activeProfile?.provider]);
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  }, [client, data.activeProfileId, isSleeper]);
   // NWR pre-UI architecture CLOSURE pass (directive section 1): the same
   // global Player Detail primitive as every other adopted surface --
   // Opponent Rosters was a real, disclosed remaining adoption gap. Kept
@@ -669,7 +681,7 @@ export function OpponentRostersContent({ client, data }: { client: NwrApiClient;
     },
   ];
   return <>
-    {data.activeProfile?.provider !== "sleeper" ? <EmptyState title="Sleeper league required" message="ESPN and local profiles have no live opponent-roster source." /> : null}
+    {!isSleeper ? <EmptyState title="Verified league data required" message="No live opponent-roster source is available for this league yet. Import league data (e.g. via Sleeper) to continue." /> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {isSleeper ? <div className="profile-edit-actions"><Link to="/trade-finder">Open Trade Finder (auto-search all opponents)</Link></div> : null}
     {result?.opponents.map((opponent) => <Panel key={opponent.rosterId} title={opponent.teamName} eyebrow={`${opponent.players.length} players · roster ${opponent.rosterId}`}><DataTable columns={columns} rows={opponent.players as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} />{opponent.unresolvedSleeperPlayerIds.length ? <p className="copy-muted">Unresolved Sleeper IDs: {opponent.unresolvedSleeperPlayerIds.join(", ")}</p> : null}</Panel>)}
@@ -677,9 +689,11 @@ export function OpponentRostersContent({ client, data }: { client: NwrApiClient;
 }
 
 export function OpponentRostersPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: capability gate, see
+  // OpponentRostersContent above.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   return <>
-    <PageHeader eyebrow="Live Sleeper league state" title="Opponent Rosters" description="Every non-owner team and its current Sleeper roster. This view is read-only and contains no projection or trade recommendation. Click a player to start a Trade Analysis for them." status={<StatusBadge tone={isSleeper ? "review" : "blocked"} label={isSleeper ? "Live source" : "Sleeper profile required"} />} />
+    <PageHeader eyebrow="Live league state" title="Opponent Rosters" description="Every non-owner team and its current roster. This view is read-only and contains no projection or trade recommendation. Click a player to start a Trade Analysis for them." status={<StatusBadge tone={isSleeper ? "review" : "blocked"} label={isSleeper ? "Live source" : "Verified league data required"} />} />
     <OpponentRostersContent client={client} data={data} />
   </>;
 }

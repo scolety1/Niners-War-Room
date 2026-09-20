@@ -47,7 +47,12 @@ const TRADES_TABS: Array<{ key: TradesTab; label: string }> = [
 type PlayerViewer = (player: { playerId: string; playerName: string; position?: string; team?: string }) => void;
 
 export function TradesPage({ client, data, defaultTab }: { client: NwrApiClient; data: RedraftBootstrap; defaultTab?: TradesTab }) {
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: converted from a
+  // blanket `provider === "sleeper"` check to the provider-agnostic
+  // capability gate (`data.leagueCapabilities.hasVerifiedIdentity`), the
+  // same field/precedent the backend's `_active_sleeper_context` guard now
+  // uses. See docs/codex/flaim_integration_20260919/LEDGER.md.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const tab: TradesTab = TRADES_TABS.some((item) => item.key === tabParam) ? (tabParam as TradesTab) : (defaultTab ?? "analyze");
@@ -136,9 +141,9 @@ export function TradesPage({ client, data, defaultTab }: { client: NwrApiClient;
       eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"}
       title="Trades"
       description="Should I make this trade? Is there a trade I should pursue? Real, structured before/after impact -- never a single opaque trade score. NWR never proposes or accepts a trade on Sleeper."
-      status={isSleeper ? undefined : <StatusBadge tone="blocked" label="Sleeper profile required" />}
+      status={isSleeper ? undefined : <StatusBadge tone="blocked" label="Verified league data required" />}
     />
-    {!isSleeper ? <EmptyState title="Sleeper league required" message="Trades needs your live Sleeper roster and every live opponent roster." /> : null}
+    {!isSleeper ? <EmptyState title="Verified league data required" message="Trades needs your live roster and every live opponent roster. Import league data (e.g. via Sleeper) to continue." /> : null}
     {isSleeper ? <>
       <nav aria-label="Trades sections" className="nwr-tabbar" role="tablist">
         {TRADES_TABS.map((item) => (
@@ -372,7 +377,9 @@ function FindTradesTab({
   onOpenPlayer: PlayerViewer;
   targetCandidates: TradeSide[];
 }) {
-  const isSleeper = data.activeProfile?.provider === "sleeper";
+  // Flaim-integration cycle (2026-09-19), Worker 4: capability gate, see
+  // TradesPage above.
+  const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   const [mode, setMode] = useState<TradePackageSearchMode>("FIND_WIN_WIN");
   const [targetPlayer, setTargetPlayer] = useState<TradeSide | null>(null);
   const [position, setPosition] = useState("RB");
