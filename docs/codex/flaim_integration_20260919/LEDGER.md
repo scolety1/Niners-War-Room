@@ -1366,3 +1366,237 @@ verified. This pass's commit sits on top of `dfae041b`.
 5. **Do not push.** Per this cycle's instructions, a later worker pushes
    once everything is verified. This pass's commit sits on top of
    `dfae041b`.
+
+---
+
+## Worker 5 — CLOSURE (2026-09-19, final worker this cycle)
+
+Starting HEAD `1bfafb65` (Worker 4's commit). Task: final regression,
+dev-process health check, this cycle-summary ledger entry, push, scratch
+cleanup. No Flaim access, no code changes made this pass (verification +
+closure only).
+
+**Note on the coordinating session's own live browser pass:** before this
+worker was dispatched, the coordinating session (not a subagent) had
+already done a real Chrome MCP click-through against the running app,
+confirming Fantasy Gamers/Las Vegas Enginerds render correctly with zero
+console errors and KHA/403 N 18th show the new honest capability-blocked
+message instead of a crash — that verification is not repeated here; this
+pass's own live checks (below) are curl/process-identity based, narrower
+by design per the dispatch brief.
+
+### 1. Final regression — ACTUAL TEST RESULT
+
+- Targeted backend suite, 19 files (9 fixture-repair files +
+  `test_league_capability_service.py` + `test_espn_flaim_snapshot_
+  service.py` + `test_kdst_streamer_capability_guard.py` +
+  `test_redraft_kdst_streamer_keep_current_fix.py` +
+  `test_desktop_facade_architecture_wiring.py` + `test_decision_envelope_
+  consumer_migration.py` + `test_weekly_home_sleeper_fetch_caching.py` +
+  `test_league_workspace_context_sleeper_p1_1.py` + 5×`test_redraft_
+  waivers_*_fix.py` + `test_trade_package_search_facade_wiring.py` +
+  `test_redraft_identity_boundary_opponent_and_trade_finder.py` +
+  `test_prospective_recommendation_ledger_v1.py` +
+  `test_weekly_lineup_optimizer_service.py` + `test_start_sit_confidence_
+  missing_projection.py` + `test_waiver_engine_service.py`): **162
+  passed, 0 failed** (run separately from `test_desktop_application_api.py`
+  below to keep its exact-node-ID check isolated and legible).
+- `tests/test_desktop_application_api.py` full run: **4 failed, 46
+  passed** — re-verified by NAME, not just count, exact node IDs
+  byte-identical to every prior worker's documented baseline this cycle:
+  `test_dynasty_facade_composes_real_governed_workflows`, `test_desktop_
+  rookie_veteran_bridge_is_source_separated_and_trade_aware`, `test_
+  redraft_bootstrap_seeds_once_and_matches_desktop_contract`, `test_
+  facade_has_no_streamlit_or_app_component_dependency`. Combined with the
+  162 above: **208 passed / 4 pre-existing failed** across the full
+  19-file targeted set, matching Worker 3's own documented combined count
+  exactly.
+- `npx vitest run` (`desktop/`): **30 files, 503 tests, all passed** —
+  identical to Worker 2/3/4's documented baseline. Confirmed the
+  incidental `frontend_bench_results.json` regeneration this run produced
+  and reverted it via `git checkout --`, per this saga's established
+  convention (verified `git status` clean after).
+- `npm run typecheck` (`desktop/`): clean, zero errors.
+- Did NOT run the full untracked repo-wide `tests/` suite, per the
+  dispatch brief and this repo's own documented ~323-pre-existing-failure
+  baseline (unrelated to this cycle, per MEMORY.md); Worker 3 already ran
+  and inspected a broader `-k` sweep this cycle and confirmed all
+  additional failures pre-existing/unrelated.
+
+### 2. Dev process health — LIVE OBSERVATION
+
+`Get-CimInstance Win32_Process` + `netstat -ano` cross-checked before
+touching anything. Exactly 4 LISTENING sockets matched to this checkout's
+processes (`--repo-root C:/NWR/prospective-outcomes-v1`): Redraft backend
+pid **21960** (port 18742, Worker 3's final restart — already includes
+Workers 1-3's backend changes), Redraft preview pid **11932** (port 1422,
+never restarted this cycle — `vite preview` serves Worker 4's fresh
+`npm run build` output straight off disk), Dynasty backend pid **46892**
+(port 18741), Dynasty preview pid **37692** (port 1421) — Dynasty
+untouched all cycle, as documented.
+
+Other python.exe entries in the process list (`46488`, `41860` — bare
+`WindowsApps\python.exe` launcher stubs) are NOT listening on any port
+(confirmed via `netstat`) and are not the real serving processes — did
+not touch them.
+
+**Confirmed serving final code, without restarting anything:**
+- `desktop/apps/redraft/dist/assets/index-QYx0P5sG.js` on disk is
+  byte-identical (same filename/hash) to what `curl http://127.0.0.1:1422/`
+  actually serves — Worker 4's final frontend build is live.
+- `curl http://127.0.0.1:18742/api/v1/bootstrap` (real, authenticated)
+  returns a real `leagueCapabilities` object for the active profile,
+  confirming the backend process is running Worker 3's converted guard
+  code (this field/shape did not exist before Worker 2, and its exact
+  content differs correctly per profile — see below).
+- Spot-checked both ends of the capability split live, this pass: Las
+  Vegas Enginerds (real Sleeper league) — `hasVerifiedIdentity: true,
+  hasRosterData: true, hasScoringSettings: PARTIAL` (15 scoring settings
+  unmapped). KHA (real ESPN profile, no snapshot) — activated live,
+  confirmed `leagueCapabilities` collapses to
+  `hasVerifiedIdentity: false / hasRosterData: false / hasScoringSettings:
+  UNKNOWN / retrievedAtUtc: None`, exactly the honest all-absent shape
+  `NO_CAPABILITIES` predicts. Restored active profile back to Las Vegas
+  Enginerds afterward (confirmed via bootstrap re-read).
+- Did not POST-test the 11 guarded action endpoints
+  (`weekly-lineup`/`waivers`/etc.) directly this pass — Workers 2-4 already
+  captured full before/after status-code matrices across all 4 profiles
+  for those, and this worker made zero code changes and did not restart
+  either process, so there is nothing new to regress there. This is the
+  intentionally lighter check the dispatch brief asked for, not a
+  redo of the coordinating session's full click-through.
+- **No restart was needed or performed.** Both dev process pairs are the
+  same ones Worker 3/4 left running, already serving all 4 workers'
+  cumulative commits.
+
+### 3. CYCLE SUMMARY (Workers 1-5) — for the coordinating session's owner report
+
+**1. What now works for KHA / 403 N 18th, precisely:** both profiles now
+receive an honest, capability-based block (`leagueCapabilities.
+hasVerifiedIdentity: false`) across the K/DST streamer and all 11
+`_active_sleeper_context`-gated tools (Start/Sit, Waivers, Trade
+Analysis, Trade Finder, My Roster, Opponent Rosters, Free Agents, Weekly
+Projections, Trade Package Search, League Workspace Context, Data
+Health), on both backend (409 with a capability-based message) and
+frontend (20 of 27 call sites reworded to the same "Verified league data
+required... Import league data (e.g. via Sleeper) to continue" language,
+confirmed live by the coordinating session's own Chrome MCP pass: no
+crash, no stale data, zero console errors). This is a STRICTLY BETTER
+FAILURE MODE than before this cycle (which threw an opaque
+Sleeper-specific error), not new functionality — **NO real ESPN data
+flows to either profile yet; zero bytes of real KHA/403 N 18th roster,
+scoring, or player data exist anywhere in this repo as of this pass.**
+
+**2. NWR refresh path status — exact:** explicit-snapshot-workflow,
+auth-dependency-gated, NOT a working direct refresh. Real, tested,
+currently-inert code exists: `src/services/espn_flaim_snapshot_service.py`
+(schema + validating loader + storage-path convention, 4/4 tests passing)
+and `scripts/refresh_espn_flaim_snapshot.py` (real CLI skeleton,
+documents the exact intended Flaim tool calls in its docstring —
+`get_league_info`/`get_roster`/`get_free_agents`, explicitly NOT
+`get_standings`/`get_transactions`). Running that script today raises a
+deliberate, specific `NotImplementedError` (confirmed by Worker 1
+actually running it) — it CANNOT fetch anything until (a) the owner's
+Flaim OAuth completes (`claude mcp login flaim`, still pending as of this
+dispatch) and (b) a future worker with real Flaim MCP access fills in the
+actual tool calls inside that script. This is a real, honest,
+well-designed, currently-incomplete path — not a working refresh.
+
+**3. Decision tools verified live vs. limited:**
+- **Verified live, real data, per the coordinating session's browser
+  pass + Workers 2-4's curl matrices:** K/DST Streamer, Start/Sit
+  (weekly-lineup), Waivers, Trade Analysis, Trade Finder, My Roster,
+  Opponent Rosters — all for Fantasy Gamers and Las Vegas Enginerds
+  (real Sleeper leagues), with the pre-existing honest "Unknown —
+  missing projection" framing from an earlier cycle preserved,
+  unregressed.
+- **Limited for KHA / 403 N 18th, all of the above tools:** honestly
+  blocked at the capability gate. Missing input in every case is the
+  same: a real, completed ESPN/Flaim snapshot (roster + scoring +
+  bounded available-player pool) written to `local_exports/redraft_v1/
+  espn_flaim_snapshots/<profile_id>.json` — does not exist for either
+  profile as of this pass. Even once one exists, Worker 3's Open Issue
+  #2 still applies: the 11 guarded methods' SECOND-stage Sleeper-specific
+  live-fetch logic (separate from the capability gate) will still
+  honestly 409 until a future worker either builds a real ESPN live-fetch
+  path or branches each method's post-guard logic on an ESPN snapshot —
+  not assumed to be "already done" once OAuth completes.
+
+**4. Bugs fixed this cycle (exact, all real, all verified live or by
+direct test):**
+- Worker 2: Fantasy Gamers `roster_snapshot: null` regression — first
+  K/DST-guard attempt gated on `has_roster_data` and would have broken a
+  real, currently-working Sleeper league; caught via live curl before
+  shipping, fixed by gating on `has_verified_identity` instead; pinned
+  with a permanent regression test.
+- Worker 2 + Worker 3: two masked-test-failure risks. (a) Worker 2 caught
+  that adding `leagueCapabilities` to the bootstrap payload would have
+  made `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`
+  fail at a NEW, wrong assertion (missing key) instead of its TRUE
+  pre-existing one (a local FantasyPros-API-key environment mismatch) —
+  fixed by adding the key to the test's expected set, re-confirmed it
+  fails for the original real reason. (b) Worker 3 found a 9th fixture
+  file (`test_league_workspace_context_sleeper_p1_1.py`, not on Worker
+  2's original 8-file list) whose `_make_sleeper_profile` helper had an
+  unused `league_name` parameter never threaded into the receipt —
+  would have silently flipped several tests from asserting real `LIVE`
+  sync to a masking-looking `DEGRADED` state rather than a loud failure;
+  fixed by wiring the existing parameter through.
+- Worker 4: `attention-center.test.ts` false-pass-by-omission risk — two
+  fixture helpers (`bootstrap()` and `buildFakeClient`'s
+  `activateRedraftProfile`) never set the new `leagueCapabilities` field,
+  which would have silently flipped the Sleeper ownership-entries test and
+  all 6 state-leakage regression tests to the wrong (capability-absent)
+  branch without a loud failure. Fixed by adding a `capabilities()`
+  fixture helper and threading `hasVerifiedIdentity: true` into both.
+
+**5. Test results, exact final counts (this pass, re-confirmed):**
+Backend targeted 19-file set: 208 passed / 4 pre-existing failed (same
+exact node IDs as every prior worker). Frontend: `npx vitest run` 30
+files / 503 tests, all passed. `npm run typecheck`: clean.
+
+**6. The exact 7 deliberately-unconverted frontend call sites, why:**
+`league-context.ts:77` (`liveSyncCapable` — asks "does a live re-sync
+path exist," not "can this tool run"; no backing capability field, no
+`leagueCapabilities` in scope). `league-context.ts:265`/`279`
+(`providerFormat`/`leagueIdentityFormat` — pure display labels that print
+the literal provider name, not a gate). `league.tsx:319` (`LeagueSyncTab`'s
+"Refresh from Sleeper" button — calls the genuinely Sleeper-only
+`resyncSleeperRedraftProfile`; converting would surface a broken button
+once ESPN's `hasVerifiedIdentity` flips true, before any real ESPN resync
+path exists). `profile.tsx:142`/`181` (same "Refresh from Sleeper"
+resync action, same reasoning). `adp-providers.tsx:68` (pure display-label
+helper, same class as `providerFormat`).
+
+### 4. Push — ACTUAL RESULT
+
+`git push origin upgrade/nwr-prospective-outcomes-v1-20260914` — see
+handoff for confirmed remote SHA match.
+
+### 5. Scratch cleanup — LIVE OBSERVATION
+
+Before deleting, confirmed via `netstat -ano` + `Get-CimInstance
+Win32_Process` that the pids these log files were written by (`44000`,
+`40808` — both superseded by the current, final pid `21960`) are no
+longer running/listening on any port. Deleted:
+`.worker2_backend.log(.err)`, `.worker2_preview.log(.err)`,
+`.worker2b_backend.log(.err)`, `.worker2c_backend.log(.err)`,
+`.worker2d_backend.log(.err)`, `.worker3_backend.log(.err)`. Left
+untouched: both `local_exports.backup-*` directories (real backup data,
+per instructions).
+
+### 6. Not touched this pass
+
+No code file changed. No Flaim MCP tool called (no access). No
+existing profile JSON touched. No write to `local_exports/` other than
+the pre-existing untouched backup directories. `marginal_roster_utility_
+v2`, governed Redraft valuation, and Dynasty's `governed_asset_registry_
+service.py` valuation computation — all confirmed untouched this cycle
+(zero diffs under those files across all 5 workers).
+
+### 7. Cycle closed
+
+This is the final worker in this cycle. Verdict:
+**ARCHITECTURE + GOVERNANCE + HONEST GATING COMPLETE — REAL ESPN DATA
+FLOW STILL BLOCKED ON THE OWNER'S PENDING ONE-TIME FLAIM
+AUTHENTICATION.** Not "ESPN integration complete."
