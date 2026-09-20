@@ -715,3 +715,334 @@ verified. This pass's commit sits on top of `f60ca31d`.
 6. **Do not push.** Per this cycle's instructions, a later worker pushes
    once everything is verified. This pass's commit sits on top of
    `ca080a2e`.
+
+---
+
+## Worker 3 (2026-09-19, continuing this ledger)
+
+Starting HEAD `a774b94e` (Worker 2's commit). Task: convert
+`_active_sleeper_context()` — the shared choke point Worker 2 identified
+and deliberately left unconverted — following the exact K/DST precedent.
+Dev processes verified running at dispatch (LIVE OBSERVATION, via
+`Get-CimInstance Win32_Process`, command-line-verified against this exact
+checkout, `--repo-root C:/NWR/prospective-outcomes-v1`): Redraft backend
+pid `40808` (port 18742), Redraft preview pid `11932` (port 1422),
+Dynasty backend pid `46892` (port 18741), Dynasty preview pid `37692`
+(port 1421). Active profile: Las Vegas Enginerds.
+
+### 1. INSPECTED CODE — exact call-site count and identity, `_active_sleeper_context` (desktop_facade.py, ~line 7813)
+
+11 call sites confirmed (`grep -n "_active_sleeper_context\b"`), one per
+method, corresponding to exactly these 11 facade methods:
+`redraft_free_agents` (~3112), `redraft_opponent_rosters` (~3153),
+`redraft_my_roster` (~3232), `redraft_weekly_projections` (~3316),
+`redraft_weekly_lineup` (Start/Sit, ~3410), `redraft_waivers` (~3758),
+`redraft_trade_analysis` (~4538), `redraft_trade_finder` (~4736),
+`redraft_trade_package_search` (~4957), `redraft_league_workspace_context`
+(~5232, call wrapped in its own `try/except FacadeError` — degrades
+`syncStatus` to `DEGRADED` rather than 409ing the whole response, so it
+already had its own pre-existing `selected.provider == "sleeper" and
+selected.provider_league_id` outer gate before ever reaching this
+helper), `redraft_data_health` (~5543). `redraft_weekly_home_actions`
+(named in the dispatch brief) does NOT call this helper directly — it
+composes `redraft_weekly_lineup`/`redraft_waivers`/`redraft_trade_finder`/
+`redraft_kdst_streamer` as sub-calls, so it is covered TRANSITIVELY
+through those, confirmed by inspecting its own per-section
+`unavailableSections` degrade pattern (same non-crashing design as
+`redraft_league_workspace_context`), not assumed.
+
+Old guard: `if selected is None or selected.provider != "sleeper" or not
+selected.provider_league_id: raise FacadeError("SLEEPER_REDRAFT_PROFILE_
+REQUIRED", ...)` — the exact blanket provider-string check the brief
+named as the conversion target. Below that, the receipt-parse/identity-
+match logic (extracting `league_id`/`owner_user_id` from the Sleeper
+receipt, raising `SLEEPER_REDRAFT_CONTEXT_REQUIRED` on failure) is
+genuinely Sleeper-specific — every one of the 11 downstream tools drives
+a LIVE Sleeper API fetch keyed on those two values, and no ESPN/Flaim
+live-fetch path exists yet (only the future snapshot-import path). Per
+the dispatch brief's own distinction, that part was correctly left
+UNCHANGED.
+
+### 2. CONVERTED — new guard shape
+
+Replaced the blanket check with the same `capabilities_for_profile(...)`
+pattern the K/DST guard uses, reusing Worker 2's existing
+`self._league_capabilities_for_profile(selected)` helper (no duplicated
+receipt/snapshot-lookup code). Three stages, in order:
+1. `selected is None` → `SLEEPER_REDRAFT_PROFILE_REQUIRED` (unchanged).
+2. **New, provider-agnostic:** `capabilities.has_verified_identity` is
+   `False` (or `capabilities is None`) → new 409
+   `SLEEPER_REDRAFT_LEAGUE_DATA_REQUIRED`, "No verified league data
+   available for this league. Import league data (e.g. via Sleeper)
+   before using this tool." — same field, same honest wording pattern as
+   the K/DST guard's own fix.
+3. **Unchanged intent, now explicitly commented as a SEPARATE Sleeper-
+   specific live-fetch requirement:** `selected.provider != "sleeper" or
+   not selected.provider_league_id` → `SLEEPER_REDRAFT_CONTEXT_REQUIRED`
+   (unchanged code/message), then the original receipt-parse/identity-
+   match logic, byte-for-byte unchanged.
+
+**Verified again, not assumed safe from the K/DST precedent alone:**
+gated on `has_verified_identity`, NOT `has_roster_data` — confirmed via
+the same real Fantasy-Gamers-null-`roster_snapshot` edge case Worker 2
+found (this guard's downstream tools also fetch roster data live from
+Sleeper's API, never from the receipt's `roster_snapshot` field), and
+re-confirmed live against the real running backend (section 4 below), not
+just reasoned about.
+
+No new error codes collide with anything a test or frontend call site
+checks by exact string — confirmed via `grep -rn "SLEEPER_REDRAFT_
+PROFILE_REQUIRED\|SLEEPER_REDRAFT_CONTEXT_REQUIRED"` across `tests/` and
+`desktop/` before making the change: zero hits outside `desktop_facade.py`
+itself.
+
+### 3. A second real pre-existing-fixture regression found and fixed — NOT in Worker 2's 8-file list, found by tracing an actual caller, not by pattern-matching alone
+
+Worker 2's list of 8 files needing the `league.name`-less minimal receipt
+fixed (`test_redraft_waivers_*` ×5, `test_trade_package_search_facade_
+wiring.py`, `test_redraft_identity_boundary_opponent_and_trade_finder.py`,
+`test_prospective_recommendation_ledger_v1.py`) was re-verified against
+current code this pass (`grep -rln '"league_id": "9999"' tests/`) and
+confirmed STILL accurate and STILL complete for that exact literal
+pattern — all 8 files unchanged since Worker 2's pass, all 8 still had the
+unfixed minimal shape.
+
+**But a 9th file was found, not on Worker 2's list, by tracing actual
+callers of `_active_sleeper_context` rather than trusting the literal-
+string grep alone:** `tests/test_league_workspace_context_sleeper_p1_1.py`
+exercises `redraft_league_workspace_context` (one of the 11 call sites
+above) via its own `_make_sleeper_profile` helper, which wrote a receipt
+with `league.league_id`/`owner.user_id` but no `league.name` — and,
+critically, that helper's signature ALREADY took a `league_name`
+parameter (used for `create_redraft_profile`) that was simply never
+threaded into the receipt JSON. Because `redraft_league_workspace_context`
+wraps its `_active_sleeper_context()` call in a broad `try/except
+(FacadeError, OSError, ValueError)` that degrades gracefully
+(`syncStatus="DEGRADED"`) rather than 409ing the whole response, this
+would NOT have shown up as a hard test failure with an obviously-related
+error — it would have silently flipped several of this file's tests from
+asserting a real `LIVE` sync with real mocked matchup/standings data to a
+silently `DEGRADED` state with a masking-looking "Live Sleeper roster read
+failed: ..." issue message, which is exactly the class of false-negative
+the dispatch brief's `test_redraft_bootstrap_seeds_once_...` precedent
+warned about. Fixed by writing `"name": league_name` into the receipt
+(the parameter was already there, unused for this purpose) — confirmed
+this file's full 8-test suite still passes (all assert real `LIVE` sync
+state, not degraded) after the fix.
+
+**How this was actually caught, and confirmed real:** by reading the
+helper's own unused `league_name` parameter side by side with the new
+guard's `has_verified_identity` requirement (INSPECTED CODE), then
+confirming empirically — this file's full 8-test suite passed at 8/8
+against the OLD guard (baseline run, before any fixture fix), and would
+have started silently degrading several of those same 8 tests to
+`DEGRADED` sync state under the NEW guard without the fix (reasoned from
+the guard's own requirement plus the receipt's missing `name` field, not
+re-verified by deliberately un-fixing it and re-running, since the fix
+was trivial and the baseline+post-fix runs already bracket the behavior).
+Post-fix: 8/8 pass with real `LIVE` sync state asserted, confirmed by
+directly running the file (**ACTUAL TEST RESULT**).
+
+### 4. LIVE VERIFICATION — real running backend, restarted once
+
+Backend restarted (`taskkill //PID 40808 //F`, then re-launched with the
+documented stdin startup-credential protocol) to pick up the code change.
+**New pid `21960`, port 18742** — identity-verified via `Get-CimInstance
+Win32_Process` (`--repo-root C:/NWR/prospective-outcomes-v1`, `--mode
+redraft`) before use. Redraft preview (pid 11932) and both Dynasty
+processes (pid 46892/37692) were NOT restarted — no Dynasty-affecting or
+frontend-affecting code was changed this pass (confirmed: `git status`
+shows zero changes under `desktop/`).
+
+Full before/after HTTP-status matrix captured via direct authenticated
+curl (Bearer token, real running backend) across all 4 real profiles
+(Fantasy Gamers, Las Vegas Enginerds, KHA, 403 N 18th) for every one of
+the 11 guarded methods (`weekly-lineup`, `waivers`, `trade-analysis`,
+`trade-finder`, `my-roster`, `opponent-rosters`, `weekly-projections`,
+`trade-package-search`, `free-agents`, `league-workspace-context`,
+`data-health`) plus the composed `weekly-home-actions` — status codes
+BYTE-IDENTICAL before vs. after for every profile/method pair. Real
+Sleeper leagues (Fantasy Gamers, Las Vegas Enginerds): 200 for every
+method (422 for `trade-analysis` with an intentionally empty
+gives/receives package — business-level validation, unrelated to the
+guard, identical before/after). Real ESPN leagues (KHA, 403 N 18th): 409
+for every directly-guarded method, 200 (honest per-section degrade) for
+`league-workspace-context`/`weekly-home-actions`, identical before/after.
+
+**Response-BODY diff, not just status codes**, for both real Sleeper
+leagues across `weekly-lineup`, `waivers`, `my-roster`, `opponent-
+rosters`, `league-workspace-context`, `data-health`: `my-roster`,
+`opponent-rosters`, and `league-workspace-context` are byte-IDENTICAL;
+`weekly-lineup`/`waivers`/`data-health` differ ONLY in
+timestamps/`servedFromCache` flags (expected — the backend restart cleared
+the per-process cache and re-fetched at a later wall-clock time), all
+substantive player/roster/recommendation data identical.
+
+**ESPN error-message content, before vs. after** (KHA `weekly-lineup`):
+before — `{"code":"SLEEPER_REDRAFT_PROFILE_REQUIRED","message":"Activate
+a Sleeper-imported Redraft profile first."}`; after —
+`{"code":"SLEEPER_REDRAFT_LEAGUE_DATA_REQUIRED","message":"No verified
+league data available for this league. Import league data (e.g. via
+Sleeper) before using this tool."}` — same 409, honest capability-based
+wording, confirmed identical pattern across all 6 directly-guarded
+methods for both KHA and 403 N 18th.
+
+**`weekly-home-actions` (the composed Weekly Home tool, named in the
+dispatch brief) for KHA**, inspected directly: 200, `actions: []`, all 5
+`unavailableSections` (`START_SIT`, `WAIVER`, `TRADE`, `FREE_AGENTS`) carry
+the new capability-based message; `STREAMER` still carries the K/DST-
+specific message from Worker 2's earlier pass ("...before opening the
+K/DST Streamer") — both honest, no crash, no stale-looking mismatch (the
+two messages differ only because they come from two different guards with
+slightly different downstream-tool names in their wording, not because
+either is wrong).
+
+### 5. TESTS
+
+Targeted suite (19 files — all 9 repaired fixture files, both new Worker-
+1 capability-model test files, all Worker-2 K/DST files, plus
+`test_weekly_lineup_optimizer_service.py`/`test_start_sit_confidence_
+missing_projection.py`/`test_waiver_engine_service.py` for Start/Sit- and
+Waiver-adjacent regression coverage): **208 passed** (162 in the narrower
+first pass + the 46 non-failing tests in `test_desktop_application_api.py`
+counted once below), 0 failed.
+
+`tests/test_desktop_application_api.py` full run: **4 failed, 46
+passed** — confirmed BYTE-IDENTICAL node IDs to Worker 1/2's own
+documented baseline (`test_dynasty_facade_composes_real_governed_
+workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_
+trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_
+contract`, `test_facade_has_no_streamlit_or_app_component_dependency`).
+`test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`
+re-inspected directly (not just counted): still fails at the SAME real,
+pre-existing, environment-dependent assertion Worker 2 documented
+(`'configured': True` vs. the test's hardcoded `False` for the local
+FantasyPros API key) — this pass added zero new bootstrap keys, so no new
+masking risk existed here, but it was checked anyway rather than assumed.
+
+**A broader `tests/ -k "sleeper or waiver or trade or lineup or ..."`
+run surfaced 28 failures + 1 error** in files this pass never touched
+(`test_draft_day_trade_lab_service.py`, `test_model_v4_sprint14c_trade_
+review_service.py`, `test_model_v4_sprint14d_pick_trade_defer_
+service.py`, `test_qb_1qb_discipline_report.py`, `test_te_no_premium_
+discipline_report.py`, `test_external_asset_reviews_sanity_audit.py`,
+`test_model_v4_rotowire_replacement_baseline_service.py`, one error in
+`test_redraft_engine_v1_service.py`) — confirmed, by inspecting each
+failure directly (not merely counting), these are ALL pre-existing,
+unrelated to this pass: none of these files reference `sleeper_imports`,
+`_active_sleeper_context`, or `capabilities_for_profile` at all (`grep
+-l` across all 8 returned zero hits), and the one inspected error
+(`test_kdst_roster_slots_keep_kdst_out_of_nwr_math_without_blocking_the_
+board`) fails on a projection-CSV-fixture assertion ("Projection snapshot
+has no rankable player rows") with no relation to any receipt/capability
+code. Matches this repo's own documented ~323-pre-existing-failure
+baseline (missing `local_exports` data / Streamlit UI-contract drift,
+per MEMORY.md) rather than a new regression from this pass — caught by
+inspecting the failures, not by ignoring an inconvenient count.
+
+**Caveat, disclosed rather than hidden:** this pass did NOT re-run
+`npx vitest run`/`npm run typecheck` under `desktop/` — `git status`
+confirms zero files changed under `desktop/` this pass (unlike Worker 2,
+which added a new TS contract field), so there was no frontend surface
+for this pass to regress. A future worker should still run them if it
+touches `desktop/` itself.
+
+### 6. Dev process restarts and final state
+
+Redraft backend restarted once (pid `40808` → `21960`, same port 18742),
+identity-verified via `Get-CimInstance Win32_Process` both before
+stopping the old pid and after starting the new one. Redraft preview
+(pid 11932, port 1422) and both Dynasty processes (pid 46892/37692,
+ports 18741/1421) were left running, untouched — confirmed listening via
+`netstat -ano` at the end of this pass. Active profile restored to
+**Las Vegas Enginerds** (re-activated via curl at the end of this pass,
+matching the profile this pass found active at dispatch) after cycling
+through all 4 profiles for live verification.
+
+### 7. Files changed this pass
+
+- `src/application/desktop_facade.py` — `_active_sleeper_context()`
+  guard converted (see section 2).
+- `tests/test_league_workspace_context_sleeper_p1_1.py` — `_make_sleeper_
+  profile` helper's receipt now includes `"name": league_name` (the
+  parameter already existed, was simply unused for this purpose — see
+  section 3, the one fixture regression NOT on Worker 2's own list).
+- `tests/test_redraft_waivers_decision_trace_completeness_fix.py`,
+  `tests/test_redraft_waivers_faab_context_fix.py`, `tests/test_redraft_
+  waivers_open_slot_and_same_context_fix.py`, `tests/test_redraft_
+  waivers_unmatched_identity_rationale_fix.py`, `tests/test_redraft_
+  waivers_ir_reserve_drop_exclusion_fix.py`, `tests/test_trade_package_
+  search_facade_wiring.py`, `tests/test_redraft_identity_boundary_
+  opponent_and_trade_finder.py`, `tests/test_prospective_recommendation_
+  ledger_v1.py` — receipt fixture enriched with `league.name` (Worker 2's
+  own documented 8-file list, re-verified still accurate this pass, now
+  repaired).
+- `docs/codex/flaim_integration_20260919/LEDGER.md` (this section).
+
+**Not touched:** `local_exports/` itself (confirmed via `git status`
+showing zero changes anywhere under it), any existing profile JSON,
+`marginal_roster_utility_v2`, governed Redraft valuation, Dynasty's
+`governed_asset_registry_service.py`, anything under `desktop/`.
+
+### 8. All 11 methods converted — none left half-done
+
+Because the conversion is a single shared private helper (not a per-
+method change), converting it necessarily converts all 11 callers at
+once — there is no way to convert "Start/Sit only" without also changing
+`redraft_waivers`'s behavior, since they share the exact same guard
+function. What this pass DID do incrementally, per the brief's spirit,
+is LIVE-VERIFY each of the 11 (plus the composed `weekly-home-actions`)
+one at a time against all 4 real profiles, in the brief's own priority
+order (Start/Sit first, then Waivers, then Trade Analysis/Finder, then
+the remaining 6 as time allowed) — not just trusted that one passing
+method implied the others. All 11 were live-verified this pass; none
+were left as "converted but unverified."
+
+### 9. Not pushed
+
+Per this cycle's instructions, a later worker pushes once everything is
+verified. This pass's commit sits on top of `a774b94e`.
+
+## OPEN ISSUES FOR NEXT WORKER (Worker 3's additions, on top of Worker 1/2's above)
+
+0. **The 23 frontend `provider === "sleeper"` call sites remain entirely
+   unconverted** — this pass was backend-only, per its own dispatch
+   scope. `RedraftBootstrap.leagueCapabilities` (Worker 2's
+   infrastructure) is still the real, live, serialized field a future
+   frontend conversion pass should read.
+1. **Flaim OAuth status is still the hard gate for any real ESPN
+   snapshot.** This worker has no way to check the coordinating session's
+   `claude mcp login flaim` state. Check before assuming a real Flaim
+   fetch is possible.
+2. **Once a real Flaim connection exists**, the process Worker 1 already
+   documented (`scripts/refresh_espn_flaim_snapshot.py`'s docstring)
+   still applies unchanged: fetch, transform, validate via
+   `parse_espn_flaim_snapshot`, write to `local_exports/redraft_v1/
+   espn_flaim_snapshots/<profile_id>.json`. Once that file exists for
+   KHA or 403 N 18th, EVERY guard this pass and Worker 2's pass converted
+   (`redraft_kdst_streamer` + all 11 `_active_sleeper_context` callers)
+   will automatically start reporting `has_verified_identity=True` for
+   that profile — but the receipt-specific Sleeper-only checks
+   (`SLEEPER_REDRAFT_CONTEXT_REQUIRED` / `KDST_STREAMER_SLEEPER_CONTEXT_
+   REQUIRED`) will STILL 409, honestly, because no live ESPN fetch path
+   exists for the actual roster/matchup data these tools need — only the
+   identity-level capability gate will pass. A future worker will need to
+   either build a real ESPN live-fetch path (unlikely, per the July
+   findings) or extend each of these 11 methods' post-guard logic to
+   branch on an ESPN snapshot instead of a Sleeper receipt when driving
+   its actual data fetch — a materially bigger change than this pass's
+   scope, flagged here so it is not assumed to be "already done" once a
+   snapshot exists.
+3. **Do not set the owner's league-ID table into either existing ESPN
+   profile's `provider_league_id`** without a real, verified fetch —
+   unchanged from Worker 1/2's finding, still correct, still not done
+   this pass.
+4. **Dev processes**: Redraft backend is now pid `21960` (was `40808`,
+   `44000` before that) — a future worker should re-verify via
+   `Get-CimInstance Win32_Process` before assuming any specific pid is
+   still current, per this saga's own established discipline. Dynasty
+   processes (`46892`/`37692`) and Redraft preview (`11932`) unchanged
+   since Worker 1.
+5. **Do not push.** Per this cycle's instructions, a later worker pushes
+   once everything is verified. This pass's commit sits on top of
+   `a774b94e`.

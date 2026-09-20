@@ -7812,10 +7812,51 @@ class DesktopBackendFacade:
 
     def _active_sleeper_context(self) -> tuple[LeagueProfile, str, str]:
         selected = active_profile(self.redraft_root)
-        if selected is None or selected.provider != "sleeper" or not selected.provider_league_id:
+        if selected is None:
             raise FacadeError(
                 "SLEEPER_REDRAFT_PROFILE_REQUIRED",
                 "Activate a Sleeper-imported Redraft profile first.",
+                status=409,
+            )
+        # Flaim-integration cycle, Worker 3 (2026-09-19): this used to be a
+        # blanket `selected.provider != "sleeper"` string check. It is now
+        # the same provider-agnostic capability check
+        # (`league_capability_service.capabilities_for_profile`, via the
+        # shared `_league_capabilities_for_profile` helper `redraft_kdst_
+        # streamer`'s guard already uses) so a future verified ESPN/Flaim
+        # snapshot can satisfy this gate too, without another guard-rewrite
+        # pass. Gated on `has_verified_identity`, matching the K/DST
+        # guard's own lesson (verified again for THIS guard, not assumed
+        # safe from that precedent alone): `has_roster_data` reads the
+        # receipt's `roster_snapshot.players` field, which is `null` for a
+        # real, currently-working league (Fantasy Gamers) whose roster data
+        # for every one of THIS guard's 11 downstream tools is fetched
+        # live from Sleeper's API below, not from that field -- gating on
+        # it here would have been a real regression for a real league. See
+        # docs/codex/flaim_integration_20260919/LEDGER.md.
+        capabilities = self._league_capabilities_for_profile(selected)
+        if capabilities is None or not capabilities.has_verified_identity:
+            raise FacadeError(
+                "SLEEPER_REDRAFT_LEAGUE_DATA_REQUIRED",
+                "No verified league data available for this league. Import league data "
+                "(e.g. via Sleeper) before using this tool.",
+                status=409,
+            )
+        # Every downstream caller of this context (Start/Sit, Waivers,
+        # Trade Analysis/Finder/Package Search, My Roster, Opponent
+        # Rosters, Weekly Projections, League Workspace Context, Data
+        # Health) still drives live Sleeper API fetches keyed on
+        # `league_id`/`owner_user_id` -- there is no ESPN/Flaim-backed
+        # live-fetch equivalent yet (only the future snapshot-import path
+        # Worker 1 designed). So even though the capability check above is
+        # provider-agnostic, actually running these tools still requires a
+        # real Sleeper profile/receipt today.
+        if selected.provider != "sleeper" or not selected.provider_league_id:
+            raise FacadeError(
+                "SLEEPER_REDRAFT_CONTEXT_REQUIRED",
+                "This league's data is not sourced from Sleeper, which this tool "
+                "currently requires for its live roster/lineup data. Re-import via "
+                "Sleeper first.",
                 status=409,
             )
         receipt = load_sleeper_import_receipt(self.redraft_root, selected.profile_id)

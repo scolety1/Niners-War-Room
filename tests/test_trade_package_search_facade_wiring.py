@@ -38,7 +38,12 @@ def _facade_with_sleeper_league(tmp_path: Path) -> tuple[DesktopBackendFacade, s
     receipt_dir = store / "sleeper_imports"
     receipt_dir.mkdir(parents=True, exist_ok=True)
     (receipt_dir / f"{profile_id}.json").write_text(
-        json.dumps({"league": {"league_id": "9999"}, "owner": {"user_id": "owner-1"}}),
+        json.dumps(
+            {
+                "league": {"league_id": "9999", "name": "Trade Package Search Facade League"},
+                "owner": {"user_id": "owner-1"},
+            }
+        ),
         encoding="utf-8",
     )
     return facade, profile_id

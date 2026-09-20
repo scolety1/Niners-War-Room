@@ -39,7 +39,12 @@ def _make_sleeper_profile(store: Path, facade: DesktopBackendFacade, *, league_i
     receipt_dir = store / "sleeper_imports"
     receipt_dir.mkdir(parents=True, exist_ok=True)
     (receipt_dir / f"{profile_id}.json").write_text(
-        json.dumps({"league": {"league_id": league_id}, "owner": {"user_id": owner_user_id}}),
+        json.dumps(
+            {
+                "league": {"league_id": league_id, "name": league_name},
+                "owner": {"user_id": owner_user_id},
+            }
+        ),
         encoding="utf-8",
     )
     return profile_id
