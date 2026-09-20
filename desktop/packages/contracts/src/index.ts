@@ -2064,6 +2064,15 @@ export interface RedraftBootstrap {
   externalConsensus?: ExternalConsensusStatus;
   health: RedraftHealth;
   notices: Notice[];
+  // Flaim-integration cycle, Worker 2 (2026-09-19): real, provider-agnostic
+  // capability data for `activeProfile`, computed server-side from whatever
+  // real receipt/snapshot that profile actually has. `null` when no
+  // profile is active (mirrors `activeProfile` itself). Optional (like
+  // `ownerPlatformSnapshot` above) so existing test fixture objects that
+  // construct a `RedraftBootstrap` without this new field still typecheck.
+  // See `LeagueCapabilities` below and
+  // `docs/codex/flaim_integration_20260919/LEDGER.md`.
+  leagueCapabilities?: LeagueCapabilities | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -2663,16 +2672,18 @@ export interface CommandItem {
 
 // --- League capability model (Flaim-integration cycle, 2026-09-19) -------
 //
-// Design-only as of this pass: this type documents the intended shape of
-// a future, provider-agnostic replacement for patterns like
-// `profile.provider === "sleeper"` (see `in-season.tsx`, `improve-team.tsx`,
-// and others). It mirrors `src/services/league_capability_service.py`'s
-// `LeagueCapabilities` dataclass field-for-field. No backend endpoint
-// serializes this type into a live response yet, and no frontend call
-// site reads it yet -- see docs/codex/flaim_integration_20260919/LEDGER.md
-// for exactly what was designed vs. wired this pass. Once a real ESPN/
-// Flaim snapshot exists and a facade endpoint starts returning this
-// shape, tools should check the SPECIFIC field(s) they need (e.g.
+// Worker 1 (design): this type mirrors `src/services/
+// league_capability_service.py`'s `LeagueCapabilities` dataclass
+// field-for-field; a provider-agnostic replacement for patterns like
+// `profile.provider === "sleeper"`. Worker 2: `RedraftBootstrap.
+// leagueCapabilities` above now serializes this type into a live response
+// (`DesktopBackendFacade._league_capabilities_payload`), and the backend's
+// own `redraft_kdst_streamer` 409 guard reads the equivalent capability
+// directly (server-side, not via this serialized field). Frontend call
+// sites converted so far: none yet as of this pass -- see
+// docs/codex/flaim_integration_20260919/LEDGER.md for exactly what was
+// wired vs. left for a later worker. Once a real ESPN/Flaim snapshot
+// exists, tools should check the SPECIFIC field(s) they need (e.g.
 // `hasLineupEligibility`) instead of a blanket provider check.
 export type ScoringSettingsCompleteness = "COMPLETE" | "PARTIAL" | "UNKNOWN";
 export type AvailablePlayerPoolCoverage = "COMPLETE" | "BOUNDED" | "NONE";

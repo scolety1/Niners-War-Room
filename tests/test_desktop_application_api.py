@@ -892,6 +892,15 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
         # (see the projection-seed migration below), before ever reaching
         # this assertion. Fixed incidentally while restoring this test.
         "marketProviderAdp",
+        # Flaim-integration cycle, Worker 2 (2026-09-19): new additive
+        # bootstrap key -- see `DesktopBackendFacade._league_capabilities_
+        # payload`. Verified live (this pass) that omitting it here makes
+        # this assertion fail on ITS OWN (the seed-hash check above it
+        # genuinely passes in this worktree), which would incorrectly mask
+        # this test's real, still-pre-existing failure further down the
+        # function -- added here for the same reason `marketProviderAdp`
+        # was added above.
+        "leagueCapabilities",
     }
     assert set(first.data["product"]) == {"title", "contextLabel", "authority"}
     assert set(first.data["status"]) == {
@@ -1722,7 +1731,16 @@ def test_redraft_kdst_streamer_records_a_decision_trace_for_k_and_dst(
     receipt_dir = store / "sleeper_imports"
     receipt_dir.mkdir(parents=True, exist_ok=True)
     (receipt_dir / f"{profile_id}.json").write_text(
-        json.dumps({"league": {"league_id": "9999"}, "owner": {"user_id": "owner-1"}}),
+        json.dumps(
+            {
+                "league": {"league_id": "9999", "name": "KDST Trace League"},
+                "owner": {"user_id": "owner-1"},
+                # Flaim-integration cycle, Worker 2: the capability guard now
+                # reads `roster_snapshot.players` -- mirror the real receipt
+                # shape rather than the pre-guard, roster-less shape.
+                "roster_snapshot": {"players": ["k-1"]},
+            }
+        ),
         encoding="utf-8",
     )
 

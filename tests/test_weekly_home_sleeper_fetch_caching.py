@@ -188,7 +188,19 @@ def _facade_with_sleeper_league(tmp_path: Path) -> tuple[DesktopBackendFacade, s
     receipt_dir = store / "sleeper_imports"
     receipt_dir.mkdir(parents=True, exist_ok=True)
     (receipt_dir / f"{profile_id}.json").write_text(
-        json.dumps({"league": {"league_id": "9999"}, "owner": {"user_id": "owner-1"}}),
+        json.dumps(
+            {
+                "league": {"league_id": "9999", "name": "Weekly Home Fetch-Caching League"},
+                "owner": {"user_id": "owner-1"},
+                # Flaim-integration cycle, Worker 2: the K/DST streamer's
+                # capability guard now reads `roster_snapshot.players` --
+                # mirror the real receipt shape (this fixture is exercised
+                # indirectly via `redraft_weekly_home_actions`, which calls
+                # `redraft_kdst_streamer`) rather than the pre-guard,
+                # roster-less shape.
+                "roster_snapshot": {"players": ["me-1", "me-2"]},
+            }
+        ),
         encoding="utf-8",
     )
     return facade, profile_id

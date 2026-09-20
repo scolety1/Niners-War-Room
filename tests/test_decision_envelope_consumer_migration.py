@@ -91,7 +91,16 @@ def test_kdst_streamer_returns_a_real_decision_envelope_per_position(
     receipt_dir = store / "sleeper_imports"
     receipt_dir.mkdir(parents=True, exist_ok=True)
     (receipt_dir / f"{profile_id}.json").write_text(
-        json.dumps({"league": {"league_id": "9999"}, "owner": {"user_id": "owner-1"}}),
+        json.dumps(
+            {
+                "league": {"league_id": "9999", "name": "KDST Envelope League"},
+                "owner": {"user_id": "owner-1"},
+                # Flaim-integration cycle, Worker 2: the capability guard now
+                # reads `roster_snapshot.players` -- mirror the real receipt
+                # shape rather than the pre-guard, roster-less shape.
+                "roster_snapshot": {"players": ["k-1"]},
+            }
+        ),
         encoding="utf-8",
     )
 

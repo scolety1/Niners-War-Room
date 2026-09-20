@@ -239,6 +239,11 @@ from src.services.trade_package_search_service import (
     search_target_player_packages,
     search_win_win_packages,
 )
+from src.services.espn_flaim_snapshot_service import (
+    EspnFlaimSnapshotError,
+    load_espn_flaim_snapshot,
+)
+from src.services.league_capability_service import LeagueCapabilities, capabilities_for_profile
 from src.services.in_season_decision_trace_service import (
     DecisionTraceError,
     load_decision_traces,
@@ -2404,6 +2409,17 @@ class DesktopBackendFacade:
                     ),
                 ),
                 "notices": notices,
+                # Flaim-integration cycle, Worker 2 (2026-09-19): real,
+                # provider-agnostic capability data for the active profile,
+                # additive alongside `activeProfile` above. `None` when no
+                # profile is active. Frontend call sites can read this
+                # instead of `activeProfile.provider === "sleeper"` -- see
+                # `desktop/packages/contracts/src/index.ts`'s
+                # `LeagueCapabilities` type (Worker 1) and
+                # `docs/codex/flaim_integration_20260919/LEDGER.md`.
+                "leagueCapabilities": self._league_capabilities_payload(
+                    self._league_capabilities_for_profile(selected)
+                ),
             },
             warnings=normalized_warnings,
         )
@@ -2806,14 +2822,69 @@ class DesktopBackendFacade:
                 "Activate a Sleeper-imported Redraft profile first.",
                 status=409,
             )
+        # Flaim-integration cycle, Worker 2 (2026-09-19): this guard used to
+        # be a direct "does a Sleeper import receipt parse" check. It is now
+        # a provider-agnostic capability check
+        # (`league_capability_service.capabilities_for_profile`) so a future
+        # ESPN/Flaim snapshot can satisfy it the same way a Sleeper receipt
+        # does today, without another guard-rewrite pass. See
+        # `docs/codex/flaim_integration_20260919/LEDGER.md`.
         receipt_path = self.redraft_root / "sleeper_imports" / f"{selected.profile_id}.json"
+        receipt: dict[str, Any] | None
         try:
             receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            receipt = None
+        try:
+            espn_snapshot = load_espn_flaim_snapshot(self.redraft_root, selected.profile_id)
+        except EspnFlaimSnapshotError:
+            # A present-but-malformed ESPN/Flaim snapshot is treated as "no
+            # usable ESPN data" for this guard's purposes, not a crash --
+            # the same honest-degradation posture `load_espn_flaim_snapshot`
+            # itself documents for a missing file.
+            espn_snapshot = None
+        capabilities = capabilities_for_profile(sleeper_receipt=receipt, espn_snapshot=espn_snapshot)
+        # NOTE: gated on `has_verified_identity`, not `has_roster_data`.
+        # `has_roster_data` (from `capabilities_from_sleeper_receipt`) reads
+        # the receipt's own `roster_snapshot.players` -- but this endpoint's
+        # roster data actually comes from a SEPARATE live Sleeper fetch
+        # below, not from the receipt at all (the receipt only supplies
+        # `league.league_id`/`owner.user_id` to drive that fetch). A real,
+        # currently-working league (Fantasy Gamers,
+        # `local_exports/redraft_v1/sleeper_imports/
+        # 941b99ade350410391b1b67c0890af79.json`) genuinely has
+        # `roster_snapshot: null` in its receipt -- verified live against
+        # this worktree's real running backend, this pass -- so gating on
+        # `has_roster_data` here would have been a real regression for a
+        # real, already-working league. `has_verified_identity` (league_id
+        # + name) is the field both real leagues' receipts always carry and
+        # is what this guard actually needs.
+        if not capabilities.has_verified_identity:
+            raise FacadeError(
+                "KDST_STREAMER_LEAGUE_DATA_REQUIRED",
+                "No verified league data available for this league. Import league data "
+                "(e.g. via Sleeper) before opening the K/DST Streamer.",
+                status=409,
+            )
+        # The live pickup search below queries Sleeper's own roster/players
+        # endpoints directly (there is no ESPN/Flaim-backed equivalent yet)
+        # -- so even though the capability check above is provider-agnostic,
+        # actually running the streamer still requires a real Sleeper
+        # receipt today.
+        if receipt is None:
+            raise FacadeError(
+                "KDST_STREAMER_SLEEPER_CONTEXT_REQUIRED",
+                "This league's roster data is not sourced from Sleeper, which the K/DST "
+                "Streamer currently requires for its live pickup search. Re-import via "
+                "Sleeper before opening the K/DST Streamer.",
+                status=409,
+            )
+        try:
             league = receipt["league"]
             owner = receipt["owner"]
             league_id = str(league["league_id"])
             owner_user_id = str(owner["user_id"])
-        except (OSError, ValueError, KeyError, TypeError) as exc:
+        except (KeyError, TypeError) as exc:
             raise FacadeError(
                 "KDST_STREAMER_SLEEPER_CONTEXT_REQUIRED",
                 "The active profile has no valid Sleeper import receipt. Re-import it before "
@@ -7911,6 +7982,49 @@ class DesktopBackendFacade:
         entry, never a fabricated "OK" value)."""
         statuses = load_player_availability_statuses(self.repo_root)
         return {status.player_id: status.to_dict() for status in statuses}
+
+    def _league_capabilities_for_profile(
+        self, selected: LeagueProfile | None
+    ) -> LeagueCapabilities | None:
+        """Flaim-integration cycle, Worker 2: compute the real, provider-
+        agnostic `LeagueCapabilities` for the given (already-active)
+        profile, or ``None`` when no profile is active. Same real receipt/
+        snapshot lookup `redraft_kdst_streamer` uses for its own guard --
+        kept as a small shared helper rather than duplicated inline, since
+        this is now called from two places (that guard, and this bootstrap
+        serialization for future frontend guard conversions)."""
+
+        if selected is None:
+            return None
+        receipt_path = self.redraft_root / "sleeper_imports" / f"{selected.profile_id}.json"
+        try:
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            receipt = None
+        try:
+            espn_snapshot = load_espn_flaim_snapshot(self.redraft_root, selected.profile_id)
+        except EspnFlaimSnapshotError:
+            espn_snapshot = None
+        return capabilities_for_profile(sleeper_receipt=receipt, espn_snapshot=espn_snapshot)
+
+    @staticmethod
+    def _league_capabilities_payload(
+        capabilities: LeagueCapabilities | None,
+    ) -> dict[str, Any] | None:
+        if capabilities is None:
+            return None
+        return {
+            "hasVerifiedIdentity": capabilities.has_verified_identity,
+            "hasRosterData": capabilities.has_roster_data,
+            "hasLineupEligibility": capabilities.has_lineup_eligibility,
+            "hasScoringSettings": capabilities.has_scoring_settings,
+            "hasAvailablePlayerPool": capabilities.has_available_player_pool,
+            "hasStandings": capabilities.has_standings,
+            "transactionDirection": capabilities.transaction_direction,
+            "retrievedAtUtc": capabilities.retrieved_at_utc,
+            "providerAsOfUtc": capabilities.provider_as_of_utc,
+            "disclosures": list(capabilities.disclosures),
+        }
 
     @staticmethod
     def _profile_payload(profile: LeagueProfile) -> dict[str, Any]:
