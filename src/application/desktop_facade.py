@@ -244,6 +244,12 @@ from src.services.espn_flaim_snapshot_service import (
     load_espn_flaim_snapshot,
 )
 from src.services.league_capability_service import LeagueCapabilities, capabilities_for_profile
+from src.services.canonical_league_state_service import (
+    CanonicalLeagueState,
+    CanonicalLeagueStateError,
+    build_canonical_league_state_from_espn_snapshot,
+    build_canonical_league_state_from_sleeper,
+)
 from src.services.in_season_decision_trace_service import (
     DecisionTraceError,
     load_decision_traces,
@@ -3230,76 +3236,106 @@ class DesktopBackendFacade:
         )
 
     def redraft_my_roster(self) -> FacadePayload:
-        """The owner's OWN current Sleeper roster, with both the Sleeper
-        player id and (where identity-matched) the NWR canonical player id
-        on every row (in-season UI pass, 2026-09-10). Built because Trade
-        Analysis's real API takes Sleeper player ids for the "I give" side
-        and no existing read exposed the owner's own roster -- Free Agents
+        """The owner's OWN current roster, with both the provider player id
+        and (where identity-matched) the NWR canonical player id on every
+        row (in-season UI pass, 2026-09-10). Built because Trade Analysis's
+        real API takes Sleeper player ids for the "I give" side and no
+        existing read exposed the owner's own roster -- Free Agents
         explicitly excludes rostered players, Opponent Rosters explicitly
         excludes the owner. Read-only: never writes to Sleeper.
+
+        Waiver-night hardening, Worker 3 (2026-09-22): converted to source
+        its roster from `CanonicalLeagueState` (`canonical_league_state_
+        service.py`) instead of doing its own raw Sleeper rosters/players
+        fetch+lookup inline. For a Sleeper profile this is a byte-identical
+        refactor -- `_resolve_canonical_league_state()` performs the exact
+        same live fetch via the exact same `_active_sleeper_context()`
+        gate, and `CanonicalRosterPlayer`'s fields are derived with the
+        exact same fallback order the old inline code used (see
+        `canonical_league_state_service._sleeper_roster_player`'s
+        docstring) -- verified by this file's own regression tests
+        (`tests/test_redraft_my_roster_canonical_state_conversion.py`) and
+        a live round trip against both real Sleeper leagues. For a real,
+        verified ESPN/Flaim snapshot (none exists yet for any real profile
+        tonight), this now serves real roster rows automatically with no
+        further code change -- see the canonical service's module
+        docstring. For an ESPN profile with no snapshot yet (both real
+        ESPN leagues tonight), this still honestly 409s, now via
+        `ESPN_REDRAFT_SNAPSHOT_REQUIRED` rather than the old generic
+        `SLEEPER_REDRAFT_CONTEXT_REQUIRED` -- a more specific, more honest
+        message, not a behavior regression (both are real 409s; no ESPN
+        league ever got real roster data from this endpoint before or
+        after this change).
         """
 
         self._require_mode("redraft")
-        selected, league_id, owner_user_id = self._active_sleeper_context()
-        ranking_warning = ""
         try:
-            ranking = self._redraft_ranking_for_profile(selected.profile_id)
-            ranking_rows = self._redraft_ranking_payloads(ranking, None)
-        except FacadeError as exc:
-            if exc.code != "REDRAFT_RANKINGS_UNAVAILABLE":
-                raise
-            ranking_rows = []
-            ranking_warning = (
-                "NWR rankings are unavailable for this profile; roster rows are shown "
-                "without a canonical NWR identity match."
-            )
-        try:
-            sleeper = SleeperHttpClient()
-            rosters = sleeper.get_json(f"league/{league_id}/rosters")
-            players = self._sleeper_get_json(sleeper, "players/nfl")
+            state = self._resolve_canonical_league_state()
+        except CanonicalLeagueStateError as exc:
+            if exc.kind == "MALFORMED_ROSTERS":
+                raise FacadeError(
+                    "REDRAFT_MY_ROSTER_READ_FAILED", "Sleeper roster response is malformed.",
+                    status=503,
+                ) from exc
+            if exc.kind == "OWN_ROSTER_NOT_FOUND":
+                raise FacadeError(
+                    "REDRAFT_MY_ROSTER_NOT_FOUND",
+                    "The owner's Sleeper roster could not be found.", status=409,
+                ) from exc
+            raise FacadeError("REDRAFT_MY_ROSTER_READ_FAILED", str(exc), status=503) from exc
         except (OSError, ValueError) as exc:
             raise FacadeError(
                 "REDRAFT_MY_ROSTER_READ_FAILED",
                 "Sleeper roster or player data could not be read. No local or remote state was changed.",
                 status=503,
             ) from exc
-        if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
-            raise FacadeError(
-                "REDRAFT_MY_ROSTER_READ_FAILED", "Sleeper roster response is malformed.", status=503
-            )
-        own_roster = next(
-            (roster for roster in rosters if str(roster.get("owner_id") or "") == str(owner_user_id)), None
-        )
-        if own_roster is None:
-            raise FacadeError(
-                "REDRAFT_MY_ROSTER_NOT_FOUND", "The owner's Sleeper roster could not be found.", status=409
-            )
-        resolved = resolve_roster_canonical_ids(
-            roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
-            players_catalog=players, ranking_rows=ranking_rows,
-        )
-        starter_ids = {str(value) for value in own_roster.get("starters") or []}
-        rows: list[dict[str, Any]] = []
-        for raw_id in own_roster.get("players") or []:
-            sleeper_id = str(raw_id)
-            catalog_entry = players.get(sleeper_id) if isinstance(players, Mapping) else None
-            canonical_id = resolved.canonical_id_by_sleeper_id.get(sleeper_id, "")
-            if isinstance(catalog_entry, Mapping):
-                position = str(catalog_entry.get("position") or "")
-                team = str(catalog_entry.get("team") or "").upper().strip()
-                name = resolved.player_names_by_canonical_id.get(canonical_id) or str(
-                    catalog_entry.get("full_name") or catalog_entry.get("search_full_name") or sleeper_id
+        league_id = state.provider_league_id
+        selected = active_profile(self.redraft_root)
+        ranking_warning = ""
+        ranking_rows: list[dict[str, Any]] = []
+        if selected is not None:
+            try:
+                ranking = self._redraft_ranking_for_profile(selected.profile_id)
+                ranking_rows = self._redraft_ranking_payloads(ranking, None)
+            except FacadeError as exc:
+                if exc.code != "REDRAFT_RANKINGS_UNAVAILABLE":
+                    raise
+                ranking_rows = []
+                ranking_warning = (
+                    "NWR rankings are unavailable for this profile; roster rows are shown "
+                    "without a canonical NWR identity match."
                 )
-            else:
-                position, team, name = "", "", sleeper_id
+        # A synthesized single-field-per-player catalog, keyed the same way
+        # the real Sleeper `players/nfl` catalog is (`full_name`/
+        # `position`/`team`), fed into the SAME, unchanged
+        # `resolve_roster_canonical_ids` matcher every other roster/
+        # opponent/free-agent identity call site in this module already
+        # uses -- no new identity heuristic, and provider-neutral for free
+        # (an ESPN roster's already-resolved player_name/position/team
+        # work here identically to a Sleeper roster's).
+        synthetic_catalog = {
+            player.provider_player_id: {
+                "full_name": player.player_name, "position": player.position, "team": player.team,
+            }
+            for player in state.roster
+        }
+        resolved = resolve_roster_canonical_ids(
+            roster_sleeper_player_ids=[player.provider_player_id for player in state.roster],
+            players_catalog=synthetic_catalog, ranking_rows=ranking_rows,
+        )
+        rows: list[dict[str, Any]] = []
+        for player in state.roster:
+            provider_player_id = player.provider_player_id
+            canonical_id = resolved.canonical_id_by_sleeper_id.get(provider_player_id, "")
+            name = resolved.player_names_by_canonical_id.get(canonical_id) or player.player_name
             rows.append(
                 {
-                    "sleeperPlayerId": sleeper_id,
+                    "sleeperPlayerId": provider_player_id,
                     "canonicalPlayerId": canonical_id or None,
                     "playerName": name,
-                    "position": position,
-                    "team": team,
-                    "starter": sleeper_id in starter_ids,
+                    "position": player.position,
+                    "team": player.team,
+                    "starter": player.slot == "STARTER",
                     "identityStatus": "MATCHED" if canonical_id else "UNMATCHED_IDENTITY",
                 }
             )
@@ -4385,6 +4421,17 @@ class DesktopBackendFacade:
                 "identityStatus": candidate.identity_status,
                 "faabBidLowDollars": bid.bid_low_dollars if bid else None,
                 "faabBidHighDollars": bid.bid_high_dollars if bid else None,
+                # Waiver-night hardening, Worker 3 (2026-09-22): these two
+                # were already computed by `suggest_faab_bids` (as a literal
+                # percent of `remaining_budget_dollars`) but were dropped
+                # before reaching the API response -- see Worker 2's finding
+                # in docs/codex/waiver_night_hardening_20260922/LEDGER.md.
+                # Purely additive: the existing dollar fields above are
+                # unchanged, this just stops throwing away math NWR already
+                # does. `None` (not 0.0) when no bid was computed at all,
+                # matching the existing dollar-field honesty convention.
+                "faabBidLowPct": bid.bid_low_pct if bid else None,
+                "faabBidHighPct": bid.bid_high_pct if bid else None,
                 "faabUrgency": bid.urgency if bid else None,
                 "faabRationale": bid.rationale if bid else None,
                 "playerAvailabilityStatus": availability_status_by_id.get(
@@ -7810,7 +7857,15 @@ class DesktopBackendFacade:
             cache[path] = client.get_json(path)
         return cache[path]
 
-    def _active_sleeper_context(self) -> tuple[LeagueProfile, str, str]:
+    def _active_profile_with_capabilities(self) -> tuple[LeagueProfile, LeagueCapabilities]:
+        """Steps 1-2 shared by `_active_sleeper_context()` (Sleeper-only,
+        unchanged, still the gate every not-yet-converted caller uses) and
+        `_resolve_canonical_league_state()` (waiver-night hardening,
+        Worker 3, 2026-09-22 -- the new provider-neutral boundary). Pure
+        extraction, no behavior change: this is exactly what both
+        functions' first two steps already did inline before this pass.
+        """
+
         selected = active_profile(self.redraft_root)
         if selected is None:
             raise FacadeError(
@@ -7842,6 +7897,10 @@ class DesktopBackendFacade:
                 "(e.g. via Sleeper) before using this tool.",
                 status=409,
             )
+        return selected, capabilities
+
+    def _active_sleeper_context(self) -> tuple[LeagueProfile, str, str]:
+        selected, _capabilities = self._active_profile_with_capabilities()
         # Every downstream caller of this context (Start/Sit, Waivers,
         # Trade Analysis/Finder/Package Search, My Roster, Opponent
         # Rosters, Weekly Projections, League Workspace Context, Data
@@ -7876,6 +7935,88 @@ class DesktopBackendFacade:
                 status=409,
             )
         return selected, league_id, owner_user_id
+
+    def _resolve_canonical_league_state(
+        self, *, include_opponent_rosters: bool = False
+    ) -> CanonicalLeagueState:
+        """The new provider-neutral boundary (waiver-night hardening,
+        Worker 3, 2026-09-22): `provider ingestion -> validated provider
+        snapshot -> provider-neutral canonical league state -> existing
+        NWR decision engines`, per the owner's Phase 3 direction. See
+        `canonical_league_state_service.py`'s module docstring for the
+        full design rationale.
+
+        For a Sleeper profile, this performs the EXACT SAME live fetch
+        (`league/{id}/rosters`, `players/nfl`) `redraft_my_roster` always
+        did directly, via the EXACT SAME `_active_sleeper_context()` gate
+        every other Sleeper-only caller still uses -- zero behavior change
+        to the Sleeper path. For an ESPN profile, it loads a real, parsed
+        `EspnFlaimSnapshot` if one has actually been imported for this
+        profile (`espn_flaim_snapshot_service.load_espn_flaim_snapshot`);
+        none has ever been produced for any real profile as of this pass
+        (Flaim OAuth/ingestion is still pending -- see
+        `docs/codex/flaim_integration_20260919/LEDGER.md`), so this
+        currently still raises an honest 409 for every real ESPN league
+        tonight (KHA, 403 N 18th) -- but the architecture is now ready to
+        serve a real snapshot the moment one exists, with NO further
+        change to this method or its converted callers.
+
+        Raises `FacadeError` for every gate failure (no active profile, no
+        verified identity, unsupported provider, no ESPN snapshot yet) and
+        lets `CanonicalLeagueStateError`/`OSError`/`ValueError` from a
+        Sleeper live-fetch or malformed-roster failure propagate
+        uncaught -- callers wrap this call in their own existing
+        try/except to preserve their own exact, pre-existing error
+        code/message/status per tool (see `redraft_my_roster`).
+        """
+
+        selected, capabilities = self._active_profile_with_capabilities()
+        if selected.provider == "sleeper" and selected.provider_league_id:
+            _selected, league_id, owner_user_id = self._active_sleeper_context()
+            sleeper = SleeperHttpClient()
+            rosters = self._sleeper_get_json(sleeper, f"league/{league_id}/rosters")
+            players = self._sleeper_get_json(sleeper, "players/nfl")
+            users_raw = None
+            if include_opponent_rosters:
+                users_raw = self._sleeper_get_json(sleeper, f"league/{league_id}/users")
+            return build_canonical_league_state_from_sleeper(
+                league_name=selected.league_name, season=selected.season,
+                team_count=selected.team_count, league_id=league_id,
+                owner_user_id=owner_user_id, rosters_raw=rosters, players_catalog=players,
+                retrieved_at_utc=datetime.now(UTC).isoformat(), capabilities=capabilities,
+                users_raw=users_raw, include_opponent_rosters=include_opponent_rosters,
+            )
+        if selected.provider == "espn":
+            try:
+                snapshot = load_espn_flaim_snapshot(self.redraft_root, selected.profile_id)
+            except (EspnFlaimSnapshotError, OSError, ValueError) as exc:
+                # `ValueError` also covers a bare `json.JSONDecodeError`
+                # for a syntactically-invalid file (not just a valid-JSON
+                # schema violation, which `EspnFlaimSnapshotError` alone
+                # covers) -- see the matching fix+comment in
+                # `_league_capabilities_for_profile`.
+                raise FacadeError(
+                    "ESPN_REDRAFT_SNAPSHOT_INVALID",
+                    "This profile's stored ESPN snapshot is malformed and could not be read. "
+                    f"({exc})",
+                    status=503,
+                ) from exc
+            if snapshot is None:
+                raise FacadeError(
+                    "ESPN_REDRAFT_SNAPSHOT_REQUIRED",
+                    "No ESPN league snapshot has been imported for this profile yet. Once a "
+                    "real ESPN/Flaim snapshot is imported, this tool will use it "
+                    "automatically -- no further code change required.",
+                    status=409,
+                )
+            return build_canonical_league_state_from_espn_snapshot(
+                snapshot, capabilities=capabilities
+            )
+        raise FacadeError(
+            "REDRAFT_LEAGUE_CONTEXT_UNSUPPORTED_PROVIDER",
+            "This league's data source is not supported for this tool yet.",
+            status=409,
+        )
 
     def _redraft_ranking_for_profile(self, profile_id: str):
         try:
@@ -8045,6 +8186,25 @@ class DesktopBackendFacade:
         try:
             espn_snapshot = load_espn_flaim_snapshot(self.redraft_root, selected.profile_id)
         except EspnFlaimSnapshotError:
+            espn_snapshot = None
+        except (OSError, ValueError):
+            # Waiver-night hardening, Worker 3 (2026-09-22): a real,
+            # pre-existing gap found while testing the new canonical-
+            # state boundary -- `load_espn_flaim_snapshot` can raise a
+            # bare `json.JSONDecodeError` (a `ValueError`) for a
+            # syntactically-invalid snapshot file, distinct from
+            # `EspnFlaimSnapshotError` (valid JSON, invalid schema),
+            # which is all this except previously caught. An uncaught
+            # `JSONDecodeError` here used to propagate all the way up
+            # through every caller of this shared helper (this method,
+            # the K/DST streamer guard, bootstrap serialization) and get
+            # mis-wrapped by whichever caller's own generic
+            # `except (OSError, ValueError)` caught it first -- e.g.
+            # `redraft_my_roster` would report a misleading "Sleeper
+            # roster or player data could not be read" for a broken ESPN
+            # file. Matches the Sleeper-receipt read two lines above,
+            # which already treats a read/parse failure as "no real
+            # receipt" rather than letting it escape uncaught.
             espn_snapshot = None
         return capabilities_for_profile(sleeper_receipt=receipt, espn_snapshot=espn_snapshot)
 

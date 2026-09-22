@@ -1288,6 +1288,14 @@ export interface WaiverAddCandidate {
   identityStatus: string;
   faabBidLowDollars: number | null;
   faabBidHighDollars: number | null;
+  /** The same bid range expressed as a fraction (0-1) of remaining FAAB
+   * budget, e.g. 0.12 = 12% -- already computed server-side by
+   * `suggest_faab_bids` alongside the dollar fields above, previously
+   * discarded before reaching the API response (waiver-night hardening,
+   * Worker 3, 2026-09-22). `null` under the exact same conditions the
+   * dollar fields are `null` (no bid computed for this candidate). */
+  faabBidLowPct?: number | null;
+  faabBidHighPct?: number | null;
   faabUrgency: "HIGH" | "MEDIUM" | "LOW" | null;
   faabRationale: string | null;
   playerAvailabilityStatus: PlayerAvailabilityStatus | null;
