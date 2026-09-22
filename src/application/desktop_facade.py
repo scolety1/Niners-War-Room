@@ -3119,7 +3119,30 @@ class DesktopBackendFacade:
         """Return every currently unrostered Sleeper fantasy player."""
 
         self._require_mode("redraft")
-        selected, league_id, _owner_user_id = self._active_sleeper_context()
+        try:
+            state = self._resolve_canonical_league_state()
+        except CanonicalLeagueStateError as exc:
+            raise FacadeError(
+                "REDRAFT_FREE_AGENTS_READ_FAILED",
+                "Sleeper roster or player data could not be read. No local or remote state "
+                "was changed.",
+                status=503,
+            ) from exc
+        except (OSError, ValueError) as exc:
+            raise FacadeError(
+                "REDRAFT_FREE_AGENTS_READ_FAILED",
+                "Sleeper roster or player data could not be read. No local or remote state "
+                "was changed.",
+                status=503,
+            ) from exc
+        selected = active_profile(self.redraft_root)
+        if selected is None:  # The canonical resolver already enforces this gate.
+            raise FacadeError(
+                "SLEEPER_REDRAFT_PROFILE_REQUIRED",
+                "Activate a Sleeper-imported Redraft profile first.",
+                status=409,
+            )
+        league_id = state.provider_league_id
         ranking_warning = ""
         try:
             ranking = self._redraft_ranking_for_profile(selected.profile_id)
@@ -3133,9 +3156,21 @@ class DesktopBackendFacade:
                 "as explicitly unranked."
             )
         try:
-            sleeper = SleeperHttpClient()
-            rosters = self._sleeper_get_json(sleeper, f"league/{league_id}/rosters")
-            players = self._sleeper_get_json(sleeper, "players/nfl")
+            if state.provider == "sleeper":
+                sleeper = SleeperHttpClient()
+                rosters = self._sleeper_get_json(sleeper, f"league/{league_id}/rosters")
+                players = self._sleeper_get_json(sleeper, "players/nfl")
+            else:
+                rosters = []
+                players = {
+                    player.provider_player_id: {
+                        "full_name": player.player_name,
+                        "position": player.position,
+                        "team": player.team,
+                        "active": True,
+                    }
+                    for player in (state.available_player_pool or ())
+                }
             free_agents = sleeper_free_agent_pool(
                 rosters=rosters,
                 players=players,
@@ -3147,12 +3182,14 @@ class DesktopBackendFacade:
                 "Sleeper roster or player data could not be read. No local or remote state was changed.",
                 status=503,
             ) from exc
+        provenance = self._canonical_state_provenance(state)
         return FacadePayload(
             data={
                 "leagueId": league_id,
                 "freeAgents": list(free_agents),
                 "rankingWarning": ranking_warning,
                 "writeBehavior": "NO_SLEEPER_WRITES",
+                **({"leagueStateProvenance": provenance} if provenance else {}),
             }
         )
 
@@ -3340,12 +3377,14 @@ class DesktopBackendFacade:
                 }
             )
         rows.sort(key=lambda row: (not row["starter"], row["position"], row["playerName"]))
+        provenance = self._canonical_state_provenance(state)
         return FacadePayload(
             data={
                 "leagueId": league_id,
                 "roster": rows,
                 "rankingWarning": ranking_warning,
                 "writeBehavior": "NO_SLEEPER_WRITES",
+                **({"leagueStateProvenance": provenance} if provenance else {}),
             }
         )
 
@@ -3372,7 +3411,30 @@ class DesktopBackendFacade:
             raise FacadeError(
                 "WEEKLY_PROJECTIONS_WEEK_INVALID", "Week must be an integer from 1 through 18."
             )
-        selected, league_id, _owner_user_id = self._active_sleeper_context()
+        try:
+            state = self._resolve_canonical_league_state()
+        except CanonicalLeagueStateError as exc:
+            raise FacadeError(
+                "WEEKLY_PROJECTIONS_READ_FAILED",
+                "Weekly-projection or roster data could not be read. No local or remote "
+                f"state was changed. ({exc})",
+                status=503,
+            ) from exc
+        except (OSError, ValueError) as exc:
+            raise FacadeError(
+                "WEEKLY_PROJECTIONS_READ_FAILED",
+                "Weekly-projection or roster data could not be read. No local or remote "
+                f"state was changed. ({exc})",
+                status=503,
+            ) from exc
+        selected = active_profile(self.redraft_root)
+        if selected is None:  # The canonical resolver already enforces this gate.
+            raise FacadeError(
+                "SLEEPER_REDRAFT_PROFILE_REQUIRED",
+                "Activate a Sleeper-imported Redraft profile first.",
+                status=409,
+            )
+        league_id = state.provider_league_id
         try:
             ranking = self._redraft_ranking_for_profile(selected.profile_id)
             ranking_rows = self._redraft_ranking_payloads(ranking, None)
@@ -3411,6 +3473,7 @@ class DesktopBackendFacade:
                 f"silently reused from a prior fetch or a season-long substitute. ({exc})",
                 status=503,
             ) from exc
+        provenance = self._canonical_state_provenance(state)
         return FacadePayload(
             data={
                 "season": result.season,
@@ -3440,6 +3503,7 @@ class DesktopBackendFacade:
                     for row in result.rows
                 ],
                 "writeBehavior": "NO_SLEEPER_WRITES",
+                **({"leagueStateProvenance": provenance} if provenance else {}),
             }
         )
 
@@ -4593,7 +4657,36 @@ class DesktopBackendFacade:
         """
 
         self._require_mode("redraft")
-        selected, league_id, owner_user_id = self._active_sleeper_context()
+        try:
+            state = self._resolve_canonical_league_state()
+        except CanonicalLeagueStateError as exc:
+            if exc.kind == "OWN_ROSTER_NOT_FOUND":
+                raise FacadeError(
+                    "TRADE_ANALYSIS_ROSTER_NOT_FOUND",
+                    "The owner's Sleeper roster could not be found.",
+                    status=409,
+                ) from exc
+            raise FacadeError(
+                "TRADE_ANALYSIS_READ_FAILED",
+                "Sleeper roster or player data could not be read. No local or remote state "
+                "was changed.",
+                status=503,
+            ) from exc
+        except (OSError, ValueError) as exc:
+            raise FacadeError(
+                "TRADE_ANALYSIS_READ_FAILED",
+                "Sleeper roster or player data could not be read. No local or remote state "
+                "was changed.",
+                status=503,
+            ) from exc
+        selected = active_profile(self.redraft_root)
+        if selected is None:  # The canonical resolver already enforces this gate.
+            raise FacadeError(
+                "SLEEPER_REDRAFT_PROFILE_REQUIRED",
+                "Activate a Sleeper-imported Redraft profile first.",
+                status=409,
+            )
+        league_id = state.provider_league_id
         try:
             ranking = self._redraft_ranking_for_profile(selected.profile_id)
             ranking_rows = self._redraft_ranking_payloads(ranking, None)
@@ -4607,9 +4700,10 @@ class DesktopBackendFacade:
                 status=409,
             ) from exc
         try:
-            sleeper = SleeperHttpClient()
-            rosters = sleeper.get_json(f"league/{league_id}/rosters")
-            players = self._sleeper_get_json(sleeper, "players/nfl")
+            if state.provider == "sleeper":
+                players = self._sleeper_get_json(SleeperHttpClient(), "players/nfl")
+            else:
+                players = self._canonical_player_catalog(state)
         except (OSError, ValueError) as exc:
             raise FacadeError(
                 "TRADE_ANALYSIS_READ_FAILED",
@@ -4617,21 +4711,8 @@ class DesktopBackendFacade:
                 "was changed.",
                 status=503,
             ) from exc
-        if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
-            raise FacadeError(
-                "TRADE_ANALYSIS_READ_FAILED", "Sleeper roster response is malformed.", status=503
-            )
-        own_roster = next(
-            (roster for roster in rosters if str(roster.get("owner_id") or "") == str(owner_user_id)),
-            None,
-        )
-        if own_roster is None:
-            raise FacadeError(
-                "TRADE_ANALYSIS_ROSTER_NOT_FOUND", "The owner's Sleeper roster could not be found.",
-                status=409,
-            )
         own_resolved = resolve_roster_canonical_ids(
-            roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
+            roster_sleeper_player_ids=[player.provider_player_id for player in state.roster],
             players_catalog=players, ranking_rows=ranking_rows,
         )
         gives_resolved = resolve_roster_canonical_ids(
@@ -4755,6 +4836,7 @@ class DesktopBackendFacade:
             issues=list(evaluation.risk_flags),
         )
 
+        provenance = self._canonical_state_provenance(state)
         return FacadePayload(
             data={
                 "leagueId": league_id,
@@ -4777,6 +4859,7 @@ class DesktopBackendFacade:
                 "riskFlags": list(evaluation.risk_flags),
                 "championshipEquityNote": evaluation.championship_equity_note,
                 "writeBehavior": "NO_SLEEPER_WRITES",
+                **({"leagueStateProvenance": provenance} if provenance else {}),
             }
         )
 
@@ -4788,7 +4871,36 @@ class DesktopBackendFacade:
         """
 
         self._require_mode("redraft")
-        selected, league_id, owner_user_id = self._active_sleeper_context()
+        try:
+            state = self._resolve_canonical_league_state(include_opponent_rosters=True)
+        except CanonicalLeagueStateError as exc:
+            if exc.kind == "OWN_ROSTER_NOT_FOUND":
+                raise FacadeError(
+                    "TRADE_FINDER_ROSTER_NOT_FOUND",
+                    "The owner's Sleeper roster could not be found.",
+                    status=409,
+                ) from exc
+            raise FacadeError(
+                "TRADE_FINDER_READ_FAILED",
+                "Sleeper roster/user/player data could not be read. No local or remote state "
+                "was changed.",
+                status=503,
+            ) from exc
+        except (OSError, ValueError) as exc:
+            raise FacadeError(
+                "TRADE_FINDER_READ_FAILED",
+                "Sleeper roster/user/player data could not be read. No local or remote state "
+                "was changed.",
+                status=503,
+            ) from exc
+        selected = active_profile(self.redraft_root)
+        if selected is None:  # The canonical resolver already enforces this gate.
+            raise FacadeError(
+                "SLEEPER_REDRAFT_PROFILE_REQUIRED",
+                "Activate a Sleeper-imported Redraft profile first.",
+                status=409,
+            )
+        league_id = state.provider_league_id
         try:
             ranking = self._redraft_ranking_for_profile(selected.profile_id)
             ranking_rows = self._redraft_ranking_payloads(ranking, None)
@@ -4801,36 +4913,47 @@ class DesktopBackendFacade:
                 "governed ranking.",
                 status=409,
             ) from exc
-        try:
-            sleeper = SleeperHttpClient()
-            rosters = self._sleeper_get_json(sleeper, f"league/{league_id}/rosters")
-            users = self._sleeper_get_json(sleeper, f"league/{league_id}/users")
-            players = self._sleeper_get_json(sleeper, "players/nfl")
-        except (OSError, ValueError) as exc:
-            raise FacadeError(
-                "TRADE_FINDER_READ_FAILED",
-                "Sleeper roster/user/player data could not be read. No local or remote state "
-                "was changed.",
-                status=503,
-            ) from exc
-        if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
+        if state.opponent_rosters is None:
+            if state.provider == "espn":
+                raise FacadeError(
+                    "TRADE_FINDER_OPPONENT_ROSTERS_UNAVAILABLE",
+                    "This ESPN snapshot does not include opponent rosters, so Trade Finder "
+                    "cannot run without fabricating league state.",
+                    status=409,
+                )
             raise FacadeError("TRADE_FINDER_READ_FAILED", "Sleeper roster response is malformed.", status=503)
-        own_roster = next(
-            (roster for roster in rosters if str(roster.get("owner_id") or "") == str(owner_user_id)),
-            None,
-        )
-        if own_roster is None:
-            raise FacadeError(
-                "TRADE_FINDER_ROSTER_NOT_FOUND", "The owner's Sleeper roster could not be found.",
-                status=409,
-            )
+        players = self._canonical_player_catalog(state, include_opponents=True)
         own_resolved = resolve_roster_canonical_ids(
-            roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
+            roster_sleeper_player_ids=[player.provider_player_id for player in state.roster],
             players_catalog=players, ranking_rows=ranking_rows,
         )
-        opponent_rows = sleeper_opponent_rosters(
-            rosters=rosters, users=users, players=players, owner_user_id=owner_user_id
-        )
+        opponent_rows = [
+            {
+                "rosterId": opponent.team_id,
+                "teamName": opponent.team_name,
+                "players": [
+                    {
+                        "sleeperPlayerId": player.provider_player_id,
+                        "playerName": player.player_name,
+                        "position": player.position or "UNKNOWN",
+                        "team": player.team,
+                        "starter": player.slot == "STARTER",
+                    }
+                    for player in sorted(
+                        opponent.roster,
+                        key=lambda row: (
+                            row.slot != "STARTER",
+                            row.position,
+                            row.player_name.casefold(),
+                        ),
+                    )
+                ],
+            }
+            for opponent in sorted(
+                state.opponent_rosters,
+                key=lambda row: (row.team_name.casefold(), row.team_id),
+            )
+        ]
         opponents: list[dict[str, Any]] = []
         sleeper_id_by_canonical_id_by_roster_id: dict[str, dict[str, str]] = {}
         for opponent in opponent_rows:
@@ -4955,6 +5078,7 @@ class DesktopBackendFacade:
             trace_id=trade_finder_trace_id,
             issues=[],
         )
+        provenance = self._canonical_state_provenance(state)
         return FacadePayload(
             data={
                 "leagueId": league_id,
@@ -4998,6 +5122,7 @@ class DesktopBackendFacade:
                     for candidate in results
                 ],
                 "writeBehavior": "NO_SLEEPER_WRITES",
+                **({"leagueStateProvenance": provenance} if provenance else {}),
             }
         )
 
@@ -5040,7 +5165,36 @@ class DesktopBackendFacade:
                 "TRADE_PACKAGE_SEARCH_POSITION_REQUIRED",
                 "IMPROVE_POSITION mode requires position.", status=422,
             )
-        selected, league_id, owner_user_id = self._active_sleeper_context()
+        try:
+            state = self._resolve_canonical_league_state(include_opponent_rosters=True)
+        except CanonicalLeagueStateError as exc:
+            if exc.kind == "OWN_ROSTER_NOT_FOUND":
+                raise FacadeError(
+                    "TRADE_PACKAGE_SEARCH_ROSTER_NOT_FOUND",
+                    "The owner's Sleeper roster could not be found.",
+                    status=409,
+                ) from exc
+            raise FacadeError(
+                "TRADE_PACKAGE_SEARCH_READ_FAILED",
+                "Sleeper roster/user/player data could not be read. No local or remote state "
+                "was changed.",
+                status=503,
+            ) from exc
+        except (OSError, ValueError) as exc:
+            raise FacadeError(
+                "TRADE_PACKAGE_SEARCH_READ_FAILED",
+                "Sleeper roster/user/player data could not be read. No local or remote state "
+                "was changed.",
+                status=503,
+            ) from exc
+        selected = active_profile(self.redraft_root)
+        if selected is None:  # The canonical resolver already enforces this gate.
+            raise FacadeError(
+                "SLEEPER_REDRAFT_PROFILE_REQUIRED",
+                "Activate a Sleeper-imported Redraft profile first.",
+                status=409,
+            )
+        league_id = state.provider_league_id
         try:
             ranking = self._redraft_ranking_for_profile(selected.profile_id)
             ranking_rows = self._redraft_ranking_payloads(ranking, None)
@@ -5053,38 +5207,49 @@ class DesktopBackendFacade:
                 "the governed ranking.",
                 status=409,
             ) from exc
-        try:
-            sleeper = SleeperHttpClient()
-            rosters = sleeper.get_json(f"league/{league_id}/rosters")
-            users = sleeper.get_json(f"league/{league_id}/users")
-            players = self._sleeper_get_json(sleeper, "players/nfl")
-        except (OSError, ValueError) as exc:
-            raise FacadeError(
-                "TRADE_PACKAGE_SEARCH_READ_FAILED",
-                "Sleeper roster/user/player data could not be read. No local or remote state "
-                "was changed.",
-                status=503,
-            ) from exc
-        if not isinstance(rosters, list) or not all(isinstance(value, Mapping) for value in rosters):
+        if state.opponent_rosters is None:
+            if state.provider == "espn":
+                raise FacadeError(
+                    "TRADE_PACKAGE_SEARCH_OPPONENT_ROSTERS_UNAVAILABLE",
+                    "This ESPN snapshot does not include opponent rosters, so Trade Package "
+                    "Search cannot run without fabricating league state.",
+                    status=409,
+                )
             raise FacadeError(
                 "TRADE_PACKAGE_SEARCH_READ_FAILED", "Sleeper roster response is malformed.", status=503
             )
-        own_roster = next(
-            (roster for roster in rosters if str(roster.get("owner_id") or "") == str(owner_user_id)),
-            None,
-        )
-        if own_roster is None:
-            raise FacadeError(
-                "TRADE_PACKAGE_SEARCH_ROSTER_NOT_FOUND", "The owner's Sleeper roster could not be found.",
-                status=409,
-            )
+        players = self._canonical_player_catalog(state, include_opponents=True)
         own_resolved = resolve_roster_canonical_ids(
-            roster_sleeper_player_ids=[str(value) for value in own_roster.get("players") or []],
+            roster_sleeper_player_ids=[player.provider_player_id for player in state.roster],
             players_catalog=players, ranking_rows=ranking_rows,
         )
-        opponent_rows = sleeper_opponent_rosters(
-            rosters=rosters, users=users, players=players, owner_user_id=owner_user_id
-        )
+        opponent_rows = [
+            {
+                "rosterId": opponent.team_id,
+                "teamName": opponent.team_name,
+                "players": [
+                    {
+                        "sleeperPlayerId": player.provider_player_id,
+                        "playerName": player.player_name,
+                        "position": player.position or "UNKNOWN",
+                        "team": player.team,
+                        "starter": player.slot == "STARTER",
+                    }
+                    for player in sorted(
+                        opponent.roster,
+                        key=lambda row: (
+                            row.slot != "STARTER",
+                            row.position,
+                            row.player_name.casefold(),
+                        ),
+                    )
+                ],
+            }
+            for opponent in sorted(
+                state.opponent_rosters,
+                key=lambda row: (row.team_name.casefold(), row.team_id),
+            )
+        ]
         opponents: list[dict[str, Any]] = []
         for opponent in opponent_rows:
             opp_sleeper_ids = [str(row["sleeperPlayerId"]) for row in opponent["players"]]
@@ -5261,6 +5426,7 @@ class DesktopBackendFacade:
             trace_id=search_trace_id,
             issues=[],
         )
+        provenance = self._canonical_state_provenance(state)
         return FacadePayload(
             data={
                 "leagueId": league_id,
@@ -5273,6 +5439,7 @@ class DesktopBackendFacade:
                 "opponentsSearched": result.opponents_searched,
                 "truncated": result.truncated,
                 "writeBehavior": "NO_SLEEPER_WRITES",
+                **({"leagueStateProvenance": provenance} if provenance else {}),
             }
         )
 
@@ -8017,6 +8184,72 @@ class DesktopBackendFacade:
             "This league's data source is not supported for this tool yet.",
             status=409,
         )
+
+    @staticmethod
+    def _canonical_player_catalog(
+        state: CanonicalLeagueState, *, include_opponents: bool = False
+    ) -> dict[str, dict[str, Any]]:
+        """Project canonical players into the established Sleeper-catalog shape.
+
+        The existing identity resolver consumes only full_name/position/team,
+        so this is a shape adapter, never a new identity heuristic.
+        """
+
+        players = list(state.roster)
+        if state.available_player_pool:
+            players.extend(state.available_player_pool)
+        if include_opponents and state.opponent_rosters:
+            for opponent in state.opponent_rosters:
+                players.extend(opponent.roster)
+        return {
+            player.provider_player_id: {
+                "full_name": player.player_name,
+                "position": player.position,
+                "team": player.team,
+                "active": True,
+            }
+            for player in players
+        }
+
+    @staticmethod
+    def _canonical_state_provenance(
+        state: CanonicalLeagueState,
+    ) -> dict[str, Any] | None:
+        """Return ESPN-only source age disclosure; Sleeper payloads stay identical."""
+
+        if state.provider != "espn":
+            return None
+        age_hours: float | None = None
+        if state.retrieved_at_utc:
+            try:
+                retrieved = datetime.fromisoformat(
+                    state.retrieved_at_utc.replace("Z", "+00:00")
+                )
+                if retrieved.tzinfo is not None:
+                    age_hours = max(
+                        0.0,
+                        (datetime.now(UTC) - retrieved.astimezone(UTC)).total_seconds()
+                        / 3600.0,
+                    )
+            except ValueError:
+                age_hours = None
+        stale = age_hours is None or age_hours > 36.0
+        warning = (
+            "ESPN SNAPSHOT STALE: this result uses a point-in-time local snapshot "
+            f"retrieved {state.retrieved_at_utc or 'at an unknown time'}; refresh before "
+            "making a deadline decision."
+            if stale
+            else ""
+        )
+        return {
+            "provider": state.provider,
+            "source": state.source,
+            "retrievedAtUtc": state.retrieved_at_utc,
+            "providerAsOfUtc": state.provider_as_of_utc,
+            "ageHours": round(age_hours, 1) if age_hours is not None else None,
+            "stale": stale,
+            "warning": warning,
+        }
 
     def _redraft_ranking_for_profile(self, profile_id: str):
         try:

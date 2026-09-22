@@ -36,9 +36,10 @@ and, eventually, by each individual tool's own capability check.
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Sequence
+from typing import Literal
 
 RosterSlotKind = Literal["STARTER", "BENCH", "RESERVE"]
 ScoringCompleteness = Literal["COMPLETE", "PARTIAL", "UNKNOWN"]
@@ -119,6 +120,11 @@ class EspnFlaimSnapshot:
     # retrieved_at_utc.
     provider_as_of_utc: str | None
     source: str = "Flaim MCP (flaim.app), read-only ESPN league data"
+    # Local import provenance. Older snapshots/fixtures may omit these;
+    # the deterministic importer always records all three on activation.
+    imported_at_utc: str | None = None
+    source_capture_sha256: str | None = None
+    source_capture_name: str | None = None
 
 
 def espn_flaim_snapshot_path(redraft_root: str | Path, profile_id: str) -> Path:
@@ -240,18 +246,17 @@ def parse_espn_flaim_snapshot(raw: dict) -> EspnFlaimSnapshot:
         scoring_completeness=scoring_completeness,
         available_player_pool=available_player_pool,
         available_player_pool_coverage=pool_coverage,
-        available_player_pool_bound_description=raw.get(
-            "available_player_pool_bound_description"
-        ),
+        available_player_pool_bound_description=raw.get("available_player_pool_bound_description"),
         retrieved_at_utc=retrieved_at_utc,
         provider_as_of_utc=raw.get("provider_as_of_utc"),
         source=raw.get("source", "Flaim MCP (flaim.app), read-only ESPN league data"),
+        imported_at_utc=raw.get("imported_at_utc"),
+        source_capture_sha256=raw.get("source_capture_sha256"),
+        source_capture_name=raw.get("source_capture_name"),
     )
 
 
-def load_espn_flaim_snapshot(
-    redraft_root: str | Path, profile_id: str
-) -> EspnFlaimSnapshot | None:
+def load_espn_flaim_snapshot(redraft_root: str | Path, profile_id: str) -> EspnFlaimSnapshot | None:
     """Load a real snapshot from disk if one exists; ``None`` if it doesn't.
 
     Never raises for a simply-missing file -- that is the normal, current

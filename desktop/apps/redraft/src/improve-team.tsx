@@ -3,6 +3,7 @@ import type {
   ExternalConsensusStatus,
   KdstStreamerResult,
   RedraftBootstrap,
+  RedraftFreeAgentsResult,
   WaiverAddCandidate,
   WaiversResult,
 } from "@nwr/contracts";
@@ -32,6 +33,7 @@ import { leagueFormat } from "./league-context";
 import { STREAMER_HORIZON_OPTIONS, STREAMER_HORIZON_WEEKS, type StreamerHorizon } from "./pages";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
+import { SnapshotProvenanceNotice } from "./snapshot-provenance";
 import {
   FAAB_URGENCY_TONE,
   FREE_AGENT_COLUMNS,
@@ -1016,7 +1018,7 @@ function AllFreeAgentsTab({
   columns,
 }: {
   isSleeper: boolean;
-  result: { freeAgents: unknown[]; rankingWarning: string } | null;
+  result: RedraftFreeAgentsResult | null;
   error: NwrApiError | null;
   working: boolean;
   query: string;
@@ -1033,6 +1035,7 @@ function AllFreeAgentsTab({
     {working ? <p className="draft-feedback">Reading current Sleeper rosters…</p> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {result?.rankingWarning ? <div className="alert-strip"><strong>Ranking unavailable</strong><span>{result.rankingWarning}</span></div> : null}
+    <SnapshotProvenanceNotice provenance={result?.leagueStateProvenance} />
     {result && rows.length === 0 ? (
       <EmptyState
         title={query ? "No matches" : "No free agents"}

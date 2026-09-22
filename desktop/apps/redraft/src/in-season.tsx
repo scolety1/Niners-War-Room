@@ -29,6 +29,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { DecisionExplain } from "./decision-explain";
 import { explainHomeAction } from "./home-action-explain";
 import { explainLineupSwap, findResultingSlot } from "./lineup-explain";
+import { SnapshotProvenanceNotice } from "./snapshot-provenance";
 import { addUniqueTradeSideCandidate, tradeFinderAnalysisLinkTarget } from "./trades-explain";
 import { leagueFormat, resolveDisplayLifecycle, resolveLeagueLifecycle } from "./league-context";
 import {
@@ -911,6 +912,7 @@ export function MyRosterContent({ client, data }: { client: NwrApiClient; data: 
     {working ? <p className="draft-feedback">Reading current Sleeper roster…</p> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {result?.rankingWarning ? <div className="alert-strip"><strong>Ranking unavailable</strong><span>{result.rankingWarning}</span></div> : null}
+    <SnapshotProvenanceNotice provenance={result?.leagueStateProvenance} />
     {result ? <Panel title={`${result.roster.length} rostered players`} eyebrow="Read-only"><DataTable columns={columns} rows={result.roster as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} /></Panel> : null}
   </>;
 }

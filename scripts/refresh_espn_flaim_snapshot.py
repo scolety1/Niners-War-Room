@@ -1,103 +1,137 @@
-"""Refresh an ESPN league snapshot via Flaim (2026-09-19, design skeleton).
+"""Preview or activate a deterministic ESPN/Flaim snapshot import.
 
-STATUS AS OF THIS PASS: NOT FUNCTIONAL. This script documents the
-intended CLI contract and process for the reproducible refresh the Flaim-
-integration cycle's Worker 1 task required, but it deliberately does not
-call Flaim -- this Claude Code worker session has no Flaim MCP tool
-available to it (only the separate, coordinating session does, and only
-once the owner's `claude mcp login flaim` OAuth step completes; see
-`docs/codex/flaim_integration_20260919/LEDGER.md` for the exact status).
-Running this script raises `NotImplementedError` with that explanation,
-by design, rather than silently doing nothing or fabricating output.
-
-Intended real process, once Flaim access exists (for whichever agent/
-session performs the actual refresh):
-
-1. Resolve the target profile's real ESPN `provider_league_id` (from the
-   existing profile JSON, e.g.
-   `local_exports/redraft_v1/profiles/<profile_id>.json`).
-2. Call Flaim's real MCP tools (per the July 2026 audit's own inventory:
-   `get_league_info`, `get_roster`, `get_free_agents` -- NOT
-   `get_standings` or `get_transactions`, which remain constrained/not
-   enabled per this cycle's governance authorization -- see
-   `docs/hq/master/flaim_scoped_capability_reauthorization_v1_20260919/
-   CAPABILITY_AUTHORIZATION_MAP.md`).
-3. Transform the real response into this codebase's documented
-   `EspnFlaimSnapshot` schema (`src/services/espn_flaim_snapshot_service.py`)
-   -- classifying each roster player's slot (STARTER/BENCH/RESERVE),
-   recording each scoring setting with an honest
-   `scoring_completeness` flag, recording the available-player pool with
-   an honest `available_player_pool_coverage` flag (never COMPLETE --
-   the loader itself rejects that per the July audit's own free-agent
-   finding) and a human-readable bound description, and setting
-   `retrieved_at_utc` to the real UTC time of this fetch (never
-   inferred).
-4. Validate the transformed snapshot with
-   `parse_espn_flaim_snapshot` (raises loudly on any malformed shape)
-   before writing it.
-5. Write the validated snapshot to
-   `espn_flaim_snapshot_path(redraft_root, profile_id)` -- i.e.
-   `local_exports/redraft_v1/espn_flaim_snapshots/<profile_id>.json` --
-   mirroring the existing Sleeper import-receipt convention exactly.
-6. Never write anything back to ESPN, Sleeper, or Flaim's own
-   connected-league registry (`refresh_leagues` is Flaim's own tool for
-   that and is out of scope here) -- this process is read-only,
-   consistent with every other data-import path in this codebase.
-
-This script intentionally does NOT create a profile, does NOT modify an
-existing profile's identity fields, and does NOT touch
-`marginal_roster_utility_v2` or any governed valuation code -- it only
-ever writes to the `espn_flaim_snapshots/` directory described above.
+No Flaim/ESPN call happens here. An authenticated session first saves one
+raw capture matching ``nwr_espn_flaim_raw_capture_v1`` (documented in
+``espn_flaim_snapshot_import_service.py``), or supplies an already-shaped
+``EspnFlaimSnapshot`` for the emergency manual path. Preview is the default;
+``--activate`` is the only mode that writes local state.
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from src.services.espn_flaim_snapshot_import_service import (  # noqa: E402
+    EspnSnapshotImportError,
+    SnapshotImportExpectations,
+    activate_snapshot,
+    prepare_snapshot_import,
+)
 from src.services.espn_flaim_snapshot_service import espn_flaim_snapshot_path  # noqa: E402
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Refresh a real ESPN league snapshot via Flaim's read-only MCP tools. "
-            "NOT YET FUNCTIONAL -- see this file's module docstring."
+            "Transform/validate a saved ESPN/Flaim capture, or validate a manual "
+            "EspnFlaimSnapshot, then preview or atomically activate it. No provider writes."
         )
     )
+    parser.add_argument("--profile-id", required=True, help="Existing ESPN Redraft profile ID.")
     parser.add_argument(
-        "--profile-id",
+        "--input",
         required=True,
-        help="The existing local Redraft profile ID to refresh a snapshot for.",
+        type=Path,
+        help="Saved raw capture or already-shaped snapshot JSON file.",
+    )
+    parser.add_argument(
+        "--input-kind",
+        choices=("raw", "snapshot"),
+        default="raw",
+        help="raw = NWR capture envelope; snapshot = emergency already-shaped import.",
+    )
+    parser.add_argument(
+        "--expected-provider-league-id",
+        required=True,
+        help=(
+            "Operator-confirmed ESPN league ID; required because real ESPN profiles may store null."
+        ),
+    )
+    parser.add_argument(
+        "--expected-owner-team-id",
+        required=True,
+        help="Operator-confirmed owner team ID from the same provider retrieval.",
+    )
+    parser.add_argument(
+        "--expected-owner-team-name",
+        required=True,
+        help="Operator-confirmed owner team name from the same provider retrieval.",
     )
     parser.add_argument(
         "--redraft-root",
         type=Path,
         default=Path("local_exports/redraft_v1"),
-        help="Redraft data root (matches NWR_REDRAFT_HOME's default layout).",
+        help="Worktree-local Redraft data root.",
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--activate",
+        action="store_true",
+        help="Write atomically after validation. Omit for the default read-only preview.",
+    )
+    return parser.parse_args(argv)
 
 
-def main() -> None:
-    args = parse_args()
-    target_path = espn_flaim_snapshot_path(args.redraft_root, args.profile_id)
-    raise NotImplementedError(
-        "refresh_espn_flaim_snapshot.py is a documented design skeleton, not a working "
-        "refresh process yet. This worker session has no Flaim MCP access. Once the "
-        "owner's Flaim OAuth login completes and a session with real Flaim MCP tools is "
-        "available, that session should call Flaim's get_league_info/get_roster/"
-        "get_free_agents tools, transform the result into the schema documented in "
-        "src/services/espn_flaim_snapshot_service.py, validate it with "
-        "parse_espn_flaim_snapshot, and write it to:\n"
-        f"  {target_path}\n"
-        "See this file's module docstring for the full intended process, and "
-        "docs/codex/flaim_integration_20260919/LEDGER.md for current Flaim-access status."
+def main(argv: Sequence[str] | None = None) -> int:
+    args = parse_args(argv)
+    expectations = SnapshotImportExpectations(
+        provider_league_id=args.expected_provider_league_id,
+        owner_team_id=args.expected_owner_team_id,
+        owner_team_name=args.expected_owner_team_name,
     )
+    try:
+        profile, snapshot, source_sha256 = prepare_snapshot_import(
+            redraft_root=args.redraft_root,
+            profile_id=args.profile_id,
+            input_path=args.input,
+            input_kind=args.input_kind,
+            expectations=expectations,
+        )
+        target = espn_flaim_snapshot_path(args.redraft_root, args.profile_id)
+        print("VALID: ESPN snapshot schema and identity checks passed.")
+        print(f"Profile: {profile.profile_id} | {profile.league_name}")
+        print(
+            f"Provider league/team: {snapshot.provider_league_id} | "
+            f"{snapshot.owner_team_id} | {snapshot.owner_team_name}"
+        )
+        print(
+            f"Roster/free agents: {len(snapshot.roster)} / "
+            f"{len(snapshot.available_player_pool)} ({snapshot.available_player_pool_coverage})"
+        )
+        print(
+            f"Scoring completeness: {snapshot.scoring_completeness}; "
+            f"retrieved: {snapshot.retrieved_at_utc}"
+        )
+        print(f"Input SHA-256: {source_sha256}")
+        print(f"Target: {target}")
+        print(f"Current target exists: {'yes' if target.exists() else 'no'}")
+        if not args.activate:
+            print("PREVIEW ONLY: no files were written. Re-run with --activate to install.")
+            return 0
+        result = activate_snapshot(
+            redraft_root=args.redraft_root,
+            snapshot=snapshot,
+            input_path=args.input,
+            source_sha256=source_sha256,
+        )
+        print(f"ACTIVATED: {result.target_path}")
+        if result.backup_path is None:
+            print("Previous snapshot: none (no backup needed).")
+        else:
+            print(f"Previous snapshot preserved at: {result.backup_path}")
+        print(f"Installed SHA-256: {result.snapshot_sha256}")
+        print(f"Imported at UTC: {result.imported_at_utc}")
+        print("Reversal: copy the preserved history file back through this same importer.")
+        return 0
+    except EspnSnapshotImportError as exc:
+        print(f"REJECTED: {exc}", file=sys.stderr)
+        print("No active snapshot was changed.", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

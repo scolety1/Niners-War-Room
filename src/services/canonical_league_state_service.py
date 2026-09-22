@@ -56,8 +56,9 @@ for a later worker.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Literal, Mapping, Sequence
+from typing import Literal
 
 from src.services.espn_flaim_snapshot_service import EspnFlaimSnapshot
 from src.services.league_capability_service import (
@@ -217,9 +218,7 @@ def _sleeper_roster_player(
     rely on it producing IDENTICAL rows to the pre-conversion code."""
 
     catalog_entry = (
-        players_catalog.get(provider_player_id)
-        if isinstance(players_catalog, Mapping)
-        else None
+        players_catalog.get(provider_player_id) if isinstance(players_catalog, Mapping) else None
     )
     if isinstance(catalog_entry, Mapping):
         position = str(catalog_entry.get("position") or "")
@@ -238,8 +237,11 @@ def _sleeper_roster_player(
     else:
         slot = "BENCH"
     return CanonicalRosterPlayer(
-        provider_player_id=provider_player_id, player_name=name, position=position,
-        team=team, slot=slot,
+        provider_player_id=provider_player_id,
+        player_name=name,
+        position=position,
+        team=team,
+        slot=slot,
     )
 
 
@@ -291,8 +293,10 @@ def build_canonical_league_state_from_sleeper(
     reserve_ids = frozenset(str(v) for v in own_roster.get("reserve") or [])
     roster_players = tuple(
         _sleeper_roster_player(
-            str(raw_id), players_catalog=players_catalog,
-            starter_ids=starter_ids, reserve_ids=reserve_ids,
+            str(raw_id),
+            players_catalog=players_catalog,
+            starter_ids=starter_ids,
+            reserve_ids=reserve_ids,
         )
         for raw_id in own_roster.get("players") or []
     )
@@ -301,9 +305,7 @@ def build_canonical_league_state_from_sleeper(
     if include_opponent_rosters:
         team_names: dict[str, str] = {}
         if isinstance(users_raw, Sequence):
-            users_by_id = {
-                str(u.get("user_id")): u for u in users_raw if isinstance(u, Mapping)
-            }
+            users_by_id = {str(u.get("user_id")): u for u in users_raw if isinstance(u, Mapping)}
             for roster in rosters_raw:
                 roster_id = str(roster.get("roster_id") or "")
                 owner_id = str(roster.get("owner_id") or "")
@@ -313,16 +315,21 @@ def build_canonical_league_state_from_sleeper(
                     team_name = (
                         (metadata.get("team_name") if isinstance(metadata, Mapping) else None)
                         or user.get("display_name")
-                        or ""
+                        or user.get("username")
+                        or f"Roster {roster_id}"
                     )
                     team_names[roster_id] = str(team_name)
         opponent_rosters = tuple(
             CanonicalTeamRoster(
                 team_id=str(roster.get("roster_id") or ""),
-                team_name=team_names.get(str(roster.get("roster_id") or ""), ""),
+                team_name=(
+                    team_names.get(str(roster.get("roster_id") or ""))
+                    or f"Roster {str(roster.get('roster_id') or '')}"
+                ),
                 roster=tuple(
                     _sleeper_roster_player(
-                        str(raw_id), players_catalog=players_catalog,
+                        str(raw_id),
+                        players_catalog=players_catalog,
                         starter_ids=frozenset(str(v) for v in roster.get("starters") or []),
                         reserve_ids=frozenset(str(v) for v in roster.get("reserve") or []),
                     )
@@ -348,8 +355,11 @@ def build_canonical_league_state_from_sleeper(
             disclosures=capabilities.disclosures,
         ),
         faab=CanonicalFaabState(
-            is_faab_league=None, total_budget_dollars=None, remaining_budget_dollars=None,
-            waiver_position=None, source="NOT_FETCHED_THIS_REQUEST",
+            is_faab_league=None,
+            total_budget_dollars=None,
+            remaining_budget_dollars=None,
+            waiver_position=None,
+            source="NOT_FETCHED_THIS_REQUEST",
         ),
         available_player_pool=None,
         available_player_pool_coverage="NONE",
@@ -385,18 +395,26 @@ def build_canonical_league_state_from_espn_snapshot(
     resolved_capabilities = capabilities or capabilities_from_espn_flaim_snapshot(snapshot)
     roster_players = tuple(
         CanonicalRosterPlayer(
-            provider_player_id=player.provider_player_id, player_name=player.player_name,
-            position=player.position, team=player.team, slot=player.slot,
+            provider_player_id=player.provider_player_id,
+            player_name=player.player_name,
+            position=player.position,
+            team=player.team,
+            slot=player.slot,
         )
         for player in snapshot.roster
     )
-    available_pool = tuple(
-        CanonicalAvailablePlayer(
-            provider_player_id=player.provider_player_id, player_name=player.player_name,
-            position=player.position, team=player.team,
+    available_pool = (
+        tuple(
+            CanonicalAvailablePlayer(
+                provider_player_id=player.provider_player_id,
+                player_name=player.player_name,
+                position=player.position,
+                team=player.team,
+            )
+            for player in snapshot.available_player_pool
         )
-        for player in snapshot.available_player_pool
-    ) or None
+        or None
+    )
     return CanonicalLeagueState(
         provider="espn",
         provider_league_id=snapshot.provider_league_id,
@@ -412,8 +430,11 @@ def build_canonical_league_state_from_espn_snapshot(
             disclosures=resolved_capabilities.disclosures,
         ),
         faab=CanonicalFaabState(
-            is_faab_league=None, total_budget_dollars=None, remaining_budget_dollars=None,
-            waiver_position=None, source="UNKNOWN",
+            is_faab_league=None,
+            total_budget_dollars=None,
+            remaining_budget_dollars=None,
+            waiver_position=None,
+            source="UNKNOWN",
         ),
         available_player_pool=available_pool,
         available_player_pool_coverage=snapshot.available_player_pool_coverage,

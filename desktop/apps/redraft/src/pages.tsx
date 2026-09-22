@@ -23,6 +23,7 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { draftFormat, leagueFormat } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
+import { SnapshotProvenanceNotice } from "./snapshot-provenance";
 import { appendPlayerDetailColumn, FREE_AGENT_COLUMNS, resolveSeasonProjectionBasisCaption, useAsync, useFreeAgents } from "./weekly-shared";
 
 const POSITION_OPTIONS = ["ALL", "QB", "RB", "WR", "TE", "K", "DST"];
@@ -397,6 +398,7 @@ export function CompareContent({ client, data }: { client: NwrApiClient; data: R
     {a && b ? <CompareCards players={[a, b]} onViewPlayer={(player) => openPlayerDetail({ playerId: player.playerId, playerName: player.playerName, position: player.position, team: player.team })} /> : <EmptyState title="Two players required" message="Governed rankings must contain at least two players." />}
     {a && b && mode === "This Week" && isSleeper ? <Panel title="This week" eyebrow={weekly ? `Week ${weekly.week}` : "Reading…"}>
       {weeklyError ? <ErrorState message={weeklyError.message} recovery={weeklyError.recoveryAction} /> : null}
+      <SnapshotProvenanceNotice provenance={weekly?.leagueStateProvenance} />
       {weekly ? <div className="compare-card-grid">{[a, b].map((player) => { const row = weeklyRowFor(player.playerId); return <article key={player.playerId}><header><span className="position-pill">{player.position}</span><strong>{player.playerName}</strong></header><div><span>Projected points</span><strong>{row?.projectedPoints == null ? "—" : formatNumber(row.projectedPoints, 1)}</strong></div><div><span>Identity match</span><strong>{row?.identityMatch ?? "UNMATCHED"}</strong></div><div><span>Scoring context</span><strong>{row?.scoringContext ?? "—"}</strong></div></article>; })}</div> : null}
       {weekly ? <p className="copy-muted">Weekly projections: {weekly.providerHealth.provider} · updated {weekly.sourceAsOf}</p> : null}
     </Panel> : null}
@@ -615,6 +617,7 @@ export function FreeAgentsPage({ client, data }: { client: NwrApiClient; data: R
     {working ? <p className="draft-feedback">Reading current Sleeper rosters…</p> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {result?.rankingWarning ? <div className="alert-strip"><strong>Ranking unavailable</strong><span>{result.rankingWarning}</span></div> : null}
+    <SnapshotProvenanceNotice provenance={result?.leagueStateProvenance} />
     {result ? <Panel title={`${result.freeAgents.length} unrostered players`} eyebrow="AVAILABLE · all fantasy positions" action={isSleeper ? <div className="profile-edit-actions"><Link to="/waivers">Open Waiver analysis</Link><Link to="/compare">Open Compare</Link></div> : undefined}><DataTable columns={columns} rows={result.freeAgents as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.sleeperPlayerId)} /></Panel> : null}
   </>;
 }

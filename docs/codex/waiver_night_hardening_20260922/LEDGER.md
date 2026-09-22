@@ -381,3 +381,129 @@ Not touched: `marginal_roster_utility_v2`, any governed Redraft valuation code, 
 4. Resolve the `TAXI` slot-kind gap (item 5 above) before attempting `redraft_weekly_lineup` or `redraft_opponent_rosters`.
 5. Re-audit whether `_league_capabilities_for_profile`'s "Sleeper receipt wins if both exist" rule (in `capabilities_for_profile`) needs revisiting once real snapshots exist alongside real receipts for the same profile id in practice, not just the synthetic stale-receipt edge case this pass's tests constructed.
 6. The `docs/codex/flaim_integration_20260919/LEDGER.md`-documented open re-audit of the September 22 Flaim evidence (free-agents/transactions) from Worker 1's Phase 0.3 is still open and still not this worker's scope.
+
+---
+
+# WORKER 4 (CODEX) - ESPN INGESTION + CANONICAL CALLER CONVERSIONS (2026-09-22)
+
+Worker 4 starting HEAD: `c32a8a9a feat: add provider-neutral canonical league-state boundary, convert My Roster` on `upgrade/nwr-prospective-outcomes-v1-20260914` (verified before any edit). This pass did not invoke Flaim, did not write to Sleeper or ESPN, did not alter either real ESPN profile identity, and did not touch `marginal_roster_utility_v2`, the governed Redraft valuation model, or Dynasty's governed valuation computation. The two pre-existing untracked `local_exports.backup-*` directories were left untouched.
+
+Evidence labels below are deliberate: **INSPECTED CODE** is a source-level finding, **ACTUAL TEST RESULT** is an executed automated check, **LIVE OBSERVATION** is a real HTTP/process observation, and **INFERENCE** is explicitly marked when used.
+
+## Deterministic ESPN/Flaim transform, validate, and activate pipeline
+
+**INSPECTED CODE.** `scripts/refresh_espn_flaim_snapshot.py` is no longer a `NotImplementedError` placeholder. It is an operator CLI over the new zero-network-I/O `src/services/espn_flaim_snapshot_import_service.py`. Provider fetching remains outside NWR code: an authenticated session calls only the authorized Flaim read tools and saves their factual output; this pipeline transforms, validates, previews, and activates that saved data. No Flaim or ESPN network client was added.
+
+The raw input contract is one explicit combined JSON envelope named `nwr_espn_flaim_raw_capture_v1`, with `profile_id`, `retrieved_at_utc`, and three named sections: `get_league_info`, `get_roster`, and `get_free_agents`. This is documented in the import service with an example. **INFERENCE / ASSUMPTION:** because Flaim access was unavailable, these field names are an NWR-owned best-effort capture contract, not a claim about Flaim's private wire format. The transformer intentionally does not guess aliases; tomorrow's authenticated operator must map the three real tool responses into the documented envelope while preserving their factual values.
+
+The transform reuses the real `EspnFlaimSnapshot` dataclass and `parse_espn_flaim_snapshot`; no second snapshot schema exists. It enforces:
+
+- required profile/league/season/team/owner identity and a non-empty roster;
+- only the existing `STARTER`, `BENCH`, and `RESERVE` roster slot kinds;
+- `get_free_agents.coverage` only `BOUNDED` or `NONE`; `COMPLETE` is rejected, `BOUNDED` requires an exact bound description, and `NONE` cannot contain rows;
+- scoring is `UNKNOWN` when no settings exist, `PARTIAL` when any provider field is unmapped or any current scalar NWR scoring input is absent, and `COMPLETE` only when all current scalar NWR fields are explicitly mapped and no provider field is unresolved;
+- UTC-aware retrieval/provider timestamps.
+
+**INSPECTED CODE.** Preview and activation validate the selected local profile before any write: provider must be `espn`; snapshot `profile_id`, normalized league name, season, and team count must match the profile; provider league ID, owner team ID, and normalized owner team name must match explicit operator-confirmed CLI arguments; and a non-empty profile provider league ID must also match the snapshot. This avoids filling either real ESPN profile's still-undetermined ID from an assumption.
+
+The exact active path remains the established one: `local_exports/redraft_v1/espn_flaim_snapshots/<profile_id>.json` (or the equivalent under `--redraft-root` in tests). Activation records the existing retrieval/source fields plus real `imported_at_utc`, `source_capture_sha256`, and `source_capture_name` provenance. Serialization is deterministically sorted and is round-tripped through the authoritative parser before any byte is staged.
+
+**INSPECTED CODE + ACTUAL TEST RESULT.** Writes are same-directory atomic writes: create a unique `.<target>.<uuid>.tmp`, write, flush, `fsync`, then `os.replace`. A simulated failure at final target replacement preserved the previous target byte-for-byte and removed the temporary file. If a target already exists, its exact bytes are first preserved atomically under `espn_flaim_snapshots/history/<profile_id>/<old-retrieved-at>--<old-sha256-prefix>.json`. The CLI reports that backup path. A collision with different bytes is rejected. A malformed existing target is not overwritten; the operator is told to preserve/repair it. Thus replacement is visible and reversible, never a blind overwrite.
+
+**ACTUAL TEST RESULT.** Synthetic-only fixtures in `tests/test_espn_flaim_snapshot_import_pipeline.py` cover end-to-end raw transform/validation/activation, `COMPLETE` pool rejection, missing roster rows, team mismatch, strict manual `COMPLETE` scoring rejection, atomic-failure survival, exact prior-byte backup, preview-before-activation, provenance, and identity mismatch before any write. No private real snapshot fixture was created or committed.
+
+## Emergency manual import path
+
+**INSPECTED CODE + ACTUAL TEST RESULT.** The same CLI is also the Phase 18 fallback; `--input-kind snapshot` accepts an already-shaped `EspnFlaimSnapshot`, routes it through the same parser, semantic completeness checks, profile/league/team identity checks, provenance injection, backup, and atomic activation code. There is no parallel importer.
+
+Preview is the default and performs zero writes. `--activate` is required to change the active snapshot. Success output names the target, counts, scoring/pool completeness, source hash, import time, any history backup, and reversal instruction. Rejection returns exit 2, explains the exact reason, and states that the active snapshot was unchanged. `python scripts/refresh_espn_flaim_snapshot.py --help` executed successfully with the complete operator contract.
+
+## Canonical-state caller conversions
+
+**INSPECTED CODE.** The exact Worker 3 five-step pattern was applied, one caller at a time, to all five requested methods:
+
+1. `redraft_free_agents`
+2. `redraft_weekly_projections`
+3. `redraft_trade_analysis`
+4. `redraft_trade_finder`
+5. `redraft_trade_package_search`
+
+Each now enters through `_resolve_canonical_league_state()` and translates `CanonicalLeagueStateError` to its own pre-existing facade error contract. Existing resolution/scoring/search services remain the authorities; the conversion only changes the provider data boundary. The Sleeper builder still consumes the same already-fetched live response and performs no extra I/O.
+
+Caller-specific behavior:
+
+- Free Agents uses `CanonicalLeagueState.available_player_pool` for ESPN and never mislabels roster players as available. Sleeper still obtains the exact same complete league-filtered free-agent set.
+- Weekly Projections gets league identity through canonical state, then keeps the existing read-only weekly projection provider because weekly projections are not stored in canonical state.
+- Trade Analysis resolves the owner's canonical roster plus the canonical player catalog (roster and bounded available pool) through the unchanged identity resolver and unchanged trade evaluator.
+- Trade Finder and Trade Package Search request canonical opponent rosters for Sleeper. The current ESPN snapshot schema has only the owner's roster, so a valid ESPN snapshot receives explicit honest 409 errors (`TRADE_FINDER_OPPONENT_ROSTERS_UNAVAILABLE` / `TRADE_PACKAGE_SEARCH_OPPONENT_ROSTERS_UNAVAILABLE`) rather than fabricated opponents. Synthetic regression tests cover this forward path.
+
+`CanonicalLeagueState`'s Sleeper opponent-team-name fallback was aligned with the old live code's exact order (`team_name`, `display_name`, username, then `Roster <id>`), and opponent rows retain the old team-name/team-ID sort. Dedicated real-Sleeper-shaped regression tests assert the response shape and values for each converted caller.
+
+As required, `redraft_weekly_lineup` and `redraft_opponent_rosters` were not converted. `redraft_league_workspace_context`, `redraft_data_health`, and waivers were also not converted; the first two already degrade honestly and waivers was outside this pass's requested five.
+
+## Snapshot freshness disclosure
+
+**INSPECTED CODE + ACTUAL TEST RESULT.** Optional `leagueStateProvenance` was added to the contracts for My Roster and all five converted results. It is omitted for Sleeper, preserving Sleeper response keys byte-for-byte. For ESPN it reports provider/source, provider and retrieval timestamps, age in hours, stale state, and a warning once the snapshot is older than 36 hours. A shared `SnapshotProvenanceNotice` displays the warning on My Roster, Free Agents, weekly projections, Trade Analysis, and Trade Package Search/Find surfaces. The stale ESPN payload and UI contract paths are covered by tests/typecheck; no synthetic snapshot was installed for either real ESPN profile.
+
+## Live A/B verification - both real Sleeper leagues
+
+**LIVE OBSERVATION.** Before restarting the non-auto-reloading backend, normalized response summaries were captured for all five endpoints on both real Sleeper profiles. After restart on the final code, the same real HTTP calls were repeated. The serialized normalized summaries were exactly equal (`same: true`), including every top-level payload key. Trace IDs were deliberately excluded because calls create new trace records; all decision values were compared.
+
+- Fantasy Gamers (`1312983576827920384`, profile `941b99ade350410391b1b67c0890af79`): Free Agents 726 rows, first IDs `8126/3163/1479`; weekly week 3 had 880 rows, 494 matched, 2738 unmatched, top projections `4881|23.8028`, `9221|23.257`, `9488|22.466`, provider `OK|LIVE`; Trade Analysis canonical give/receive `00-0039918` / `00-0039910`, net marginal utility `-10.52`, ROS delta `-203.9`; Trade Finder 15 candidates, first `00-0036252` for `00-0040730` from roster 10; Trade Package Search 5 candidates, 900 packages evaluated, 8 opponents, truncated true, first `1-for-2` package sending `00-0036252` for `00-0040734,00-0040730`.
+- Las Vegas Enginerds (`1344772855908290560`, profile `6687d2b3aa21450ea0fc9e1792d461ff`): Free Agents 629 rows, first IDs `11655/11647/1479`; weekly week 3 had 880 rows, 494 matched, 2738 unmatched, top projections `4881|20.16`, `4984|17.3707`, `8183|16.8957`, provider `OK|LIVE`; Trade Analysis canonical give/receive `00-0034796` / `00-0040691`, net marginal utility `0.91`, ROS delta `17.57`; Trade Finder 15 candidates, first `00-0039491` for `00-0036555` from roster 3; Trade Package Search 5 candidates, 450 packages evaluated, 9 opponents, truncated false, first `2-for-1` package sending `00-0035229,00-0038935` for `00-0040876`.
+
+This is stronger than HTTP-status-only verification: counts, ordering samples, identities, evaluated-package counts, decision values, provider health, truncation, and complete payload key sets all matched before/after.
+
+## Live ESPN verification - both real profiles remain honest
+
+**LIVE OBSERVATION.** No real snapshot exists and no fake file was placed in the real snapshot directory. After activating each real ESPN profile, all five converted endpoints returned HTTP 409 without a crash or fabricated data:
+
+- KHA, profile `fb1c49402c7644a99120197d41344bbb`: Free Agents, Weekly Projections, Trade Analysis, Trade Finder, and Trade Package Search each returned `SLEEPER_REDRAFT_LEAGUE_DATA_REQUIRED` with the existing `No verified league data available...` message.
+- 403 N 18th, profile `4b4a990faf124ce7a5d612537ba5943b`: the same five HTTP 409 responses with the same code/message.
+
+This is the expected pre-snapshot capability gate and is unchanged from tonight's prior live evidence. It is distinct from the forward-path opponent-roster-specific 409s, which become reachable only after a validated ESPN owner-roster snapshot exists.
+
+## Test and static verification
+
+**ACTUAL TEST RESULT.** Final results after all code changes:
+
+- New Worker 4 suites alone: **16 passed** (`test_espn_flaim_snapshot_import_pipeline.py` plus `test_redraft_canonical_state_caller_conversions.py`).
+- Required combined backend set: **136 passed, 4 failed**. The four failures are the exact same named pre-existing failures documented by Worker 3: `test_dynasty_facade_composes_real_governed_workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`, and `test_facade_has_no_streamlit_or_app_component_dependency`. No new failure name appeared.
+- The combined command included `test_canonical_league_state_service.py`, `test_redraft_my_roster_canonical_state_conversion.py`, `test_redraft_waivers_faab_pct_fix.py`, both Worker 4 suites, the identity/trade-finder and trade-package wiring suites, capability tests, waiver context/reserve tests, facade architecture wiring, and `test_desktop_application_api.py`.
+- Focused Ruff check on the importer CLI/service, snapshot/canonical services, and both new tests: **all checks passed**. Whole-file `desktop_facade.py` still has 104 legacy Ruff findings (mostly E501 plus import ordering); this pass did not autoformat unrelated facade code.
+- `python -m py_compile` on modified Python passed.
+- `npm --prefix desktop run typecheck`: passed.
+- Full `npx vitest run`: **30 files, 503 tests passed**. Its machine-timing benchmark artifact was restored to exact HEAD content and is not part of this change.
+- `npm run build:redraft`: passed earlier in this pass; only the existing bundle-size warning was emitted.
+- `git diff --check`: passed.
+
+## Final dev processes
+
+**LIVE OBSERVATION.** The original backend PID 32480 and frontend PID 27280 were identity-checked before any stop. The backend was restarted because Python does not auto-reload. Windows keeps redirected stdin open for the process lifetime, so the final launch keeps runtime-only startup input/log files in the OS temp directory, not in the repository; the workspace credential/log copies were removed and no credential is staged.
+
+- Backend PID **33944**, `python.exe ... C:\NWR\prospective-outcomes-v1\scripts\run_nwr_desktop_api.py --host 127.0.0.1 --port 18742 --mode redraft --repo-root C:\NWR\prospective-outcomes-v1`, command line verified via `Get-CimInstance`, listener verified on `127.0.0.1:18742`.
+- Frontend PID **27280**, checkout-local Vite preview command verified, listener on `127.0.0.1:1422`.
+- Fantasy Gamers restored as final active profile (`941b99ade350410391b1b67c0890af79`).
+
+## Files changed
+
+- `src/services/espn_flaim_snapshot_import_service.py` (new deterministic transform/identity/backup/atomic activation service)
+- `scripts/refresh_espn_flaim_snapshot.py` (real preview/activate CLI and manual fallback)
+- `src/services/espn_flaim_snapshot_service.py` (import provenance fields/parser support)
+- `src/services/canonical_league_state_service.py` (exact legacy Sleeper opponent-name fallback)
+- `src/application/desktop_facade.py` (five canonical caller conversions, canonical catalog/provenance helpers, ESPN freshness metadata)
+- `desktop/packages/contracts/src/index.ts` (optional league-state provenance contract)
+- `desktop/apps/redraft/src/snapshot-provenance.tsx` (new shared warning component)
+- `desktop/apps/redraft/src/pages.tsx`, `in-season.tsx`, `improve-team.tsx`, `trades.tsx` (snapshot freshness display)
+- `tests/test_espn_flaim_snapshot_import_pipeline.py` (new, synthetic only)
+- `tests/test_redraft_canonical_state_caller_conversions.py` (new regression suite)
+- this ledger.
+
+## Remaining work for future workers
+
+1. A Flaim-authenticated session must make the authorized read calls and map the factual results into `nwr_espn_flaim_raw_capture_v1`; preview must be reviewed before activation. This pass could not validate Flaim's actual response field names and does not claim it did.
+2. Do not convert `redraft_weekly_lineup` until `TAXI` is added in lockstep to `CanonicalRosterPlayer` and `EspnRosterPlayer` and the real Sleeper taxi exclusion has lossless regression coverage.
+3. Do not convert `redraft_opponent_rosters` until its legacy row shape, including `unresolvedSleeperPlayerIds`, is reconciled with canonical opponent rows. The current ESPN snapshot also has no opponent-roster collection, which is why the two converted trade-search callers honestly block for an otherwise valid ESPN snapshot.
+4. Waivers still uses the old Sleeper context and requires a dedicated canonical conversion that preserves live FAAB/acquisition-state semantics. Workspace Context and Data Health remain lower priority because they already degrade honestly.
+5. Re-audit the September 22 Flaim evidence before changing the deliberate bounded-only free-agent rule or authorizing transactions. This pass preserved both constraints.
+6. Once the first real private snapshot is obtained, live-verify My Roster and the converted Free Agents/Weekly Projections/Trade Analysis paths end-to-end, inspect the >36-hour stale warning in the real UI, and keep the private snapshot outside Git.

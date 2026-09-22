@@ -21,6 +21,7 @@ import { TradeSidePicker, type TradeSide } from "./in-season";
 import { leagueFormat } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
+import { SnapshotProvenanceNotice } from "./snapshot-provenance";
 import { addUniqueTradeSideCandidate, describeTradePackageSearchError, explainTradeAnalysis, explainTradePackageCandidate, isTradeAnalysisStale, isTradePackageSearchStale } from "./trades-explain";
 import { resolveSeasonProjectionBasisCaption, useAsync } from "./weekly-shared";
 
@@ -280,6 +281,7 @@ function AnalyzeTab({
       </div>
     </Panel>
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+    <SnapshotProvenanceNotice provenance={result?.leagueStateProvenance} />
     {stale && !working ? (
       <div className="alert-strip alert-strip--pending" role="status">
         <strong>This trade has changed.</strong>
@@ -437,6 +439,7 @@ function FindTradesTab({
     ) : null}
 
     {softenedError ? <ErrorState message={softenedError.message} recovery={softenedError.recovery} /> : null}
+    <SnapshotProvenanceNotice provenance={result?.leagueStateProvenance} />
     {working && !result ? <p className="draft-feedback">Searching every live opponent roster for a real package…</p> : null}
     {stale ? (
       <div className="alert-strip alert-strip--pending" role="status">

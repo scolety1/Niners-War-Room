@@ -995,11 +995,22 @@ export interface RedraftFreeAgent {
   rosterStatus: "AVAILABLE";
 }
 
+export interface LeagueStateProvenance {
+  provider: "espn";
+  source: string;
+  retrievedAtUtc: string | null;
+  providerAsOfUtc: string | null;
+  ageHours: number | null;
+  stale: boolean;
+  warning: string;
+}
+
 export interface RedraftFreeAgentsResult {
   leagueId: string;
   freeAgents: RedraftFreeAgent[];
   rankingWarning: string;
   writeBehavior: string;
+  leagueStateProvenance?: LeagueStateProvenance;
 }
 
 export interface RedraftOpponentPlayer {
@@ -1093,6 +1104,7 @@ export interface WeeklyProjectionsResult {
   providerHealth: WeeklyProjectionProviderHealth;
   rows: WeeklyProjectionRow[];
   writeBehavior: string;
+  leagueStateProvenance?: LeagueStateProvenance;
 }
 
 export interface WeeklyLineupSlotPlayer {
@@ -1501,6 +1513,7 @@ export interface TradeAnalysisResult {
   riskFlags: string[];
   championshipEquityNote: string | null;
   writeBehavior: string;
+  leagueStateProvenance?: LeagueStateProvenance;
 }
 
 export interface TradeFinderCandidate {
@@ -1538,6 +1551,7 @@ export interface TradeFinderResult {
   decisionEnvelope?: DecisionResultEnvelope;
   candidates: TradeFinderCandidate[];
   writeBehavior: string;
+  leagueStateProvenance?: LeagueStateProvenance;
 }
 
 /**
@@ -1618,6 +1632,7 @@ export interface TradePackageSearchResult {
    * is true. */
   truncated: boolean;
   writeBehavior: string;
+  leagueStateProvenance?: LeagueStateProvenance;
 }
 
 export interface WeeklyHomeAction {
@@ -1666,6 +1681,7 @@ export interface RedraftMyRosterResult {
   roster: RedraftMyRosterPlayer[];
   rankingWarning: string;
   writeBehavior: string;
+  leagueStateProvenance?: LeagueStateProvenance;
 }
 
 export interface RedraftSleeperResyncResult {
