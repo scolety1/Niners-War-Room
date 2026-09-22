@@ -252,7 +252,11 @@ def test_faab_context_is_honestly_unavailable_when_league_settings_cannot_be_rea
             return {"week": 2}
         raise AssertionError(f"unexpected Sleeper GET path in test: {path}")
 
-    monkeypatch.setattr(desktop_facade_module.SleeperHttpClient, "get_json", _fake_get_json_no_settings)
+    monkeypatch.setattr(
+        desktop_facade_module.SleeperHttpClient,
+        "get_json",
+        _fake_get_json_no_settings,
+    )
 
     result = facade.redraft_waivers(mode="REST_OF_SEASON")
     ctx = result.data["faabContext"]
@@ -271,6 +275,26 @@ def test_faab_context_is_honestly_unavailable_when_league_settings_cannot_be_rea
     # The rest of the endpoint must remain fully functional -- a
     # league-settings read failure is honestly degraded, never fatal.
     assert result.data["addCandidates"]
+    assert all(row["faabBidLowDollars"] is None for row in result.data["addCandidates"])
+
+
+def test_faab_context_is_unavailable_when_type_is_known_but_real_balance_is_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade, _profile_id = _facade_with_sleeper_league(tmp_path)
+    monkeypatch.setattr(
+        desktop_facade_module.SleeperHttpClient,
+        "get_json",
+        _make_fake_get_json({"waiver_type": 2, "playoff_week_start": 15}),
+    )
+
+    result = facade.redraft_waivers(mode="REST_OF_SEASON")
+    ctx = result.data["faabContext"]
+
+    assert ctx["isFaabLeague"] is True
+    assert ctx["source"] == "UNAVAILABLE"
+    assert ctx["totalBudgetDollars"] is None
+    assert ctx["remainingBudgetDollars"] is None
     assert all(row["faabBidLowDollars"] is None for row in result.data["addCandidates"])
 
 

@@ -319,6 +319,11 @@ def rank_waiver_candidates(
         )
     candidates: list[WaiverCandidate] = []
     for row in free_agents:
+        candidate_position = str(row.get('position') or '')
+        # Keep the live pool complete, but never recommend a position the
+        # configured roster cannot hold (Las Vegas has no DST slot).
+        if not _position_has_roster_slot(candidate_position, profile):
+            continue
         sleeper_id = str(row.get("sleeperPlayerId") or "")
         canonical_id = str(row.get("playerId") or "")
         position = str(row.get("position") or "")
@@ -398,6 +403,21 @@ def rank_waiver_candidates(
     return tuple(candidates[:limit])
 
 
+def _position_has_roster_slot(position: str, profile: LeagueProfile) -> bool:
+    normalized = str(position or '').upper().strip()
+    roster = profile.roster
+    if normalized == 'QB':
+        return roster.qb > 0 or roster.superflex > 0
+    if normalized in {'RB', 'WR', 'TE'}:
+        dedicated = {'RB': roster.rb, 'WR': roster.wr, 'TE': roster.te}[normalized]
+        return dedicated > 0 or roster.flex > 0 or roster.superflex > 0
+    if normalized == 'K':
+        return roster.k > 0
+    if normalized == 'DST':
+        return roster.dst > 0
+    return False
+
+
 def rank_drop_candidates(
     *,
     roster_canonical_ids: Sequence[str],
@@ -429,6 +449,40 @@ def rank_drop_candidates(
         )
     drops.sort(key=lambda candidate: (candidate.marginal_utility is None, candidate.marginal_utility or 0.0))
     return tuple(drops)
+
+
+def filter_legal_drop_candidates(
+    *,
+    candidates: Sequence[DropCandidate],
+    canonical_id_by_sleeper_id: Mapping[str, str],
+    starter_sleeper_player_ids: Sequence[str] = (),
+    reserve_sleeper_player_ids: Sequence[str] = (),
+    taxi_sleeper_player_ids: Sequence[str] = (),
+    locked_sleeper_player_ids: Sequence[str] = (),
+) -> tuple[DropCandidate, ...]:
+    """Keep only bench players that can participate in a legal drop move."""
+
+    excluded_sleeper_ids = {
+        str(value)
+        for values in (
+            starter_sleeper_player_ids,
+            reserve_sleeper_player_ids,
+            taxi_sleeper_player_ids,
+            locked_sleeper_player_ids,
+        )
+        for value in values
+        if str(value) and str(value) != '0'
+    }
+    excluded_canonical_ids = {
+        canonical_id_by_sleeper_id[sleeper_id]
+        for sleeper_id in excluded_sleeper_ids
+        if sleeper_id in canonical_id_by_sleeper_id
+    }
+    return tuple(
+        candidate
+        for candidate in candidates
+        if candidate.canonical_player_id not in excluded_canonical_ids
+    )
 
 
 def pair_add_drop(
@@ -507,7 +561,9 @@ def pair_add_drop(
                 AddDropPairing(
                     add=add,
                     drop=None,
-                    drop_required=False,
+                    # No verified open slot + no legal drop candidate is
+                    # not an add-only transaction. A drop remains required.
+                    drop_required=True,
                     add_utility_vs_original_roster=add.marginal_utility,
                     add_utility_vs_post_drop_roster=None,
                     drop_utility_vs_post_drop_roster=None,
@@ -579,7 +635,8 @@ def suggest_faab_bids(
     candidates: Sequence[WaiverCandidate],
     remaining_budget_dollars: int,
     weeks_remaining: int,
-    total_budget_dollars: int = 100,
+    total_budget_dollars: int | None = None,
+    transaction_net_utility_by_sleeper_id: Mapping[str, float | None] | None = None,
 ) -> tuple[FaabBidSuggestion, ...]:
     """Contextual bid range, not a static universal percentage table --
     every candidate's range is computed from the REAL, live utility
@@ -588,13 +645,12 @@ def suggest_faab_bids(
     likely-competition figure is fabricated -- this app has no real signal
     for that.
 
-    Two floors/gates, applied BEFORE the positive-utility pricing formula
-    below (which is itself unchanged): an unmatched identity (no real
-    signal at all) and a zero-or-negative real `marginal_roster_utility_v2`
-    value (a real signal that says "not worth paying for") both produce a
-    non-positive ($0) result, never a fabricated positive bid -- see the
-    two distinctly-worded `rationale` strings below for why they are
-    different reasons, not the same "no bid" state.
+    Floors/gates are applied BEFORE the positive-utility pricing formula
+    below (which is itself unchanged): an unmatched identity, no legal
+    add/drop transaction, a nonpositive legal transaction net, or a
+    zero-or-negative `marginal_roster_utility_v2` value all produce $0.
+    Their rationales remain distinct so missing evidence, transaction
+    illegality, and modeled nonpositive value are never conflated.
 
     KNOWN LIMITATION, surfaced to the owner (see `FaabTab`'s caption in
     `improve-team.tsx`, not just this comment): the POSITIVE dollar amounts
@@ -606,14 +662,25 @@ def suggest_faab_bids(
     more), not a guaranteed market-clearing price.
     """
 
-    if remaining_budget_dollars < 0 or total_budget_dollars <= 0 or weeks_remaining < 0:
+    if (
+        remaining_budget_dollars < 0
+        or (total_budget_dollars is not None and total_budget_dollars <= 0)
+        or weeks_remaining < 0
+    ):
         raise ValueError("Invalid FAAB context.")
+
+    def _pricing_utility(candidate: WaiverCandidate) -> float | None:
+        if transaction_net_utility_by_sleeper_id is None:
+            return candidate.marginal_utility
+        return transaction_net_utility_by_sleeper_id.get(candidate.sleeper_player_id)
+
     utilities = sorted(
         (candidate.marginal_utility for candidate in candidates if candidate.marginal_utility is not None),
         reverse=True,
     )
     suggestions: list[FaabBidSuggestion] = []
     for candidate in candidates:
+        pricing_utility = _pricing_utility(candidate)
         if candidate.marginal_utility is None:
             suggestions.append(
                 FaabBidSuggestion(
@@ -626,6 +693,26 @@ def suggest_faab_bids(
                         "real marginal-utility signal exists to price a bid from. No positive bid is "
                         "suggested. A $0 result here does NOT mean the player has no value -- only that "
                         "NWR has no real signal to price a claim on him."
+                    ),
+                )
+            )
+            continue
+        if pricing_utility is None:
+            suggestions.append(
+                FaabBidSuggestion(
+                    canonical_player_id=candidate.canonical_player_id,
+                    player_name=candidate.player_name,
+                    bid_low_pct=0.0,
+                    bid_high_pct=0.0,
+                    bid_low_dollars=0,
+                    bid_high_dollars=0,
+                    urgency=FAAB_URGENCY_TIER['LOW_VALUE'],
+                    percentile_in_pool=None,
+                    rationale=(
+                        'No legal transaction value -- this roster has no verified open slot '
+                        'and NWR could not identify a legal drop candidate for this add. '
+                        'No positive bid is '
+                        'suggested for a move that is not currently constructible.'
                     ),
                 )
             )
@@ -647,6 +734,26 @@ def suggest_faab_bids(
         # "a real signal WAS computed, and it says not to pay" -- the two
         # are different reasons for a non-positive result and must read
         # differently to the owner, per the directive.
+        if transaction_net_utility_by_sleeper_id is not None and pricing_utility <= 0:
+            suggestions.append(
+                FaabBidSuggestion(
+                    canonical_player_id=candidate.canonical_player_id,
+                    player_name=candidate.player_name,
+                    bid_low_pct=0.0,
+                    bid_high_pct=0.0,
+                    bid_low_dollars=0,
+                    bid_high_dollars=0,
+                    urgency=FAAB_URGENCY_TIER['LOW_VALUE'],
+                    percentile_in_pool=round(percentile, 3),
+                    rationale=(
+                        'Modeled nonpositive add/drop value -- the legal transaction net '
+                        f'utility is {pricing_utility:.1f}. No positive bid is suggested for '
+                        'a move that does not '
+                        'improve this roster after its required drop.'
+                    ),
+                )
+            )
+            continue
         if candidate.marginal_utility <= 0:
             suggestions.append(
                 FaabBidSuggestion(

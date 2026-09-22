@@ -586,6 +586,10 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
 // Exported for the Improve Team workspace (`improve-team.tsx`), which
 // reuses this exact panel for its own ADD-DROP tab -- one detail view,
 // not a second competing one.
+export function formatKnownWaiverNumber(value: number | null | undefined): string {
+  return value == null ? 'unavailable' : formatNumber(value, 1);
+}
+
 export function AddDropDetail({
   add,
   waivers,
@@ -599,15 +603,14 @@ export function AddDropDetail({
 }) {
   const pairing = waivers.addDropPairings.find((row) => row.add.canonicalPlayerId === add.canonicalPlayerId) ?? null;
   const suggestedDrop: WaiverDropCandidate | null = pairing?.drop ?? null;
-  // dropCandidates IS the full current roster (rank_drop_candidates ranks
-  // every rostered player, weakest first) -- the only real source this app
-  // has for a position-depth breakdown, so it's reused rather than
-  // re-derived some other way.
-  const depthBefore = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const drop of waivers.dropCandidates) counts[drop.position] = (counts[drop.position] ?? 0) + 1;
-    return counts;
-  }, [waivers.dropCandidates]);
+  // The backend supplies counts from the actual full Sleeper roster. Drop
+  // candidates are intentionally only the legally droppable bench subset,
+  // so deriving roster construction from that list would omit starters,
+  // reserve/taxi assets, and out-of-model K/DST identities.
+  const depthBefore = useMemo(
+    () => ({ ...waivers.rosterPositionCounts }),
+    [waivers.rosterPositionCounts],
+  );
   const depthAfter = useMemo(() => {
     const counts = { ...depthBefore };
     if (suggestedDrop) counts[suggestedDrop.position] = Math.max(0, (counts[suggestedDrop.position] ?? 0) - 1);
@@ -638,14 +641,14 @@ export function AddDropDetail({
             ) : (
               <p className="copy-muted">
                 A real weekly-lineup evaluation was not computed for this candidate this pass -- this is
-                NOT the same as "would not start". Weekly projected points: {formatNumber(add.weeklyProjectedPoints ?? 0, 1)}.
+                NOT the same as "would not start". Weekly projected points: {formatKnownWaiverNumber(add.weeklyProjectedPoints)}.
               </p>
             )
           ) : <p className="copy-muted">Switch to THIS WEEK mode above for a weekly-lineup estimate.</p>}
           <h3>Rest-of-season impact</h3>
           <p>
-            Replacement value {formatNumber(add.rosReplacementValue ?? 0, 1)} · Marginal utility {formatNumber(add.marginalUtility ?? 0, 1)}
-            {suggestedDrop ? <> vs. dropping {suggestedDrop.playerName} ({formatNumber(suggestedDrop.marginalUtility ?? 0, 1)}) — net {formatNumber(pairing?.netMarginalUtility ?? 0, 1)}</> : null}
+            Replacement value {formatKnownWaiverNumber(add.rosReplacementValue)} · Marginal utility {formatKnownWaiverNumber(add.marginalUtility)}
+            {suggestedDrop ? <> vs. dropping {suggestedDrop.playerName} ({formatKnownWaiverNumber(suggestedDrop.marginalUtility)}) — net {formatKnownWaiverNumber(pairing?.netMarginalUtility)}</> : null}
           </p>
           {/* Waiver Night V1 (Section 4, add/drop context repair): the "net"
               above is now a same-context comparison -- both sides measured
@@ -657,15 +660,17 @@ export function AddDropDetail({
           {suggestedDrop && pairing?.contextLabel === "SAME_CONTEXT_MARGINAL_COMPARISON" ? (
             <p className="copy-muted">
               Same-context comparison: adding {add.playerName} after dropping {suggestedDrop.playerName} would be worth{" "}
-              {formatNumber(pairing?.addUtilityVsPostDropRoster ?? 0, 1)} (vs. {formatNumber(pairing?.addUtilityVsOriginalRoster ?? 0, 1)} against your roster as it stands today, before any drop);{" "}
-              {suggestedDrop.playerName}'s own value on that same post-drop roster is {formatNumber(pairing?.dropUtilityVsPostDropRoster ?? 0, 1)}.
+              {formatKnownWaiverNumber(pairing?.addUtilityVsPostDropRoster)} (vs. {formatKnownWaiverNumber(pairing?.addUtilityVsOriginalRoster)} against your roster as it stands today, before any drop);{" "}
+              {suggestedDrop.playerName}'s own value on that same post-drop roster is {formatKnownWaiverNumber(pairing?.dropUtilityVsPostDropRoster)}.
               This is a same-context marginal comparison, not a total-roster or completed-transaction value.
             </p>
           ) : null}
           <h3>Status / risk</h3>
           <p>{add.marginalUtilityExplanation}{suggestedDrop ? <><br /><span className="copy-muted">Drop rationale: {suggestedDrop.explanation}</span></> : null}</p>
           <h3>FAAB recommendation</h3>
-          {add.faabBidLowDollars == null ? <p className="copy-muted">No FAAB estimate available for this candidate.</p> : (
+          {add.faabBidLowDollars == null ? <p className="copy-muted">No FAAB estimate available for this candidate.</p> : add.faabBidLowDollars <= 0 ? (
+            <p className="copy-muted">No positive FAAB bid is recommended. {add.faabRationale}</p>
+          ) : (
             <p>
               Suggested bid <strong>${add.faabBidLowDollars}–${add.faabBidHighDollars}</strong>{" "}
               <StatusBadge tone={FAAB_URGENCY_TONE[add.faabUrgency ?? ""] ?? "review"} label={`${add.faabUrgency ?? "unknown"} urgency`} />
@@ -679,6 +684,8 @@ export function AddDropDetail({
           {!suggestedDrop ? (
             pairing?.contextLabel === "OPEN_ROSTER_SLOT_ADD_ONLY" ? (
               <p className="copy-muted">NWR verified a real open roster slot on your bench -- this add is legal without dropping anyone.</p>
+            ) : pairing?.contextLabel === "NO_DROP_CANDIDATE_AVAILABLE" ? (
+              <p className="copy-muted">This roster is full and NWR found no legal bench drop. The add is not currently executable; do not treat it as a completed move.</p>
             ) : (
               <p className="copy-muted">NWR did not suggest a drop pairing for this add -- pick one from the candidates below, or add without dropping if you have an open bench slot.</p>
             )

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { verdictFor } from "./in-season";
+import { formatKnownWaiverNumber, verdictFor } from "./in-season";
 
 function tradeResult(overrides: { netMarginalUtility: number; rosValueDelta: number }) {
   return {
@@ -51,5 +51,13 @@ describe("Redraft Trade Analysis verdict", () => {
       label: "Close",
       tone: "review",
     });
+  });
+});
+
+describe("Add/Drop missing-value honesty", () => {
+  it("renders a missing projection or utility as unavailable, never numeric zero", () => {
+    expect(formatKnownWaiverNumber(null)).toBe("unavailable");
+    expect(formatKnownWaiverNumber(undefined)).toBe("unavailable");
+    expect(formatKnownWaiverNumber(0)).toBe("0.0");
   });
 });

@@ -1338,10 +1338,10 @@ export interface WaiverAddDropPairing {
   add: WaiverAddCandidate;
   drop: WaiverDropCandidate | null;
   /** `false` only for a real, verified open non-reserve roster slot
-   * (`contextLabel === "OPEN_ROSTER_SLOT_ADD_ONLY"`) or when this roster
-   * genuinely has no drop candidates at all -- never inferred from
-   * anything else. When `false`, `drop` is `null`: this add is legal on
-   * its own, never a fabricated forced pairing. */
+   * (`contextLabel === "OPEN_ROSTER_SLOT_ADD_ONLY"`). A full roster with
+   * no legal drop candidate keeps this `true` and reports
+   * `NO_DROP_CANDIDATE_AVAILABLE`; it is not misrepresented as an add-only
+   * move. */
   dropRequired: boolean;
   /** The add's own marginal value against the roster exactly as it stands
    * today -- identical to `add.marginalUtility`, kept here too so both
@@ -1383,6 +1383,31 @@ export interface WaiverRosterSlotContext {
   status: "OPEN_SLOT_AVAILABLE" | "NO_OPEN_SLOT" | "UNVERIFIED_ROSTER_SLOTS";
   rosterSlotsTotal: number | null;
   rosterSlotsOccupied: number | null;
+  dropEligibility?: {
+    status: 'LEGAL_BENCH_ONLY';
+    legalDropCandidateCount: number;
+    excludedStarterCount: number;
+    excludedReserveCount: number;
+    excludedTaxiCount: number;
+    excludedLockedCount: number;
+    gameLockStatus: 'NOT_EVALUATED_REST_OF_SEASON' | 'PENDING' | 'OK' | 'UNAVAILABLE';
+    disclosure: string;
+  };
+  rosterPositionCounts?: Record<string, number>;
+  freeAgentPool?: {
+    source: 'SLEEPER_LIVE';
+    retrievedAtUtc: string;
+    coverage: 'COMPLETE_UNROSTERED_POOL';
+    disclosure: string;
+  };
+  acquisition?: {
+    availabilityMeaning: 'UNROSTERED_ONLY';
+    waiverStatusAvailable: false;
+    waiverClearTimeAvailable: false;
+    recentTransactionsAvailable: false;
+    disclosure: string;
+    valuationHorizonDisclosure: string;
+  };
 }
 
 /**
@@ -1457,6 +1482,10 @@ export interface WaiversResult {
   decisionEnvelope?: DecisionResultEnvelope;
   faabContext: WaiverFaabContext;
   rosterSlotContext: WaiverRosterSlotContext;
+  dropEligibilityContext: NonNullable<WaiverRosterSlotContext['dropEligibility']>;
+  rosterPositionCounts: Record<string, number>;
+  freeAgentPoolContext: NonNullable<WaiverRosterSlotContext['freeAgentPool']>;
+  acquisitionContext: NonNullable<WaiverRosterSlotContext['acquisition']>;
   unmatchedRosterSleeperPlayerIds: string[];
   /**
    * NWR Full Cycle V1 (Worker 7): a readable label/reason per entry in

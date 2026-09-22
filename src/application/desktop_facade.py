@@ -226,6 +226,7 @@ from src.services.weekly_lineup_optimizer_service import (
 from src.services.weekly_game_lock_service import compute_weekly_game_lock
 from src.services.waiver_engine_service import (
     describe_unmatched_roster_players,
+    filter_legal_drop_candidates,
     pair_add_drop,
     rank_drop_candidates,
     rank_waiver_candidates,
@@ -3923,6 +3924,7 @@ class DesktopBackendFacade:
             rosters = self._sleeper_get_json(sleeper, f"league/{league_id}/rosters")
             players = self._sleeper_get_json(sleeper, "players/nfl")
             free_agents = sleeper_free_agent_pool(rosters=rosters, players=players, rankings=ranking_rows)
+            free_agent_pool_retrieved_at = datetime.now(UTC).isoformat(timespec='seconds')
         except (FantasyProsProviderError, OSError, ValueError) as exc:
             raise FacadeError(
                 "WAIVERS_READ_FAILED",
@@ -4094,6 +4096,18 @@ class DesktopBackendFacade:
             players_catalog=players, ranking_rows=ranking_rows,
         )
         manual_assets = self._manual_assets_for_profile(selected.profile_id)
+        raw_player_ids = [str(value) for value in (own_roster.get('players') or [])]
+        raw_starter_ids = {
+            str(value) for value in (own_roster.get('starters') or [])
+            if str(value) and str(value) != '0'
+        }
+        if is_faab_league is True and budget_scenario is None and not can_compute_faab:
+            # Knowing that the league uses FAAB is not the same as knowing
+            # this roster's remaining balance. Never label a missing live
+            # balance as a complete live budget read.
+            faab_context['source'] = 'UNAVAILABLE'
+        raw_reserve_ids = [str(value) for value in (own_roster.get('reserve') or [])]
+        raw_taxi_ids = [str(value) for value in (own_roster.get('taxi') or [])]
         # NWR Waiver Night V1 (Worker 3, Work Unit 5): `redraft_my_roster()`
         # has no reserve/IR field (see docs/codex/waiver_night_v1/LEDGER.md,
         # Worker 2's disclosed gap) -- a player parked on IR occupies a
@@ -4108,12 +4122,6 @@ class DesktopBackendFacade:
         # reserve players right now, so this exact wrong-recommendation
         # could not be reproduced against the owner's own live data; a
         # dedicated test fixture below constructs one to verify the fix.
-        reserve_canonical_ids = {
-            resolved.canonical_id_by_sleeper_id[str(raw_id)]
-            for raw_id in (own_roster.get("reserve") or [])
-            if str(raw_id) in resolved.canonical_id_by_sleeper_id
-        }
-
         # NWR Sunday Readiness overnight cycle, Worker 3: moved up from just
         # after `add_candidates` (unchanged logic/inputs, neither depends on
         # `add_candidates`) so the THIS_WEEK weekly-lineup-gain evaluation
@@ -4125,10 +4133,26 @@ class DesktopBackendFacade:
             manual_assets=manual_assets, player_names=resolved.player_names_by_canonical_id,
             player_positions=resolved.player_positions_by_canonical_id,
         )
-        drop_candidates = tuple(
-            candidate for candidate in drop_candidates_all
-            if candidate.canonical_player_id not in reserve_canonical_ids
+        drop_candidates = filter_legal_drop_candidates(
+            candidates=drop_candidates_all,
+            canonical_id_by_sleeper_id=resolved.canonical_id_by_sleeper_id,
+            starter_sleeper_player_ids=raw_starter_ids,
+            reserve_sleeper_player_ids=raw_reserve_ids,
+            taxi_sleeper_player_ids=raw_taxi_ids,
         )
+        drop_eligibility_context = {
+            'status': 'LEGAL_BENCH_ONLY',
+            'legalDropCandidateCount': len(drop_candidates),
+            'excludedStarterCount': len(raw_starter_ids),
+            'excludedReserveCount': len(raw_reserve_ids),
+            'excludedTaxiCount': len(raw_taxi_ids),
+            'excludedLockedCount': 0,
+            'gameLockStatus': 'NOT_EVALUATED_REST_OF_SEASON' if mode == 'REST_OF_SEASON' else 'PENDING',
+            'disclosure': (
+                'Drop candidates exclude current starters plus reserve/IR and taxi players. '
+                'Game-lock legality is verified in THIS_WEEK mode.'
+            ),
+        }
         sleeper_id_by_canonical_id = {
             canonical_id: sleeper_id for sleeper_id, canonical_id in resolved.canonical_id_by_sleeper_id.items()
         }
@@ -4163,6 +4187,15 @@ class DesktopBackendFacade:
         raw_reserve_ids = [str(value) for value in (own_roster.get("reserve") or [])]
         raw_taxi_ids = [str(value) for value in (own_roster.get("taxi") or [])]
         occupied_non_reserve_slots = len(raw_player_ids) - len(raw_reserve_ids) - len(raw_taxi_ids)
+        roster_position_counts: dict[str, int] = {}
+        for sleeper_id in raw_player_ids:
+            catalog_row = players.get(sleeper_id)
+            if not isinstance(catalog_row, Mapping):
+                continue
+            roster_position = str(catalog_row.get('position') or 'UNKNOWN').upper().strip()
+            if roster_position == 'DEF':
+                roster_position = 'DST'
+            roster_position_counts[roster_position] = roster_position_counts.get(roster_position, 0) + 1
         if roster_positions is not None:
             open_slot_available: bool | None = occupied_non_reserve_slots < len(roster_positions)
             open_slot_status = "OPEN_SLOT_AVAILABLE" if open_slot_available else "NO_OPEN_SLOT"
@@ -4239,6 +4272,29 @@ class DesktopBackendFacade:
             _THIS_WEEK_IMPACT_EVAL_LIMIT = 60
             try:
                 game_lock = compute_weekly_game_lock(season=selected.season, week=week)
+                drop_eligibility_context['gameLockStatus'] = game_lock.source_status
+                if game_lock.source_status == 'OK':
+                    locked_sleeper_ids = {
+                        sleeper_id
+                        for sleeper_id in raw_player_ids
+                        if isinstance(players.get(sleeper_id), Mapping)
+                        and str(players[sleeper_id].get('team') or '').upper().strip() in game_lock.locked_teams
+                    }
+                    locked_canonical_ids = {
+                        resolved.canonical_id_by_sleeper_id[sleeper_id]
+                        for sleeper_id in locked_sleeper_ids
+                        if sleeper_id in resolved.canonical_id_by_sleeper_id
+                    }
+                    drop_candidates = filter_legal_drop_candidates(
+                        candidates=drop_candidates_all,
+                        canonical_id_by_sleeper_id=resolved.canonical_id_by_sleeper_id,
+                        starter_sleeper_player_ids=raw_starter_ids,
+                        reserve_sleeper_player_ids=raw_reserve_ids,
+                        taxi_sleeper_player_ids=raw_taxi_ids,
+                        locked_sleeper_player_ids=locked_sleeper_ids,
+                    )
+                    drop_eligibility_context['excludedLockedCount'] = len(locked_canonical_ids)
+                    drop_eligibility_context['legalDropCandidateCount'] = len(drop_candidates)
                 locked_teams = sorted(game_lock.locked_teams) if game_lock.source_status == "OK" else ()
                 own_roster_weekly_candidates = build_roster_candidates(
                     roster_sleeper_player_ids=raw_player_ids,
@@ -4299,7 +4355,7 @@ class DesktopBackendFacade:
         # into `drop_candidates`/`drop_candidates_all` above (computed
         # earlier so the THIS_WEEK weekly-gain evaluation could reuse the
         # same real weakest-drop candidate) -- reused here unchanged.
-        pairings = pair_add_drop(
+        all_pairings = pair_add_drop(
             add_candidates=add_candidates,
             drop_candidates=drop_candidates,
             owner_roster_canonical_ids=resolved.canonical_player_ids,
@@ -4307,10 +4363,16 @@ class DesktopBackendFacade:
             ranking=ranking,
             manual_assets=manual_assets,
             open_slot_available=open_slot_available,
-            top_n=10,
+            top_n=len(add_candidates),
         )
-        # `suggest_faab_bids` itself (the pricing formula) is completely
-        # unchanged -- this call is only ever made with a genuine effective
+        pairings = all_pairings[:10]
+        transaction_net_utility_by_sleeper_id = {
+            pairing.add.sleeper_player_id: pairing.net_marginal_utility
+            for pairing in all_pairings
+        }
+        # The positive-utility pricing formula remains unchanged; Worker 5
+        # adds only the legal transaction-net gate. This call is made with
+        # a genuine effective
         # budget (`can_compute_faab`, computed above); a non-FAAB or
         # budget-unavailable league gets an empty `faab_by_id` instead of a
         # call seeded with a fabricated default, so every candidate's
@@ -4320,6 +4382,7 @@ class DesktopBackendFacade:
             suggest_faab_bids(
                 candidates=add_candidates, remaining_budget_dollars=effective_remaining_budget,
                 weeks_remaining=effective_weeks_remaining, total_budget_dollars=effective_total_budget,
+                transaction_net_utility_by_sleeper_id=transaction_net_utility_by_sleeper_id,
             )
             if can_compute_faab
             else ()
@@ -4581,6 +4644,32 @@ class DesktopBackendFacade:
                 "decisionEnvelope": waivers_envelope.to_dict(),
                 "faabContext": faab_context,
                 "rosterSlotContext": roster_slot_context,
+                "dropEligibilityContext": drop_eligibility_context,
+                "rosterPositionCounts": roster_position_counts,
+                "freeAgentPoolContext": {
+                    "source": "SLEEPER_LIVE",
+                    "retrievedAtUtc": free_agent_pool_retrieved_at,
+                    "coverage": "COMPLETE_UNROSTERED_POOL",
+                    "disclosure": (
+                        "Fetched from this selected league during this request; roster ownership is not "
+                        "cached across requests."
+                    ),
+                },
+                "acquisitionContext": {
+                    "availabilityMeaning": "UNROSTERED_ONLY",
+                    "waiverStatusAvailable": False,
+                    "waiverClearTimeAvailable": False,
+                    "recentTransactionsAvailable": False,
+                    "disclosure": (
+                        "NWR knows that these players are unrostered in this league, but does not know "
+                        "whether each is on waivers or an immediate free agent, when a waiver would clear, "
+                        "or recent winning/failed bids. Verify claim timing in Sleeper."
+                    ),
+                    "valuationHorizonDisclosure": (
+                        "Waiver utility is current-season redraft/ROS value only; it is not a dynasty stash "
+                        "or long-term asset valuation."
+                    ),
+                },
                 "unmatchedRosterSleeperPlayerIds": list(resolved.unmatched_sleeper_player_ids),
                 "unmatchedRosterSleeperPlayers": [
                     {

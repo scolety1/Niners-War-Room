@@ -27,7 +27,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { DecisionExplain } from "./decision-explain";
-import { explainStreamerPlay, explainWaiverTarget, resolveFaabDisplay } from "./improve-team-explain";
+import {
+  explainStreamerPlay,
+  explainWaiverTarget,
+  hasRetainedRowsAfterFailedRefresh,
+  hasTrustworthyFaabBudget,
+  resolveFaabDisplay,
+} from "./improve-team-explain";
 import { AddDropDetail } from "./in-season";
 import { leagueFormat } from "./league-context";
 import { STREAMER_HORIZON_OPTIONS, STREAMER_HORIZON_WEEKS, type StreamerHorizon } from "./pages";
@@ -313,6 +319,14 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
       ))}
     </nav>
 
+    {waivers?.freeAgentPoolContext ? (
+      <p className="copy-muted">
+        Free-agent pool: live Sleeper read at {waivers.freeAgentPoolContext.retrievedAtUtc}.{" "}
+        {waivers.acquisitionContext.disclosure}
+        {" "}{waivers.acquisitionContext.valuationHorizonDisclosure}
+      </p>
+    ) : null}
+
     {tab === "targets" ? (
       <TargetsTab
         addRows={addRows}
@@ -456,6 +470,7 @@ function TargetsTab({
         ranking -- see `resolveSeasonProjectionBasisCaption`. */}
     <p className="copy-muted">{resolveSeasonProjectionBasisCaption(seasonSourceAsOf)}</p>
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+    {hasRetainedRowsAfterFailedRefresh(error, waivers) ? <p className="copy-muted">The refresh failed. Rows below are from the last successful read and are not confirmed current.</p> : null}
     {waivers?.rankingWarning ? <div className="alert-strip"><strong>Ranking unavailable</strong><span>{waivers.rankingWarning}</span></div> : null}
     {mode === "THIS_WEEK" ? <ProviderStatusLine health={waivers?.weeklyProviderHealth ?? null} /> : null}
     {working && !waivers ? <p className="draft-feedback">Reading current waiver targets…</p> : null}
@@ -588,7 +603,11 @@ function AddDropTab({
 
   const pairingColumns: TableColumn[] = [
     { key: "addName", label: "Add", sort: "text", render: (row) => (row as unknown as (typeof pairingRows)[number]).add.playerName },
-    { key: "dropName", label: "Drop", sort: "text", render: (row) => (row as unknown as (typeof pairingRows)[number]).drop?.playerName ?? "— (no drop needed)" },
+    { key: "dropName", label: "Drop", sort: "text", render: (row) => {
+      const pairing = row as unknown as (typeof pairingRows)[number];
+      if (pairing.drop) return pairing.drop.playerName;
+      return pairing.contextLabel === "NO_DROP_CANDIDATE_AVAILABLE" ? "No legal drop available" : "— (no drop needed)";
+    } },
     { key: "netMarginalUtility", label: "Net marginal utility", sort: "number", align: "right", render: (row) => { const value = (row as unknown as (typeof pairingRows)[number]).netMarginalUtility; return value == null ? "—" : formatNumber(value, 1); } },
     { key: "action", label: "", render: (row) => <Button variant="secondary" onClick={() => setSelectedAddId((row as unknown as (typeof pairingRows)[number]).add.canonicalPlayerId)}>View</Button> },
   ];
@@ -600,6 +619,7 @@ function AddDropTab({
       <Button icon="activity" variant="secondary" onClick={reload} disabled={working}>{working ? "Reading…" : "Refresh"}</Button>
     </div>
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+    {hasRetainedRowsAfterFailedRefresh(error, waivers) ? <p className="copy-muted">The refresh failed. Add/drop rows below are from the last successful read and are not confirmed current.</p> : null}
     {waivers ? <>
       {view === "Available to add" ? (
         <Panel title="Available to add" eyebrow={`${addRows.length} shown`}>
@@ -724,7 +744,7 @@ function FaabTab({
   // frontend `useState(100)` defaults, indistinguishable from a genuine
   // live $100/$100 read. Now `faabContext.source === "UNAVAILABLE"` is
   // surfaced explicitly and NEVER silently defaulted.
-  if (!faabContext || faabContext.source === "UNAVAILABLE" || faabContext.isFaabLeague === null) {
+  if (!hasTrustworthyFaabBudget(faabContext)) {
     return <>
       {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
       <EmptyState
@@ -734,8 +754,8 @@ function FaabTab({
     </>;
   }
 
-  const perWeekBudget = (faabContext.weeksRemaining ?? 0) > 0 && faabContext.remainingBudgetDollars != null
-    ? faabContext.remainingBudgetDollars / (faabContext.weeksRemaining as number)
+  const perWeekBudget = faabContext.weeksRemaining > 0
+    ? faabContext.remainingBudgetDollars / faabContext.weeksRemaining
     : faabContext.remainingBudgetDollars;
 
   // `display` is derived ONLY from `faabContext` (the same resolved
@@ -754,9 +774,9 @@ function FaabTab({
 
   const beginScenario = () => {
     setBudgetScenario({
-      remainingBudgetDollars: faabContext.remainingBudgetDollars ?? 100,
-      totalBudgetDollars: faabContext.totalBudgetDollars ?? 100,
-      weeksRemaining: faabContext.weeksRemaining ?? 14,
+      remainingBudgetDollars: faabContext.remainingBudgetDollars,
+      totalBudgetDollars: faabContext.totalBudgetDollars,
+      weeksRemaining: faabContext.weeksRemaining,
     });
   };
   const updateScenario = (patch: Partial<FaabBudgetScenario>) => {

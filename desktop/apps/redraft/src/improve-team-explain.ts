@@ -53,9 +53,14 @@ export function explainWaiverTarget(
   alternativeAdd: WaiverAddCandidate | null,
 ): WaiverTargetExplanation {
   const drop = pairing?.drop ?? null;
-  const headline = drop ? `ADD ${add.playerName} / DROP ${drop.playerName}` : `ADD ${add.playerName}`;
+  const noLegalDrop = pairing?.contextLabel === 'NO_DROP_CANDIDATE_AVAILABLE';
+  const headline = drop
+    ? `ADD ${add.playerName} / DROP ${drop.playerName}`
+    : noLegalDrop
+      ? `TARGET ${add.playerName} -- NO LEGAL DROP AVAILABLE`
+      : `ADD ${add.playerName}`;
 
-  const bid = add.faabBidLowDollars != null && add.faabBidHighDollars != null
+  const bid = add.faabBidLowDollars != null && add.faabBidLowDollars > 0 && add.faabBidHighDollars != null
     ? `$${add.faabBidLowDollars}–${add.faabBidHighDollars}${add.faabUrgency ? ` · ${add.faabUrgency} urgency` : ""}`
     : null;
 
@@ -85,7 +90,9 @@ export function explainWaiverTarget(
 
   return {
     headline,
-    why: add.marginalUtilityExplanation || "Ranked by real marginal roster utility.",
+    why: noLegalDrop
+      ? `${add.marginalUtilityExplanation} This roster has no verified open slot or legal drop candidate, so this is not currently an executable claim.`
+      : add.marginalUtilityExplanation || "Ranked by real marginal roster utility.",
     bid,
     thisWeekImpact,
     rosImpact,
@@ -95,8 +102,8 @@ export function explainWaiverTarget(
     // is reserved for a genuine close-call SIGNAL this endpoint does not
     // emit for waivers, so tone stays "recommended" rather than guessing
     // one from a raw utility magnitude.
-    tone: "recommended",
-    confidence: null,
+    tone: noLegalDrop ? 'neutral' : 'recommended',
+    confidence: noLegalDrop ? 'LOW' : null,
   };
 }
 
@@ -137,6 +144,29 @@ export interface WaiverFaabDisplay {
    * differ if they kept typing after the request was sent). */
   alertHeadline: string | null;
   alertBody: string | null;
+}
+
+export function hasTrustworthyFaabBudget(
+  faabContext: WaiverFaabContext | null | undefined,
+): faabContext is WaiverFaabContext & {
+  totalBudgetDollars: number;
+  remainingBudgetDollars: number;
+  weeksRemaining: number;
+} {
+  if (!faabContext || faabContext.source === 'UNAVAILABLE' || faabContext.isFaabLeague !== true) return false;
+  if (
+    faabContext.totalBudgetDollars == null
+    || faabContext.remainingBudgetDollars == null
+    || faabContext.weeksRemaining == null
+  ) return false;
+  return faabContext.budgetMode !== 'SCENARIO' || faabContext.scenario !== null;
+}
+
+export function hasRetainedRowsAfterFailedRefresh(
+  error: unknown,
+  waivers: unknown,
+): boolean {
+  return error != null && waivers != null;
 }
 
 export function resolveFaabDisplay(faabContext: WaiverFaabContext): WaiverFaabDisplay {

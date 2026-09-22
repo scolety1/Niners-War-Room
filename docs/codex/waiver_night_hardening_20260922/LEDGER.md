@@ -507,3 +507,111 @@ This is the expected pre-snapshot capability gate and is unchanged from tonight'
 4. Waivers still uses the old Sleeper context and requires a dedicated canonical conversion that preserves live FAAB/acquisition-state semantics. Workspace Context and Data Health remain lower priority because they already degrade honestly.
 5. Re-audit the September 22 Flaim evidence before changing the deliberate bounded-only free-agent rule or authorizing transactions. This pass preserved both constraints.
 6. Once the first real private snapshot is obtained, live-verify My Roster and the converted Free Agents/Weekly Projections/Trade Analysis paths end-to-end, inspect the >36-hour stale warning in the real UI, and keep the private snapshot outside Git.
+
+---
+
+# WORKER 5 (CODEX) - WAIVER ENGINE + FAAB + ADD/DROP HARDENING (2026-09-22)
+
+Worker 5 starting HEAD: `27310502 feat: harden ESPN ingestion and canonical league callers` on `upgrade/nwr-prospective-outcomes-v1-20260914` (verified before edits). The two pre-existing untracked `local_exports.backup-*` directories were left untouched. This pass made no provider writes, did not use Flaim, did not change KHA/403 identity, did not touch `marginal_roster_utility_v2` or `governed_asset_registry_service.py`, and did not change any governed valuation weight/formula.
+
+Evidence labels are strict: **INSPECTED CODE** is a source finding, **ACTUAL TEST RESULT** is an executed automated check, **LIVE OBSERVATION** is a real HTTP/provider/process observation, and **INFERENCE** is used only where stated.
+
+## Reproducible bugs fixed
+
+### 1. Actual starters were offered as drops
+
+**LIVE OBSERVATION, BEFORE FIX.** Fantasy Gamers' highest-ranked drop was Rashod Bateman while he was in Sleeper's real current starter list. Las Vegas Enginerds offered nine real current starters among its drop candidates: Jalen Coker, Xavier Worthy, Luther Burden, Lamar Jackson, Jake Ferguson, David Montgomery, Jameson Williams, Chase Brown, and De'Von Achane. The cause was direct: `rank_drop_candidates` ranked the full resolved roster and the facade removed only reserve IDs; it never removed `own_roster.starters`.
+
+**INSPECTED CODE + FIX.** New pure `filter_legal_drop_candidates` filters starter, reserve/IR, taxi, and (when verified in THIS_WEEK mode) already-locked Sleeper IDs through the existing Sleeper-to-canonical identity map. REST_OF_SEASON does not pretend game-lock data was checked. The facade now exposes `dropEligibilityContext` with legal count, excluded counts, game-lock status, and a disclosure. Reserve/IR exclusion remains intact and is now on the same shared path. No starter/drop utility formula changed.
+
+**ACTUAL TEST RESULT.** `tests/test_redraft_waivers_starter_drop_exclusion_fix.py` proves a starter is absent from both drop rows and pairings, a locked bench player is excluded, and the legal bench player remains. The prior reserve-specific suite also passed.
+
+**LIVE OBSERVATION, AFTER FIX.** Direct read-only Sleeper roster GETs plus the NWR waiver response showed zero actual-starter/drop overlap in both leagues: Fantasy Gamers (15 players, 9 starters, 6 legal drops) and Las Vegas (26 players, 10 starters, 14 legal drops).
+
+### 2. A full roster with no legal drop was mislabeled as add-only
+
+**INSPECTED CODE + FIX.** `pair_add_drop` used `dropRequired: false` both for a verified open slot and for the opposite condition: no legal drop on a full/unverified roster. The latter now keeps `dropRequired: true`, `drop: null`, `netMarginalUtility: null`, and `contextLabel: NO_DROP_CANDIDATE_AVAILABLE`. The UI says the target is not currently executable instead of saying no drop is needed. FAAB is $0 for this unconstructible transaction.
+
+**ACTUAL TEST RESULT.** The dedicated full-roster fixture asserts no crash, no fabricated drop, no add-only claim, and zero bid. Frontend explanation tests assert `NO LEGAL DROP AVAILABLE`, neutral/LOW framing, and no positive bid label.
+
+### 3. Positive standalone add value could produce a positive bid despite nonpositive legal add/drop value
+
+**INSPECTED CODE.** FAAB pricing received only each add's standalone `marginalUtility`; it did not receive the required-drop pairing's transaction net. Therefore the existing nonpositive-utility floor did not protect a positive standalone add whose legal add/drop move was neutral or harmful.
+
+**FIX.** The facade evaluates all 25 add/drop pairings internally (still serializes the existing top 10), passes a per-Sleeper-ID legal transaction net into `suggest_faab_bids`, and gates to $0 when the transaction is absent or nonpositive. The positive-utility percentile/urgency/season-taper pricing branch is unchanged. Distinct rationales separate unknown identity, no legal transaction, nonpositive transaction, and nonpositive standalone value.
+
+**ACTUAL TEST RESULT.** `tests/test_redraft_waivers_transaction_net_faab_fix.py` reproduces positive standalone utility `8.0` with transaction net `-0.01` and verifies a $0 range; a positive transaction still prices from the real remaining balance ($37 fixture). Existing zero/negative standalone tests also passed. The UI no longer formats `$0-$0` as a BID.
+
+### 4. Position-ineligible adds could enter recommendations
+
+**INSPECTED CODE + FIX.** `rank_waiver_candidates` did not reject a position that the profile cannot roster. It now retains the complete free-agent pool for ownership truth but skips recommendation candidates with no configured compatible starter slot. This is especially important for Las Vegas, whose real configuration has `dst=0`.
+
+**ACTUAL TEST RESULT.** `tests/test_redraft_waivers_position_eligibility_fix.py` supplies a ranked JAX DST to a no-DST profile and proves it is not recommended.
+
+**LIVE OBSERVATION.** Las Vegas returned 25 skill-position adds and zero DST adds after restart. No governed K/DST or skill-player valuation formula changed.
+
+### 5. Budget/freshness/missing-value UI could imply confidence NWR did not have
+
+**INSPECTED CODE + FIX.** The backend already separated live remaining budget from initial budget, but a confirmed FAAB league with missing live balance was still labeled `SLEEPER_LIVE`; the frontend also retained `$100` scenario fallbacks. The facade now reports `faabContext.source: UNAVAILABLE` if league type is known but the real total or remaining balance is missing. The frontend requires real total, remaining, and weeks values (or a complete echoed scenario), contains no `$100` fallback, and never presents a number when the balance is unavailable.
+
+The waiver response now includes a per-request `freeAgentPoolContext.retrievedAtUtc` and says the pool is a live selected-league read. If a refresh fails after a prior success, retained rows are explicitly labeled last-successful/not-current rather than silently appearing fresh. Initial retrieval failures still fail closed as structured `WAIVERS_READ_FAILED`/503; the backend does not turn a failed fetch into a current empty pool.
+
+The Add/Drop detail previously derived roster construction from `dropCandidates`, which is now correctly only a legal bench subset and was never the full roster. It now uses backend `rosterPositionCounts` built from the actual full raw Sleeper roster, including K/DST and reserve identities. Missing weekly/ROS/net values no longer use `?? 0`; they render `unavailable`, while a real zero still renders `0.0`.
+
+**ACTUAL TEST RESULT.** The missing-live-balance facade test returns `UNAVAILABLE` and null bid fields. `improve-team-faab-budget.test.ts` rejects incomplete live/scenario budget contexts. `in-season.test.ts` distinguishes missing from real zero. The starter-drop fixture proves two rostered RBs remain in `rosterPositionCounts` while only one is legally droppable, and verifies freshness/acquisition disclosures. A pure UI test verifies retained rows become stale-labeled only after a failed refresh.
+
+## Audited paths that were already correct or remain honestly missing
+
+- **League-specific availability - INSPECTED CODE + LIVE OBSERVATION.** `sleeper_free_agent_pool` removes raw Sleeper IDs rostered anywhere in the selected league on every request. After the fix, both real leagues had 25 recommended adds and zero IDs rostered anywhere in that league. Pools are genuinely independent: the pre-fix live audit found Fantasy Gamers roster assets NE DST and Rashod Bateman free in Las Vegas, while Las Vegas roster assets including Xavier Worthy, Daniel Jones, Brenton Strange, Oronde Gadsden, T.J. Hockenson, Chris Bell, Jakobi Meyers, Jayden Higgins were free in Fantasy Gamers. No profile's FAAB or ownership state is cached into another profile's response.
+- **Waiver vs immediate free agent - INSPECTED CODE.** Still genuinely missing for Sleeper and ESPN. The recent ESPN snapshot schema contains available players but no waiver-status or clear-time field. `acquisitionContext` and the UI now explicitly say NWR knows only `UNROSTERED`, not waiver-vs-FA, clear time, or recent winning/failed bids. No failed historical bid is treated as a winning price because no transaction-history input exists at all.
+- **FAAB vs priority - LIVE OBSERVATION.** Fantasy Gamers is `isFaabLeague: false`, real waiver position 9, null total/remaining and 25/25 null bid rows. Las Vegas is `isFaabLeague: true`, live total `$100`, live remaining `$100`, waiver position 2, 25/25 priced rows. The $100 values are provider facts (`waiver_budget` and roster `waiver_budget_used`), not a fallback. The UI suppresses FAAB entirely for Fantasy Gamers.
+- **Missing projection - LIVE OBSERVATION + ACTUAL TEST RESULT.** The current real missing weekly projection is Caleb Williams on Fantasy Gamers' bench in week 3. It remains `projectedPoints: null`; no numeric zero or fabricated delta is shown. `unprojectedStarterCount` is correctly 0 because he is not a required starter. The existing optimizer missing-row/unknown-delta tests passed.
+- **Reserve/IR and locks - INSPECTED CODE + ACTUAL TEST RESULT.** Reserve and taxi remain excluded. THIS_WEEK reuses `weekly_game_lock_service`; an already-locked bench player is not a drop candidate, while REST_OF_SEASON explicitly says locks were not evaluated. Neither real roster had a currently excluded locked candidate at verification time, so lock exclusion is synthetic-test-proven rather than falsely called a live reproduction.
+- **Injury/questionable - INSPECTED CODE.** The optimizer honors the existing manual status override layer for `SEASON_OUT`, `NOT_WITH_TEAM`, and `ADMINISTRATIVE_EXEMPT` and does not assume an unmatched identity healthy. NWR still has no automated injury/questionable feed; ordinary Q tags are therefore not a trustworthy waiver ranking input tonight. This is a missing capability, not silently invented data.
+- **Bye week/SOS - INSPECTED CODE.** No bye/schedule/SOS input reaches waiver ranking or add/drop simulation. This remains a disclosed future capability; no heuristic was added tonight.
+- **Dynasty framing - INSPECTED CODE + LIVE OBSERVATION.** Las Vegas is dynasty, but this Redraft waiver engine uses current-season ROS marginal utility only. `acquisitionContext.valuationHorizonDisclosure` now says it is not dynasty stash/long-term asset valuation. A real dynasty waiver model remains missing.
+- **Identity collisions/aliases - INSPECTED CODE + ACTUAL TEST RESULT.** The existing free-agent identity boundary strips only trailing generational suffix tokens and normalizes team aliases such as JAC/JAX; the executed `test_fantasypros_kdst_consensus_service.py` coverage passed. No name-only cross-league ownership decision was introduced; ownership exclusion remains raw provider ID based.
+- **Roster-full-after-move - INSPECTED CODE + ACTUAL TEST RESULT.** Full-roster pairings remove one legal drop before evaluating the add; verified open slots use `OPEN_ROSTER_SLOT_ADD_ONLY`. No-legal-drop is non-executable, not a fabricated post-move roster.
+- **ESPN - LIVE OBSERVATION.** KHA and 403 N 18th still return honest HTTP 409 `SLEEPER_REDRAFT_LEAGUE_DATA_REQUIRED` for waivers because no real ESPN snapshot exists. No fake snapshot/private data was created. The legacy error name is provider-specific wording debt, but the behavior is fail-closed and unchanged.
+
+## Verification results
+
+**ACTUAL TEST RESULT.** Final results after all changes:
+
+- Touched backend waiver/lineup/K-DST set: **113 passed**.
+- Required `tests/test_desktop_application_api.py`: **46 passed** when the four known failures were deselected, and the four named tests independently reproduced **exactly 4 failures**: `test_dynasty_facade_composes_real_governed_workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`, `test_facade_has_no_streamlit_or_app_component_dependency`. Thus the required combined set is **159 passed, 4 pre-existing failures**, with no new failure name.
+- `python -m ruff check` on all new Worker 5 backend regression files plus the modified FAAB-context file: passed. Whole `waiver_engine_service.py` still has legacy line-length/import findings and was not broadly reformatted.
+- `python -m py_compile` on modified Python and new regression tests: passed.
+- `npm run typecheck`: passed.
+- Directly changed frontend tests: **3 files, 34 tests passed**.
+- Exact full `npx vitest run`: **31 files, 510 tests passed**. The timing benchmark artifact written by that suite was restored byte-for-byte and is not part of this change.
+- `git diff --check`: passed (only Git's existing LF-to-CRLF warnings).
+
+## Final live/process state
+
+**LIVE OBSERVATION.** The final backend was restarted after Python changes. Actual listener PID **36328** (Windows launcher parent 32328) runs `scripts/run_nwr_desktop_api.py` from `C:\NWR\prospective-outcomes-v1` on `127.0.0.1:18742`. Frontend PID **27280** runs the checkout-local Vite preview on `127.0.0.1:1422`. Both command lines and listeners were re-verified. Authenticated bootstrap succeeds with the required dev token.
+
+Post-restart live smoke: Fantasy Gamers returned 25 adds, 6 legal drops, 10 pairings, non-FAAB with 25 null bid rows; Las Vegas returned 25 adds, 14 legal drops, 10 pairings, live `$100/$100` FAAB with 25 positive bid rows and zero DST adds. Fantasy Gamers was restored as final active profile (`941b99ade350410391b1b67c0890af79`).
+
+## Files changed
+
+- `src/services/waiver_engine_service.py`
+- `src/application/desktop_facade.py`
+- `desktop/packages/contracts/src/index.ts`
+- `desktop/apps/redraft/src/improve-team-explain.ts` and its test
+- `desktop/apps/redraft/src/improve-team.tsx`
+- `desktop/apps/redraft/src/in-season.tsx` and its test
+- `desktop/apps/redraft/src/improve-team-faab-budget.test.ts` (new)
+- `tests/test_waiver_engine_service.py`
+- `tests/test_redraft_waivers_faab_context_fix.py`
+- `tests/test_redraft_waivers_starter_drop_exclusion_fix.py` (new)
+- `tests/test_redraft_waivers_transaction_net_faab_fix.py` (new)
+- `tests/test_redraft_waivers_position_eligibility_fix.py` (new)
+- this ledger.
+
+## Remaining open items
+
+1. Add real provider acquisition state (waiver/free-agent distinction, clear time) and recent transaction context to canonical state only when sourced truthfully; historical failed bids must remain market context, never labeled winning price.
+2. Add a trustworthy live injury/questionable feed and bye/schedule/SOS input before using those facts in waiver ranking.
+3. Build a separate dynasty waiver/stash valuation surface for Las Vegas; do not reinterpret this governed current-season ROS output as long-term asset value.
+4. Convert waivers to the canonical provider boundary after a real ESPN snapshot exists, preserving Sleeper FAAB, reserve/taxi, game-lock, and complete-pool semantics. Consider replacing the legacy `SLEEPER_REDRAFT_LEAGUE_DATA_REQUIRED` wording with a provider-neutral capability error at that time.

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { explainStreamerPlay, explainWaiverTarget, resolveFaabDisplay } from "./improve-team-explain";
+import {
+  explainStreamerPlay,
+  explainWaiverTarget,
+  hasRetainedRowsAfterFailedRefresh,
+  resolveFaabDisplay,
+} from "./improve-team-explain";
 import type { KdstStreamerRow, WaiverAddCandidate, WaiverAddDropPairing, WaiverDropCandidate, WaiverFaabContext } from "@nwr/contracts";
 
 function add(overrides: Partial<WaiverAddCandidate> = {}): WaiverAddCandidate {
@@ -134,6 +139,32 @@ describe("explainWaiverTarget", () => {
     expect(explanation.bid).toBeNull();
   });
 
+  it("does not render a $0 result as a positive BID recommendation", () => {
+    const explanation = explainWaiverTarget(
+      add({ faabBidLowDollars: 0, faabBidHighDollars: 0, faabUrgency: "LOW" }),
+      pairing(),
+      "REST_OF_SEASON",
+      null,
+    );
+    expect(explanation.bid).toBeNull();
+  });
+
+  it("labels a full roster with no legal drop as a non-executable target", () => {
+    const noDrop = pairing({
+      drop: null,
+      dropRequired: true,
+      addUtilityVsPostDropRoster: null,
+      dropUtilityVsPostDropRoster: null,
+      netMarginalUtility: null,
+      contextLabel: "NO_DROP_CANDIDATE_AVAILABLE",
+    });
+    const explanation = explainWaiverTarget(add(), noDrop, "REST_OF_SEASON", null);
+    expect(explanation.headline).toContain("NO LEGAL DROP AVAILABLE");
+    expect(explanation.why).toContain("not currently an executable claim");
+    expect(explanation.tone).toBe("neutral");
+    expect(explanation.confidence).toBe("LOW");
+  });
+
   it("formats a real next-best alternative add candidate when one is supplied", () => {
     const alt = add({ canonicalPlayerId: "canon-2", playerName: "Xavier Legette", rosOverallRank: 44 });
     const explanation = explainWaiverTarget(add(), null, "REST_OF_SEASON", alt);
@@ -148,6 +179,14 @@ describe("explainWaiverTarget", () => {
   it("falls back to a generic why when the backend explanation string is empty", () => {
     const explanation = explainWaiverTarget(add({ marginalUtilityExplanation: "" }), null, "REST_OF_SEASON", null);
     expect(explanation.why).toBe("Ranked by real marginal roster utility.");
+  });
+});
+
+describe("waiver refresh failure disclosure", () => {
+  it("marks retained rows stale only when a refresh failed after a successful read", () => {
+    expect(hasRetainedRowsAfterFailedRefresh(new Error("offline"), {})).toBe(true);
+    expect(hasRetainedRowsAfterFailedRefresh(null, {})).toBe(false);
+    expect(hasRetainedRowsAfterFailedRefresh(new Error("offline"), null)).toBe(false);
   });
 });
 

@@ -430,7 +430,7 @@ def test_faab_bids_scale_with_percentile_and_never_fabricate_for_unmatched() -> 
         free_agents=_free_agent_rows(), owner_roster_canonical_ids=_owner_roster_ids(),
         profile=ranking.profile, ranking=ranking, manual_assets=_manual_assets(), mode="REST_OF_SEASON",
     )
-    bids = suggest_faab_bids(candidates=candidates, remaining_budget_dollars=100, weeks_remaining=14)
+    bids = suggest_faab_bids(candidates=candidates, remaining_budget_dollars=100, weeks_remaining=14, total_budget_dollars=100)
     by_id = {b.canonical_player_id: b for b in bids if b.canonical_player_id}
     unmatched_bid = next(b for b in bids if b.canonical_player_id == "")
     assert unmatched_bid.bid_low_dollars == 0 and unmatched_bid.bid_high_dollars == 0
@@ -448,8 +448,8 @@ def test_faab_bids_taper_late_in_season() -> None:
         free_agents=_free_agent_rows(), owner_roster_canonical_ids=_owner_roster_ids(),
         profile=ranking.profile, ranking=ranking, manual_assets=_manual_assets(), mode="REST_OF_SEASON",
     )
-    early = suggest_faab_bids(candidates=candidates, remaining_budget_dollars=100, weeks_remaining=14)
-    late = suggest_faab_bids(candidates=candidates, remaining_budget_dollars=100, weeks_remaining=1)
+    early = suggest_faab_bids(candidates=candidates, remaining_budget_dollars=100, weeks_remaining=14, total_budget_dollars=100)
+    late = suggest_faab_bids(candidates=candidates, remaining_budget_dollars=100, weeks_remaining=1, total_budget_dollars=100)
     early_rb = next(b for b in early if b.canonical_player_id == "fa-rb")
     late_rb = next(b for b in late if b.canonical_player_id == "fa-rb")
     assert late_rb.bid_high_dollars <= early_rb.bid_high_dollars
@@ -457,7 +457,7 @@ def test_faab_bids_taper_late_in_season() -> None:
 
 def test_faab_rejects_invalid_context() -> None:
     with pytest.raises(ValueError):
-        suggest_faab_bids(candidates=(), remaining_budget_dollars=-1, weeks_remaining=5)
+        suggest_faab_bids(candidates=(), remaining_budget_dollars=-1, weeks_remaining=5, total_budget_dollars=100)
 
 
 def _candidate(canonical_id, marginal_utility, becomes_starter) -> WaiverCandidate:
