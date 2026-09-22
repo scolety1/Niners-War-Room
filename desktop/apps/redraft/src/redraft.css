@@ -781,6 +781,13 @@
 .drawer-warnings { color: var(--warn, #d3a954); font-size: 11px; margin: 6px 0 0; padding-left: 16px; }
 .drawer-warnings li { margin: 2px 0; }
 
+/* Waiver-Night Readiness / Hardening cycle, Worker A (2026-09-22): Start/Sit's
+   "Not included this week" panel -- each entry now carries a real, sourced
+   status badge + reason, not a single generic sentence, so it needs its own
+   simple stacked-row list rather than the old comma-joined paragraph. */
+.lineup-excluded-list { display: flex; flex-direction: column; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.lineup-excluded-list li { align-items: baseline; display: flex; flex-wrap: wrap; gap: 6px; }
+
 /* NWR in-season UI pass (2026-09-10): Weekly Home / Start-Sit / Waivers /
    Trade Analysis / Trade Finder / provider status line. */
 .nwr-actions-list { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0; padding: 0; }

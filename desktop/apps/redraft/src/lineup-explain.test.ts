@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { WeeklyLineupSlot, WeeklyLineupSwap } from "@nwr/contracts";
-import { explainLineupSwap, findResultingSlot } from "./lineup-explain";
+import type { PlayerAvailabilityStatus, WeeklyLineupSlot, WeeklyLineupSwap } from "@nwr/contracts";
+import { describeExcludedLineupPlayer, explainLineupSwap, findResultingSlot } from "./lineup-explain";
 
 function makeSlot(overrides: Partial<WeeklyLineupSlot> = {}): WeeklyLineupSlot {
   return {
@@ -135,5 +135,59 @@ describe("explainLineupSwap", () => {
     expect(result.why).toMatch(/missing/);
     expect(result.tone).toBe("warning");
     expect(result.confidence).toBe("LOW");
+  });
+});
+
+function makeAvailabilityStatus(overrides: Partial<PlayerAvailabilityStatus> = {}): PlayerAvailabilityStatus {
+  return {
+    playerId: "00-0040130",
+    playerName: "Jayden Higgins",
+    statusCategory: "OUT_FOR_SEASON",
+    injuryDesignation: "OUT",
+    practiceState: null,
+    irPupNfi: null,
+    suspension: false,
+    administrativeExempt: false,
+    released: false,
+    currentTeam: null,
+    reason: "Torn ACL in training camp; placed on Reserve/Injured (no Designated for Return) -- season-ending for 2026.",
+    source: "MANUAL_VERIFIED_OVERRIDE",
+    sourceAsOf: "2026-08-19",
+    overrideKind: "SEASON_OUT",
+    ...overrides,
+  };
+}
+
+// Waiver-Night Readiness / Hardening cycle, Worker A (2026-09-22): real,
+// reproduced bug fix. Live-reproduced against the real Las Vegas Enginerds
+// roster in week 3: `WeeklyLineupResult.excluded` is populated ONLY by a
+// real, sourced status override (never a roster-slot or missing-projection
+// reason -- see `weekly_lineup_optimizer_service.ZERO_VALUE_KINDS`), but the
+// Lineup page's "Not included this week" panel used to render a single
+// static, FALSE sentence ("no roster slot they're eligible for, or no
+// usable projection") for every entry regardless of the real reason already
+// available on `playerAvailabilityStatus`.
+describe("describeExcludedLineupPlayer", () => {
+  it("surfaces the real, sourced exclusion reason instead of the old fabricated roster-slot/projection sentence", () => {
+    const result = describeExcludedLineupPlayer(makeAvailabilityStatus());
+    expect(result.reason).toBe(
+      "Torn ACL in training camp; placed on Reserve/Injured (no Designated for Return) -- season-ending for 2026.",
+    );
+    expect(result.reason).not.toMatch(/no roster slot|no usable projection/i);
+    expect(result.badgeLabel).toBe("OUT FOR SEASON");
+  });
+
+  it("distinguishes NOT_WITH_TEAM from SEASON_OUT rather than collapsing every override to one label", () => {
+    const result = describeExcludedLineupPlayer(
+      makeAvailabilityStatus({ statusCategory: "NOT_WITH_TEAM", overrideKind: "NOT_WITH_TEAM", reason: "Released by club; not currently on any NFL roster." }),
+    );
+    expect(result.badgeLabel).toBe("NOT WITH TEAM");
+    expect(result.reason).toBe("Released by club; not currently on any NFL roster.");
+  });
+
+  it("falls back to an honest 'no detail recorded' message, never a fabricated one, when status is null", () => {
+    const result = describeExcludedLineupPlayer(null);
+    expect(result.reason).toMatch(/no further detail recorded/i);
+    expect(result.reason).not.toMatch(/no roster slot|no usable projection/i);
   });
 });

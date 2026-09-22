@@ -430,6 +430,82 @@ def test_regression_fixture_5c_locked_bench_player_excluded_from_new_starts() ->
     assert any(c.player_name == "Locked Bench Player" for c in result.locked_unavailable)
 
 
+def test_regression_fixture_5e_taxi_squad_excluded_from_normal_candidate_selection() -> None:
+    """Waiver-Night Readiness / Hardening cycle, Worker A (2026-09-22):
+    the taxi-squad sibling of fixture 5a -- a real, live-relevant gap check
+    for the Las Vegas Enginerds dynasty league (real taxi squad slots on
+    that league's real roster, per the dispatching worker's brief), which
+    had NO dedicated test of its own before this pass. `is_reserve` and
+    `is_taxi` share the exact same hard-exclusion branch in
+    `optimize_weekly_lineup` (`if candidate.is_reserve or candidate.is_taxi:
+    ... continue`), so this is not a new code path -- but until now nothing
+    proved a real, TAXI-SPECIFICALLY-flagged candidate (as opposed to a
+    reserve/IR one) is actually excluded rather than merely sharing an
+    untested branch by coincidence. A high-scoring taxi-squad player must
+    never win a starting slot over a genuine active starter, and must be
+    reported in `result.reserve` (not silently dropped, not shown as a
+    normal bench option)."""
+
+    roster = RosterSettings(qb=0, rb=1, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=10)
+    candidates = [
+        _candidate("active", "Active Starter", "RB", 10.0, starting=True),
+        _candidate("taxi", "Taxi Squad Rookie", "RB", 30.0, starting=False, taxi=True),
+    ]
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    rb_slot = result.starters[0]
+    assert rb_slot.player is not None
+    # The real risk this proves against: "Taxi Squad Rookie" (30 > 10)
+    # winning the slot if taxi exclusion were ever silently dropped.
+    assert rb_slot.player.player_name == "Active Starter"
+    assert any(c.player_name == "Taxi Squad Rookie" and c.is_taxi for c in result.reserve)
+    assert not any(c.player_name == "Taxi Squad Rookie" for c in result.bench)
+    assert len(result.swaps_vs_current) == 0
+
+
+def test_build_roster_candidates_wires_real_sleeper_reserve_and_taxi_arrays() -> None:
+    """The real, live integration point (`desktop_facade.redraft_weekly_
+    lineup`) sources `reserve_sleeper_player_ids`/`taxi_sleeper_player_ids`
+    directly from a live Sleeper roster's own `reserve`/`taxi` arrays and
+    string-coerces every id before passing them here. Every existing
+    fixture above builds a `RosterCandidate` directly with
+    `reserve=`/`taxi=` already set, which never exercises
+    `build_roster_candidates`'s own set-membership/type-coercion logic at
+    all -- a real, previously-untested gap at exactly the wiring point that
+    matters for the real Las Vegas Enginerds dynasty league. Mirrors a real
+    Sleeper roster shape: `players` includes every rostered id (active,
+    reserve, AND taxi -- Sleeper's own convention, confirmed against a real
+    reserve-populated roster this pass), `starters` only the active
+    starting set, `reserve`/`taxi` as separate id lists whose members are a
+    subset of `players`."""
+
+    projection_rows = [
+        _row("1", "Starter One", "RB", 12.0),
+        _row("2", "Reserve Guy", "RB", 18.0),
+        _row("3", "Taxi Rookie", "WR", 22.0),
+    ]
+    candidates = build_roster_candidates(
+        roster_sleeper_player_ids=["1", "2", "3"],
+        starter_sleeper_player_ids=["1"],
+        projection_rows=projection_rows,
+        status_overrides=(),
+        reserve_sleeper_player_ids=["2"],
+        taxi_sleeper_player_ids=["3"],
+    )
+    by_id = {candidate.sleeper_player_id: candidate for candidate in candidates}
+    assert by_id["1"].is_reserve is False and by_id["1"].is_taxi is False
+    assert by_id["2"].is_reserve is True and by_id["2"].is_taxi is False
+    assert by_id["3"].is_reserve is False and by_id["3"].is_taxi is True
+    # Feeding these candidates through the real optimizer must keep the
+    # taxi/reserve players out of the starting lineup and out of `bench`,
+    # end to end, not just at the tagging step above.
+    roster = RosterSettings(qb=0, rb=1, wr=0, te=0, flex=0, superflex=0, k=0, dst=0, bench_size=10)
+    result = optimize_weekly_lineup(candidates=candidates, roster=roster, status_overrides=())
+    assert result.starters[0].player is not None
+    assert result.starters[0].player.player_name == "Starter One"
+    reserve_names = {c.player_name for c in result.reserve}
+    assert reserve_names == {"Reserve Guy", "Taxi Rookie"}
+
+
 # ---------------------------------------------------------------------------
 # NWR connection/update pass, Worker 2 (2026-09-19) -- owner-reported bug
 # fix: `_swap_reasons` used to compute `bumped.projected_points or 0.0`,

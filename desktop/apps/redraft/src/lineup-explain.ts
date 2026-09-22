@@ -1,4 +1,5 @@
-import type { WeeklyLineupSlot, WeeklyLineupSwap } from "@nwr/contracts";
+import type { PlayerAvailabilityStatus, WeeklyLineupSlot, WeeklyLineupSwap } from "@nwr/contracts";
+import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
 
 /**
  * NWR UI expansion pass (2026-09-12, Lineup surface): the Start/Sit
@@ -103,4 +104,40 @@ export function findResultingSlot(
   return starters.find(
     (slot) => slot.slotType === swap.slotType && slot.player?.playerName === swap.startPlayer,
   ) ?? null;
+}
+
+export interface ExcludedLineupPlayerExplanation {
+  badgeTone: ReturnType<typeof playerAvailabilityBadgeTone>;
+  badgeLabel: string;
+  reason: string;
+}
+
+/**
+ * Waiver-Night Readiness / Hardening cycle, Worker A (2026-09-22): real,
+ * reproduced bug fix. `WeeklyLineupResult.excluded` is populated ONLY by a
+ * real, sourced status override (`weekly_lineup_optimizer_service
+ * .ZERO_VALUE_KINDS` -- SEASON_OUT / NOT_WITH_TEAM / ADMINISTRATIVE_EXEMPT;
+ * see that module's `_status_for`), never by roster-slot ineligibility or a
+ * missing weekly projection. The Lineup page's "Not included this week"
+ * panel used to show a single static sentence claiming exactly that ("no
+ * roster slot they're eligible for, or no usable projection") for every
+ * entry -- FALSE for every real player this panel can ever show. Live
+ * reproduced against the real Las Vegas Enginerds roster (real player: a
+ * dated, sourced SEASON_OUT override, "Torn ACL in training camp ...
+ * season-ending for 2026" -- not a slot/projection issue at all). The real
+ * reason was always available on `playerAvailabilityStatus` (the same
+ * canonical authority Trades/Draft Room already render via
+ * `playerAvailabilityBadgeLabel`/`playerAvailabilityBadgeTone`) -- this
+ * just stops discarding it. `null` is an honest "no status recorded" state
+ * (should not occur for a real `excluded` row today, since that bucket is
+ * status-override-only, but never assumed impossible).
+ */
+export function describeExcludedLineupPlayer(
+  status: PlayerAvailabilityStatus | null,
+): ExcludedLineupPlayerExplanation {
+  return {
+    badgeTone: playerAvailabilityBadgeTone(status),
+    badgeLabel: playerAvailabilityBadgeLabel(status),
+    reason: status?.reason ?? "Excluded by NWR's canonical availability authority; no further detail recorded.",
+  };
 }

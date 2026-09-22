@@ -28,7 +28,7 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { DecisionExplain } from "./decision-explain";
 import { explainHomeAction } from "./home-action-explain";
-import { explainLineupSwap, findResultingSlot } from "./lineup-explain";
+import { describeExcludedLineupPlayer, explainLineupSwap, findResultingSlot } from "./lineup-explain";
 import { SnapshotProvenanceNotice } from "./snapshot-provenance";
 import { addUniqueTradeSideCandidate, tradeFinderAnalysisLinkTarget } from "./trades-explain";
 import { leagueFormat, resolveDisplayLifecycle, resolveLeagueLifecycle } from "./league-context";
@@ -568,8 +568,40 @@ export function LineupPage({ client, data }: { client: NwrApiClient; data: Redra
         </Panel>
       ) : null}
       {result.excluded.length ? (
+        // Waiver-Night Readiness / Hardening cycle, Worker A (2026-09-22):
+        // real, reproduced bug fix. `result.excluded` is populated ONLY by
+        // a real, sourced status override (`weekly_lineup_optimizer_
+        // service.ZERO_VALUE_KINDS` -- SEASON_OUT/NOT_WITH_TEAM/
+        // ADMINISTRATIVE_EXEMPT; see `_status_for`), never by roster-slot
+        // ineligibility or a missing projection -- but this panel's old
+        // static copy claimed exactly that ("no roster slot they're
+        // eligible for, or no usable projection"), which was FALSE for
+        // every real entry this panel can ever show. Live-reproduced
+        // against the real Las Vegas Enginerds roster this week: Jayden
+        // Higgins is here because of a real, dated, sourced SEASON_OUT
+        // override ("Torn ACL in training camp... season-ending for
+        // 2026"), not a slot/projection issue -- the backend already
+        // carries that real reason on `player.playerAvailabilityStatus`
+        // (the same canonical authority Trades/Draft Room already render
+        // via `playerAvailabilityBadgeLabel`/`playerAvailabilityBadgeTone`,
+        // reused here rather than a third status heuristic). Now shows the
+        // real, specific reason per player instead of a fabricated
+        // generic one.
         <Panel title="Not included this week" eyebrow={`${result.excluded.length} player(s)`}>
-          <p className="copy-muted">{result.excluded.map((player) => player.playerName).join(", ")} -- no roster slot they're eligible for, or no usable projection.</p>
+          <ul className="copy-muted lineup-excluded-list">
+            {result.excluded.map((player) => {
+              const explanation = describeExcludedLineupPlayer(player.playerAvailabilityStatus ?? null);
+              return (
+                <li key={player.sleeperPlayerId}>
+                  <StatusBadge tone={explanation.badgeTone} label={explanation.badgeLabel} />
+                  {" "}
+                  <strong>{player.playerName}</strong>
+                  {" -- "}
+                  {explanation.reason}
+                </li>
+              );
+            })}
+          </ul>
         </Panel>
       ) : null}
       {result.gameLock && result.gameLock.sourceStatus === "UNAVAILABLE" ? (
