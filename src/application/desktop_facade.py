@@ -3220,6 +3220,31 @@ class DesktopBackendFacade:
         """Return every currently unrostered Sleeper fantasy player."""
 
         self._require_mode("redraft")
+        # Waiver-night hardening reconciliation (2026-09-22): this method
+        # resolves the canonical league state (which itself fetches
+        # `league/{id}/rosters` once) and then separately re-fetches the
+        # same raw rosters below to feed the legacy `sleeper_free_agent_
+        # pool` helper -- a real, confirmed double live fetch per call
+        # (see `tests/test_weekly_home_sleeper_fetch_caching.py`). Turn on
+        # the same thread-local, per-request Sleeper GET cache
+        # `redraft_weekly_home_actions` already uses, for the duration of
+        # this method only, so both fetches share one real network call --
+        # but do so in a NESTING-SAFE way: `redraft_weekly_home_actions`
+        # calls this method as one of its own five sub-calls with the
+        # cache already on, and unconditionally resetting it to `None` in
+        # `finally` here would prematurely end that OUTER scope's cache
+        # for the sub-calls still to come. Only enable/disable the cache
+        # if it was genuinely off when this method started.
+        already_cached = getattr(self._sleeper_fetch_cache_local, "cache", None) is not None
+        if not already_cached:
+            self._sleeper_fetch_cache_local.cache = {}
+        try:
+            return self._redraft_free_agents_impl()
+        finally:
+            if not already_cached:
+                self._sleeper_fetch_cache_local.cache = None
+
+    def _redraft_free_agents_impl(self) -> FacadePayload:
         try:
             state = self._resolve_canonical_league_state()
         except CanonicalLeagueStateError as exc:
