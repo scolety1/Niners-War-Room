@@ -5,6 +5,7 @@ import {
   explainWaiverTarget,
   hasRetainedRowsAfterFailedRefresh,
   resolveFaabDisplay,
+  selectPrimaryStreamerRow,
 } from "./improve-team-explain";
 import type { KdstStreamerRow, WaiverAddCandidate, WaiverAddDropPairing, WaiverDropCandidate, WaiverFaabContext } from "@nwr/contracts";
 
@@ -258,6 +259,70 @@ describe("explainStreamerPlay", () => {
   it("humanizes ROSTERED_ELSEWHERE the same way", () => {
     const explanation = explainStreamerPlay(streamerRow({ rosterStatus: "ROSTERED_ELSEWHERE", recommendation: "ROSTERED_ELSEWHERE" }), null);
     expect(explanation.thisWeekImpact).toBe("ROSTERED ELSEWHERE · Week 3");
+  });
+});
+
+// Waiver-Night Hardening cycle, Worker B (2026-09-22): real, live-
+// reproducible frontend/backend divergence. `StreamersTab` used to
+// re-derive its own "top" row inline, checking only
+// `recommendation === "START" || "ADD"` (HOLD omitted) -- diverging from
+// the backend's own `_STREAMER_ACTIONABLE_RECOMMENDATIONS = {"START",
+// "HOLD", "ADD"}` selection in `desktop_facade.py::redraft_kdst_streamer`.
+// Whenever the real best-actionable row was HOLD (a real bench K/DST the
+// owner already rosters but isn't starting), the old UI logic fell through
+// to the single best-ECR row regardless of ownership -- which can be a
+// real OPPONENT'S rostered player. `selectPrimaryStreamerRow` is the
+// extracted, tested fix.
+describe("selectPrimaryStreamerRow", () => {
+  it("selects START over a better-ECR opponent-rostered row", () => {
+    const rows = [
+      streamerRow({ playerName: "Opponent K", ecr: 1, recommendation: "ROSTERED_ELSEWHERE", rosterStatus: "ROSTERED" }),
+      streamerRow({ playerName: "Owned Starter", ecr: 2, recommendation: "START", rosterStatus: "YOUR_STARTER" }),
+    ];
+    const { top } = selectPrimaryStreamerRow(rows);
+    expect(top?.playerName).toBe("Owned Starter");
+  });
+
+  it("selects ADD when it is the best real actionable option", () => {
+    const rows = [
+      streamerRow({ playerName: "Opponent K", ecr: 1, recommendation: "ROSTERED_ELSEWHERE", rosterStatus: "ROSTERED" }),
+      streamerRow({ playerName: "Free K", ecr: 2, recommendation: "ADD", rosterStatus: "AVAILABLE" }),
+    ];
+    const { top } = selectPrimaryStreamerRow(rows);
+    expect(top?.playerName).toBe("Free K");
+  });
+
+  // THE BUG THIS CLOSES: a real bench K/DST the owner already rosters
+  // (HOLD) ranks worse than an opponent's rostered player (ROSTERED_
+  // ELSEWHERE) but better than any real available option. The old inline
+  // logic (START/ADD only) would have fallen through to `rows[0]`, the
+  // opponent's player -- never a legitimate recommendation target.
+  it("selects HOLD over a better-ECR opponent-rostered row (the real bug this closes)", () => {
+    const rows = [
+      streamerRow({ playerName: "Opponent DST", ecr: 1, recommendation: "ROSTERED_ELSEWHERE", rosterStatus: "ROSTERED" }),
+      streamerRow({ playerName: "Owned Bench DST", ecr: 2, recommendation: "HOLD", rosterStatus: "YOUR_ROSTER" }),
+      streamerRow({ playerName: "Free DST", ecr: 3, recommendation: "ADD", rosterStatus: "AVAILABLE" }),
+    ];
+    const { top, alternative } = selectPrimaryStreamerRow(rows);
+    expect(top?.playerName).toBe("Owned Bench DST");
+    expect(top?.recommendation).toBe("HOLD");
+    // Real regression guard: the opponent's rostered player is never the
+    // primary OR the next-shown alternative.
+    expect(alternative?.playerName).not.toBe("Opponent DST");
+    expect(alternative?.playerName).toBe("Free DST");
+  });
+
+  it("falls back to the single best-ECR row (even a real opponent's) only when nothing is actionable at all", () => {
+    const rows = [
+      streamerRow({ playerName: "Opponent DST", ecr: 1, recommendation: "ROSTERED_ELSEWHERE", rosterStatus: "ROSTERED" }),
+      streamerRow({ playerName: "Other Opponent DST", ecr: 2, recommendation: "ROSTERED_ELSEWHERE", rosterStatus: "ROSTERED" }),
+    ];
+    const { top } = selectPrimaryStreamerRow(rows);
+    expect(top?.playerName).toBe("Opponent DST");
+  });
+
+  it("returns null for both fields on an empty row set (never fabricates a row)", () => {
+    expect(selectPrimaryStreamerRow([])).toEqual({ top: null, alternative: null });
   });
 });
 

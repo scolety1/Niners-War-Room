@@ -959,6 +959,22 @@ export interface KdstStreamerUnmatchedEntry {
   sleeperPlayerId: string;
 }
 
+// Waiver-Night Hardening cycle, Worker B (2026-09-22): a real, live-
+// reproduced gap -- the owner's own currently-rostered K/DST can be
+// genuinely outside FantasyPros' real current top-N consensus rankings
+// (live-confirmed: Fantasy Gamers' real New England DST), in which case it
+// previously never appeared anywhere in `positions` or as anything more
+// than a bare, anonymous id in `unmatchedSleeperPlayerIds` -- no
+// indication it was the OWNER'S OWN player. This carries a resolved
+// name/team so a caller can honestly disclose "your current X could not
+// be evaluated" instead of silently omitting it.
+export interface KdstStreamerOwnRosterUnrankedEntry {
+  position: "K" | "DST";
+  sleeperPlayerId: string;
+  playerName: string;
+  team: string;
+}
+
 export interface KdstStreamerResult {
   authority: string;
   week: number;
@@ -968,6 +984,15 @@ export interface KdstStreamerResult {
   // (e.g. "DST" -> "dST"). Each row carries its own `position` field.
   positions: KdstStreamerRow[];
   unmatchedSleeperPlayerIds: KdstStreamerUnmatchedEntry[];
+  // See `KdstStreamerOwnRosterUnrankedEntry` above. Optional/omittable for
+  // the common empty case; a caller with no entries should not assume
+  // undefined means "not checked" -- the backend always sends this key
+  // present as [] when no own-roster player is affected.
+  ownRosterUnranked?: KdstStreamerOwnRosterUnrankedEntry[];
+  // Real, uncached, live-every-call retrieval instant (see
+  // `desktop_facade.py::redraft_kdst_streamer`'s own comment) -- optional
+  // for backward compatibility with any cached/replayed response shape.
+  retrievedAtUtc?: string;
   writeBehavior: string;
   // NWR pre-UI architecture pass (2026-09-10, directive section 3/C):
   // identification fields, additive. Flat list for the same reason as

@@ -2958,6 +2958,45 @@ class DesktopBackendFacade:
             )
             if own_roster is not None:
                 own_roster_player_ids = [str(value) for value in own_roster.get("players") or []]
+        # Waiver-Night Hardening cycle, Worker B (2026-09-22): a real,
+        # live-reproduced disclosure gap. `unmatched[position]` already
+        # contains every rostered-but-FantasyPros-unranked Sleeper id for
+        # that position (built by `sleeper_streamer_actions` above), but it
+        # was previously only surfaced as a bare, anonymous sleeper-id list
+        # (`unmatchedSleeperPlayerIds`) with no indication that one of those
+        # ids might be the OWNER'S OWN current starter -- confirmed live
+        # against the real Fantasy Gamers league: the owner's real rostered
+        # DST (New England, sleeper id "NE") is genuinely outside
+        # FantasyPros' real top-10 DST ECR this week, so it silently never
+        # appeared anywhere in `positions` (not as YOUR_STARTER, not at
+        # all), and the primary DST recommendation flatly said "ADD Green
+        # Bay Packers" with no caveat that the owner's actual current DST
+        # was never evaluable. This directly undermines the streamer's own
+        # stated job ("should I keep my current K/DST or stream someone
+        # else" -- never merely rank free agents). Resolve the owner's own
+        # unmatched K/DST id(s), if any, to a real name/team so the caller
+        # can honestly disclose "your current X could not be evaluated"
+        # instead of silently omitting it.
+        own_roster_player_id_set = set(own_roster_player_ids)
+        own_unmatched_by_position: dict[str, list[dict[str, str]]] = {"K": [], "DST": []}
+        for position in ("K", "DST"):
+            for sleeper_id in unmatched.get(position, []):
+                if sleeper_id not in own_roster_player_id_set:
+                    continue
+                raw = players.get(sleeper_id) if isinstance(players, Mapping) else None
+                name = ""
+                team = ""
+                if isinstance(raw, Mapping):
+                    team = str(raw.get("team") or "").upper().strip()
+                    name = str(raw.get("full_name") or raw.get("search_full_name") or "").strip()
+                    if position == "DST" and not name:
+                        # Mirrors `sleeper_streamer_actions`'s own real DST
+                        # name-reconstruction fallback (Sleeper DST catalog
+                        # rows carry first_name/last_name, never full_name).
+                        name = f"{raw.get('first_name') or ''} {raw.get('last_name') or ''}".strip()
+                own_unmatched_by_position[position].append(
+                    {"sleeperPlayerId": sleeper_id, "playerName": name or sleeper_id, "team": team}
+                )
         # NWR Post-UI Product V1 (P1-4): computed BEFORE the trace-recording
         # loop below (moved up from its prior position after the loop) so
         # every K/DST trace can carry the real `leagueSnapshotId` its own
@@ -3052,45 +3091,106 @@ class DesktopBackendFacade:
             # came back" -- a real, disclosed reason, not a generic
             # unavailable that reads like a provider/data problem.
             position_not_used = _STREAMER_POSITION_SLOT_COUNT.get(position, 0) <= 0
+            own_unranked = own_unmatched_by_position.get(position) or []
+            own_unranked_names = ", ".join(
+                f"{entry['playerName']} ({entry['team']})" if entry["team"] else entry["playerName"]
+                for entry in own_unranked
+            )
+            own_unranked_disclosure = (
+                f"Your currently rostered {position} ({own_unranked_names}) is outside "
+                f"FantasyPros' real current {position} consensus rankings and could not be "
+                "evaluated or compared by this streamer."
+                if own_unranked
+                else None
+            )
+            rationale = (
+                f"{top_action.get('playerName')} ({top_action.get('team')}): "
+                f"{top_action.get('recommendation')} per FantasyPros consensus ECR."
+                if top_action is not None
+                else (
+                    f"This league has no {position} roster slot; {position} pickups are never "
+                    "recommended."
+                    if position_not_used
+                    else f"No {position} streamer candidate was found this week."
+                )
+            )
+            if own_unranked_disclosure is not None:
+                rationale = f"{rationale} {own_unranked_disclosure}"
+            confidence_basis = (
+                "Ranked from live FantasyPros consensus ECR and a live Sleeper roster read."
+                if top_action is not None
+                else (
+                    f"Position not used: this league's real roster configuration has "
+                    f"0 {position} slots."
+                    if position_not_used
+                    else f"No {position} rows were returned by the FantasyPros consensus read."
+                )
+            )
+            if own_unranked_disclosure is not None:
+                confidence_basis = f"{confidence_basis} {own_unranked_disclosure}"
+            # A real current-roster asset this streamer could not evaluate
+            # is a genuine reason to downgrade confidence even when a
+            # different (real, available) top action was found -- never
+            # claim NOMINAL confidence while silently unable to compare the
+            # owner's own current player.
+            if own_unranked and top_action is not None:
+                confidence_state = "LOW"
+            elif top_action is not None:
+                confidence_state = "NOMINAL"
+            else:
+                confidence_state = "UNAVAILABLE"
+            issues = [
+                f"{len(unmatched.get(position, []))} unmatched Sleeper player id(s) for {position}."
+            ] if unmatched.get(position) else []
+            if own_unranked_disclosure is not None:
+                issues.append(own_unranked_disclosure)
             envelope = build_decision_envelope(
                 task=tool_name,
                 profile_id=selected.profile_id,
                 league_snapshot_id=kdst_league_snapshot_id,
                 primary_recommendation=top_action,
                 alternatives=alternatives_by_position.get(position) or [],
-                rationale=(
-                    f"{top_action.get('playerName')} ({top_action.get('team')}): "
-                    f"{top_action.get('recommendation')} per FantasyPros consensus ECR."
-                    if top_action is not None
-                    else (
-                        f"This league has no {position} roster slot; {position} pickups are never "
-                        "recommended."
-                        if position_not_used
-                        else f"No {position} streamer candidate was found this week."
-                    )
-                ),
-                confidence_state="NOMINAL" if top_action is not None else "UNAVAILABLE",
-                confidence_basis=(
-                    "Ranked from live FantasyPros consensus ECR and a live Sleeper roster read."
-                    if top_action is not None
-                    else (
-                        f"Position not used: this league's real roster configuration has 0 {position} slots."
-                        if position_not_used
-                        else f"No {position} rows were returned by the FantasyPros consensus read."
-                    )
-                ),
+                rationale=rationale,
+                confidence_state=confidence_state,
+                confidence_basis=confidence_basis,
                 data_health=None,
                 trace_id=trace_id_by_position.get(position),
-                issues=[
-                    f"{len(unmatched.get(position, []))} unmatched Sleeper player id(s) for {position}."
-                ] if unmatched.get(position) else [],
+                issues=issues,
             )
-            decision_envelopes.append({"position": position, "decisionEnvelope": envelope.to_dict()})
+            decision_envelopes.append(
+                {"position": position, "decisionEnvelope": envelope.to_dict()}
+            )
         return FacadePayload(
             data={
                 "authority": status.authority,
                 "week": week,
                 "leagueId": league_id,
+                # Waiver-Night Hardening cycle, Worker B: this endpoint
+                # performs a real, uncached, live FantasyPros + Sleeper read
+                # on every call (see `_sleeper_get_json` -- only the
+                # `players/nfl` CATALOG path is cross-request cached, and
+                # FantasyPros consensus reads have no caching layer at all
+                # in this file), so it genuinely IS live every time -- but
+                # nothing in the prior response disclosed WHEN it was
+                # retrieved, unlike `redraft_free_agents`' own established
+                # `retrievedAtUtc` pattern. Added for the same honesty
+                # reason: an owner should be able to see the real
+                # retrieval instant, not just trust an undated "live" label.
+                "retrievedAtUtc": datetime.now(UTC).isoformat(timespec="seconds"),
+                # Flat list (never a {"K": ..., "DST": ...} dict, matching
+                # every other arbitrary-string-keyed field in this
+                # response's own established convention) -- the owner's
+                # own rostered K/DST that FantasyPros' real current
+                # rankings could not place, so it never appears in
+                # `positions`/`unmatchedSleeperPlayerIds` as anything more
+                # than a bare id. See the `own_unmatched_by_position`
+                # comment above for the real, live-reproduced gap this
+                # closes.
+                "ownRosterUnranked": [
+                    {"position": position, **entry}
+                    for position in ("K", "DST")
+                    for entry in own_unmatched_by_position.get(position, [])
+                ],
                 "traceIds": trace_ids,
                 "leagueSnapshotId": kdst_league_snapshot_id,
                 # Flat list, not a {"K": ..., "DST": ...} dict -- same

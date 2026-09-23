@@ -120,6 +120,38 @@ def test_sleeper_k_roster_matching_is_unaffected_by_the_dst_full_name_fallback()
     assert actions[1]["recommendation"] == "ADD"
 
 
+def test_sleeper_streamer_actions_unmatched_is_scoped_to_rows_own_position() -> None:
+    # Waiver-Night Hardening cycle, Worker B (2026-09-22): real,
+    # reproduced bug. `rows` is always scoped to exactly ONE position per
+    # real call site (`redraft_kdst_streamer` calls this once for K, once
+    # for DST). Before this fix, the roster scan considered BOTH
+    # SUPPORTED_POSITIONS regardless of which position `rows` actually
+    # covered, so a real DST roster entry always landed in `unmatched`
+    # during a K-only call (it can never match a K-only `provider_ids`
+    # dict), and vice versa for a real K entry during a DST-only call --
+    # pure cross-position noise inflating the "N unmatched" count/set with
+    # players that were never a genuine identity-match failure at all.
+    k_rows = _parse_consensus(
+        {"players": [{"player_id": 1, "player_name": "K One", "player_position_id": "K", "player_team_id": "SF", "rank_ecr": 1, "tier": 1}]},
+        season=2026, week=1, position="K",
+    )
+    rosters = [{"owner_id": "owner", "players": ["k1", "d1"], "starters": ["k1", "d1"]}]
+    players = {
+        "k1": {"full_name": "K One", "position": "K", "team": "SF"},
+        # A real, genuinely-real DST roster entry -- present on the SAME
+        # roster the K-only call also scans.
+        "d1": {"first_name": "New England", "last_name": "Patriots", "position": "DST", "team": "NE"},
+    }
+    _actions, unmatched = sleeper_streamer_actions(
+        k_rows, rosters=rosters, players=players, owner_user_id="owner"
+    )
+    # THE FIX: the DST roster entry is never scanned/reported by a K-only
+    # call at all -- it is simply out of scope for this call, not a K
+    # identity-match failure.
+    assert "d1" not in unmatched
+    assert unmatched == ()
+
+
 def test_identity_boundary_resolves_fantasypros_jac_against_sleeper_jax() -> None:
     # The exact canonical-boundary fix: FantasyPros' real K/DST consensus
     # API reports Jacksonville as "JAC" (reconfirmed live this pass);

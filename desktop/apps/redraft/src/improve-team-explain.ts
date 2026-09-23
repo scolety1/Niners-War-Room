@@ -220,6 +220,52 @@ const STREAMER_TONE: Record<KdstStreamerRow["recommendation"], DecisionExplainTo
   ALTERNATIVE: "alternative",
 };
 
+// Waiver-Night Hardening cycle, Worker B (2026-09-22): a real,
+// live-reproducible frontend/backend divergence. `redraft_kdst_streamer`
+// (`desktop_facade.py`) selects its own primary recommendation as the
+// first ECR-ranked row whose recommendation is genuinely actionable --
+// `_STREAMER_ACTIONABLE_RECOMMENDATIONS = {"START", "HOLD", "ADD"}` -- but
+// this file's own UI previously re-derived "top" independently, inline in
+// `StreamersTab`, checking only `recommendation === "START" || "ADD"`
+// (HOLD omitted). Whenever the real best-actionable row for a position was
+// HOLD (a player the owner already rosters but is not currently
+// starting -- e.g. a real bench K/DST), the UI's own re-derivation missed
+// it and fell through to `rows[0]`, the single best-ECR row regardless of
+// ownership -- which can be a real OPPONENT'S rostered player
+// (`ROSTERED_ELSEWHERE`). That is exactly the "opponent's rostered player
+// recommended" bug class an earlier cycle already fixed for Waivers/Free
+// Agents; this closes the same class of gap for the K/DST Streamer's own
+// UI-level primary-row selection (the backend's own selection was already
+// correct -- this is a presentation-layer re-derivation bug, not a data
+// bug). Extracted to a pure, tested function so the UI's selection can
+// never silently drift from the backend's own actionable set again.
+const STREAMER_ACTIONABLE_RECOMMENDATIONS: ReadonlySet<KdstStreamerRow["recommendation"]> = new Set([
+  "START",
+  "HOLD",
+  "ADD",
+]);
+
+export interface StreamerPrimarySelection {
+  top: KdstStreamerRow | null;
+  alternative: KdstStreamerRow | null;
+}
+
+/**
+ * `rows` must already be ECR-ordered for the target position/week (the
+ * backend's own `positions` list already is). Mirrors
+ * `desktop_facade.py::redraft_kdst_streamer`'s own primary-recommendation
+ * selection exactly -- the first actionable (START/HOLD/ADD) row, never a
+ * real opponent's `ROSTERED_ELSEWHERE` row, falling back to the single
+ * best-ECR row only when NO row is actionable at all (an honest "nothing
+ * to recommend", not a fabricated one).
+ */
+export function selectPrimaryStreamerRow(rows: KdstStreamerRow[]): StreamerPrimarySelection {
+  const topIndex = rows.findIndex((row) => STREAMER_ACTIONABLE_RECOMMENDATIONS.has(row.recommendation));
+  const top = (topIndex >= 0 ? rows[topIndex] : rows[0]) ?? null;
+  const alternative = top ? (rows[(topIndex >= 0 ? topIndex : 0) + 1] ?? null) : null;
+  return { top, alternative };
+}
+
 /**
  * `alternativeRow` is a real, already-ranked other row at the SAME
  * position for the SAME week (the streamer/positions list is already

@@ -171,6 +171,25 @@ def sleeper_streamer_actions(
     if not isinstance(players, Mapping):
         raise FantasyProsProviderError("Sleeper player response is malformed.")
     provider_ids = {_identity(row.player_name, row.position, row.team): row.provider_player_id for row in rows}
+    # Waiver-Night Hardening cycle, Worker B (2026-09-22): a real,
+    # reproduced bug found while extending this endpoint's own unmatched-id
+    # reporting. `rows` is always scoped to exactly ONE position per call
+    # (`redraft_kdst_streamer` calls this once for K, once for DST) -- but
+    # this loop used to scan every SUPPORTED_POSITIONS (K AND DST) roster
+    # player regardless, so a real DST roster entry would ALWAYS land in
+    # `unmatched` during the K-only call (its identity can never appear in
+    # K-only `provider_ids`), and vice versa for a real K entry during the
+    # DST-only call -- pure cross-position noise, not a genuine identity
+    # match failure. This inflated the "N unmatched Sleeper player id(s)"
+    # disclosure with irrelevant counts and (found live, via a new
+    # own-roster-unranked disclosure this pass) could even mislabel the
+    # owner's own DST as an unmatched *K* entry. Restricting the scan to
+    # only the position(s) genuinely present in `rows` fixes this without
+    # touching `_identity`, `streamer_actions`, or any call site's
+    # signature -- `rostered`/`owner`/`starters` were never corrupted by
+    # this (they only grow on a real positive match), only `unmatched`'s
+    # count/membership was polluted.
+    target_positions = {row.position for row in rows}
     rostered: set[str] = set()
     owner: set[str] = set()
     starters: set[str] = set()
@@ -183,7 +202,7 @@ def sleeper_streamer_actions(
             if not isinstance(player, Mapping):
                 continue
             position = _sleeper_position(player.get("position"))
-            if position not in SUPPORTED_POSITIONS:
+            if position not in target_positions:
                 continue
             team = str(player.get("team") or "").upper().strip()
             name = str(player.get("full_name") or player.get("search_full_name") or "").strip()

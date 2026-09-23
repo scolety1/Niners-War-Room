@@ -33,6 +33,7 @@ import {
   hasRetainedRowsAfterFailedRefresh,
   hasTrustworthyFaabBudget,
   resolveFaabDisplay,
+  selectPrimaryStreamerRow,
 } from "./improve-team-explain";
 import { AddDropDetail } from "./in-season";
 import { leagueFormat } from "./league-context";
@@ -994,9 +995,14 @@ function StreamersTab({
         <p className="draft-feedback">Week {result.week} · {result.writeBehavior.replaceAll("_", " ")} · provider-scored ECR only; schedule, betting, weather, and hidden weights are not used.</p>
         {(["K", "DST"] as const).map((pos) => {
           const rows = result.positions.filter((row) => row.position === pos);
-          const topIndex = rows.findIndex((row) => row.recommendation === "START" || row.recommendation === "ADD");
-          const top = topIndex >= 0 ? rows[topIndex] : rows[0] ?? null;
-          const alternativeRow = top ? (rows[(topIndex >= 0 ? topIndex : 0) + 1] ?? null) : null;
+          // Real bug fix (Waiver-Night Hardening, Worker B): this used to
+          // re-derive "top" inline here, checking only START/ADD (omitting
+          // HOLD) -- diverging from the backend's own actionable-row
+          // selection and, in a real bench-K/DST-owned scenario, able to
+          // fall through to an opponent's ROSTERED_ELSEWHERE row instead.
+          // See `selectPrimaryStreamerRow`'s own doc comment.
+          const { top, alternative: alternativeRow } = selectPrimaryStreamerRow(rows);
+          const ownUnranked = result.ownRosterUnranked?.filter((entry) => entry.position === pos) ?? [];
           const explanation = top ? explainStreamerPlay(top, alternativeRow) : null;
           return (
             <div key={`${result.week}-${pos}`}>
@@ -1012,6 +1018,15 @@ function StreamersTab({
                   />
                 </div>
               ) : <EmptyState title="No available recommendation" message={`No ${pos} streamer read for Week ${result.week}.`} />}
+              {ownUnranked.length ? (
+                <div className="alert-strip">
+                  <strong>Your current {pos} isn't in this week's rankings</strong>
+                  <span>
+                    {ownUnranked.map((entry) => entry.team ? `${entry.playerName} (${entry.team})` : entry.playerName).join(", ")}{" "}
+                    is outside FantasyPros' real current {pos} consensus and could not be evaluated or compared above.
+                  </span>
+                </div>
+              ) : null}
               <Panel title={`Week ${result.week} · ${pos} streamer actions`} eyebrow="FantasyPros ECR (provider-scored) · Sleeper availability">
                 {rows.length ? <DataTable columns={columns} rows={rows as unknown as Array<Record<string, unknown>>} rowKey={(row) => `${pos}-${String(row.playerName)}-${String(row.ecr)}`} /> : <EmptyState title="No candidates" message={`No ${pos} rows returned for Week ${result.week}.`} />}
               </Panel>
