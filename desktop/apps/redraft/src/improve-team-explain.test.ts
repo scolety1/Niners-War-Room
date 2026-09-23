@@ -4,6 +4,7 @@ import {
   explainStreamerPlay,
   explainWaiverTarget,
   hasRetainedRowsAfterFailedRefresh,
+  isFaabContextPending,
   resolveFaabDisplay,
   selectPrimaryStreamerRow,
 } from "./improve-team-explain";
@@ -188,6 +189,24 @@ describe("waiver refresh failure disclosure", () => {
     expect(hasRetainedRowsAfterFailedRefresh(new Error("offline"), {})).toBe(true);
     expect(hasRetainedRowsAfterFailedRefresh(null, {})).toBe(false);
     expect(hasRetainedRowsAfterFailedRefresh(new Error("offline"), null)).toBe(false);
+  });
+});
+
+describe("isFaabContextPending (Worker C fix: stuck 'Reading your real FAAB context...' bug)", () => {
+  it("is pending only while a fetch is genuinely in flight", () => {
+    expect(isFaabContextPending(null, true)).toBe(true);
+  });
+
+  it("is NOT pending once data has arrived, even if a background refresh is running", () => {
+    expect(isFaabContextPending({}, true)).toBe(false);
+  });
+
+  it("is NOT pending when no data exists and nothing is fetching (the real ESPN-profile case: the loader never fires a request at all, so 'working' never becomes true) -- this is the exact bug this fix closes: before the fix, this state rendered a permanent 'Reading...' message", () => {
+    expect(isFaabContextPending(null, false)).toBe(false);
+  });
+
+  it("is NOT pending when data has already loaded and nothing is refreshing", () => {
+    expect(isFaabContextPending({}, false)).toBe(false);
   });
 });
 

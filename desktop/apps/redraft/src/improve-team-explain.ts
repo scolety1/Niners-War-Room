@@ -169,6 +169,22 @@ export function hasRetainedRowsAfterFailedRefresh(
   return error != null && waivers != null;
 }
 
+/**
+ * Worker C fix (multi-league leakage/dogfood pass, 2026-09-22): `FaabTab`
+ * used to render "Reading your real FAAB context..." whenever `waivers`
+ * was null, with no `working` check -- so for a profile whose loader
+ * intentionally never fires a request (e.g. a real ESPN profile with no
+ * verified live league data, where `useAsync`'s loader returns `null`
+ * instead of a promise), the message stayed on screen forever, implying a
+ * stuck/broken load rather than an honestly unavailable read. This mirrors
+ * `TargetsTab`'s existing `working && !waivers` guard in the same file so
+ * the "reading" message only ever appears while a real fetch is in
+ * flight.
+ */
+export function isFaabContextPending(waivers: unknown, working: boolean): boolean {
+  return waivers == null && working;
+}
+
 export function resolveFaabDisplay(faabContext: WaiverFaabContext): WaiverFaabDisplay {
   const isScenario = faabContext.budgetMode === "SCENARIO";
   const scenario = faabContext.scenario;

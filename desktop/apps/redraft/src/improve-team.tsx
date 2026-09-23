@@ -32,6 +32,7 @@ import {
   explainWaiverTarget,
   hasRetainedRowsAfterFailedRefresh,
   hasTrustworthyFaabBudget,
+  isFaabContextPending,
   resolveFaabDisplay,
   selectPrimaryStreamerRow,
 } from "./improve-team-explain";
@@ -706,9 +707,14 @@ function FaabTab({
   const isPending = working && waivers !== null;
 
   if (!waivers) {
+    // Worker C fix (multi-league leakage/dogfood pass, 2026-09-22): see
+    // `isFaabContextPending` docstring -- this used to unconditionally
+    // render "Reading your real FAAB context..." whenever `waivers` was
+    // null, even for a profile (e.g. either real ESPN league) whose loader
+    // never fires a request at all, leaving the message on screen forever.
     return <>
       {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
-      <p className="draft-feedback">Reading your real FAAB context…</p>
+      {isFaabContextPending(waivers, working) ? <p className="draft-feedback">Reading your real FAAB context…</p> : null}
     </>;
   }
 
