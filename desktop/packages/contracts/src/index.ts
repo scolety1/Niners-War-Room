@@ -1540,6 +1540,13 @@ export interface TradePlayerImpact {
   playerName: string;
   position: string;
   rosReplacementValue: number | null;
+  /** Full Trust Hardening V1 (Worker 2): false for an unranked skill-
+   * position player or an unmodeled K/DST -- `rosReplacementValue` is 0
+   * in that case for arithmetic convenience only, and means UNKNOWN, not
+   * "worth zero." Optional for backward compatibility with any cached
+   * response shape that predates this field; treat a missing value the
+   * same as `true` (known), matching the backend's own additive rollout. */
+  rosReplacementValueKnown?: boolean;
   marginalUtility: number | null;
   becomesStarter: boolean;
   statusFlag: string | null;
@@ -1554,6 +1561,12 @@ export interface TradeAnalysisResult {
   gives: TradePlayerImpact[];
   receives: TradePlayerImpact[];
   rosValueDelta: number;
+  /** True only when every traded player (both sides) has a real, known
+   * rosReplacementValue -- false means rosValueDelta was computed
+   * treating one or more unranked/unmodeled players as 0 and is honestly
+   * a PARTIAL figure. Optional for backward compatibility; treat missing
+   * as true (known). */
+  rosValueDeltaAllKnown?: boolean;
   netMarginalUtility: number;
   startingLineupValueBefore: number;
   startingLineupValueAfter: number;
@@ -1596,6 +1609,9 @@ export interface TradeFinderCandidate {
   myNetMarginalUtility: number;
   opponentNetMarginalUtility: number;
   myRosValueDelta: number;
+  /** See `TradeAnalysisResult.rosValueDeltaAllKnown`. Optional for backward
+   * compatibility; treat missing as true (known). */
+  myRosValueDeltaAllKnown?: boolean;
 }
 
 export interface TradeFinderResult {
@@ -1636,6 +1652,9 @@ export interface TradePackageEvaluation {
   gives: TradePlayerImpact[];
   receives: TradePlayerImpact[];
   rosValueDelta: number;
+  /** See `TradeAnalysisResult.rosValueDeltaAllKnown`. Optional for backward
+   * compatibility; treat missing as true (known). */
+  rosValueDeltaAllKnown?: boolean;
   netMarginalUtility: number;
   startingLineupValueBefore: number;
   startingLineupValueAfter: number;

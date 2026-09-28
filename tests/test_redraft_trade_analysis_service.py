@@ -124,3 +124,58 @@ def test_championship_equity_honestly_disclosed_as_not_evaluated() -> None:
     )
     assert "not evaluated" in result.championship_equity_note
     assert "live standings store" in result.championship_equity_note
+
+
+def test_fully_ranked_trade_reports_ros_value_delta_as_fully_known() -> None:
+    # Regression guard: a real, fully-ranked trade must keep reporting
+    # ros_value_delta_all_known True on both the evaluation and every
+    # individual impact -- the new disclosure fields must never make a
+    # normal, fully-known trade look uncertain.
+    ranking = _ranking()
+    result = evaluate_trade(
+        roster_before_ids=_roster_ids(), gives_ids=["rb3"], receives_ids=["wr-star"],
+        profile=ranking.profile, ranking=ranking, manual_assets=[],
+    )
+    assert result.ros_value_delta_all_known is True
+    assert all(impact.ros_replacement_value_known for impact in result.gives)
+    assert all(impact.ros_replacement_value_known for impact in result.receives)
+
+
+def test_unranked_manual_asset_ros_value_is_honestly_unknown_not_silently_zero() -> None:
+    # Full Trust Hardening V1 (Worker 2): reproduces the exact undisclosed
+    # gap Worker 1 flagged at redraft_trade_analysis_service.py:149 -- a
+    # K/DST or otherwise-unmodeled manual asset has no real
+    # replacement_adjusted_value (_asset_pool sets it to None, "NOT
+    # MODELED"). Before this fix, ros_replacement_value silently collapsed
+    # to 0.0 with no way to tell "unknown" from "genuinely worth zero,"
+    # which could fabricate a confident-looking rosValueDelta arbitrage
+    # number. Now the value stays 0.0 for arithmetic convenience but is
+    # explicitly flagged unknown on both the impact and the evaluation.
+    ranking = _ranking()
+    manual_assets = [
+        {
+            "player_id": "dst-unmodeled",
+            "player_name": "Unmodeled DST",
+            "position": "DST",
+            "team": "TST",
+        }
+    ]
+    result = evaluate_trade(
+        roster_before_ids=[*_roster_ids(), "dst-unmodeled"],
+        gives_ids=["dst-unmodeled"],
+        receives_ids=["wr-star"],
+        profile=ranking.profile,
+        ranking=ranking,
+        manual_assets=manual_assets,
+    )
+    given = result.gives[0]
+    assert given.player_id == "dst-unmodeled"
+    # Arithmetic default stays 0.0 for the delta computation...
+    assert given.ros_replacement_value == 0.0
+    # ...but it must be explicitly disclosed as unknown, never a bare zero.
+    assert given.ros_replacement_value_known is False
+    # The received (fully-ranked) side is unaffected.
+    assert result.receives[0].ros_replacement_value_known is True
+    # And the top-level delta must be flagged as partial/not-fully-known,
+    # since it silently summed a real known value against an unknown one.
+    assert result.ros_value_delta_all_known is False

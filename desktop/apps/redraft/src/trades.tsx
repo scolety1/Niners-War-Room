@@ -228,7 +228,21 @@ function AnalyzeTab({
     () => [
       { key: "playerName", label: "Player", sort: "text" },
       { key: "position", label: "Pos", sort: "text" },
-      { key: "rosReplacementValue", label: "ROS replacement value", sort: "number", align: "right", render: (row) => row.rosReplacementValue == null ? "—" : formatNumber(Number(row.rosReplacementValue), 1) },
+      {
+        key: "rosReplacementValue", label: "ROS replacement value", sort: "number", align: "right",
+        // Full Trust Hardening V1 (Worker 2): `rosReplacementValueKnown ===
+        // false` means this player is unranked/unmodeled (e.g. K/DST) --
+        // the backend's own 0 in that case is an arithmetic placeholder,
+        // not a real "worth zero" value. Show "Unknown" instead of a
+        // confident-looking 0.0, never silently render the placeholder as
+        // if it were a real number. Missing the flag entirely (older cached
+        // response) is treated as known, matching the contract's own
+        // documented backward-compatible default.
+        render: (row) => {
+          if (row.rosReplacementValueKnown === false) return "Unknown";
+          return row.rosReplacementValue == null ? "—" : formatNumber(Number(row.rosReplacementValue), 1);
+        },
+      },
       { key: "marginalUtility", label: "Marginal utility", sort: "number", align: "right", render: (row) => row.marginalUtility == null ? "—" : formatNumber(Number(row.marginalUtility), 1) },
       { key: "becomesStarter", label: "Becomes starter", sort: "text", render: (row) => row.becomesStarter ? <StatusBadge tone="safe" label="Yes" /> : "No" },
       { key: "statusFlag", label: "Status/risk", sort: "text", render: (row) => row.statusFlag ? <StatusBadge tone="review" label={String(row.statusFlag)} /> : "—" },

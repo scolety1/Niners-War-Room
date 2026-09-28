@@ -193,10 +193,42 @@ def compute_market_sanity_flags(
     if "dp_market_rank_1qb" not in frame.columns:
         frame = join_market_to_players(frame, artifact_dir)
 
+    # Full Trust Hardening V1 (Worker 2): every joined player row carries the
+    # RAW per-row `freshness_status` written into the CSV at connector-fetch
+    # time -- it is never re-checked against today's date. `load_market_
+    # freshness()` is the one place that recomputes staleness dynamically
+    # (age_days > 7 downgrades even a GREEN status to YELLOW_STALE -- see
+    # its own docstring/logic). Before this fix, a real admitted snapshot
+    # could sit untouched for weeks/months and every row here would still
+    # read "GREEN_SAME_WEEK_NO_CHANGE" from the stale CSV, so `_market_gap_
+    # label()` would never hit its `STALE_STATUSES` branch and would keep
+    # emitting confident "Aligned"/"NWR much higher"/"NWR much lower" labels
+    # off data that was, in fact, genuinely stale -- a silent current-
+    # looking arbitrage claim built on old evidence. Reusing the SAME
+    # dynamically-recomputed aggregate status `owner_asset_evidence_
+    # service.py`'s `_market_status()` already trusts closes that gap here
+    # too, for the sibling display surface (Compare's NWR-vs-market flags).
+    effective_status = ""
+    try:
+        effective_status = load_market_freshness(artifact_dir).get("freshness_status", "")
+    except (OSError, ValueError, KeyError):
+        # A freshness-report read failure must never crash sanity-flag
+        # display; fall back to each row's own (possibly stale-at-write-
+        # time-only) status rather than raising.
+        effective_status = ""
+
     labels: list[str] = []
     gaps: list[float | str] = []
     for row in frame.to_dict("records"):
-        label, gap = _market_gap_label(row)
+        effective_row = dict(row)
+        # Only override a row that actually HAS a market match (a non-empty
+        # per-row freshness_status) -- an unmatched player's own status is
+        # always "" ("No market match" territory) and must stay that way;
+        # staleness is only a meaningful concept once there is a real
+        # market data point to be stale about.
+        if effective_status and _text(row.get("freshness_status")):
+            effective_row["freshness_status"] = effective_status
+        label, gap = _market_gap_label(effective_row)
         labels.append(label)
         gaps.append("" if gap is None else gap)
 

@@ -69,6 +69,18 @@ class TradeSideImpact:
     marginal_utility: float | None
     becomes_starter: bool
     status_flag: str | None  # a real ZERO_VALUE_KINDS override, if one exists
+    # Full Trust Hardening V1 (Worker 2): False when this player has no real
+    # governed replacement_adjusted_value (unranked skill-position player or
+    # an unmodeled K/DST -- see `_asset_pool`'s own "NOT MODELED" comment).
+    # `ros_replacement_value` stays 0.0 in that case for arithmetic
+    # convenience, but callers/owners must treat it as UNKNOWN, not "worth
+    # zero" -- the prior silent collapse of "unranked" and "actually zero"
+    # into the same displayed number was the exact undisclosed gap this
+    # field closes (redraft_trade_analysis_service.py:149 pre-fix). Default
+    # True is for the many pre-existing test fixtures that construct a
+    # fully-known impact directly; the real evaluate_trade() call site below
+    # always sets this explicitly, never relies on the default.
+    ros_replacement_value_known: bool = True
 
 
 @dataclass(frozen=True)
@@ -91,6 +103,13 @@ class TradeEvaluation:
         "Championship Equity is not evaluated -- this repo has no live standings store "
         "(a real, disclosed MISSING capability, not a fabricated omission)."
     )
+    # Full Trust Hardening V1 (Worker 2): True only when every traded player
+    # (both sides) has a real, known ros_replacement_value -- False means
+    # ros_value_delta was computed treating one or more unranked/unmodeled
+    # players as 0.0 and is honestly a PARTIAL figure, not a complete one.
+    # Default True for pre-existing fixtures; evaluate_trade() always sets
+    # this explicitly.
+    ros_value_delta_all_known: bool = True
 
 
 def _status_flag(player_id: str, overrides_by_id: Mapping[str, StatusOverride]) -> str | None:
@@ -139,6 +158,8 @@ def evaluate_trade(
 
     def _impact(player_id: str, current_player_ids_for_utility: Sequence[str]) -> TradeSideImpact:
         asset = pool.get(player_id)
+        raw_ros_value = asset.get("replacement_adjusted_value") if asset else None
+        ros_known = raw_ros_value is not None
         result = marginal_roster_utility_v2(
             player_id, current_player_ids_for_utility, profile, ranking, manual_assets
         )
@@ -146,7 +167,8 @@ def evaluate_trade(
             player_id=player_id,
             player_name=str(asset.get("player_name")) if asset else player_id,
             position=str(asset.get("position")) if asset else "",
-            ros_replacement_value=float(asset.get("replacement_adjusted_value") or 0.0) if asset else 0.0,
+            ros_replacement_value=float(raw_ros_value) if ros_known else 0.0,
+            ros_replacement_value_known=ros_known,
             marginal_utility=result.utility,
             becomes_starter=result.becomes_starter,
             status_flag=_status_flag(player_id, overrides_by_id),
@@ -174,10 +196,15 @@ def evaluate_trade(
         if impact.status_flag
     ]
 
+    ros_value_delta_all_known = all(
+        impact.ros_replacement_value_known for impact in (*gives_impacts, *receives_impacts)
+    )
+
     return TradeEvaluation(
         gives=gives_impacts,
         receives=receives_impacts,
         ros_value_delta=round(ros_delta, 2),
+        ros_value_delta_all_known=ros_value_delta_all_known,
         net_marginal_utility=net_marginal,
         starting_lineup_value_before=report_before.starting_lineup_value,
         starting_lineup_value_after=report_after.starting_lineup_value,

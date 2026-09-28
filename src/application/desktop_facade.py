@@ -4978,6 +4978,7 @@ class DesktopBackendFacade:
                 "receives": [impact.player_id for impact in evaluation.receives],
                 "netMarginalUtility": evaluation.net_marginal_utility,
                 "rosValueDelta": evaluation.ros_value_delta,
+                "rosValueDeltaAllKnown": evaluation.ros_value_delta_all_known,
             },
             league_snapshot_id=trade_league_snapshot_id,
             status_versions=self._status_versions_snapshot(),
@@ -4994,6 +4995,13 @@ class DesktopBackendFacade:
                     "playerName": impact.player_name,
                     "position": impact.position,
                     "rosReplacementValue": impact.ros_replacement_value,
+                    # Full Trust Hardening V1 (Worker 2): False for an
+                    # unranked skill-position player or an unmodeled K/DST --
+                    # rosReplacementValue is 0.0 for arithmetic convenience
+                    # in that case, but that 0.0 means UNKNOWN, not "worth
+                    # zero." Never silently upgrade an unknown value to a
+                    # real zero on this flag's absence.
+                    "rosReplacementValueKnown": impact.ros_replacement_value_known,
                     "marginalUtility": impact.marginal_utility,
                     "becomesStarter": impact.becomes_starter,
                     "statusFlag": impact.status_flag,
@@ -5031,6 +5039,7 @@ class DesktopBackendFacade:
                 "receives": receives_names,
                 "netMarginalUtility": evaluation.net_marginal_utility,
                 "rosValueDelta": evaluation.ros_value_delta,
+                "rosValueDeltaAllKnown": evaluation.ros_value_delta_all_known,
             },
             # Trade Analysis evaluates exactly the ONE proposed trade the
             # owner submitted -- there is no real "alternative trade" this
@@ -5060,6 +5069,7 @@ class DesktopBackendFacade:
                 "gives": _side_payload(evaluation.gives),
                 "receives": _side_payload(evaluation.receives),
                 "rosValueDelta": evaluation.ros_value_delta,
+                "rosValueDeltaAllKnown": evaluation.ros_value_delta_all_known,
                 "netMarginalUtility": evaluation.net_marginal_utility,
                 "startingLineupValueBefore": evaluation.starting_lineup_value_before,
                 "startingLineupValueAfter": evaluation.starting_lineup_value_after,
@@ -5332,6 +5342,7 @@ class DesktopBackendFacade:
                         "myNetMarginalUtility": candidate.my_evaluation.net_marginal_utility,
                         "opponentNetMarginalUtility": candidate.opponent_evaluation.net_marginal_utility,
                         "myRosValueDelta": candidate.my_evaluation.ros_value_delta,
+                        "myRosValueDeltaAllKnown": candidate.my_evaluation.ros_value_delta_all_known,
                     }
                     for candidate in results
                 ],
@@ -5519,6 +5530,7 @@ class DesktopBackendFacade:
                 "playerName": impact.player_name,
                 "position": impact.position,
                 "rosReplacementValue": impact.ros_replacement_value,
+                "rosReplacementValueKnown": impact.ros_replacement_value_known,
                 "marginalUtility": impact.marginal_utility,
                 "becomesStarter": impact.becomes_starter,
                 "statusFlag": impact.status_flag,
@@ -5530,6 +5542,7 @@ class DesktopBackendFacade:
                 "gives": [_impact_payload(impact) for impact in evaluation.gives],
                 "receives": [_impact_payload(impact) for impact in evaluation.receives],
                 "rosValueDelta": evaluation.ros_value_delta,
+                "rosValueDeltaAllKnown": evaluation.ros_value_delta_all_known,
                 "netMarginalUtility": evaluation.net_marginal_utility,
                 "startingLineupValueBefore": evaluation.starting_lineup_value_before,
                 "startingLineupValueAfter": evaluation.starting_lineup_value_after,

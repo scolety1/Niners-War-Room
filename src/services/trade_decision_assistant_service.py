@@ -1154,11 +1154,22 @@ def _age_risk(row: Mapping[str, object]) -> bool:
 
 
 def _youth_and_age_risk(rows: Sequence[Mapping[str, object]]) -> tuple[int, int]:
-    young = sum(_is_rookie(row) for row in rows)
-    young += sum(
-        bool(age is not None and age <= 25) for row in rows if (age := _known_age(row)) is not None
-    )
+    # Full Trust Hardening V1 (Worker 2): a single asset must count as at
+    # most ONE "young/rookie asset," never two. Before this fix, a real
+    # rookie under 25 (the overwhelmingly common case -- rookies are young
+    # by definition) was counted once via `_is_rookie` and AGAIN via the
+    # age<=25 check, inflating a one-asset youth edge into a reported
+    # two-asset edge. That inflation could tip an ordinal outcome from
+    # SIDE_*_LEAN to the stronger SIDE_*_CLEAR purely from double-counting,
+    # not from any real additional evidence -- reproduced live this pass
+    # (Jeremiyah Love alone reported as "2 young/rookie asset(s)").
+    young = sum(1 for row in rows if _is_rookie(row) or _is_young_by_age(row))
     return young, sum(_age_risk(row) for row in rows)
+
+
+def _is_young_by_age(row: Mapping[str, object]) -> bool:
+    age = _known_age(row)
+    return age is not None and age <= 25
 
 
 def _limited_one_qb(row: Mapping[str, object]) -> bool:

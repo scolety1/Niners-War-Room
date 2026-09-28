@@ -470,3 +470,33 @@ def test_contract_enums_and_dimensions_are_closed() -> None:
 def test_unknown_team_window_fails_closed(team_window: str) -> None:
     with pytest.raises(ValueError, match="Unsupported team window"):
         evaluate_trade_decision({"give": [], "get": []}, {}, team_window=team_window)
+
+
+def test_a_single_young_rookie_counts_as_one_young_asset_not_two() -> None:
+    # Full Trust Hardening V1 (Worker 2): reproduces a real bug found this
+    # pass live-testing the Dynasty Trade Decision Lab (Jeremiyah Love --
+    # a real rookie under 25 -- was reported as "2 young/rookie asset(s)"
+    # for a single traded player). `_youth_and_age_risk` used to count a
+    # rookie once via registry_asset_type and again via age<=25, and
+    # rookies are almost always both. A lone young rookie on one side must
+    # never be reported as two assets' worth of youth evidence.
+    veteran_side = "registry:current:veteran"
+    rookie_side = "registry:rookie:one-young-rookie"
+    decision = _decision(
+        [
+            _player(veteran_side, "Established Veteran", rank=60, age=29),
+            _player(
+                rookie_side,
+                "Young Rookie",
+                rank=20,
+                age=21,
+                registry_type="Rookie Review",
+            ),
+        ],
+        [veteran_side],
+        [rookie_side],
+    )
+
+    youth = next(row for row in decision.dimensions if row.code == "D3")
+    assert "You receive: 1 young/rookie asset(s)" in " ".join(youth.evidence)
+    assert "You receive: 2 young/rookie asset(s)" not in " ".join(youth.evidence)
