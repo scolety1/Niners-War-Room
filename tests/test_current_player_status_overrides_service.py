@@ -7,6 +7,7 @@ import pytest
 from src.services.current_player_status_overrides_service import (
     OVERRIDES_RELATIVE_PATH,
     StatusOverride,
+    StatusOverrideCorruptionError,
     StatusOverrideIntakeError,
     add_verified_status_override,
     apply_status_overrides_to_ranking,
@@ -246,3 +247,71 @@ def test_add_verified_status_override_team_correction_accepted(tmp_path: Path) -
     assert result.corrected_team == "HOU"
     reloaded = load_status_overrides(root)
     assert next(o for o in reloaded if o.player_id == "00-0099999").corrected_team == "HOU"
+
+
+# --- Full Trust Hardening V1 (Worker 3): missing-injury-becomes-healthy
+# bug found+fixed. Before this pass, `load_status_overrides` caught a
+# missing file and a genuinely CORRUPT/unparseable file with the exact
+# same `(OSError, ValueError)` clause and silently returned `()` for both
+# -- meaning a real SEASON_OUT/NOT_WITH_TEAM/ADMINISTRATIVE_EXEMPT
+# override would silently vanish app-wide (recommendations, CPU picks,
+# roster completion all treat the player as fully healthy/available again)
+# the instant the file was even slightly malformed, with zero error
+# surfaced anywhere. Fixed: a MISSING file still honestly returns `()`;
+# an EXISTING-but-corrupt file now raises `StatusOverrideCorruptionError`
+# instead of silently emptying out.
+
+
+def test_missing_overrides_file_is_honestly_empty_not_an_error(tmp_path: Path) -> None:
+    # A repo root with no overrides file at all (e.g. a fresh worktree/
+    # fixture) is a real, legitimate "no overrides configured yet" -- must
+    # NOT raise.
+    assert load_status_overrides(tmp_path) == ()
+
+
+def test_corrupt_overrides_file_fails_loudly_not_silently_empty(tmp_path: Path) -> None:
+    # THE BUG, reproduced: before the fix, this returned `()` -- exactly
+    # indistinguishable from "no injuries on file" to every live caller
+    # (waivers, trade analysis, weekly lineup, bootstrap, ranking).
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / OVERRIDES_RELATIVE_PATH.name).write_text(
+        '{"schema_version": 1, "overrides": [', encoding="utf-8"  # truncated/corrupt JSON
+    )
+    with pytest.raises(StatusOverrideCorruptionError):
+        load_status_overrides(tmp_path)
+
+
+def test_overrides_file_with_malformed_top_level_shape_fails_loudly(tmp_path: Path) -> None:
+    # Valid JSON, but not the expected document shape (missing/wrong-typed
+    # "overrides" field) -- also a real malformed document, not a
+    # legitimate empty override set.
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / OVERRIDES_RELATIVE_PATH.name).write_text(
+        json.dumps({"schema_version": 1}), encoding="utf-8"
+    )
+    with pytest.raises(StatusOverrideCorruptionError):
+        load_status_overrides(tmp_path)
+
+
+def test_add_verified_status_override_writes_atomically_via_temp_and_replace(
+    tmp_path: Path,
+) -> None:
+    # Full Trust Hardening V1 (Worker 3): a direct `path.write_text(...)`
+    # to the final path (pre-fix) risks leaving a truncated/corrupt file
+    # behind if the process is interrupted mid-write -- which, combined
+    # with the bug above, used to silently discard EVERY real, previously
+    # -verified override on file. The fix writes to a `.tmp` sibling and
+    # atomically replaces the real file -- proven here by confirming no
+    # leftover `.tmp` file survives a real, successful write, and the real
+    # file itself always parses as complete, valid JSON immediately after.
+    root = _fixture_repo_root(tmp_path)
+    real_path = root / OVERRIDES_RELATIVE_PATH
+    add_verified_status_override(root, **_VALID_KWARGS)
+    temp_path = real_path.with_suffix(real_path.suffix + ".tmp")
+    assert not temp_path.exists()
+    # The real file is complete, valid JSON with the new entry present --
+    # never a half-written intermediate state.
+    on_disk = json.loads(real_path.read_text(encoding="utf-8"))
+    assert any(entry.get("player_id") == "00-0099999" for entry in on_disk["overrides"])

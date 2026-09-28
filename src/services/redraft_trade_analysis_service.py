@@ -148,6 +148,39 @@ def evaluate_trade(
 
     pool = _asset_pool(ranking, manual_assets)
     roster_after = [pid for pid in roster_before if pid not in gives] + receives
+    # Full Trust Hardening V1 (Worker 3): post-trade roster-size legality.
+    # `trade_package_search_service.py`'s own automated search already
+    # gates every candidate it generates through an equivalent
+    # `_roster_size_legal` check before it ever reaches this function --
+    # but this function is ALSO called directly by the Trade Analysis
+    # facade endpoint for an arbitrary, owner-constructed N-for-M trade,
+    # and that call site had no equivalent check at all. Reproduced live:
+    # giving 1 player and receiving 3 in a league with only 1 open
+    # bench/starter slot previously returned a real, confident-looking
+    # positive `net_marginal_utility` for a trade that is not actually
+    # constructible on the real platform without an additional drop this
+    # tool never disclosed. Centralized here (not just at the Trade
+    # Analysis call site) so every current and future caller of
+    # `evaluate_trade` is protected the same way; harmless/redundant for
+    # Trade Finder (always 1-for-1, so roster size never changes) and
+    # Trade Package Search (already checks this upstream before calling).
+    total_roster_slots = (
+        profile.roster.qb
+        + profile.roster.rb
+        + profile.roster.wr
+        + profile.roster.te
+        + profile.roster.flex
+        + profile.roster.superflex
+        + profile.roster.k
+        + profile.roster.dst
+        + profile.roster.bench_size
+    )
+    if len(roster_after) > total_roster_slots:
+        raise TradeAnalysisError(
+            f"This trade would leave {len(roster_after)} player(s) on the roster, exceeding "
+            f"the league's configured {total_roster_slots} roster slot(s) (starters + bench). "
+            "An additional drop is required for this trade to be legal."
+        )
     before_players = _roster_players(roster_before, pool)
     after_players = _roster_players(roster_after, pool)
     report_before: RosterCompositionReport = roster_composition_report(before_players, profile)

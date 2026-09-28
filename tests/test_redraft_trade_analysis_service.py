@@ -76,6 +76,33 @@ def test_cannot_receive_a_player_already_rostered() -> None:
         )
 
 
+def test_same_asset_cannot_be_both_given_and_received() -> None:
+    """Full Trust Hardening V1 (Worker 3): `evaluate_trade` already contains
+    this exact validation (line ~145's `overlap = set(gives) & set(receives)`)
+    but it had zero test coverage until now -- a permanent regression guard,
+    not a new fix."""
+    ranking = _ranking()
+    with pytest.raises(TradeAnalysisError):
+        evaluate_trade(
+            roster_before_ids=_roster_ids(), gives_ids=["rb3"], receives_ids=["rb3"],
+            profile=ranking.profile, ranking=ranking, manual_assets=[],
+        )
+
+
+def test_evaluate_trade_is_deterministic() -> None:
+    """Full Trust Hardening V1 (Worker 3): identical inputs must produce an
+    identical evaluation -- a pure function over its real inputs, no hidden
+    global/cached state."""
+    ranking = _ranking()
+    kwargs = dict(
+        roster_before_ids=_roster_ids(), gives_ids=["rb3"], receives_ids=["wr-star"],
+        profile=ranking.profile, ranking=ranking, manual_assets=[],
+    )
+    first = evaluate_trade(**kwargs)
+    second = evaluate_trade(**kwargs)
+    assert first == second
+
+
 def test_empty_trade_rejected() -> None:
     ranking = _ranking()
     with pytest.raises(TradeAnalysisError):

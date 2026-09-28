@@ -268,7 +268,7 @@ def _active_roster_output_quality_check(
         row
         for row in board.roster_rows
         if str(row.get("team_section") or "") == "Needs Data Review"
-        or _float(row.get("confidence"), 100.0) < 78.0
+        or _confidence_needs_review(row.get("confidence"))
     ]
     if review_rows:
         names = ", ".join(str(row.get("player") or "") for row in review_rows[:5])
@@ -633,6 +633,37 @@ def _float(value: object, default: float = 0.0) -> float:
         return float(text)
     except (TypeError, ValueError):
         return default
+
+
+def _confidence_needs_review(value: object, *, threshold: float = 78.0) -> bool:
+    """True when a roster row's real confidence is genuinely missing/
+    unparseable (unknown -- must be treated as needing review, never as
+    maximally confident) or a real, parsed confidence below `threshold`.
+
+    Full Trust Hardening V1 (Worker 3): `_active_roster_output_quality_check`
+    used to gate this via `_float(row.get("confidence"), 100.0) < 78.0`.
+    `command_board_service._confidence_value` genuinely returns `None` for a
+    row with no `confidence_score` at all (an unranked/unmodeled player, the
+    same real gap already documented elsewhere in this codebase) --
+    `_float`'s exception-swallowing default then silently substituted 100.0
+    (maximally confident) for that genuinely-unknown value, so a roster row
+    with NO real confidence signal was never flagged for review unless its
+    `team_section` happened to already say "Needs Data Review" separately.
+    Reproduced live: a single fabricated row with `confidence=None` and
+    `team_section="Core"` returned `status="ready"` before this fix.
+    Missing confidence must read as "needs review," matching every other
+    "missing is not a safe default" fix already made in this codebase.
+    """
+
+    if value is None:
+        return True
+    text = str(value)
+    if text == "":
+        return True
+    try:
+        return float(text) < threshold
+    except (TypeError, ValueError):
+        return True
 
 
 def _boolish(value: object) -> bool:

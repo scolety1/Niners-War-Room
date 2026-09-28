@@ -96,15 +96,52 @@ class StatusOverride:
 ZERO_VALUE_KINDS = frozenset({"SEASON_OUT", "NOT_WITH_TEAM", "ADMINISTRATIVE_EXEMPT"})
 
 
+class StatusOverrideCorruptionError(ValueError):
+    """Full Trust Hardening V1 (Worker 3): the overrides file exists but
+    could not be read/parsed as real JSON. Before this fix, `load_status_
+    overrides` caught this the SAME way it caught "file does not exist"
+    (both `(OSError, ValueError)`) and silently returned `()` -- an empty
+    override set is indistinguishable from "no injuries/releases/exempt
+    statuses are currently on file" to every downstream consumer
+    (recommendations, CPU picks, roster completion, decision-bundle
+    scoring). A genuinely SEASON_OUT player would silently become
+    recommendable again app-wide the instant this file was even slightly
+    malformed -- a real missing-injury-becomes-healthy failure mode, not a
+    style nit. A MISSING file is still a legitimate, honest "no overrides
+    configured yet" and continues to return `()`; only a file that EXISTS
+    but fails to parse now fails loudly instead of silently emptying out.
+    The desktop API server's own top-level handler (`server.py`'s bare
+    `except Exception`) already converts any raised exception into a clean,
+    generic, non-leaking error response -- so this never surfaces a raw
+    internal error to the owner, only an honest "something is wrong,"
+    which is strictly safer than a silent false-healthy result."""
+
+
 def load_status_overrides(repo_root: str | Path) -> tuple[StatusOverride, ...]:
     path = Path(repo_root) / OVERRIDES_RELATIVE_PATH
+    if not path.exists():
+        # A missing file is a real, honest "no overrides configured yet" --
+        # never conflated with a corrupt one below.
+        return ()
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return ()
+    except (OSError, ValueError) as exc:
+        raise StatusOverrideCorruptionError(
+            f"The verified current-player-status overrides file exists at {path} but could "
+            f"not be read/parsed ({type(exc).__name__}: {exc}). Refusing to silently treat "
+            "this as 'no overrides on file' -- that could resurrect a real SEASON_OUT / "
+            "NOT_WITH_TEAM / ADMINISTRATIVE_EXEMPT player as falsely available for "
+            "recommendations, CPU picks, and roster completion. Restore this file from "
+            "version control or repair it before continuing."
+        ) from exc
     overrides = raw.get("overrides") if isinstance(raw, dict) else None
     if not isinstance(overrides, list):
-        return ()
+        raise StatusOverrideCorruptionError(
+            f"The verified current-player-status overrides file at {path} parsed as JSON but "
+            "its top-level 'overrides' field is missing or is not a list -- a malformed "
+            "document, not a real empty override set. Refusing to silently treat this as "
+            "'no overrides on file.'"
+        )
     result: list[StatusOverride] = []
     for entry in overrides:
         if not isinstance(entry, dict):
@@ -233,7 +270,22 @@ def add_verified_status_override(
     if corrected_team:
         new_entry["corrected_team"] = corrected_team
     existing_overrides.append(new_entry)
-    path.write_text(json.dumps(raw, indent=2) + "\n", encoding="utf-8")
+    # Full Trust Hardening V1 (Worker 3): atomic temp-file + replace, not a
+    # direct write to the final path -- mirrors the SAME pattern already
+    # used elsewhere in this codebase for exactly this reason
+    # (`draft_day_runtime_state_service._write_json_atomic`,
+    # `refresh_receipt_store_service`'s own `os.replace` writers). Before
+    # this fix, a process crash/power-loss mid-write here could leave a
+    # truncated/corrupt file -- which, combined with `load_status_overrides`'
+    # own bug (also fixed this pass), used to silently discard EVERY real,
+    # previously-verified override on file, not just the new one being
+    # added. `os.replace`/`Path.replace` is atomic on both POSIX and
+    # Windows for same-volume renames, which this always is (same parent
+    # directory).
+    serialized = json.dumps(raw, indent=2) + "\n"
+    temp_path = path.with_suffix(path.suffix + ".tmp")
+    temp_path.write_text(serialized, encoding="utf-8")
+    temp_path.replace(path)
     return StatusOverride(
         player_id=player_id,
         player_name=str(player_name or ""),

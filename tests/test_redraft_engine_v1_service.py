@@ -470,6 +470,36 @@ def test_profile_create_edit_duplicate_archive_delete_and_active_isolation(tmp_p
     assert {profile.profile_id for profile in list_profiles(tmp_path)} == {second.profile_id}
 
 
+def test_atomic_json_persistence_error_never_leaks_the_raw_filesystem_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Full Trust Hardening V1 (Worker 3): `_atomic_json` used to build its
+    `RedraftPersistenceError` message as f"Could not persist redraft state:
+    {exc}" -- and a real OSError's own str() embeds the absolute local
+    filesystem path it failed on. That message reaches desktop_facade.py's
+    `FacadeError` boundary, which is documented as "user-safe" -- a raw
+    local path (e.g. a real AppData path) leaking there is exactly the kind
+    of internal-detail exposure that boundary exists to prevent. Proves the
+    fix: the message never contains the path, while the real OSError is
+    still chained via __cause__ for server-side logs/tracebacks."""
+    from src.services import redraft_engine_v1_service as engine_module
+
+    target = tmp_path / "definitely_secret_owner_name" / "active_profile.json"
+    sensitive_path = str(target)
+
+    def _boom(_source: object, _destination: object) -> None:
+        raise OSError(13, "Permission denied", sensitive_path)
+
+    monkeypatch.setattr(engine_module.os, "replace", _boom)
+    with pytest.raises(RedraftPersistenceError) as exc_info:
+        engine_module._atomic_json(target, {"profile_id": "x"})
+
+    message = str(exc_info.value)
+    assert "definitely_secret_owner_name" not in message
+    assert sensitive_path not in message
+    assert isinstance(exc_info.value.__cause__, OSError)
+
+
 def test_receipt_backed_sleeper_profile_identity_migration_preserves_existing_settings(
     tmp_path: Path,
 ) -> None:

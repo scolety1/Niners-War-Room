@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from dataclasses import replace
 
 from src.services.redraft_engine_v1_service import (
     DraftContext,
@@ -136,6 +137,62 @@ def test_find_win_win_returns_a_real_1_for_2_filling_two_starter_holes() -> None
     for candidate in result.candidates:
         assert candidate.owner_evaluation.net_marginal_utility > 0.0
         assert candidate.opponent_evaluation.net_marginal_utility > 0.0
+
+
+def test_multi_opponent_search_never_attributes_a_candidate_to_the_wrong_counterparty() -> None:
+    """Full Trust Hardening V1 (Worker 3): TRADE invariant -- 'incoming
+    assets resolve to exactly one real counterparty where the tool claims
+    that.' A second, structurally-identical opponent roster is added
+    alongside the first; every real candidate this search returns must
+    receive players ONLY from the opponent roster its own
+    `opponent_roster_id` names, never from the other opponent's roster."""
+    ranking = _two_team_ranking()
+    second_opponent_rows = [
+        _row("opp2-qb1", "Opp2 QB1", "QB", 280, 108),
+        _row("opp2-rb1", "Opp2 RB1", "RB", 210, 109),
+        _row("opp2-rb2", "Opp2 RB2", "RB", 170, 110),
+        _row("opp2-wr1", "Opp2 WR1", "WR", 230, 111),
+        _row("opp2-wr2", "Opp2 WR2", "WR", 190, 112),
+        _row("opp2-wr3", "Opp2 WR3", "WR", 140, 113),
+        _row("opp2-te1", "Opp2 TE1", "TE", 100, 114),
+        _row("opp2-te2", "Opp2 TE2", "TE", 15, 115),
+        _row("opp2-wr4", "Opp2 WR4", "WR", 20, 116),
+    ]
+    combined_ranking = replace(ranking, rows=tuple(ranking.rows) + tuple(second_opponent_rows))
+    rows_by_id = {row.player_id: row for row in combined_ranking.rows}
+    opp2_ids = [row.player_id for row in second_opponent_rows]
+    my_names, my_positions = _names_positions(_my_ids(), rows_by_id)
+    opp_names, opp_positions = _names_positions(_opp_ids(), rows_by_id)
+    opp2_names, opp2_positions = _names_positions(opp2_ids, rows_by_id)
+    opponents = [
+        {
+            "rosterId": "2", "teamName": "Rival Team",
+            "canonicalIds": _opp_ids(), "names": opp_names, "positions": opp_positions,
+        },
+        {
+            "rosterId": "3", "teamName": "Second Rival",
+            "canonicalIds": opp2_ids, "names": opp2_names, "positions": opp2_positions,
+        },
+    ]
+    result = search_win_win_packages(
+        my_roster_canonical_ids=_my_ids(), my_player_names=my_names, my_player_positions=my_positions,
+        opponents=opponents, profile=combined_ranking.profile, ranking=combined_ranking, manual_assets=[],
+    )
+    assert result.candidates, "expected at least one real win-win candidate across two opponents"
+    roster_by_id = {"2": set(_opp_ids()), "3": set(opp2_ids)}
+    seen_roster_ids = set()
+    for candidate in result.candidates:
+        seen_roster_ids.add(candidate.opponent_roster_id)
+        own_roster = roster_by_id[candidate.opponent_roster_id]
+        other_roster = roster_by_id["3" if candidate.opponent_roster_id == "2" else "2"]
+        for player_id in candidate.you_receive:
+            assert player_id in own_roster
+            assert player_id not in other_roster
+    # Real coverage check: both opponents are structurally identical rosters
+    # under the same search, so both must actually surface real candidates
+    # (not just the first one visited) -- otherwise the "never wrong
+    # counterparty" assertion above would be vacuously true.
+    assert seen_roster_ids == {"2", "3"}
 
 
 def test_find_win_win_never_returns_duplicate_packages() -> None:

@@ -485,6 +485,28 @@ class FacadeError(RuntimeError):
         self.status = status
 
 
+def _redact_unsafe_exception_message(exc: BaseException, safe_fallback: str) -> str:
+    """Full Trust Hardening V1 (Worker 3): pick the right message to put in
+    a `FacadeError` raised from an `except (OSError, RedraftPersistenceError,
+    RedraftValidationError)` block.
+
+    A bare `OSError`'s own `str()` can embed a real local filesystem path
+    (e.g. a real owner AppData path) -- that must never reach the owner
+    verbatim, so it is replaced with `safe_fallback`. `RedraftPersistenceError`
+    and `RedraftValidationError`, in contrast, are this codebase's own
+    deliberately-curated, already-path-free, user-safe validation/persistence
+    messages (e.g. "No pick correction is available to undo.", "Catch-up
+    paste has unresolved, ambiguous, or unassigned lines; nothing was
+    applied.") -- collapsing those to the same generic fallback string
+    discards real, safe, actionable information the owner needs to
+    self-correct, and is a real regression, not a safety improvement.
+    """
+
+    if isinstance(exc, OSError):
+        return safe_fallback
+    return str(exc) or safe_fallback
+
+
 @dataclass(frozen=True)
 class FacadePayload:
     data: dict[str, Any]
@@ -6786,7 +6808,25 @@ class DesktopBackendFacade:
             adp = load_adp_snapshot(self.redraft_root, profile)
             board = build_draft_room_payload(profile, ranking, manual_assets, adp, state)
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
-            raise FacadeError("REDRAFT_REPLACE_PICK_FAILED", str(exc), status=409) from exc
+            # Full Trust Hardening V1 (Worker 3, corrected by Worker 3's own
+            # re-review): only a bare OSError needs redaction here -- its
+            # own str() can embed the real local filesystem path, breaking
+            # FacadeError's documented user-safe contract.
+            # RedraftPersistenceError/RedraftValidationError are already
+            # curated, path-free, user-safe messages (e.g. "No pick
+            # correction is available to undo.") that existing callers and
+            # tests correctly rely on seeing verbatim -- collapsing them to
+            # this same generic string too (the first version of this fix)
+            # was a real regression, silently discarding genuinely useful,
+            # safe information the owner needs to self-correct. See
+            # `_redact_unsafe_exception_message` below.
+            raise FacadeError(
+                "REDRAFT_REPLACE_PICK_FAILED",
+                _redact_unsafe_exception_message(
+                    exc, "This pick could not be replaced. Verify the pick number and player, then try again."
+                ),
+                status=409,
+            ) from exc
         self._append_nwr_pure_correction_record(
             profile=profile, correction_type="REPLACE_PICK", pick_number=pick_number,
             detail={"new_player_id": normalized_player},
@@ -6811,7 +6851,14 @@ class DesktopBackendFacade:
             adp = load_adp_snapshot(self.redraft_root, profile)
             board = build_draft_room_payload(profile, ranking, manual_assets, adp, state)
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
-            raise FacadeError("REDRAFT_CLEAR_PICK_FAILED", str(exc), status=409) from exc
+            # Full Trust Hardening V1 (Worker 3): see REDRAFT_REPLACE_PICK_FAILED above / `_redact_unsafe_exception_message`.
+            raise FacadeError(
+                "REDRAFT_CLEAR_PICK_FAILED",
+                _redact_unsafe_exception_message(
+                    exc, "This pick could not be cleared. Verify the pick number, then try again."
+                ),
+                status=409,
+            ) from exc
         self._append_nwr_pure_correction_record(
             profile=profile, correction_type="CLEAR_PICK", pick_number=pick_number, detail={},
         )
@@ -6841,7 +6888,14 @@ class DesktopBackendFacade:
             adp = load_adp_snapshot(self.redraft_root, profile)
             board = build_draft_room_payload(profile, ranking, manual_assets, adp, state)
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
-            raise FacadeError("REDRAFT_FILL_GAP_FAILED", str(exc), status=409) from exc
+            # Full Trust Hardening V1 (Worker 3): see REDRAFT_REPLACE_PICK_FAILED above / `_redact_unsafe_exception_message`.
+            raise FacadeError(
+                "REDRAFT_FILL_GAP_FAILED",
+                _redact_unsafe_exception_message(
+                    exc, "This pick gap could not be filled. Verify the pick number and player, then try again."
+                ),
+                status=409,
+            ) from exc
         self._append_nwr_pure_correction_record(
             profile=profile, correction_type="FILL_GAP", pick_number=pick_number,
             detail={"filled_player_id": normalized_player},
@@ -6865,7 +6919,14 @@ class DesktopBackendFacade:
             adp = load_adp_snapshot(self.redraft_root, profile)
             board = build_draft_room_payload(profile, ranking, manual_assets, adp, state)
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
-            raise FacadeError("REDRAFT_UNDO_CORRECTION_FAILED", str(exc), status=409) from exc
+            # Full Trust Hardening V1 (Worker 3): see REDRAFT_REPLACE_PICK_FAILED above / `_redact_unsafe_exception_message`.
+            raise FacadeError(
+                "REDRAFT_UNDO_CORRECTION_FAILED",
+                _redact_unsafe_exception_message(
+                    exc, "The most recent pick correction could not be undone."
+                ),
+                status=409,
+            ) from exc
         self._log_owner_test_event(
             build_draft_state_change_event(
                 profile_id=profile.profile_id, timestamp_utc=utc_now(),
@@ -6883,7 +6944,14 @@ class DesktopBackendFacade:
                 self.redraft_root, profile, ranking, manual_assets, paste=str(paste)
             )
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
-            raise FacadeError("REDRAFT_CATCH_UP_PREVIEW_FAILED", str(exc), status=409) from exc
+            # Full Trust Hardening V1 (Worker 3): see REDRAFT_REPLACE_PICK_FAILED above / `_redact_unsafe_exception_message`.
+            raise FacadeError(
+                "REDRAFT_CATCH_UP_PREVIEW_FAILED",
+                _redact_unsafe_exception_message(
+                    exc, "The catch-up paste could not be previewed. Check the pasted text and try again."
+                ),
+                status=409,
+            ) from exc
         return FacadePayload(data={"catchUpPreview": preview})
 
     def apply_redraft_catch_up(self, *, profile_id: str, paste: str) -> FacadePayload:
@@ -6901,7 +6969,14 @@ class DesktopBackendFacade:
                 profile, ranking, manual_assets, adp, result["state"]
             )
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
-            raise FacadeError("REDRAFT_CATCH_UP_APPLY_FAILED", str(exc), status=409) from exc
+            # Full Trust Hardening V1 (Worker 3): see REDRAFT_REPLACE_PICK_FAILED above / `_redact_unsafe_exception_message`.
+            raise FacadeError(
+                "REDRAFT_CATCH_UP_APPLY_FAILED",
+                _redact_unsafe_exception_message(
+                    exc, "The catch-up paste could not be applied. Check the pasted text and try again."
+                ),
+                status=409,
+            ) from exc
         self._log_owner_test_event(
             build_draft_state_change_event(
                 profile_id=profile.profile_id, timestamp_utc=utc_now(),
@@ -7474,7 +7549,14 @@ class DesktopBackendFacade:
         try:
             result = rollback_udk_position_rankings(self.redraft_root, normalized, position)
         except (OSError, RedraftPersistenceError, RedraftValidationError) as exc:
-            raise FacadeError("REDRAFT_UDK_ROLLBACK_UNAVAILABLE", str(exc), status=409) from exc
+            # Full Trust Hardening V1 (Worker 3): see REDRAFT_REPLACE_PICK_FAILED above / `_redact_unsafe_exception_message`.
+            raise FacadeError(
+                "REDRAFT_UDK_ROLLBACK_UNAVAILABLE",
+                _redact_unsafe_exception_message(
+                    exc, "This UDK ranking change could not be rolled back."
+                ),
+                status=409,
+            ) from exc
         return FacadePayload(data={"rollback": result})
 
     def refresh_redraft_adp(self, *, profile_id: str) -> FacadePayload:

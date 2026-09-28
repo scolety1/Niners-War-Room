@@ -831,3 +831,31 @@ def test_characterize_late_season_taper_has_a_floor_not_a_ramp_to_zero() -> None
     # Floor reached at/below week 4 -- 4, 2, 1, 0 are all identical.
     assert by_weeks[4].bid_high_dollars == by_weeks[2].bid_high_dollars == by_weeks[1].bid_high_dollars == by_weeks[0].bid_high_dollars
     assert by_weeks[4].bid_low_dollars > 0  # a real bench-depth candidate still gets SOME positive range, just tapered
+
+
+def test_a_rostered_player_can_never_be_recommended_as_a_waiver_add() -> None:
+    """Full Trust Hardening V1 (Worker 3): `rank_waiver_candidates` used to
+    trust its caller's `free_agents` pool completely -- it never checked a
+    row's resolved canonical id against `owner_roster_canonical_ids`, the
+    one identity fact this function IS already given. A stale/incorrect
+    free-agent pool (e.g. a caching bug, or a real Sleeper transaction race)
+    that still included one of the owner's own rostered players used to
+    flow straight through to a real, positive-looking marginal-utility ADD
+    recommendation for a player the owner already owns. Reproduced here
+    with `rb1` (on the owner's own roster per `_owner_roster_ids()`)
+    appearing in the free-agent pool anyway -- and proven excluded."""
+    ranking = _ranking()
+    free_agents = list(_free_agent_rows()) + [
+        {
+            "sleeperPlayerId": "s-rb1", "playerId": "rb1", "playerName": "RB One",
+            "position": "RB", "team": "TST", "overallRank": 2, "replacementAdjustedValue": 250.0,
+        },
+    ]
+    candidates = rank_waiver_candidates(
+        free_agents=free_agents, owner_roster_canonical_ids=_owner_roster_ids(),
+        profile=ranking.profile, ranking=ranking, manual_assets=_manual_assets(), mode="REST_OF_SEASON",
+    )
+    assert "rb1" not in {c.canonical_player_id for c in candidates}
+    assert "s-rb1" not in {c.sleeper_player_id for c in candidates}
+    # The two genuine free agents are unaffected.
+    assert {"fa-rb", "fa-wr"} <= {c.canonical_player_id for c in candidates}

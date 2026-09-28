@@ -406,7 +406,13 @@ def _atomic_json(path: Path, document: Mapping[str, Any]) -> None:
         os.replace(temporary, path)
     except OSError as exc:
         temporary.unlink(missing_ok=True)
-        raise RedraftPersistenceError(f"Could not persist redraft state: {exc}") from exc
+        # Full Trust Hardening V1 (Worker 3): a raw OSError's own str() embeds
+        # the absolute local filesystem path (e.g. a real AppData path) --
+        # never interpolate it into this message. RedraftPersistenceError
+        # messages are documented at the desktop_facade.py boundary as
+        # user-safe (`FacadeError`'s own docstring); the real exception is
+        # still preserved server-side via `from exc` for logs/tracebacks.
+        raise RedraftPersistenceError("Could not persist redraft state.") from exc
 
 
 def list_profiles(root: str | Path, *, include_archived: bool = False) -> tuple[LeagueProfile, ...]:
@@ -650,7 +656,11 @@ def install_projection_snapshot(
     except OSError as exc:
         temporary.unlink(missing_ok=True)
         approval_temporary.unlink(missing_ok=True)
-        raise RedraftPersistenceError(f"Could not install projection snapshot: {exc}") from exc
+        # Full Trust Hardening V1 (Worker 3): never interpolate a raw
+        # OSError's local filesystem path into a message that reaches the
+        # facade boundary (RedraftPersistenceError is documented there as
+        # user-safe by `FacadeError`'s own docstring).
+        raise RedraftPersistenceError("Could not install projection snapshot.") from exc
     _atomic_json(
         destination.with_suffix(".manifest.json"),
         {
@@ -730,7 +740,11 @@ def install_projection_snapshot_from_release_summary(
     except OSError as exc:
         temporary.unlink(missing_ok=True)
         approval_temporary.unlink(missing_ok=True)
-        raise RedraftPersistenceError(f"Could not install projection snapshot: {exc}") from exc
+        # Full Trust Hardening V1 (Worker 3): never interpolate a raw
+        # OSError's local filesystem path into a message that reaches the
+        # facade boundary (RedraftPersistenceError is documented there as
+        # user-safe by `FacadeError`'s own docstring).
+        raise RedraftPersistenceError("Could not install projection snapshot.") from exc
     _atomic_json(
         destination.with_suffix(".manifest.json"),
         {

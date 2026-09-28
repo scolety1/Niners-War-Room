@@ -317,6 +317,20 @@ def rank_waiver_candidates(
             "THIS_WEEK mode requires real weekly projections; the caller must disable this "
             "mode honestly rather than call it with no data."
         )
+    # Full Trust Hardening V1 (Worker 3): this function trusted its caller's
+    # `free_agents` pool to already exclude every rostered player (both mine
+    # and every opponent's) -- true today via `sleeper_free_agent_pool`'s own
+    # live roster-exclusion join, but this ranking layer itself had NO
+    # independent defense of its own. A stale/incorrect free-agent pool (a
+    # caching bug, a Sleeper-side transaction race, a bad manual-asset merge)
+    # would have flowed straight through to a real-looking positive
+    # marginal-utility "add" recommendation for a player the owner ALREADY
+    # owns -- `marginal_roster_utility_v2` has no idea `candidate_id` might
+    # already be inside `current_player_ids` and does not guard against it.
+    # This is the one identity fact this layer CAN check directly (it is
+    # already given the owner's own roster ids), so it always does, never
+    # trusting the caller's pre-filtering alone.
+    owner_roster_id_set = frozenset(str(value) for value in owner_roster_canonical_ids)
     candidates: list[WaiverCandidate] = []
     for row in free_agents:
         candidate_position = str(row.get('position') or '')
@@ -326,6 +340,10 @@ def rank_waiver_candidates(
             continue
         sleeper_id = str(row.get("sleeperPlayerId") or "")
         canonical_id = str(row.get("playerId") or "")
+        if canonical_id and canonical_id in owner_roster_id_set:
+            # Already on the owner's own roster -- never a legitimate add
+            # candidate, regardless of what the caller's pool claims.
+            continue
         position = str(row.get("position") or "")
         weekly_row = (
             weekly_projections_by_sleeper_id.get(sleeper_id) if weekly_projections_by_sleeper_id else None

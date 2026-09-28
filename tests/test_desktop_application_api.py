@@ -1577,6 +1577,36 @@ def test_facade_replace_clear_fill_gap_undo_wire_through_to_persisted_state(
     assert reopened_cell["playerId"] == original_pick_one["playerId"]
 
 
+def test_replace_redraft_pick_failure_never_leaks_raw_filesystem_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Full Trust Hardening V1 (Worker 3): `replace_redraft_pick` (and its 6
+    siblings -- clear/fill-gap/undo-correction/catch-up preview+apply/UDK
+    rollback) used to pass a raw caught exception's str() straight through
+    as the `FacadeError` message. `FacadeError` is documented ("Controlled,
+    user-safe application boundary error") as safe to show the owner -- but
+    a bare `OSError`'s own str() embeds the real local filesystem path
+    (e.g. a real AppData path), which is exactly what would have leaked to
+    the screen on a real disk/permission failure. Proves the fix: the
+    message never contains the raw path, while the real exception is still
+    preserved server-side via exception chaining for logs/tracebacks."""
+    facade, profile_id = _started_redraft_room(tmp_path, monkeypatch)
+
+    sensitive_path = str(tmp_path / "definitely_secret_owner_name" / "draft_state.json")
+
+    def _boom(*_args: Any, **_kwargs: Any) -> Any:
+        raise OSError(13, "Permission denied", sensitive_path)
+
+    monkeypatch.setattr(desktop_facade_module, "replace_pick", _boom)
+    with pytest.raises(FacadeError) as exc_info:
+        facade.replace_redraft_pick(profile_id=profile_id, pick_number=1, player_id="TE-29")
+
+    assert exc_info.value.code == "REDRAFT_REPLACE_PICK_FAILED"
+    assert "definitely_secret_owner_name" not in exc_info.value.message
+    assert sensitive_path not in exc_info.value.message
+    assert isinstance(exc_info.value.__cause__, OSError)
+
+
 def test_facade_undo_pick_correction_reverses_only_the_latest_correction(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
