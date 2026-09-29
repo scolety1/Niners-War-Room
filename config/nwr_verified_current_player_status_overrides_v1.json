@@ -43,6 +43,20 @@
         "https://www.houstontexans.com/team/transactions/",
         "https://www.houstontexans.com/team/players-roster/"
       ]
+    },
+    {
+      "player_id": "00-0039040",
+      "player_name": "De'Von Achane",
+      "kind": "SEASON_OUT",
+      "effective_date": "2026-09-27",
+      "verified_at_utc": "2026-09-29T00:00:00Z",
+      "reason": "Torn ACL sustained on a non-contact first-quarter run in the Week 3 loss to the Kansas City Chiefs (2026-09-27); Dolphins placed him on Reserve/Injured (2026-09-28), ruled out for the remainder of the 2026 season.",
+      "sources": [
+        "https://www.espn.com/nfl/story/_/id/50052064/sources-dolphins-rb-devon-achane-suffered-torn-acl-vs-chiefs",
+        "https://www.nfl.com/news/dolphins-rb-devon-achane-miss-2026-season-acl-tear",
+        "https://www.cbssports.com/nfl/news/devon-achane-knee-injury-dolphins-chiefs-2026/",
+        "https://www.nbcsports.com/fantasy/football/player-news/2026-09-28/devon-achane-suffered-torn-acl-in-loss-to-chiefs"
+      ]
     }
   ],
   "explicitly_not_overridden_examples": [

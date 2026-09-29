@@ -227,6 +227,22 @@ export interface DynastySummary {
   workspace: WorkspaceSummary;
 }
 
+// Dogfood Rebuild V1 (Worker 4): the display-only shape of a matched
+// `current_player_status_overrides_service` entry, now also wired into
+// Dynasty surfaces (previously Redraft-only -- see LEDGER for the root-cause
+// trace). Matched by normalized player name, not a shared numeric ID, since
+// Dynasty's own internal asset IDs are not in the same ID space as the
+// override file's nflverse gsis IDs; absent means "no known override," never
+// "confirmed healthy."
+export interface DynastyCurrentStatusOverride {
+  kind: "SEASON_OUT" | "NOT_WITH_TEAM" | "ADMINISTRATIVE_EXEMPT" | "TEAM_CORRECTION";
+  reason: string;
+  effectiveDate: string;
+  verifiedAtUtc: string;
+  sources: string[];
+  correctedTeam: string;
+}
+
 export interface DynastyRanking {
   rank: number | null;
   player: string;
@@ -247,6 +263,7 @@ export interface DynastyRanking {
   risk: string;
   assetId: string;
   ownership?: AssetOwnership;
+  currentStatusOverride?: DynastyCurrentStatusOverride | null;
 }
 
 export interface AssetOption {
@@ -271,6 +288,7 @@ export interface AssetOption {
   overallPick: number | null;
   refreshAvailable: boolean;
   ownership?: AssetOwnership;
+  currentStatusOverride?: DynastyCurrentStatusOverride | null;
 }
 
 export interface RookieRanking {
@@ -434,6 +452,7 @@ export interface PlayerDetail {
   rookieIntelligence: RookieIntelligence | null;
   immediateProduction?: ImmediateProduction;
   ownership?: AssetOwnership;
+  currentStatusOverride?: DynastyCurrentStatusOverride | null;
 }
 
 export interface ImmediateProduction {
@@ -547,6 +566,13 @@ export interface TradeDecision {
   counterMessage: string;
   ownership?: AssetOwnershipEntry[];
   dynastyLeague?: DynastyLeagueContext;
+  /** Dogfood Rebuild V1 (Worker 4): real, sourced current-status overrides
+   * (e.g. a season-ending injury) for any asset actually in this trade.
+   * Display-only -- never read by `recommendation`/`preferredSide`/
+   * `dimensions` above, which come from a completely separate evidence
+   * path (`trade_decision_assistant_service.py`). Omitted (not present as
+   * an empty array) when no asset in the trade has a known override. */
+  assetStatusNotices?: Array<{ assetId: string; playerName: string } & DynastyCurrentStatusOverride>;
 }
 
 export interface SavedTradeScenario {

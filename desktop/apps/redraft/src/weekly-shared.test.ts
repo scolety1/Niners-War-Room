@@ -9,6 +9,7 @@ import {
   describeUnmatchedRosterPlayers,
   FAAB_URGENCY_TONE,
   formatClock,
+  resolveGovernedModelCadenceCaption,
   resolveHomeActionFreshness,
   resolveSeasonProjectionBasisCaption,
   resolveWeekDisplay,
@@ -349,6 +350,41 @@ describe("resolveSeasonProjectionBasisCaption", () => {
     );
     expect(resolveSeasonProjectionBasisCaption("")).toBe(
       "Season-level values reflect NWR's governed season model; admission date unavailable.",
+    );
+  });
+});
+
+/**
+ * Dogfood Rebuild V1, Worker 4 (Item 2): a real owner dogfood finding -- the
+ * Data Health hero showed a bare "2026-09-08 · Governed current-season
+ * projection snapshot" with no context, which a real Week 4 owner
+ * reasonably read as stale advice. This caption discloses the real
+ * `scheduledRefresh` governance field (already computed server-side, never
+ * rendered anywhere before this fix) instead of re-fetching or fabricating
+ * a fresher number.
+ */
+describe("resolveGovernedModelCadenceCaption", () => {
+  it("discloses the real scheduled-refresh policy (the date itself is shown adjacent by the caller)", () => {
+    const caption = resolveGovernedModelCadenceCaption(
+      "2026-09-08",
+      "Off — owner approval required",
+    );
+    expect(caption).toContain("Off — owner approval required");
+    expect(caption).toContain("not a live weekly refresh");
+    expect(caption).toContain("Start/Sit, Waivers (This Week), and Streamers");
+  });
+
+  it("degrades honestly when scheduledRefresh is missing, never fabricating a policy", () => {
+    const caption = resolveGovernedModelCadenceCaption("2026-09-08", null);
+    expect(caption).toContain("unavailable");
+  });
+
+  it("degrades honestly (no fabricated date) when the admission date is missing", () => {
+    expect(resolveGovernedModelCadenceCaption(null, "Off — owner approval required")).toBe(
+      "The governed season model's admission date is unavailable; season-level values cannot be dated.",
+    );
+    expect(resolveGovernedModelCadenceCaption(undefined, undefined)).toBe(
+      "The governed season model's admission date is unavailable; season-level values cannot be dated.",
     );
   });
 });

@@ -1,4 +1,4 @@
-import type { AssetOption, AssetOwnership, DynastyBootstrap, DynastyRanking } from "@nwr/contracts";
+import type { AssetOption, AssetOwnership, DynastyBootstrap, DynastyCurrentStatusOverride, DynastyRanking } from "@nwr/contracts";
 import { Button, DataTable, PageHeader, Panel, SearchInput, SegmentedControl, SelectField, StatusBadge, type TableColumn, formatNumber, stableSortRows } from "@nwr/ui";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +10,25 @@ function OwnershipBadge({ ownership }: { ownership: AssetOwnership | undefined }
   const display = resolveOwnershipDisplay(ownership);
   if (!display) return <span>—</span>;
   return <StatusBadge tone={display.tone} label={display.label} />;
+}
+
+// Dogfood Rebuild V1 (Worker 4): the Dynasty "Finished V1" board never
+// consumed the real current-status-override authority before this fix (a
+// real season-ending injury could sit unflagged at the top of the board --
+// see LEDGER for the full De'Von Achane trace). This is the one place that
+// authority becomes visible on the Rankings table; it never changes rank,
+// score, or row order -- purely an additive badge next to the player name.
+const STATUS_OVERRIDE_LABEL: Record<DynastyCurrentStatusOverride["kind"], string> = {
+  SEASON_OUT: "Season out",
+  NOT_WITH_TEAM: "Not with team",
+  ADMINISTRATIVE_EXEMPT: "Exempt",
+  TEAM_CORRECTION: "Team correction",
+};
+
+function CurrentStatusBadge({ override }: { override: DynastyCurrentStatusOverride | null | undefined }) {
+  if (!override) return null;
+  const tone = override.kind === "TEAM_CORRECTION" ? "review" : "blocked";
+  return <StatusBadge tone={tone} label={STATUS_OVERRIDE_LABEL[override.kind] ?? override.kind} />;
 }
 
 const OWNERSHIP_COLUMN: TableColumn = {
@@ -129,7 +148,7 @@ export function RankingsPage({ data }: { data: DynastyBootstrap }) {
       <div className="toolbar"><SearchInput value={query} onChange={setQuery} placeholder="Find a player or team…" /><SegmentedControl label="Position" options={positions} value={position} onChange={setPosition} /><SelectField label="Team" value={team} onChange={setTeam} options={teams.map((value) => ({ value, label: value === "ALL" ? "All teams" : value }))} /><SelectField label="Market view" value={market} onChange={setMarket} options={markets.map((value) => ({ value, label: ownerLabel(value) }))} /><SelectField label="Show" value={limit} onChange={setLimit} options={[25,50,100,data.rankings.length].map((value) => ({ value: String(value), label: `${value} rows` }))} /><Button icon="undo" onClick={reset} variant="ghost">Reset</Button></div>
       <DataTable columns={[
         { key: "rank", label: "Rank", sort: "number", width: "65px", render: (row) => <span className="rank-cell"><i /><b>#{String(row.rank ?? "—")}</b></span> },
-        { key: "player", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.player)}</strong><small>{ownerLabel(row.team)} · Age {String(row.age ?? "—")}</small></span> },
+        { key: "player", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.player)} </strong><CurrentStatusBadge override={row.currentStatusOverride as DynastyCurrentStatusOverride | null | undefined} /><small>{ownerLabel(row.team)} · Age {String(row.age ?? "—")}</small></span> },
         { key: "position", label: "Pos", sort: "text", align: "center", render: (row) => <span className="position-pill">{String(row.position)}</span> },
         { key: "positionRank", label: "Pos rank", sort: "text", render: (row) => <OwnerValue value={row.positionRank} /> },
         { key: "nwrScore", label: "NWR score", sort: "number", align: "right", render: (row) => formatNumber(row.nwrScore as number, 2) },

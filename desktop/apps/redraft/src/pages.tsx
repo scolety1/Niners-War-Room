@@ -24,7 +24,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { draftFormat, leagueFormat } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { SnapshotProvenanceNotice } from "./snapshot-provenance";
-import { appendPlayerDetailColumn, FREE_AGENT_COLUMNS, resolveSeasonProjectionBasisCaption, useAsync, useFreeAgents } from "./weekly-shared";
+import { appendPlayerDetailColumn, FREE_AGENT_COLUMNS, resolveGovernedModelCadenceCaption, resolveSeasonProjectionBasisCaption, useAsync, useFreeAgents } from "./weekly-shared";
 
 const POSITION_OPTIONS = ["ALL", "QB", "RB", "WR", "TE", "K", "DST"];
 const DRAFT_ROOM_POSITION_OPTIONS = ["ALL", "FLEX", "QB", "RB", "WR", "TE", "K", "DST"];
@@ -522,7 +522,12 @@ export function DataHealthPage({ client, data, onReload }: { client: NwrApiClien
         ))}
       </div>
     ) : dataHealthWorking ? <p className="draft-feedback">Reading real runtime health…</p> : null}
-    <section className={`health-hero health-hero--${data.status.tone}`}><div className="health-hero__icon"><Icon name={data.status.ready ? "check" : "alert"} /></div><div><span>Redraft · Draft-readiness authority</span><h2>{data.status.summary}</h2><p>{data.status.sourceAsOf || "Projection date unavailable"} · {data.status.freshness}</p></div><div><strong>{health.status || "REVIEW"}</strong><small>Contract 1.0</small></div></section>
+    <section className={`health-hero health-hero--${data.status.tone}`}><div className="health-hero__icon"><Icon name={data.status.ready ? "check" : "alert"} /></div><div><span>Redraft · Draft-readiness authority</span><h2>{data.status.summary}</h2><p>{data.status.sourceAsOf || "Projection date unavailable"} · {data.status.freshness}</p>
+      {/* Dogfood Rebuild V1, Worker 4 (Item 2): a real owner saw this exact
+          date with no context and reasonably read it as stale. See
+          `resolveGovernedModelCadenceCaption` for the full trace. */}
+      <p className="copy-muted">{resolveGovernedModelCadenceCaption(data.status.sourceAsOf, data.status.scheduledRefresh)}</p>
+    </div><div><strong>{health.status || "REVIEW"}</strong><small>Contract 1.0</small></div></section>
     <div className="metric-grid"><MetricCard label="Ranked players" value={health.rankedPlayers} detail="Active profile" icon="board" tone="gold" /><MetricCard label="Blocked rows" value={health.blockedPlayers} detail="Visible, never imputed" icon="alert" tone="crimson" /><MetricCard label="Profiles" value={data.profiles.length} detail="Redraft namespace" icon="profile" tone="violet" /></div>
     <Panel title="Readiness checks" eyebrow="Deterministic validation"><dl className="health-list"><div><dt>Player universe</dt><dd><StatusBadge tone={health.playerUniverseAvailable ? "safe" : "blocked"} label={health.playerUniverseAvailable ? "Available" : "Blocked"} /></dd></div><div><dt>Current forecast</dt><dd><StatusBadge tone={health.currentSeasonForecastAvailable ? "safe" : "blocked"} label={health.currentSeasonForecastAvailable ? "Available" : "Blocked"} /></dd></div><div><dt>Scoring profile</dt><dd><StatusBadge tone={health.scoringProfileValid ? "safe" : "blocked"} label={health.scoringProfileValid ? "Valid" : "Invalid"} /></dd></div><div><dt>Replacement model</dt><dd><StatusBadge tone={health.replacementCalculationValid ? "safe" : "blocked"} label={health.replacementCalculationValid ? "Valid" : "Blocked"} /></dd></div></dl></Panel>
     {data.notices.map((notice, index) => <div className={`alert-strip alert-strip--${notice.tone}`} key={`${notice.title}-${index}`}><strong>{notice.title}</strong><span>{notice.message}</span></div>)}

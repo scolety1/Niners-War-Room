@@ -160,6 +160,35 @@ export function resolveSeasonProjectionBasisCaption(
 }
 
 /**
+ * Dogfood Rebuild V1, Worker 4 (Item 2 -- "current data must actually be
+ * current"): the Data Health page's own top hero (`DataHealthPage` below)
+ * used to show ONLY `{sourceAsOf} · {freshness}` (e.g. "2026-09-08 ·
+ * Governed current-season projection snapshot") with no context at all --
+ * a real owner dogfood finding: a real-world Week 4 owner reading a
+ * September 8 date with no explanation reasonably reads it as "this app's
+ * advice is three weeks stale," which is NOT true (Start/Sit, Waivers
+ * THIS_WEEK, and Streamers all layer genuinely live, week-scoped data on
+ * top of this season-level baseline -- see `resolveSeasonProjectionBasisCaption`
+ * above and each surface's own `ProviderStatusLine`/`resolveWeekDisplay`).
+ * `data.status.scheduledRefresh` (e.g. "Off — owner approval required")
+ * was already computed server-side for exactly this purpose but was never
+ * rendered anywhere in this app before this fix (confirmed by a full-repo
+ * search: only test fixtures referenced the field). This caption surfaces
+ * it, disclosing WHY the date doesn't move every week (a real governance
+ * choice, not an oversight) rather than re-fetching or fabricating a
+ * fresher number this codebase doesn't actually have.
+ */
+export function resolveGovernedModelCadenceCaption(
+  sourceAsOf: string | null | undefined,
+  scheduledRefresh: string | null | undefined,
+): string {
+  const refresh = scheduledRefresh || "unavailable";
+  return sourceAsOf
+    ? `This is the season-level governed model's admission date, not a live weekly refresh (scheduled refresh: ${refresh} -- by design, this updates only through a new owner-approved admission, not automatically). Start/Sit, Waivers (This Week), and Streamers layer separate, live, week-scoped data on top of this baseline.`
+    : "The governed season model's admission date is unavailable; season-level values cannot be dated.";
+}
+
+/**
  * Weekly Home's "NWR Actions" list (`WeeklyHomeAction`) mixes categories
  * with genuinely DIFFERENT provenance bases: START_SIT / START_SIT_CLOSE_
  * CALL come from the real live weekly lineup optimizer (`weekly`

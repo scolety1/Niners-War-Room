@@ -197,6 +197,13 @@ def owner_rankings_frame(rows: Sequence[Mapping[str, Any]]) -> pd.DataFrame:
                 "Confidence": _text(row.get("confidence")) or "Not enough information",
                 "Risk": owner_risk(row),
                 "asset_id": _text(row.get("asset_id")),
+                # Dogfood Rebuild V1 (Worker 4): passes through the display-only
+                # current-status-override annotation (see
+                # `owner_asset_evidence_service.compose_owner_asset_evidence`)
+                # so `_dynasty_ranking_payload` can surface it -- never a
+                # ranking/value input, this column is never read by
+                # `sort_values` below or any numeric computation in this file.
+                "current_status_override": row.get("current_status_override"),
             }
         )
     frame = pd.DataFrame(output)

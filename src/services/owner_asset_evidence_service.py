@@ -14,11 +14,13 @@ from typing import Any
 
 import pandas as pd
 
+from src.services.current_player_status_overrides_service import StatusOverride
 from src.services.market_baseline_service import (
     DEFAULT_ARTIFACT_DIR,
     join_market_to_players,
     load_market_freshness,
 )
+from src.services.model_v4_identity_join_gate_service import normalize_identity_name
 from src.services.owner_caveat_presentation_service import owner_caveats, owner_evidence_status
 
 NOT_AVAILABLE = "Not available"
@@ -48,10 +50,38 @@ def compose_owner_asset_evidence(
     outcome_frame: pd.DataFrame | None = None,
     market_artifact_dir: str | Path = DEFAULT_ARTIFACT_DIR,
     include_market: bool = True,
+    status_overrides: Sequence[StatusOverride] = (),
 ) -> OwnerAssetEvidenceBundle:
-    """Compose one canonical display row per governed asset ID."""
+    """Compose one canonical display row per governed asset ID.
+
+    `status_overrides` (Dogfood Rebuild V1, Worker 4): the SAME real,
+    individually-sourced current-availability overrides authority Redraft
+    has consumed for weeks (`current_player_status_overrides_service.py`)
+    -- until this fix, Dynasty never read it at all (confirmed by grep: no
+    caller of `load_status_overrides`/`apply_status_overrides_to_ranking`
+    anywhere in `governed_asset_registry_service.py` or this module), so a
+    real season-ending injury (e.g. a 2026-09 ACL tear) could sit at the
+    top of the Dynasty "Finished V1" board and the Trade Decision Lab with
+    zero disclosure. This is a pure DISPLAY annotation -- it adds one new
+    `current_status_override` key to each matched row and never touches
+    `nwr_dynasty_score`, `dynasty_rank`, `market_*`, or any other field the
+    governed value/rank pipeline produces. Matching is by normalized
+    player name (`normalize_identity_name`, the same helper already used
+    elsewhere in this codebase for cross-source identity joins) because
+    Dynasty's own internal numeric asset IDs (e.g. `current:9226`) are not
+    in the same ID space as the override file's nflverse `gsis_id`s (e.g.
+    `00-0039040`) -- no live crosswalk between those two ID spaces exists
+    in this codebase today (see LEDGER for the full trace); name matching
+    is a deliberate, disclosed, best-effort substitute, not a claim of
+    exact-identity certainty.
+    """
 
     errors: list[str] = []
+    overrides_by_name = {
+        normalize_identity_name(override.player_name): override
+        for override in status_overrides
+        if override.player_name
+    }
     dynasty = (dynasty_frame if dynasty_frame is not None else pd.DataFrame()).copy()
     market_freshness: dict[str, str] = {}
     if include_market and not dynasty.empty:
@@ -80,6 +110,8 @@ def compose_owner_asset_evidence(
             row.get("warnings"),
             row.get("blocking_reason"),
         )
+        resolved_name = _first_present(current.get("player_name"), row.get("asset_name"))
+        status_override = overrides_by_name.get(normalize_identity_name(resolved_name))
 
         # Canonical Finished V1 values win. Optional enrichments only fill context fields.
         row.update(
@@ -90,7 +122,7 @@ def compose_owner_asset_evidence(
                     row.get("frozen_model_player_id"),
                     _asset_player_id(asset_id),
                 ),
-                "asset_name": _first_present(current.get("player_name"), row.get("asset_name")),
+                "asset_name": resolved_name,
                 "position": _first_present(current.get("position"), row.get("position")),
                 "team": _first_present(current.get("nfl_team"), row.get("team")),
                 "age": _first_present(current.get("age"), row.get("age")),
@@ -143,10 +175,29 @@ def compose_owner_asset_evidence(
                 "research_ceiling_signal": _first_present(research.get("ceiling_signal")),
                 "research_downside_signal": _first_present(research.get("downside_signal")),
                 "outcome_signals": _outcome_signals(asset_id, row, outcome),
+                "current_status_override": _status_override_payload(status_override),
             }
         )
         rows.append(row)
     return OwnerAssetEvidenceBundle(tuple(rows), market_freshness, tuple(errors))
+
+
+def _status_override_payload(override: StatusOverride | None) -> dict[str, Any] | None:
+    """Display-only shape for a matched `StatusOverride` (Dogfood Rebuild V1,
+    Worker 4) -- never a value/rank field, purely informational so a
+    consuming surface can render a real, sourced current-status badge
+    (e.g. "SEASON OUT -- ACL") without this module or its caller making
+    any recommendation/ordering decision on the owner's behalf."""
+    if override is None:
+        return None
+    return {
+        "kind": override.kind,
+        "reason": override.reason,
+        "effective_date": override.effective_date,
+        "verified_at_utc": override.verified_at_utc,
+        "sources": list(override.sources),
+        "corrected_team": override.corrected_team,
+    }
 
 
 def _rows_by(frame: pd.DataFrame, key: str) -> dict[str, dict[str, Any]]:

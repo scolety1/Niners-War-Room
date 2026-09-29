@@ -707,6 +707,36 @@ class DesktopBackendFacade:
         ranking_rows = [
             self._dynasty_ranking_payload(row) for row in snapshot.rankings.to_dict("records")
         ]
+        # Dogfood Rebuild V1 (Worker 4), Item 3 second half -- "is Finished
+        # V1 presented as a current live ranking, or clearly a base model
+        # as of a real date": the raw rebuilt board CSV
+        # (`rebuilt_full_player_board_value_review_rows.csv`) carries its
+        # own real `score_as_of_date` column -- every one of the 240 real
+        # rows shares the exact same value, `"2026-pre-draft"` -- but until
+        # this fix, NOTHING in the Dynasty UI ever surfaced it; the only
+        # dated context shown anywhere was the separate DynastyProcess
+        # market-evidence date, which is a different, optional,
+        # display-only enrichment, not the board's own scoring basis. This
+        # is a real, precise disclosure gap: an owner has no way to learn
+        # the "Finished V1" scores were computed before this season's games
+        # were even played, unless they already knew to distrust the date-
+        # free "Finished V1" label. Purely additive (a new notice string,
+        # sourced from the real CSV column) -- never touches `nwr_rank`,
+        # `nwr_dynasty_score`, or any other governed value.
+        board_as_of_values = sorted(
+            {
+                _text(row.get("score_as_of_date"))
+                for row in snapshot.rank_receipts.values()
+                if _text(row.get("score_as_of_date"))
+            }
+        )
+        board_as_of_label = (
+            board_as_of_values[0]
+            if len(board_as_of_values) == 1
+            else "; ".join(board_as_of_values)
+            if board_as_of_values
+            else "unavailable"
+        )
         rookie_rows = self._rookie_records(snapshot.rookies)
         asset_options = [self._asset_option(row) for row in snapshot.evidence.rows]
         trade_lookup = build_registry_trade_item_lookup(snapshot.evidence.rows)
@@ -832,6 +862,19 @@ class DesktopBackendFacade:
                     "tone": "review",
                     "title": "Market evidence is display-only",
                     "message": ("External consensus never changes the Finished V1 rank or score."),
+                },
+                {
+                    "tone": "review",
+                    "title": "Finished V1 is a frozen base model, not a live weekly ranking",
+                    "message": (
+                        f"Finished V1 player scores are dated {board_as_of_label} -- computed "
+                        "before this season's games were played and not automatically updated "
+                        "for role changes, performance, or injuries since. Real, sourced "
+                        "current-status corrections (e.g. a season-ending injury) are layered "
+                        "on top and shown per player as \"Current status\" where known, but the "
+                        "underlying rank/score itself only changes through a new owner-approved "
+                        "governance admission."
+                    ),
                 },
                 {
                     "tone": "review",
@@ -1566,6 +1609,33 @@ class DesktopBackendFacade:
         )
         decision = evaluate_trade_decision(state, lookup, team_window=team_window)
         data = self._trade_decision_payload(decision)
+        # Dogfood Rebuild V1 (Worker 4): real, sourced current-status
+        # overrides (e.g. a season-ending injury) for any asset actually in
+        # THIS trade -- display-only, built entirely from `lookup`'s own
+        # `current_status_override` annotation attached in `_trade_context`
+        # above; never read by `evaluate_trade_decision`'s own valuation
+        # dimensions, never changes `recommendation`/`preferredSide`. Scoped
+        # strictly to `give_ids`/`receive_ids` (NOT all of `lookup`, which
+        # is the whole registry universe `_trade_context` builds once and
+        # shares across every possible trade) -- an earlier version of this
+        # fix incorrectly iterated every row in `lookup`, which surfaced
+        # unrelated players' overrides (e.g. Jayden Higgins) on trades that
+        # never involved them; caught live before commit, fixed, and now
+        # regression-tested.
+        asset_status_notices = []
+        for asset_id in (*give_ids, *receive_ids):
+            row = lookup.get(key_for_id[asset_id], {})
+            override = self._status_override_json(row.get("current_status_override"))
+            if override is not None:
+                asset_status_notices.append(
+                    {
+                        "assetId": _text(row.get("asset_id")),
+                        "playerName": _text(row.get("player")),
+                        **override,
+                    }
+                )
+        if asset_status_notices:
+            data["assetStatusNotices"] = asset_status_notices
         # Dynasty League Import V1 (Worker 4): same annotation-only pattern
         # as `compare_dynasty_assets` above -- `evaluate_trade_decision`
         # above never receives `league_profile_id` and its return value is
@@ -1900,6 +1970,13 @@ class DesktopBackendFacade:
                     "research_outlook_3y": evidence.get("research_outlook_3y", ""),
                     "research_outlook_5y": evidence.get("research_outlook_5y", ""),
                     "research_ceiling_signal": evidence.get("research_ceiling_signal", ""),
+                    # Dogfood Rebuild V1 (Worker 4): display-only, same as the
+                    # `redraft_*`/`research_*` context fields above -- never
+                    # read by `evaluate_trade_decision`'s own valuation logic
+                    # (`trade_decision_assistant_service.py`), only by
+                    # `_trade_decision_payload` below to build
+                    # `assetStatusNotices`.
+                    "current_status_override": evidence.get("current_status_override"),
                 }
             )
         key_for_id = {str(row.get("asset_id")): key for key, row in lookup.items()}
@@ -8094,6 +8171,11 @@ class DesktopBackendFacade:
             # The canonical sentinel deliberately resolves through the launcher-owned
             # physical refresh root in packaged and repository runtimes.
             market_artifact_dir=DEFAULT_ARTIFACT_DIR,
+            # Dogfood Rebuild V1 (Worker 4): Dynasty previously never read this
+            # authority at all -- see `compose_owner_asset_evidence`'s own
+            # docstring for the full root-cause trace. Display-only; never
+            # changes `nwr_dynasty_score`/`dynasty_rank`/any governed value.
+            status_overrides=load_status_overrides(self.repo_root),
         )
         if evidence.errors:
             warnings.append("Optional market context is unavailable or incomplete.")
@@ -8874,6 +8956,9 @@ class DesktopBackendFacade:
             "confidence": _text(source.get("Confidence")),
             "risk": _text(source.get("Risk")),
             "assetId": _text(source.get("asset_id")),
+            "currentStatusOverride": DesktopBackendFacade._status_override_json(
+                source.get("current_status_override")
+            ),
         }
 
     @staticmethod
@@ -8968,6 +9053,27 @@ class DesktopBackendFacade:
             "draftRound": _integer(row.get("draft_round")),
             "overallPick": _integer(row.get("overall_pick")),
             "refreshAvailable": _flag(row.get("refresh_available")),
+            "currentStatusOverride": DesktopBackendFacade._status_override_json(
+                row.get("current_status_override")
+            ),
+        }
+
+    @staticmethod
+    def _status_override_json(value: Any) -> dict[str, Any] | None:
+        """Dogfood Rebuild V1 (Worker 4): converts the display-only
+        `current_status_override` dict (`owner_asset_evidence_service.
+        _status_override_payload`) into the same camelCase shape
+        `list_player_status_overrides` already uses, so a future Dynasty
+        frontend surface and Redraft's existing one agree on one schema."""
+        if not isinstance(value, Mapping):
+            return None
+        return {
+            "kind": _text(value.get("kind")),
+            "reason": _text(value.get("reason")),
+            "effectiveDate": _text(value.get("effective_date")),
+            "verifiedAtUtc": _text(value.get("verified_at_utc")),
+            "sources": [str(url) for url in value.get("sources") or ()],
+            "correctedTeam": _text(value.get("corrected_team")),
         }
 
     @staticmethod
@@ -9109,6 +9215,7 @@ class DesktopBackendFacade:
             or ("Score available" if score_eligible else "No common model score"),
             "selectable": _flag(row.get("selectable"), default=True),
             "refreshAvailable": _flag(row.get("refresh_available")),
+            "currentStatusOverride": cls._status_override_json(row.get("current_status_override")),
             "rookieIntelligence": (
                 {
                     "nwrRookieScore": _number(row.get("board_score")),
