@@ -6,11 +6,6 @@ import { ownerLabel } from "../lib/owner-copy";
 export function HomePage({ data }: { data: DynastyBootstrap }) {
   const navigate = useNavigate();
   const summary = data.summary;
-  const marketOpportunities = data.rankings
-    .filter((row) => (row.marketGap ?? 0) >= 6)
-    .sort((left, right) => (right.marketGap ?? 0) - (left.marketGap ?? 0))
-    .slice(0, 7)
-    .map((row) => ({ ...row }));
   // Dynasty League Import V1 (Worker 3): present ONLY once a real league is
   // connected -- `data.dynastyLeague` is entirely absent otherwise (the
   // backend facade's byte-identical-when-not-connected guarantee), so this
@@ -23,10 +18,21 @@ export function HomePage({ data }: { data: DynastyBootstrap }) {
   const myTeamName = dynastyLeague
     ? data.rankings.find((row) => row.ownership?.isMyTeam)?.ownership?.rosterTeamName || null
     : null;
+  const injuryFindings = myRoster
+    .filter((row) => row.currentStatusOverride)
+    .sort((left, right) => {
+      const leftStarter = left.ownership?.rosterSlotStatus === "starter" ? 1 : 0;
+      const rightStarter = right.ownership?.rosterSlotStatus === "starter" ? 1 : 0;
+      return rightStarter - leftStarter || (left.rank ?? 999) - (right.rank ?? 999);
+    });
+  const marketOpportunities = myRoster
+    .filter((row) => Math.abs(row.marketGap ?? 0) >= 6)
+    .sort((left, right) => Math.abs(right.marketGap ?? 0) - Math.abs(left.marketGap ?? 0))
+    .slice(0, 5);
+  const hasPriorityFindings = injuryFindings.length > 0 || marketOpportunities.length > 0;
 
   return <>
     <PageHeader eyebrow="Owner command center" title="Your dynasty, in decision order." description="Rank, compare, pressure-test, and plan from one governed long-term view. Model operations stay behind the glass." status={<><StatusBadge tone="safe" label="Finished V1 authority" /><StatusBadge tone="review" label={ownerLabel(data.marketFreshness.status, "Market freshness review")} />{dynastyLeague ? <StatusBadge tone="safe" label={`Connected: ${dynastyLeague.leagueName || dynastyLeague.profileId}`} /> : null}</>} actions={<><Button icon="compare" onClick={() => navigate("/compare")}>Compare players</Button><Button icon="trade" variant="secondary" onClick={() => navigate("/trades")}>Analyze trade</Button></>} />
-    {data.notices.map((notice) => <div className={`alert-strip ${notice.tone === "blocked" ? "alert-strip--blocked" : ""}`} key={notice.title}><strong>{notice.title}</strong><span>{notice.message}</span></div>)}
     {!dynastyLeague ? (
       <div className="alert-strip">
         <strong>No Dynasty league connected</strong>
@@ -34,7 +40,28 @@ export function HomePage({ data }: { data: DynastyBootstrap }) {
         <Button icon="check" onClick={() => navigate("/data-health")} variant="secondary">Connect league</Button>
       </div>
     ) : null}
-    <section className="decision-hero"><div><span className="decision-hero__eyebrow">Decision pulse · Long-term roster architecture</span><h2>What needs your attention?</h2><p>Market disagreement, rookie uncertainty, and open owner decisions are surfaced here. No outside signal can silently reorder the NWR board.</p></div><div className="decision-hero__actions"><Button icon="search" onClick={() => navigate("/players")}>Evaluate player</Button><Button icon="market" variant="secondary" onClick={() => navigate("/market")}>Scan market gaps</Button></div></section>
+    <section className="decision-hero"><div><span className="decision-hero__eyebrow">Decision pulse · Your real roster</span><h2>What needs your attention?</h2><p>Only high-value owner-roster findings lead: verified status changes and large NWR-versus-market disagreements.</p></div><div className="decision-hero__actions"><Button icon="trade" onClick={() => navigate("/trades")}>Open Trade Lab</Button><Button icon="market" variant="secondary" onClick={() => navigate("/market")}>Scan market gaps</Button></div></section>
+    {dynastyLeague ? <Panel title="Priority actions" eyebrow={`${data.lifecycleContext?.seasonPhase?.replaceAll("_", " ") ?? "Current season"} · owner roster only`}>
+      {!hasPriorityFindings ? <p className="copy-muted">No verified major status change or large owner-roster market discrepancy needs action right now.</p> : null}
+      <div className="action-grid">
+        {injuryFindings.map((row) => <ActionCard
+          key={`status-${row.assetId}`}
+          icon="alert"
+          title={`${row.player}: ${row.currentStatusOverride!.kind.replaceAll("_", " ")}`}
+          description={row.currentStatusOverride!.reason}
+          meta={`${ownerLabel(row.ownership?.rosterSlotStatus ?? "Rostered")} · verified ${row.currentStatusOverride!.effectiveDate}`}
+          onClick={() => navigate(`/players/${encodeURIComponent(row.assetId)}`)}
+        />)}
+        {marketOpportunities.map((row) => <ActionCard
+          key={`gap-${row.assetId}`}
+          icon="market"
+          title={`${row.player}: ${row.marketGap! > 0 ? "+" : ""}${formatNumber(row.marketGap!, 0)} rank gap`}
+          description={`NWR #${row.rank ?? "—"} versus market #${row.marketRank ?? "—"}. Investigate before a trade decision; market evidence never reorders NWR.`}
+          meta={`${ownerLabel(row.ownership?.rosterSlotStatus ?? "Rostered")} · ${ownerLabel(row.marketBand)}`}
+          onClick={() => navigate(`/players/${encodeURIComponent(row.assetId)}`)}
+        />)}
+      </div>
+    </Panel> : null}
     <div className="metric-grid">
       <MetricCard label="Governed board" value={summary.rankedPlayers} detail="Finished V1 assets" trend="Board authority" icon="board" tone="violet" />
       <MetricCard label="Market coverage" value={summary.marketMatched} detail={`${Math.max(0, summary.rankedPlayers - summary.marketMatched)} unmatched`} trend={data.marketFreshness.sourceAsOf || "No date"} icon="market" tone="gold" />
@@ -69,7 +96,7 @@ export function HomePage({ data }: { data: DynastyBootstrap }) {
       </Panel>
     ) : null}
     <div className="dashboard-grid">
-      <Panel title="Highest-leverage market gaps" eyebrow="Investigate · never automatic" action={<Button variant="ghost" onClick={() => navigate("/market")}>Open full market</Button>}>
+      <Panel title="Your roster's market gaps" eyebrow="Investigate · never automatic" action={<Button variant="ghost" onClick={() => navigate("/market")}>Open full market</Button>}>
         <DataTable columns={[
           { key: "rank", label: "NWR", width: "62px", render: (row) => <span className="rank-cell"><i /><b>#{String(row.rank ?? "—")}</b></span> },
           { key: "player", label: "Player", render: (row) => <span className="player-cell"><strong>{String(row.player)}</strong><small>{ownerLabel(row.team)} · {ownerLabel(row.positionRank)}</small></span> },

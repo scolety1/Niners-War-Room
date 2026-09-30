@@ -1,5 +1,5 @@
 import { createNwrClient, NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { CommandItem, KhaHistoricalReplayPreview, LeagueLifecycle, LeagueProfile, NavigationGroup, PlayerStatusOverride, RedraftBootstrap } from "@nwr/contracts";
+import type { CommandItem, KhaHistoricalReplayPreview, LeagueProfile, LeagueSeasonPhase, NavigationGroup, PlayerStatusOverride, RedraftBootstrap } from "@nwr/contracts";
 import { AppShell, Button, EmptyState, ErrorState, LoadingScreen, WindowChrome } from "@nwr/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
@@ -9,10 +9,10 @@ import { serializeActiveProfileCall } from "./attention-center";
 import { assertRedraftBootstrap } from "./bootstrap-guard";
 import { DecisionHistoryPage } from "./decision-history";
 import { CheatSheetPage } from "./cheat-sheet";
-import { legacyRedirectTarget, resolveActiveNavPath, resolveLeagueHomeSubpath, resolveLeagueLifecycle } from "./league-context";
+import { legacyRedirectTarget, resolveActiveNavPath, resolveLeagueHomeSubpath } from "./league-context";
 import { LeaguesPage } from "./leagues";
 import { DataHealthPage, FreeAgentsPage, WeeklyToolsPage } from "./pages";
-import { LineupPage, WeeklyHomePage } from "./in-season";
+import { LineupPage, WeeklyHomePage, WeeklyRankingsPage } from "./in-season";
 import { ImproveTeamPage } from "./improve-team";
 import { LeagueWorkspacePage } from "./league";
 import { PlayersPage } from "./players";
@@ -38,7 +38,10 @@ import { FreshnessIndicator, ShellIdentity } from "./shell-identity";
  * only reordered/labeled).
  */
 const NAV_HOME: NavigationGroup = { label: "Home", items: [{ label: "Weekly Home", path: "/league-home", icon: "home" }] };
-const NAV_DRAFT: NavigationGroup = { label: "Draft", items: [{ label: "Draft Room", path: "/draft-room-v2", icon: "draft" }] };
+const NAV_DRAFT: NavigationGroup = { label: "Draft", items: [
+  { label: "Draft Room", path: "/draft-room-v2", icon: "draft" },
+  { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" },
+] };
 const NAV_LINEUP: NavigationGroup = { label: "Lineup", items: [{ label: "Start / Sit", path: "/lineup", icon: "board" }] };
 // NWR UI expansion pass (2026-09-12, Improve Team surface): ONE nav item,
 // not three -- Waivers/Add-Drop/FAAB/Streamers/Free Agents are now tabs
@@ -49,7 +52,10 @@ const NAV_LINEUP: NavigationGroup = { label: "Lineup", items: [{ label: "Start /
 // standalone `WaiversPage` (below).
 const NAV_IMPROVE: NavigationGroup = {
   label: "Improve Team",
-  items: [{ label: "Improve Team", path: "/waivers", icon: "activity" }],
+  items: [
+    { label: "Waiver Wire", path: "/waivers", icon: "activity" },
+    { label: "Streamers", path: "/streamers", icon: "target" },
+  ],
 };
 // NWR UI expansion pass (2026-09-12, Trades surface): ONE nav item, not
 // two -- Trade Analysis/Trade Finder are now tabs (ANALYZE/FIND TRADES)
@@ -60,7 +66,10 @@ const NAV_IMPROVE: NavigationGroup = {
 // `TradeAnalysisPage` (in-season.tsx, left in place unrouted).
 const NAV_TRADES: NavigationGroup = {
   label: "Trades",
-  items: [{ label: "Trades", path: "/trade-analysis", icon: "trade" }],
+  items: [
+    { label: "Trade Finder", path: "/trade-finder", icon: "search" },
+    { label: "Analyze Trade", path: "/trade-analysis", icon: "trade" },
+  ],
 };
 // NWR UI expansion pass (2026-09-12, Players surface): ONE nav item, not
 // four -- Rankings/Tiers & Positions/Compare/Market Data are now tabs
@@ -73,10 +82,10 @@ const NAV_TRADES: NavigationGroup = {
 // Cheat Sheet stays its own separate nav item/page -- a different,
 // already-unified consumer surface, out of this consolidation's scope.
 const NAV_PLAYERS: NavigationGroup = {
-  label: "Players",
+  label: "Rankings",
   items: [
-    { label: "Players", path: "/rankings", icon: "board", shortcut: "2" },
-    { label: "Cheat Sheet", path: "/cheat-sheet", icon: "target" },
+    { label: "Weekly Rankings", path: "/weekly-rankings", icon: "activity" },
+    { label: "Rest of Season Rankings", path: "/rankings", icon: "board" },
   ],
 };
 // NWR UI expansion pass (2026-09-12, League surface): ONE nav item, not
@@ -106,7 +115,14 @@ const NAV_PLAYERS: NavigationGroup = {
 const NAV_LEAGUE: NavigationGroup = {
   label: "League",
   items: [
-    { label: "League", path: "/my-roster", icon: "profile", shortcut: "4" },
+    { label: "Rosters / Opponents", path: "/my-roster", icon: "profile" },
+    { label: "Data Health", path: "/data-health", icon: "health" },
+  ],
+};
+
+const NAV_MANAGE: NavigationGroup = {
+  label: "System",
+  items: [
     { label: "Attention Center", path: "/attention-center", icon: "shield" },
     { label: "History", path: "/decision-history", icon: "board" },
     { label: "Manage Leagues", path: "/profile", icon: "settings" },
@@ -120,10 +136,11 @@ const NAV_LEAGUE: NavigationGroup = {
  * research) per the directive's own wording. No active league yet uses
  * the same order as PRE_DRAFT -- Draft is the very next real task after
  * creating/importing a league. */
-function buildNavigation(lifecycle: LeagueLifecycle | null): NavigationGroup[] {
-  if (lifecycle === "IN_SEASON") return [NAV_HOME, NAV_LINEUP, NAV_IMPROVE, NAV_TRADES, NAV_PLAYERS, NAV_LEAGUE, NAV_DRAFT];
-  if (lifecycle === "OFFSEASON") return [NAV_DRAFT, NAV_PLAYERS, NAV_LEAGUE, NAV_HOME, NAV_LINEUP, NAV_IMPROVE, NAV_TRADES];
-  return [NAV_DRAFT, NAV_HOME, NAV_LINEUP, NAV_IMPROVE, NAV_TRADES, NAV_PLAYERS, NAV_LEAGUE];
+export function buildNavigation(phase: LeagueSeasonPhase | null): NavigationGroup[] {
+  if (phase === "REGULAR_SEASON" || phase === "PLAYOFF_PUSH" || phase === "FANTASY_PLAYOFFS") {
+    return [NAV_HOME, NAV_LINEUP, NAV_IMPROVE, NAV_TRADES, NAV_PLAYERS, NAV_LEAGUE];
+  }
+  return [NAV_DRAFT, NAV_PLAYERS, NAV_HOME, NAV_LINEUP, NAV_IMPROVE, NAV_TRADES, NAV_MANAGE];
 }
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "nwr-redraft-sidebar-collapsed";
@@ -201,10 +218,8 @@ export function RedraftApp() {
   // the active league's real lifecycle, using the exact same shared
   // resolver every other lifecycle-aware surface in this app already
   // uses -- never a second lifecycle heuristic.
-  const lifecycle: LeagueLifecycle | null = data?.activeProfile
-    ? resolveLeagueLifecycle(data.activeProfile, data.draftBoard)
-    : null;
-  const navigation = useMemo(() => buildNavigation(lifecycle), [lifecycle]);
+  const lifecyclePhase: LeagueSeasonPhase | null = data?.lifecycleContext?.seasonPhase ?? null;
+  const navigation = useMemo(() => buildNavigation(lifecyclePhase), [lifecyclePhase]);
   // NWR UI foundation-propagation pass (directive Phase 1, nav-active-
   // route bug fix): resolve which nav item is active from the ONE
   // canonical mapping (`resolveActiveNavPath`) rather than NavLink's own
@@ -255,7 +270,7 @@ export function RedraftApp() {
           Room (invariant A). */}
       <Route path="/" element={<Navigate replace to={
         data.activeProfileId && data.activeProfile
-          ? `/league/${encodeURIComponent(data.activeProfileId)}/${resolveLeagueHomeSubpath(data.activeProfile, data.draftBoard)}`
+          ? `/league/${encodeURIComponent(data.activeProfileId)}/${data.lifecycleContext ? (data.lifecycleContext.isDraftSeason ? "draft" : "home") : resolveLeagueHomeSubpath(data.activeProfile, data.draftBoard)}`
           : "/leagues"
       } />} />
       <Route path="/leagues" element={<LeaguesPage client={client} data={data} onUpdate={update} />} />
@@ -276,6 +291,8 @@ export function RedraftApp() {
       <Route path="/league" element={<LegacyRedirect data={data} subpath="league" />} />
       <Route path="/lineup" element={<LegacyRedirect data={data} subpath="lineup" />} />
       <Route path="/waivers" element={<LegacyRedirect data={data} subpath="waivers" />} />
+      <Route path="/streamers" element={<LegacyRedirect data={data} subpath="streamers" />} />
+      <Route path="/weekly-rankings" element={<LegacyRedirect data={data} subpath="weekly-rankings" />} />
       <Route path="/my-roster" element={<LegacyRedirect data={data} subpath="my-roster" />} />
       <Route path="/trade-analysis" element={<LegacyRedirect data={data} subpath="trade-analysis" />} />
       <Route path="/trade-finder" element={<LegacyRedirect data={data} subpath="trade-finder" />} />
@@ -309,11 +326,12 @@ export function RedraftApp() {
           no working route is lost -- see PRODUCT_ARCHITECTURE.md. */}
       <Route path="/league/:leagueKey/home" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><WeeklyHomePage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/lineup" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><LineupPage client={client} data={data} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/waivers" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ImproveTeamPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/waivers" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ImproveTeamPage client={client} data={data} section="waivers" /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/streamers" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ImproveTeamPage client={client} data={data} section="streamers" /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/improve" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><ImproveTeamPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/my-roster" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><LeagueWorkspacePage client={client} data={data} onUpdate={update} defaultTab="roster" /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/league" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><LeagueWorkspacePage client={client} data={data} onUpdate={update} /></LeagueScopedPage>} />
-      <Route path="/league/:leagueKey/trade-analysis" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradesPage client={client} data={data} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/trade-analysis" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradesPage client={client} data={data} defaultTab="analyze" /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/trades" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradesPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/trade-finder" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><TradesPage client={client} data={data} defaultTab="find" /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/free-agents" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><FreeAgentsPage client={client} data={data} /></LeagueScopedPage>} />
@@ -337,6 +355,7 @@ export function RedraftApp() {
         />
       </LeagueScopedPage>} />
       <Route path="/league/:leagueKey/rankings" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><PlayersPage client={client} data={data} onUpdate={update} /></LeagueScopedPage>} />
+      <Route path="/league/:leagueKey/weekly-rankings" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><WeeklyRankingsPage client={client} data={data} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/players" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><PlayersPage client={client} data={data} onUpdate={update} /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/tiers" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><PlayersPage client={client} data={data} onUpdate={update} defaultTab="tiers" /></LeagueScopedPage>} />
       <Route path="/league/:leagueKey/compare" element={<LeagueScopedPage client={client} data={data} onUpdate={update}><PlayersPage client={client} data={data} onUpdate={update} defaultTab="compare" /></LeagueScopedPage>} />

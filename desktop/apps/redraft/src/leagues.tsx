@@ -41,7 +41,9 @@ export function LeaguesPage({
       // this same activation call just returned (so it reflects the
       // league that was just opened, not whatever was active before).
       const activatedProfile = next.activeProfile ?? profile;
-      const subpath = resolveLeagueHomeSubpath(activatedProfile, next.draftBoard);
+      const subpath = next.lifecycleContext
+        ? (next.lifecycleContext.isDraftSeason ? "draft" : "home")
+        : resolveLeagueHomeSubpath(activatedProfile, next.draftBoard);
       navigate(`/league/${encodeURIComponent(profile.profileId)}/${subpath}`);
     } catch (reason) {
       setError(reason instanceof NwrApiError

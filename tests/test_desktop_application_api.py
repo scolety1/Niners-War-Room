@@ -879,6 +879,7 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
         "rankings",
         "replacementLevels",
         "draftBoard",
+        "lifecycleContext",
         "manualAssets",
         "udkRankings",
         "ownerPlatformSnapshot",

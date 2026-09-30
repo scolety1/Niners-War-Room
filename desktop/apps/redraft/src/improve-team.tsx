@@ -72,6 +72,7 @@ import {
  */
 
 type ImproveTeamTab = "targets" | "add-drop" | "faab" | "streamers" | "free-agents";
+type ImproveTeamSection = "all" | "waivers" | "streamers";
 
 const IMPROVE_TEAM_TABS: Array<{ key: ImproveTeamTab; label: string }> = [
   { key: "targets", label: "Targets" },
@@ -85,7 +86,15 @@ const TARGETS_DISPLAY_CAP = 10;
 
 type PlayerViewer = (player: { playerId: string; playerName: string; position?: string; team?: string }) => void;
 
-export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
+export function ImproveTeamPage({
+  client,
+  data,
+  section = "all",
+}: {
+  client: NwrApiClient;
+  data: RedraftBootstrap;
+  section?: ImproveTeamSection;
+}) {
   // Flaim-integration cycle (2026-09-19), Worker 4: converted from a
   // blanket `provider === "sleeper"` check to the provider-agnostic
   // capability gate (`data.leagueCapabilities.hasVerifiedIdentity`), the
@@ -99,7 +108,6 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
   const isSleeper = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const tab: ImproveTeamTab = IMPROVE_TEAM_TABS.some((item) => item.key === tabParam) ? (tabParam as ImproveTeamTab) : "targets";
   const setTab = useCallback(
     (next: ImproveTeamTab) => {
       const nextParams = new URLSearchParams(searchParams);
@@ -176,6 +184,17 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
     waiversLoader,
     [isSleeper, mode, week, budgetScenario, data.activeProfileId],
   );
+  const sectionTabs = useMemo(() => {
+    if (section === "streamers") return [{ key: "streamers", label: "Streamers" }] as Array<{ key: ImproveTeamTab; label: string }>;
+    if (section === "waivers") {
+      return IMPROVE_TEAM_TABS
+        .filter((item) => item.key !== "streamers")
+        .map((item) => item.key === "faab" && waivers?.faabContext?.isFaabLeague === false ? { ...item, label: "Claims" } : item);
+    }
+    return IMPROVE_TEAM_TABS;
+  }, [section, waivers?.faabContext?.isFaabLeague]);
+  const requestedTab = sectionTabs.some((item) => item.key === tabParam) ? (tabParam as ImproveTeamTab) : null;
+  const tab: ImproveTeamTab = section === "streamers" ? "streamers" : (requestedTab ?? "targets");
 
   const positions = useMemo(() => ["ALL", ...new Set((waivers?.addCandidates ?? []).map((row) => row.position))], [waivers]);
   const addRows = useMemo(
@@ -279,8 +298,10 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
   return <>
     <PageHeader
       eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"}
-      title="Improve Team"
-      description="How can I improve my roster? Targets, Add/Drop, FAAB, Streamers, and the full free agent pool -- one workspace, ranked by NWR's real marginal roster utility."
+      title={section === "streamers" ? "Streamers" : section === "waivers" ? "Waiver Wire" : "Improve Team"}
+      description={section === "streamers"
+        ? "Weekly K/DST streaming decisions from the existing provider-scored consensus and real league availability."
+        : "Ranked waiver targets, add/drop pairings, claim order or FAAB guidance, and the live free-agent pool."}
       status={waivers ? <StatusBadge tone="safe" label={`${waivers.addCandidates.length} targets`} /> : undefined}
     />
     {!isSleeper ? <EmptyState title="Verified league data required" message="Improve Team needs a live roster and the governed NWR ranking. Import league data (e.g. via Sleeper) to continue." /> : null}
@@ -306,8 +327,8 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
         ) : null}
       </p>
     ) : null}
-    <nav aria-label="Improve Team sections" className="nwr-tabbar" role="tablist">
-      {IMPROVE_TEAM_TABS.map((item) => (
+    {section !== "streamers" ? <nav aria-label="Waiver Wire sections" className="nwr-tabbar" role="tablist">
+      {sectionTabs.map((item) => (
         <button
           aria-selected={tab === item.key}
           className={`nwr-tabbar__tab${tab === item.key ? " nwr-tabbar__tab--active" : ""}`}
@@ -319,7 +340,7 @@ export function ImproveTeamPage({ client, data }: { client: NwrApiClient; data: 
           {item.label}
         </button>
       ))}
-    </nav>
+    </nav> : null}
 
     {waivers?.freeAgentPoolContext ? (
       <p className="copy-muted">
@@ -551,6 +572,7 @@ function AddDropTab({
   const pairingRows = useMemo(() => (waivers?.addDropPairings ?? []).filter((row) => position === "ALL" || row.add.position === position), [waivers, position]);
   const selectedAdd = waivers?.addCandidates.find((row) => row.canonicalPlayerId === selectedAddId) ?? null;
 
+  const isFaabLeague = waivers?.faabContext?.isFaabLeague === true;
   const addColumns: TableColumn[] = [
     { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
     { key: "rosOverallRank", label: "ROS rank", sort: "number", align: "right", render: (row) => row.rosOverallRank == null ? "Unranked" : `#${String(row.rosOverallRank)}` },
@@ -576,7 +598,7 @@ function AddDropTab({
             : "No"
       ),
     },
-    {
+    ...(isFaabLeague ? [{
       key: "faabBidLowDollars",
       label: "Suggested FAAB",
       sort: "number",
@@ -587,7 +609,7 @@ function AddDropTab({
           <StatusBadge tone={FAAB_URGENCY_TONE[String(row.faabUrgency)] ?? "review"} label={String(row.faabUrgency ?? "")} />
         </span>
       ),
-    },
+    } as TableColumn] : []),
     {
       key: "playerDetail", label: "", render: (row) => (
         <Button variant="ghost" onClick={() => onOpenPlayer({ playerId: String(row.canonicalPlayerId), playerName: String(row.playerName), position: String(row.position), team: String(row.team) })}>View</Button>
@@ -737,10 +759,7 @@ function FaabTab({
         />
       </div>
       {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
-      <EmptyState
-        title="This is not a FAAB league"
-        message="Sleeper reports this league uses rolling waiver-priority order, not a FAAB budget -- no dollar bid range is shown. Claim order follows your real waiver position above (lower is earlier)."
-      />
+      <OrderedClaimBuilder waivers={waivers} />
     </>;
   }
 
@@ -903,6 +922,55 @@ function FaabTab({
       </div>
     ) : null}
   </>;
+}
+
+export function moveClaim<T>(claims: readonly T[], from: number, to: number): T[] {
+  if (from < 0 || from >= claims.length || to < 0 || to >= claims.length || from === to) {
+    return [...claims];
+  }
+  const next = [...claims];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved!);
+  return next;
+}
+
+function OrderedClaimBuilder({ waivers }: { waivers: WaiversResult }) {
+  const initialClaims = waivers.addDropPairings.slice(0, 6);
+  const [claims, setClaims] = useState(initialClaims);
+
+  if (!claims.length) {
+    return <EmptyState title="No claim recommendation" message="No legal add/drop pairing is available for this roster right now." />;
+  }
+
+  return (
+    <Panel
+      title="Ordered claim builder"
+      eyebrow="Read-only plan · NWR never submits claims"
+    >
+      <p className="copy-muted">
+        Put the claims in the order you want Sleeper to process them. Add/drop pairs come
+        directly from the current waiver analysis; no dollar bids are used in this league.
+      </p>
+      <div className="nwr-action-grid">
+        {claims.map((claim, index) => (
+          <article className="decision-card" key={claim.add.canonicalPlayerId}>
+            <header>
+              <span>WAIVER CLAIM {index + 1}</span>
+              <strong>Add {claim.add.playerName}</strong>
+            </header>
+            <p>Drop {claim.drop?.playerName ?? (claim.contextLabel === "NO_DROP_CANDIDATE_AVAILABLE" ? "No legal drop available" : "No drop needed")}</p>
+            <p className="copy-muted">
+              Net marginal utility {claim.netMarginalUtility == null ? "not evaluated" : formatNumber(claim.netMarginalUtility, 1)}
+            </p>
+            <div className="profile-edit-actions">
+              <Button disabled={index === 0} variant="ghost" onClick={() => setClaims((current) => moveClaim(current, index, index - 1))}>Move up</Button>
+              <Button disabled={index === claims.length - 1} variant="ghost" onClick={() => setClaims((current) => moveClaim(current, index, index + 1))}>Move down</Button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </Panel>
+  );
 }
 
 // ---------------------------------------------------------------------------

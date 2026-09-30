@@ -404,6 +404,7 @@ export interface DynastyBootstrap {
   planning: PlanningWorkspace;
   notices: Notice[];
   dynastyLeague?: DynastyLeagueContext;
+  lifecycleContext?: LeagueLifecycleContext | null;
 }
 
 export interface PlayerDetail {
@@ -2173,6 +2174,7 @@ export interface RedraftBootstrap {
   rankings: RedraftRanking[];
   replacementLevels: ReplacementLevel[];
   draftBoard: DraftBoard | null;
+  lifecycleContext?: LeagueLifecycleContext | null;
   ownerPlatformSnapshot?: OwnerPlatformSnapshotStatus;
   // NWR DATA-IMPORT UX FIX (2026-09-08, directive section 11): the real,
   // per-provider raw values behind the global owner platform snapshot,
@@ -2206,6 +2208,37 @@ export interface RedraftBootstrap {
 // ---------------------------------------------------------------------------
 
 export type LeagueLifecycle = "PRE_DRAFT" | "LIVE_DRAFT" | "IN_SEASON" | "OFFSEASON";
+
+export type LeagueSeasonPhase =
+  | "OFFSEASON"
+  | "ROOKIE_PRE_DRAFT"
+  | "DRAFT_APPROACHING"
+  | "DRAFT_DAY"
+  | "REGULAR_SEASON"
+  | "PLAYOFF_PUSH"
+  | "FANTASY_PLAYOFFS"
+  | "SEASON_COMPLETE";
+
+/** One provider-neutral lifecycle contract emitted by both app bootstraps.
+ * Nullable facts stay null when a provider read is unavailable; the frontend
+ * never derives a second calendar from local dates. */
+export interface LeagueLifecycleContext {
+  leagueType: "REDRAFT" | "DYNASTY";
+  seasonYear: number;
+  currentWeek: number | null;
+  seasonPhase: LeagueSeasonPhase;
+  draftStatus: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETE" | "UNKNOWN";
+  waiverType: "WAIVER_PRIORITY" | "FAAB" | "FREE_AGENCY" | "UNKNOWN";
+  faabEnabled: boolean | null;
+  playoffsStart: number | null;
+  isDraftSeason: boolean;
+  isRegularSeason: boolean;
+  isPlayoffs: boolean;
+  isOffseason: boolean;
+  providerStatus: string | null;
+  seasonType: string | null;
+  basis: string;
+}
 
 // P1-1 (2026-09-12): raw, directly-sourced Sleeper matchup/standings/
 // playoff context -- additive-only fields on LeagueWorkspaceContext below.

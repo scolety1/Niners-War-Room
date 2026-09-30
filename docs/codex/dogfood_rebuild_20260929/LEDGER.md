@@ -257,3 +257,108 @@ No governed valuation model touched (`marginal_roster_utility_v2`, `governed_ass
 2. **`tests/test_redraft_engine_v1_service.py`'s 3 failed + 13 errors** are a newly-noticed (this pass), confirmed-pre-existing-in-this-worktree baseline (via `git stash` comparison) -- not previously catalogued in this ledger chain. Worth reconciling with `tests/test_draft_day_trade_lab_service.py`'s already-documented 12-failure `AppTest` baseline and checking whether either is fixed by the sibling `Niners-War-Room` repo's "resolve Streamlit AppTest paths from repo root" commit (`157b9601`, referenced in this session's own git log) or a similar fixture-depth fix.
 3. **No native/rendered-browser visual confirmation** of either fix this pass -- both are backend/facade-only with zero frontend file changes, verified via direct HTTP round trips (`curl`) against the real running dev backends, not a rendered Chrome session.
 4. **Item 6+ of the owner's original work sequence (LeagueLifecycleContext + the full Redraft/Dynasty information-architecture rebuild)** is next, per the dispatch that assigned this worker items 4-5.
+
+---
+
+# Worker 6 (Codex) -- items 6-9 (shared LeagueLifecycleContext + Redraft/Dynasty IA rebuild)
+
+Dispatch HEAD: `deda149c` (verified with `git log -1 --oneline` before any edit). The only pre-existing worktree entries were the two known untracked `local_exports.backup-*` directories; neither was touched.
+
+## Item 6 -- one shared LeagueLifecycleContext
+
+**INSPECTED CODE**: `league_lifecycle_service.py` was already the authoritative provider-status/draft-completion resolver. `LeagueWorkspaceContext`, Weekly Home, Start/Sit, and waiver budget resolution already read Sleeper's real `state/nfl` week and league settings, but neither app bootstrap exposed one provider-neutral season phase. Frontend routing still depended on a smaller local lifecycle mirror and draft-board state. I extended the existing authority rather than creating a competing calendar.
+
+**IMPLEMENTED**: new `src/services/league_lifecycle_context_service.py` defines the frozen `LeagueLifecycleContext` read model and `build_league_lifecycle_context()`. Its exact fields are:
+
+- `leagueType`, `seasonYear`, `currentWeek`, `seasonPhase`, `draftStatus`
+- `waiverType`, `faabEnabled`, `playoffsStart`
+- `isDraftSeason`, `isRegularSeason`, `isPlayoffs`, `isOffseason`
+- `providerStatus`, `seasonType`, `basis`
+
+The phase vocabulary is `OFFSEASON`, `ROOKIE_PRE_DRAFT`, `DRAFT_APPROACHING`, `DRAFT_DAY`, `REGULAR_SEASON`, `PLAYOFF_PUSH`, `FANTASY_PLAYOFFS`, and `SEASON_COMPLETE`. The builder delegates draft/provider precedence to the existing `resolve_league_lifecycle()` function. It then uses Sleeper's real NFL `week`/`season_type`, the provider league `status`, real `settings.playoff_week_start`, and real `settings.waiver_type`. `PLAYOFF_PUSH` is relative to the league's configured playoff start (three provider weeks before it), not an arbitrary calendar date. Unknown facts remain `null`/`UNKNOWN`; provider read failure does not block bootstrap. Sleeper waiver types map as the already-established contract does: `0` free agency, `1` waiver priority, `2` FAAB.
+
+`desktop_facade.py` now emits this same object as `lifecycleContext` in both bootstraps. Redraft uses the active profile plus draft board, persisted import status fallback, and optional read-only Sleeper evidence. Dynasty uses the active Dynasty profile plus its persisted league snapshot and the same optional read-only Sleeper evidence. `desktop/packages/contracts/src/index.ts` contains the one shared TypeScript contract consumed by both apps. No frontend calendar/date heuristic was added.
+
+**LIVE OBSERVATION** after both backends were restarted: Fantasy Gamers returned `REGULAR_SEASON`, current week `4`, draft status `COMPLETE`, waiver type `WAIVER_PRIORITY`, `faabEnabled: false`; Las Vegas Enginerds returned `REGULAR_SEASON`, current week `4`, draft status `COMPLETE`, waiver type `FAAB`, `faabEnabled: true`. In both cases the returned `basis` cited Sleeper's real `in_season` league status taking precedence over local draft-board activity.
+
+## Item 7 -- Redraft in-season IA and waiver-priority workflow
+
+**INSPECTED CODE**: the prior Redraft sidebar still included Draft Room in its in-season groups and treated Improve Team and Trades as consolidated single destinations. The underlying Waivers, Add/Drop, FAAB, Streamers, Trade Analysis, and Trade Finder implementations already existed. `faabContext.isFaabLeague` and real `waiverPosition` were already correctly computed; the non-FAAB tab stopped at an explanatory empty state.
+
+**IMPLEMENTED**:
+
+- The sidebar now consumes bootstrap `lifecycleContext.seasonPhase`.
+- In `REGULAR_SEASON`/`PLAYOFF_PUSH`/`FANTASY_PLAYOFFS`, its exact primary groups are Home (Weekly Home), Lineup (Start / Sit), Improve Team (Waiver Wire, Streamers), Trades (Trade Finder, Analyze Trade), Rankings (Weekly Rankings, Rest of Season Rankings), and League (Rosters / Opponents, Data Health).
+- Draft Room and Cheat Sheet are hidden in season and promoted again in draft/offseason phases; neither route or feature was deleted.
+- `/waivers` and `/streamers` are now separate first-class routed destinations while reusing the existing `ImproveTeamPage` data fetching and panels. Trade Finder and Analyze Trade are separately discoverable routes into the existing `TradesPage`. A new `/weekly-rankings` destination reuses the established provider-week and weekly-projection contracts, keeping weekly and rest-of-season ranks distinct.
+- For confirmed non-FAAB leagues, the old dead-end FAAB-shaped state is replaced by an `Ordered claim builder`. It displays real waiver priority when available, renders up to six real add/drop pairings as `WAIVER CLAIM N / Add / Drop`, allows local Move up/Move down reordering, never displays dollar bids, and explicitly remains read-only (NWR never submits claims). The Add/Drop candidate table also suppresses its Suggested FAAB column when the league is not FAAB.
+
+**LIVE OBSERVATION**, rendered Chrome session against Fantasy Gamers: the sidebar showed the exact regular-season groups above and did not show Draft Room or Cheat Sheet. Waiver Wire loaded 25 real targets; its tab renamed itself from `FAAB` to `CLAIMS` once real settings resolved. The Claims view showed real waiver priority `#8`, six ordered real claims (starting with Add Kenny Gainwell / Drop J.K. Dobbins), reorder controls, and no FAAB dollar workflow. The separate Streamers route resolved the provider week to Week 4; a read-only refresh displayed real K and DST tables, including the owner's real K starter and real available alternatives. Direct HTTP corroboration returned `isFaabLeague: false`, `waiverPosition: 8`, 10 legal add/drop pairings, and `NO_SLEEPER_WRITES`.
+
+## Items 8-9 -- Dynasty season-aware IA, nav ordinal removal, and Home command center
+
+**INSPECTED CODE**: the visible `1 2 3 4` values were `shortcut` properties rendered by the shared shell beside Home, Dynasty Rankings, Compare, and Trade Decision Lab. They were keyboard/navigation hints, not data. The existing Dynasty Home scanned market-wide gaps and rendered general notices, but it did not prioritize verified current-status overrides on the owner's own roster.
+
+**IMPLEMENTED**:
+
+- All visible Dynasty nav `shortcut` properties were removed; keyboard/command-palette navigation remains available without visual ordinals.
+- Dynasty navigation now consumes the same bootstrap `lifecycleContext.seasonPhase`. Its in-season hierarchy is Home (Command Center), Team (Dynasty Rankings, Current Roster, ROS / Current Value, Rookie Watch), Trades (Trade Decision Lab, Market Gaps, Trade Block / Targets), Assets (Picks / Future Ledger, Player Explorer, Compare), and System (Data Health). Draft Cockpit and Rookie Review are promoted in draft/offseason phases and Draft Cockpit is absent in season. A compatibility fallback remains only for old bootstrap fixtures that do not carry the additive context.
+- Home now builds `Priority actions` from `rankings` rows where `ownership.isMyTeam` is true. Verified `currentStatusOverride` rows sort starters first and render the real kind, reason, slot, and verification date. Owner-roster market discrepancies with absolute `marketGap >= 6` are sorted by magnitude and capped at five. The former market-wide table is now owner-roster-only; blanket notice noise is removed from Home. Governed values and ordering are untouched.
+
+**LIVE OBSERVATION**, rendered Chrome session against Las Vegas Enginerds: the sidebar showed the in-season hierarchy, contained no visible `1 2 3 4` ordinals, and did not show Draft Cockpit. Home identified the connected real league and displayed `REGULAR SEASON · OWNER ROSTER ONLY`. Its first action was the real De'Von Achane `SEASON OUT` card, explicitly marking him as a starter and showing the verified torn-ACL reason/date. Jayden Higgins' real season-out reserve finding followed. The remaining cards were the five largest real owner-roster NWR-versus-market gaps, including Lamar Jackson and Jerry Jeudy. Direct HTTP corroboration found 23 owner-roster ranking rows, two with real status overrides, and the same market-gap values shown by the UI.
+
+**INFERENCE**: because the rendered accessibility tree contained the lifecycle-driven groups and real roster facts after a production build and backend restart, the observed pages were consuming the new bootstrap contract rather than a test fixture. This is corroborated by the direct HTTP payloads and the real league-specific Week 4/waiver/ownership values.
+
+## Tests and verification
+
+**ACTUAL TEST RESULT**, backend targeted lifecycle/workspace/Dynasty-status suite:
+
+- `tests/test_league_lifecycle_context_service.py`
+- `tests/test_league_lifecycle_service.py`
+- `tests/test_league_workspace_context_service.py`
+- `tests/test_league_workspace_context_sleeper_p1_1.py`
+- `tests/test_sleeper_league_context_service.py`
+- `tests/test_dynasty_league_import_facade_wiring.py`
+- `tests/test_dogfood_rebuild_v1_dynasty_status_override.py`
+
+Result: **88 passed**. The 23 setup errors in the first attempt were a Windows global pytest-temp permission problem; rerunning against a new repository-local `--basetemp` produced the clean result above.
+
+**ACTUAL TEST RESULT**, HTTP contract suite: `tests/test_desktop_http_api.py` -- **44 passed**.
+
+**ACTUAL TEST RESULT**, required `tests/test_desktop_application_api.py`: **47 passed, exactly 4 failed**, with the exact documented pre-existing names and no others:
+
+- `test_dynasty_facade_composes_real_governed_workflows`
+- `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`
+- `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`
+- `test_facade_has_no_streamlit_or_app_component_dependency`
+
+The additive Redraft bootstrap key assertion was updated to include `lifecycleContext`; the named failure remains part of the existing broader baseline.
+
+**ACTUAL TEST RESULT**, frontend: `npm run typecheck` passed; full `npx vitest run` passed **531 tests in 34 files**. This includes new lifecycle-navigation coverage for both apps, draft-season promotion coverage, legacy/new Trade Finder active-route coverage, and ordered-claim reordering coverage. `npm run build` completed both Vite production builds; the only output was the pre-existing-style Redraft chunk-size advisory.
+
+**ACTUAL TEST RESULT**, lint: the new lifecycle service and its test are Ruff-clean. `desktop_facade.py` reports 119 whole-file findings (117 E501, 2 I001); none point into the new lifecycle methods, but no clean-parent baseline comparison was performed, so they are recorded as an existing-file result rather than claimed away.
+
+**LIVE OBSERVATION**, final services: both API `/healthz`/bootstrap paths and both preview ports were healthy after the backend restart and production frontend build. Final identity-verified processes: Redraft API PID 36440 on 18742, Dynasty API PID 31212 on 18741, Redraft Vite preview PID 25852 on 1422, and Dynasty Vite preview PID 37864 on 1421. No Sleeper or ESPN write endpoint was called; all provider calls were GET/read-only. KHA/403N18th identity fields, governed valuation formulas, base-board CSVs, projection snapshots, and the owner's AppData installation were untouched. No generated data pack was modified.
+
+## Files changed
+
+- `src/services/league_lifecycle_context_service.py` -- new shared lifecycle dataclass/builder.
+- `src/application/desktop_facade.py` -- shared lifecycle evidence/composition and both bootstrap fields.
+- `desktop/packages/contracts/src/index.ts` -- shared lifecycle TypeScript contract on both bootstraps.
+- `desktop/apps/redraft/src/RedraftApp.tsx`, `league-context.ts`, `leagues.tsx` -- lifecycle-aware navigation/routing/landing.
+- `desktop/apps/redraft/src/improve-team.tsx`, `in-season.tsx` -- first-class Waiver Wire/Streamers, weekly rankings, non-FAAB ordered claims.
+- `desktop/apps/dynasty/src/DynastyApp.tsx`, `pages/home.tsx` -- lifecycle-aware navigation, no visible shortcut ordinals, real owner command center.
+- `tests/test_league_lifecycle_context_service.py`, `desktop/apps/{redraft,dynasty}/src/lifecycle-navigation.test.ts`, `desktop/apps/redraft/src/waiver-claim-order.test.ts`, `tests/test_desktop_application_api.py` -- contract/formula/IA coverage.
+- `docs/codex/dogfood_rebuild_20260929/LEDGER.md` -- this entry.
+
+## Exact remaining owner sequence for the next worker (items 10-16)
+
+1. Build the real Dynasty Waiver Wire destination (not added here; this pass only reorganized existing Dynasty capabilities).
+2. Improve Trade Finder discoverability in both apps beyond this pass's Redraft route split.
+3. Enforce trade selector ownership rules and build counter generation.
+4. Rebuild streamer horizons.
+5. Restructure rankings.
+6. Simplify cards and warning presentation.
+7. Complete the remaining ESPN path.
+
+Also retain Worker 5's open investigation of analogous K/DST composition behavior in Trade Finder/Trade Package Search. Items 10+ were deliberately not implemented in this pass.

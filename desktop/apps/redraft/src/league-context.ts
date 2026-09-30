@@ -168,6 +168,8 @@ export const NAV_LEGACY_PATH_SUBPATH: Record<string, string> = {
   "/league-home": "home",
   "/lineup": "lineup",
   "/waivers": "waivers",
+  "/streamers": "streamers",
+  "/weekly-rankings": "weekly-rankings",
   "/my-roster": "my-roster",
   "/trade-analysis": "trade-analysis",
   "/trade-finder": "trade-finder",
@@ -246,6 +248,7 @@ export function resolveActiveNavPath(pathname: string, navPaths: readonly string
   const scoped = /^\/league\/[^/]+\/([^/]+)/.exec(pathname);
   const rawSubpath = scoped?.[1];
   if (!rawSubpath) return null;
+  if (rawSubpath === "trade-finder" && navPaths.includes("/trade-finder")) return "/trade-finder";
   const subpath = ROUTE_ALIAS_SUBPATH[rawSubpath] ?? rawSubpath;
   return navPaths.find((path) => NAV_LEGACY_PATH_SUBPATH[path] === subpath) ?? null;
 }

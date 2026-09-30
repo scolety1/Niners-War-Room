@@ -278,6 +278,10 @@ from src.services.league_workspace_context_service import (
     compute_roster_state_hash,
     compute_scoring_profile_hash,
 )
+from src.services.league_lifecycle_context_service import (
+    LeagueLifecycleContext,
+    build_league_lifecycle_context,
+)
 from src.services.player_availability_status_service import (
     load_player_availability_statuses,
     player_availability_authority_health,
@@ -2136,6 +2140,149 @@ class DesktopBackendFacade:
             parts.append(f"{count} {noun} -- {reason}")
         return "; ".join(parts)
 
+    def _live_sleeper_lifecycle_evidence(
+        self, league_id: str
+    ) -> tuple[Mapping[str, Any] | None, Mapping[str, Any] | None]:
+        """Read the two small, GET-only provider documents lifecycle needs.
+
+        A failed provider read never blocks bootstrap: callers retain real
+        persisted/imported provider status and leave nullable fields unknown.
+        """
+
+        sleeper = SleeperHttpClient()
+        state: Mapping[str, Any] | None = None
+        league: Mapping[str, Any] | None = None
+        try:
+            raw_state = sleeper.get_json("state/nfl")
+            if isinstance(raw_state, Mapping):
+                state = raw_state
+        except (OSError, ValueError):
+            pass
+        try:
+            raw_league = sleeper.get_json(f"league/{league_id}")
+            if isinstance(raw_league, Mapping):
+                league = raw_league
+        except (OSError, ValueError):
+            pass
+        return state, league
+
+    def _redraft_lifecycle_context(
+        self,
+        profile: LeagueProfile | None,
+        draft_board: Mapping[str, Any] | None,
+    ) -> LeagueLifecycleContext | None:
+        if profile is None:
+            return None
+
+        provider_status: str | None = None
+        current_week: int | None = None
+        season_type: str | None = None
+        playoffs_start: int | None = None
+        raw_waiver_type: object = None
+        if profile.provider == "sleeper" and profile.provider_league_id:
+            receipt_path = (
+                self.redraft_root / "sleeper_imports" / f"{profile.profile_id}.json"
+            )
+            try:
+                receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                receipt = {}
+            receipt_league = receipt.get("league") if isinstance(receipt, Mapping) else None
+            if isinstance(receipt_league, Mapping):
+                provider_status = _text(receipt_league.get("status")) or None
+
+            state, league = self._live_sleeper_lifecycle_evidence(
+                profile.provider_league_id
+            )
+            current_week = parse_current_nfl_week(state)
+            if state is not None:
+                season_type = _text(state.get("season_type")) or None
+            if league is not None:
+                provider_status = _text(league.get("status")) or provider_status
+                settings = league.get("settings")
+                if isinstance(settings, Mapping):
+                    raw_playoffs_start = settings.get("playoff_week_start")
+                    if isinstance(raw_playoffs_start, int) and not isinstance(
+                        raw_playoffs_start, bool
+                    ):
+                        playoffs_start = raw_playoffs_start
+                    raw_waiver_type = settings.get("waiver_type")
+
+        drafted = draft_board.get("drafted") if draft_board is not None else None
+        drafted_count = len(drafted) if isinstance(drafted, list) else 0
+        total_draft_picks = max(0, profile.team_count) * max(0, profile.draft.rounds)
+        current_pick_raw = draft_board.get("currentPick") if draft_board is not None else None
+        current_pick = current_pick_raw if isinstance(current_pick_raw, int) else None
+        updated_at_raw = draft_board.get("updatedAtUtc") if draft_board is not None else None
+        return build_league_lifecycle_context(
+            league_type="REDRAFT",
+            season_year=profile.season,
+            archived=profile.archived,
+            draft_configured=bool(draft_board and draft_board.get("configured")),
+            drafted_count=drafted_count,
+            total_draft_picks=total_draft_picks,
+            current_pick=current_pick,
+            provider_status=provider_status,
+            current_week=current_week,
+            season_type=season_type,
+            playoffs_start=playoffs_start,
+            raw_waiver_type=raw_waiver_type,
+            live_sync_capable=(
+                profile.provider == "sleeper" and bool(profile.provider_league_id)
+            ),
+            draft_last_activity_utc=(
+                updated_at_raw if isinstance(updated_at_raw, str) else None
+            ),
+        )
+
+    def _dynasty_lifecycle_context(
+        self, profile: Any, league_snapshot: Any
+    ) -> LeagueLifecycleContext:
+        settings = league_snapshot.settings
+        provider_status = _text(settings.status) or None
+        current_week: int | None = None
+        season_type: str | None = None
+        playoffs_start = profile.playoff_week_start or settings.playoff_week_start or None
+        raw_waiver_type: object = profile.waiver_type
+
+        state, live_league = self._live_sleeper_lifecycle_evidence(profile.league_id)
+        current_week = parse_current_nfl_week(state)
+        if state is not None:
+            season_type = _text(state.get("season_type")) or None
+        if live_league is not None:
+            provider_status = _text(live_league.get("status")) or provider_status
+            live_settings = live_league.get("settings")
+            if isinstance(live_settings, Mapping):
+                live_playoffs_start = live_settings.get("playoff_week_start")
+                if isinstance(live_playoffs_start, int) and not isinstance(
+                    live_playoffs_start, bool
+                ):
+                    playoffs_start = live_playoffs_start
+                raw_waiver_type = live_settings.get("waiver_type", raw_waiver_type)
+
+        draft_count = sum(draft.pick_count for draft in league_snapshot.drafts)
+        configured_rounds = max(0, settings.configured_draft_rounds)
+        total_draft_picks = max(0, settings.num_teams) * configured_rounds
+        try:
+            season_year = int(profile.season)
+        except (TypeError, ValueError):
+            season_year = 0
+        return build_league_lifecycle_context(
+            league_type="DYNASTY",
+            season_year=season_year,
+            archived=False,
+            draft_configured=bool(league_snapshot.drafts),
+            drafted_count=draft_count,
+            total_draft_picks=total_draft_picks,
+            current_pick=None,
+            provider_status=provider_status,
+            current_week=current_week,
+            season_type=season_type,
+            playoffs_start=playoffs_start,
+            raw_waiver_type=raw_waiver_type,
+            live_sync_capable=True,
+        )
+
     def redraft_bootstrap(self) -> FacadePayload:
         self._require_mode("redraft")
         presets = builtin_presets()
@@ -2439,6 +2586,8 @@ class DesktopBackendFacade:
                 }
             )
 
+        lifecycle_context = self._redraft_lifecycle_context(selected, draft_board)
+
         return FacadePayload(
             data={
                 "product": dict(REDRAFT_PRODUCT),
@@ -2469,6 +2618,9 @@ class DesktopBackendFacade:
                 "rankings": rankings,
                 "replacementLevels": replacement_levels,
                 "draftBoard": self._draft_board_payload(draft_board),
+                "lifecycleContext": (
+                    lifecycle_context.to_dict() if lifecycle_context is not None else None
+                ),
                 "ownerPlatformSnapshot": owner_platform_snapshot_status(self.redraft_root, selected),
                 "marketProviderAdp": {
                     player_id: {
@@ -8107,6 +8259,9 @@ class DesktopBackendFacade:
             "leagueId": profile.league_id,
             "myOwnerId": profile.my_owner_id,
         }
+        data["lifecycleContext"] = self._dynasty_lifecycle_context(
+            profile, league_snapshot
+        ).to_dict()
         return FacadePayload(data=data, warnings=payload.warnings)
 
     def _annotate_dynasty_workspace_payload(

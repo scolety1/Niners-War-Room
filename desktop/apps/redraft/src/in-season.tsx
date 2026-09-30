@@ -361,6 +361,54 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
 }
 
 // ---------------------------------------------------------------------------
+// Weekly Rankings
+// ---------------------------------------------------------------------------
+
+export function WeeklyRankingsPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
+  const hasVerifiedLeague = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
+  const profileId = hasVerifiedLeague ? data.activeProfileId : null;
+  const { providerWeek, error: contextError, working: contextWorking } = useProviderWeek(client, profileId);
+  const { week, manualWeekOverride, setManualWeekOverride, usingProviderWeek } = useWeekSelection(providerWeek, profileId);
+  const loader = useCallback(
+    () => (hasVerifiedLeague && week != null ? client.redraftWeeklyProjections(week) : null),
+    [client, hasVerifiedLeague, week],
+  );
+  const { result, error, working, reload } = useAsync(loader, [hasVerifiedLeague, week, data.activeProfileId]);
+  const rows = useMemo(
+    () => (result?.rows ?? []).slice().sort((left, right) => (right.projectedPoints ?? -1) - (left.projectedPoints ?? -1)),
+    [result],
+  );
+  const columns: TableColumn[] = [
+    { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
+    { key: "position", label: "Pos", sort: "text", align: "center" },
+    { key: "projectedPoints", label: "Projected points", sort: "number", align: "right", render: (row) => row.projectedPoints == null ? "—" : formatNumber(Number(row.projectedPoints), 1) },
+    { key: "identityMatch", label: "Identity", sort: "text" },
+  ];
+
+  return <>
+    <PageHeader
+      eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"}
+      title={week == null ? "Weekly Rankings" : `Weekly Rankings · Week ${week}`}
+      description="Current-week projections under this league's scoring, separate from the governed rest-of-season board."
+      actions={<div className="profile-edit-actions">
+        <WeekControl week={week ?? providerWeek ?? 1} onChange={setManualWeekOverride} label={usingProviderWeek ? "NFL week (auto)" : "NFL week (manual)"} />
+        <Button disabled={working || week == null} icon="activity" variant="secondary" onClick={reload}>{working ? "Reading…" : "Refresh"}</Button>
+      </div>}
+    />
+    {!hasVerifiedLeague ? <EmptyState title="Verified league data required" message="Weekly Rankings needs a verified league and its real scoring settings." /> : null}
+    {contextWorking && week == null ? <p className="draft-feedback">Reading the provider's current NFL week…</p> : null}
+    {contextError ? <ErrorState message={contextError.message} recovery={contextError.recoveryAction} /> : null}
+    {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
+    {manualWeekOverride !== null && providerWeek !== null && manualWeekOverride !== providerWeek ? <p className="copy-muted">Provider week is {providerWeek}; showing manually selected Week {manualWeekOverride}.</p> : null}
+    <ProviderStatusLine health={result?.providerHealth ?? null} />
+    <SnapshotProvenanceNotice provenance={result?.leagueStateProvenance} />
+    {result ? <Panel title={`Week ${result.week} player rankings`} eyebrow={`${result.matched} identity-matched · ${result.source}`}>
+      {rows.length ? <DataTable columns={columns} rows={rows as unknown as Array<Record<string, unknown>>} rowKey={(row) => String(row.canonicalPlayerId || row.sleeperPlayerId)} /> : <EmptyState title="No weekly projections" message="The weekly provider returned no usable player rows for this league." />}
+    </Panel> : null}
+  </>;
+}
+
+// ---------------------------------------------------------------------------
 // Start / Sit (Lineup)
 // ---------------------------------------------------------------------------
 

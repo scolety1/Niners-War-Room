@@ -1,5 +1,5 @@
 import { createNwrClient, NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { CommandItem, DynastyBootstrap, NavigationGroup } from "@nwr/contracts";
+import type { CommandItem, DynastyBootstrap, LeagueSeasonPhase, NavigationGroup } from "@nwr/contracts";
 import { AppShell, Button, ErrorState, LoadingScreen, WindowChrome } from "@nwr/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
@@ -21,15 +21,63 @@ import {
   TradeLabPage,
 } from "./pages";
 
-const NAVIGATION: NavigationGroup[] = [
-  { label: "Command", items: [{ label: "Home", path: "/", icon: "home", shortcut: "1" }] },
+const NAV_HOME: NavigationGroup = {
+  label: "Home",
+  items: [{ label: "Command Center", path: "/", icon: "home" }],
+};
+const NAV_TEAM: NavigationGroup = {
+  label: "Team",
+  items: [
+    { label: "Dynasty Rankings", path: "/rankings", icon: "board" },
+    { label: "Current Roster", path: "/assets", icon: "players" },
+    { label: "ROS / Current Value", path: "/market", icon: "market" },
+    { label: "Rookie Watch", path: "/rookies", icon: "rookie" },
+  ],
+};
+const NAV_TRADES: NavigationGroup = {
+  label: "Trades",
+  items: [
+    { label: "Trade Decision Lab", path: "/trades", icon: "trade" },
+    { label: "Market Gaps", path: "/market", icon: "market" },
+    { label: "Trade Block / Targets", path: "/workspace", icon: "target" },
+  ],
+};
+const NAV_ASSETS: NavigationGroup = {
+  label: "Assets",
+  items: [
+    { label: "Picks / Future Ledger", path: "/planning", icon: "draft" },
+    { label: "Player Explorer", path: "/players", icon: "players" },
+    { label: "Compare", path: "/compare", icon: "compare" },
+  ],
+};
+const NAV_DRAFT: NavigationGroup = {
+  label: "Draft",
+  items: [
+    { label: "Draft Cockpit", path: "/draft", icon: "draft" },
+    { label: "Rookie Review", path: "/rookies", icon: "rookie" },
+  ],
+};
+const NAV_SYSTEM: NavigationGroup = {
+  label: "System",
+  items: [{ label: "Data Health", path: "/data-health", icon: "health" }],
+};
+
+export function buildDynastyNavigation(phase: LeagueSeasonPhase | null): NavigationGroup[] {
+  if (phase === "REGULAR_SEASON" || phase === "PLAYOFF_PUSH" || phase === "FANTASY_PLAYOFFS") {
+    return [NAV_HOME, NAV_TEAM, NAV_TRADES, NAV_ASSETS, NAV_SYSTEM];
+  }
+  return [NAV_HOME, NAV_DRAFT, NAV_TEAM, NAV_TRADES, NAV_ASSETS, NAV_SYSTEM];
+}
+
+const LEGACY_NAVIGATION: NavigationGroup[] = [
+  { label: "Command", items: [{ label: "Home", path: "/", icon: "home" }] },
   {
     label: "Players",
     items: [
-      { label: "Dynasty Rankings", path: "/rankings", icon: "board", shortcut: "2" },
+      { label: "Dynasty Rankings", path: "/rankings", icon: "board" },
       { label: "Asset Explorer", path: "/assets", icon: "players" },
       { label: "Player Detail", path: "/players", icon: "players" },
-      { label: "Compare", path: "/compare", icon: "compare", shortcut: "3" },
+      { label: "Compare", path: "/compare", icon: "compare" },
       { label: "Market Analysis", path: "/market", icon: "market" },
       { label: "Rookie Review", path: "/rookies", icon: "rookie" },
     ],
@@ -37,7 +85,7 @@ const NAVIGATION: NavigationGroup[] = [
   {
     label: "Decisions",
     items: [
-      { label: "Trade Decision Lab", path: "/trades", icon: "trade", shortcut: "4" },
+      { label: "Trade Decision Lab", path: "/trades", icon: "trade" },
       { label: "My Board & Decisions", path: "/workspace", icon: "board" },
       { label: "Scenario Playground", path: "/planning", icon: "target" },
     ],
@@ -54,6 +102,10 @@ export function DynastyApp() {
   const [attempt, setAttempt] = useState(0);
 
   const reload = useCallback(() => setAttempt((value) => value + 1), []);
+  const navigation = useMemo(
+    () => buildDynastyNavigation(data?.lifecycleContext?.seasonPhase ?? null),
+    [data?.lifecycleContext?.seasonPhase],
+  );
 
   useEffect(() => {
     let active = true;
@@ -80,7 +132,7 @@ export function DynastyApp() {
   }, [attempt]);
 
   const commands = useMemo<CommandItem[]>(() => {
-    const navigationCommands = NAVIGATION.flatMap((group) => group.items).map((item) => ({
+    const navigationCommands = navigation.flatMap((group) => group.items).map((item) => ({
       id: `nav:${item.path}`,
       label: item.label,
       detail: `Open ${item.label}`,
@@ -107,7 +159,7 @@ export function DynastyApp() {
       ],
     }));
     return [...navigationCommands, ...assetCommands];
-  }, [data]);
+  }, [data, navigation]);
 
   if (!data && !error) return <div className="standalone-frame"><WindowChrome title="Niners War Room — Dynasty" /><LoadingScreen label="Opening Dynasty command center" /></div>;
   if (!data || !client) {
@@ -122,7 +174,7 @@ export function DynastyApp() {
       healthLabel={status.ready ? "Decision system ready" : status.tone === "blocked" ? "Evidence blocked" : "Review required"}
       healthTone={status.tone}
       mode="dynasty"
-      navigation={NAVIGATION}
+      navigation={data.lifecycleContext ? navigation : LEGACY_NAVIGATION}
       profileLabel={data.product.leagueLabel || "10-team · 1QB"}
       sourceAsOf={data.marketFreshness.sourceAsOf ? `Market ${data.marketFreshness.sourceAsOf}` : status.sourceAsOf}
       title="Niners War Room — Dynasty"
