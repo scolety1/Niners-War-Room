@@ -128,6 +128,19 @@ POOL_HEADER = (
 )
 
 
+class DraftPrepSourcePackageMissingError(RuntimeError):
+    """Raised when the real prior-draft-history source package is absent.
+
+    ``build_draft_prep_data_foundation`` writes its output directly over the
+    tracked canonical docs under ``docs/model_v4`` (and the review CSVs under
+    ``local_exports/model_v4/draft_prep/latest``). If the real source package is
+    missing, ``normalize_prior_draft_history`` would otherwise silently produce a
+    degraded 0-row result that then overwrites real historical evidence already
+    committed to those tracked docs. Raising here instead makes that failure mode
+    loud and keeps the existing tracked files untouched.
+    """
+
+
 @dataclass(frozen=True)
 class DraftPrepBuildResult:
     prior_history_rows: int
@@ -139,6 +152,23 @@ class DraftPrepBuildResult:
     output_root: Path
 
 
+def _has_real_prior_history_inputs(package: Path) -> bool:
+    """True only if real source files are actually present under ``package``.
+
+    A missing ``package`` directory, or one present but containing neither any
+    ``*.xlsx`` workbook under ``raw_uploaded_files`` nor the PDF transcription
+    CSV, means ``normalize_prior_draft_history`` has nothing real to read and
+    would otherwise return an empty list - a degraded artifact of missing
+    inputs, not a genuine zero computed from real, present source data.
+    """
+    if not package.exists():
+        return False
+    raw = package / "raw_uploaded_files"
+    has_xlsx = raw.exists() and any(raw.glob("*.xlsx"))
+    has_pdf = (package / "drafts_pdf_official_transcription_best_effort.csv").exists()
+    return has_xlsx or has_pdf
+
+
 def build_draft_prep_data_foundation(
     *,
     package_root: str | Path = PACKAGE_ROOT,
@@ -148,6 +178,19 @@ def build_draft_prep_data_foundation(
     package = Path(package_root)
     output = Path(output_root)
     docs = Path(doc_root)
+
+    if not _has_real_prior_history_inputs(package):
+        raise DraftPrepSourcePackageMissingError(
+            "Refusing to build draft-prep data foundation: no real source inputs "
+            f"found under package_root='{package}' (expected *.xlsx workbook(s) "
+            "under 'raw_uploaded_files/' and/or "
+            "'drafts_pdf_official_transcription_best_effort.csv'). Writing now "
+            f"would overwrite the tracked docs under '{docs}' and the review CSVs "
+            f"under '{output}' with a degraded 0-row result. Populate the real "
+            "source package before running this build, or pass an explicit "
+            "package_root pointing at real (or test-fixture) source files."
+        )
+
     output.mkdir(parents=True, exist_ok=True)
     docs.mkdir(parents=True, exist_ok=True)
 
