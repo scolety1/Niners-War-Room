@@ -419,19 +419,38 @@ function RedraftCounterResults({ result }: { result: RedraftTradeCounterResult }
       title={`${result.candidates.length} constructible counter${result.candidates.length === 1 ? "" : "s"}`}
       eyebrow={`vs. ${result.counterpartyTeamName} · ${result.packagesEvaluated} evaluated`}
     >
+      {/*
+       * Dogfood Rebuild V1, Worker 9 (Item 2 -- card density simplification):
+       * every candidate card used to always-render 5 full paragraphs (What
+       * changed / Why this helps me / Why it may fit them / NWR vs market /
+       * Main risk), identically structured on every card in the grid -- real
+       * owner-reported-style wordiness. Nothing here is hidden or removed:
+       * "What changed" (the single most scannable fact) stays always-on;
+       * the other four real disclosures move into one collapsed `<details>`
+       * per card (the exact same collapse primitive/CSS class
+       * `DecisionExplain`'s own "Advanced" section already uses elsewhere
+       * in this app -- `.nwr-explain__advanced`, not a new pattern), so a
+       * five-card grid reads as 5 short lines instead of 25 paragraphs by
+       * default, one click away from full detail.
+       */}
       {result.candidates.length ? <div className="nwr-action-grid">
         {result.candidates.map((candidate, index) => (
           <article className="decision-explain" key={`${candidate.youSend.join("-")}-${candidate.youReceive.join("-")}-${index}`}>
             <header><span>COUNTER {index + 1}</span><strong>Give {candidate.youSendNames.join(" + ")} for {candidate.youReceiveNames.join(" + ")}</strong></header>
-            <p><b>What changed:</b> {candidate.whatChanged.join(" ")}</p>
-            <p><b>Why this helps me:</b> {candidate.whyItHelpsYou.join(" ")}</p>
-            <p><b>Why it may make sense for them:</b> {candidate.whyItMayFitThem.join(" ")}</p>
-            <p><b>NWR vs market:</b> {candidate.marketContext}</p>
-            <p><b>Main risk:</b> {candidate.mainRisk}</p>
             <div className="toolbar">
               <StatusBadge tone="safe" label={`Your utility ${candidate.ownerEvaluation.netMarginalUtility >= 0 ? "+" : ""}${formatNumber(candidate.ownerEvaluation.netMarginalUtility, 1)}`} />
               <StatusBadge tone="review" label={`Their utility ${candidate.opponentEvaluation.netMarginalUtility >= 0 ? "+" : ""}${formatNumber(candidate.opponentEvaluation.netMarginalUtility, 1)}`} />
             </div>
+            <p>{candidate.whatChanged.join(" ")}</p>
+            <details className="nwr-explain__advanced">
+              <summary>Why &amp; risk</summary>
+              <div className="nwr-explain__advanced-body">
+                <p><b>Why this helps me:</b> {candidate.whyItHelpsYou.join(" ")}</p>
+                <p><b>Why it may make sense for them:</b> {candidate.whyItMayFitThem.join(" ")}</p>
+                <p><b>NWR vs market:</b> {candidate.marketContext}</p>
+                <p><b>Main risk:</b> {candidate.mainRisk}</p>
+              </div>
+            </details>
           </article>
         ))}
       </div> : <EmptyState title="No constructible counters" message="The bounded search did not find another legal package around this offer." />}

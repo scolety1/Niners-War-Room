@@ -2,6 +2,7 @@ import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
 import type {
   LeagueWorkspaceContext,
   RedraftFreeAgentsResult,
+  SourceStatus,
   WeeklyProjectionProviderHealth,
 } from "@nwr/contracts";
 import { Button, StatusBadge, formatNumber, type TableColumn } from "@nwr/ui";
@@ -186,6 +187,48 @@ export function resolveGovernedModelCadenceCaption(
   return sourceAsOf
     ? `This is the season-level governed model's admission date, not a live weekly refresh (scheduled refresh: ${refresh} -- by design, this updates only through a new owner-approved admission, not automatically). Start/Sit, Waivers (This Week), and Streamers layer separate, live, week-scoped data on top of this baseline.`
     : "The governed season model's admission date is unavailable; season-level values cannot be dated.";
+}
+
+/**
+ * Dogfood Rebuild V1, Worker 9 (Item 1 -- Redraft Rankings restructuring +
+ * projection freshness): the Rest-of-Season board ("War Room Rank") only
+ * ever carried a plain muted caption (`resolveSeasonProjectionBasisCaption`)
+ * and a `sourceAsOf` value repeated identically on every single row of the
+ * table -- no status badge, no expandable detail, and the same date printed
+ * once per row instead of once for the whole board. Season-level data has
+ * no per-week `WeeklyProjectionProviderHealth` object the way Streamers/
+ * Weekly Rankings do (it's a governed admission, not a live weekly pull),
+ * so this is NOT `ProviderStatusLine` itself -- it is the same compact
+ * badge + expandable `<dl>` SHAPE, reused verbatim, driven by the real
+ * `SourceStatus` fields the bootstrap payload already carries
+ * (`data.status`: `tone`/`sourceAsOf`/`freshness`/`scheduledRefresh`/
+ * `authority`/`warnings`/`errors`) -- no new backend field, no fabricated
+ * freshness signal, and the exact same `resolveGovernedModelCadenceCaption`
+ * text the Data Health hero already shows (not a second, divergent
+ * explanation of the same fact).
+ */
+export function SeasonModelStatusLine({ status }: { status: SourceStatus }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="provider-status-line">
+      <button type="button" className="provider-status-line__toggle" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>
+        <StatusBadge tone={status.tone} label={status.ready ? "ADMITTED" : "REVIEW"} />
+        <span>War Room Rank · Rest of Season: admitted {status.sourceAsOf || "unknown"}{status.freshness ? ` · ${status.freshness}` : ""}</span>
+        <span aria-hidden="true">{expanded ? "▴" : "▾"}</span>
+      </button>
+      {expanded ? (
+        <dl className="health-list provider-status-line__detail">
+          <div><dt>Authority</dt><dd>{status.authority || "Unknown"}</dd></div>
+          <div><dt>Admitted (source as of)</dt><dd>{status.sourceAsOf || "unavailable"}</dd></div>
+          <div><dt>Freshness</dt><dd>{status.freshness || "unavailable"}</dd></div>
+          <div><dt>Scheduled refresh</dt><dd>{status.scheduledRefresh || "unavailable"}</dd></div>
+          <div><dt>What this means</dt><dd>{resolveGovernedModelCadenceCaption(status.sourceAsOf, status.scheduledRefresh)}</dd></div>
+          {status.warnings.length ? <div><dt>Warnings</dt><dd>{status.warnings.join("; ")}</dd></div> : null}
+          {status.errors.length ? <div><dt>Errors</dt><dd>{status.errors.join("; ")}</dd></div> : null}
+        </dl>
+      ) : null}
+    </div>
+  );
 }
 
 /**

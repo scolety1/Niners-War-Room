@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatKnownWaiverNumber, verdictFor } from "./in-season";
+import { formatKnownWaiverNumber, verdictFor, withWeeklyRank } from "./in-season";
 
 function tradeResult(overrides: { netMarginalUtility: number; rosValueDelta: number }) {
   return {
@@ -59,5 +59,41 @@ describe("Add/Drop missing-value honesty", () => {
     expect(formatKnownWaiverNumber(null)).toBe("unavailable");
     expect(formatKnownWaiverNumber(undefined)).toBe("unavailable");
     expect(formatKnownWaiverNumber(0)).toBe("0.0");
+  });
+});
+
+// Dogfood Rebuild V1, Worker 9 (Item 1): Weekly Rankings previously showed
+// no rank ordinal at all -- only a raw projected-points number. This is the
+// pure ordinal-assignment logic behind the new "Weekly Rank" column.
+describe("withWeeklyRank", () => {
+  it("assigns a 1-based rank in descending projected-points order", () => {
+    const rows = [
+      { playerName: "A", projectedPoints: 10 },
+      { playerName: "B", projectedPoints: 25 },
+      { playerName: "C", projectedPoints: 15 },
+    ];
+    expect(withWeeklyRank(rows).map((row) => [row.playerName, row.weeklyRank])).toEqual([
+      ["B", 1],
+      ["C", 2],
+      ["A", 3],
+    ]);
+  });
+
+  it("treats a missing (null) projection as lowest, never fabricating a zero-value rank ahead of real evidence", () => {
+    const rows = [
+      { playerName: "Known", projectedPoints: 1 },
+      { playerName: "Missing", projectedPoints: null },
+    ];
+    expect(withWeeklyRank(rows).map((row) => row.playerName)).toEqual(["Known", "Missing"]);
+  });
+
+  it("does not mutate the input array", () => {
+    const rows = [
+      { playerName: "A", projectedPoints: 1 },
+      { playerName: "B", projectedPoints: 2 },
+    ];
+    const original = [...rows];
+    withWeeklyRank(rows);
+    expect(rows).toEqual(original);
   });
 });

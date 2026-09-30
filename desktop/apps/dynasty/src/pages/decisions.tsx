@@ -1335,6 +1335,17 @@ function DynastyCounterResults({ result }: { result: DynastyTradeCounterResult }
       eyebrow={`vs. ${result.counterpartyTeamName} · ${result.packagesEvaluated} evaluated`}
     >
       <p className="copy-muted">Preserved core asset: {result.preservedAnchorName}. {result.opponentWindowBasis}</p>
+      {/*
+       * Dogfood Rebuild V1, Worker 9 (Item 2 -- card density simplification):
+       * same fix as Redraft's own counter-offer cards (trades.tsx) -- every
+       * candidate card used to always-render 5 full paragraphs identically
+       * structured on every card in the grid. "What changed" stays
+       * always-on; the other four real disclosures move into one collapsed
+       * `<details>` per card, using this app's own existing
+       * `.advanced-details` collapse class (pages.css, already used
+       * elsewhere in Dynasty) rather than a new pattern. Nothing is hidden
+       * or removed -- only collapsed one click deep.
+       */}
       {result.candidates.length ? (
         <div className="nwr-action-grid">
           {result.candidates.map((candidate, index) => (
@@ -1343,15 +1354,18 @@ function DynastyCounterResults({ result }: { result: DynastyTradeCounterResult }
                 <span>COUNTER {index + 1}</span>
                 <strong>Give {candidate.giveNames.join(" + ")} for {candidate.receiveNames.join(" + ")}</strong>
               </header>
-              <p><b>What changed:</b> {candidate.changes.join(" ")}</p>
-              <p><b>Why this helps me:</b> {candidate.whyItHelpsYou}</p>
-              <p><b>Why it may make sense for them:</b> {candidate.whyItMayMakeSenseForThem}</p>
-              <p><b>NWR vs market:</b> {candidate.nwrVsMarket}</p>
-              <p><b>Main risk:</b> {candidate.mainRisk}</p>
               <div className="toolbar">
                 <StatusBadge tone="safe" label={`Your view: ${candidate.ownerDecision.recommendation.replaceAll("_", " ")}`} />
                 <StatusBadge tone="review" label={`Their balanced view: ${candidate.opponentDecision.recommendation.replaceAll("_", " ")}`} />
               </div>
+              <p><b>What changed:</b> {candidate.changes.join(" ")}</p>
+              <details className="advanced-details">
+                <summary>Why &amp; risk</summary>
+                <p><b>Why this helps me:</b> {candidate.whyItHelpsYou}</p>
+                <p><b>Why it may make sense for them:</b> {candidate.whyItMayMakeSenseForThem}</p>
+                <p><b>NWR vs market:</b> {candidate.nwrVsMarket}</p>
+                <p><b>Main risk:</b> {candidate.mainRisk}</p>
+              </details>
             </article>
           ))}
         </div>

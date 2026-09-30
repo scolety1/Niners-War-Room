@@ -364,6 +364,23 @@ export function WeeklyHomePage({ client, data }: { client: NwrApiClient; data: R
 // Weekly Rankings
 // ---------------------------------------------------------------------------
 
+/**
+ * Dogfood Rebuild V1, Worker 9 (Item 1): pure, directly-testable ordinal
+ * assignment -- sorts weekly projection rows by real projected points
+ * (unmatched/null treated as lowest, never fabricated as zero-value
+ * evidence) and assigns a 1-based "Weekly Rank" over the SAME real rows
+ * `WeeklyRankingsPage` already fetches. Presentation-only: no new
+ * valuation, just a display ordinal over an existing real field.
+ */
+export function withWeeklyRank<T extends { projectedPoints: number | null }>(
+  rows: T[],
+): Array<T & { weeklyRank: number }> {
+  return rows
+    .slice()
+    .sort((left, right) => (right.projectedPoints ?? -1) - (left.projectedPoints ?? -1))
+    .map((row, index) => ({ ...row, weeklyRank: index + 1 }));
+}
+
 export function WeeklyRankingsPage({ client, data }: { client: NwrApiClient; data: RedraftBootstrap }) {
   const hasVerifiedLeague = Boolean(data.leagueCapabilities?.hasVerifiedIdentity);
   const profileId = hasVerifiedLeague ? data.activeProfileId : null;
@@ -374,11 +391,15 @@ export function WeeklyRankingsPage({ client, data }: { client: NwrApiClient; dat
     [client, hasVerifiedLeague, week],
   );
   const { result, error, working, reload } = useAsync(loader, [hasVerifiedLeague, week, data.activeProfileId]);
-  const rows = useMemo(
-    () => (result?.rows ?? []).slice().sort((left, right) => (right.projectedPoints ?? -1) - (left.projectedPoints ?? -1)),
-    [result],
-  );
+  // Dogfood Rebuild V1, Worker 9 (Item 1): a real "Weekly Rank" ordinal --
+  // this week's own War Room ordering, distinct from the Rest-of-Season
+  // board's `overallRank` -- was never displayed here before, only the raw
+  // projected-points number. Pure presentation: a 1-based position over
+  // the SAME already-fetched real weekly projection rows; no new ranking
+  // formula or valuation (see `withWeeklyRank`).
+  const rows = useMemo(() => withWeeklyRank(result?.rows ?? []), [result]);
   const columns: TableColumn[] = [
+    { key: "weeklyRank", label: "Weekly Rank", sort: "number", width: "60px", render: (row) => <span className="rank-cell" title="This week's War Room order; not the Rest-of-Season board's overallRank."><i /><b>#{String(row.weeklyRank)}</b></span> },
     { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
     { key: "position", label: "Pos", sort: "text", align: "center" },
     { key: "projectedPoints", label: "Projected points", sort: "number", align: "right", render: (row) => row.projectedPoints == null ? "—" : formatNumber(Number(row.projectedPoints), 1) },
@@ -400,6 +421,7 @@ export function WeeklyRankingsPage({ client, data }: { client: NwrApiClient; dat
     {contextError ? <ErrorState message={contextError.message} recovery={contextError.recoveryAction} /> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
     {manualWeekOverride !== null && providerWeek !== null && manualWeekOverride !== providerWeek ? <p className="copy-muted">Provider week is {providerWeek}; showing manually selected Week {manualWeekOverride}.</p> : null}
+    <p className="copy-muted">Rest-of-Season War Room Rank lives on its own separate board -- <Link to="/rankings">open Rankings</Link>.</p>
     <ProviderStatusLine health={result?.providerHealth ?? null} />
     <SnapshotProvenanceNotice provenance={result?.leagueStateProvenance} />
     {result ? <Panel title={`Week ${result.week} player rankings`} eyebrow={`${result.matched} identity-matched · ${result.source}`}>

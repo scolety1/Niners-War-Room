@@ -24,7 +24,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { draftFormat, leagueFormat } from "./league-context";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { SnapshotProvenanceNotice } from "./snapshot-provenance";
-import { appendPlayerDetailColumn, FREE_AGENT_COLUMNS, resolveGovernedModelCadenceCaption, resolveSeasonProjectionBasisCaption, useAsync, useFreeAgents } from "./weekly-shared";
+import { formatAdpRoundPick } from "./adp-format";
+import { appendPlayerDetailColumn, FREE_AGENT_COLUMNS, resolveGovernedModelCadenceCaption, resolveSeasonProjectionBasisCaption, SeasonModelStatusLine, useAsync, useFreeAgents } from "./weekly-shared";
 
 const POSITION_OPTIONS = ["ALL", "QB", "RB", "WR", "TE", "K", "DST"];
 const DRAFT_ROOM_POSITION_OPTIONS = ["ALL", "FLEX", "QB", "RB", "WR", "TE", "K", "DST"];
@@ -136,9 +137,38 @@ export function globalPickSearchRows(
   return [...fromRanked, ...fromManual].slice(0, limit);
 }
 
-function rankingColumns(compact = false): TableColumn[] {
+/**
+ * Dogfood Rebuild V1, Worker 9 (Item 1): adds the real Market Rank (ADP)
+ * column alongside NWR's own governed "War Room Rank" -- the Official/
+ * Market/War Room/My Rank separation `AGENTS.md` asks for. This table
+ * genuinely only has two of those four signals today, both real: War Room
+ * Rank (`overallRank`, NWR's governed formula) and Market Rank
+ * (`overallAdp`/`adpSource`, the same real market-ADP field Draft Room and
+ * Cheat Sheets already read -- reused here, not recomputed). "Official
+ * Rank" (an external expert-consensus rank distinct from market ADP) and
+ * "My Rank" (an owner personal-override rank) are NOT fabricated here --
+ * neither exists as a real, live signal anywhere in this desktop app today
+ * (confirmed by a full-repo search: `fact_official_rankings.csv` belongs
+ * only to the separate legacy CLI/Streamlit pipeline, and no owner-rank-
+ * override concept exists in Redraft at all). See the Worker 9 ledger entry
+ * for the honest, undecorated statement of this gap.
+ *
+ * The per-row "Source as of" column (identical on every single row, since
+ * it's one season-level snapshot) is replaced by the single board-level
+ * `SeasonModelStatusLine` below -- the same repeated-disclosure simplification
+ * this pass's Item 2 (card/density simplification) asks for, applied here
+ * to a table column instead of a card.
+ */
+function rankingColumns(compact = false, adpTeamCount: number | null = null, roomTeamCount: number | null = null): TableColumn[] {
   const base: TableColumn[] = [
-    { key: "overallRank", label: "Rank", sort: "number", width: "60px", render: (row) => <span className="rank-cell"><i /><b>#{String(row.overallRank)}</b></span> },
+    { key: "overallRank", label: "War Room Rank", sort: "number", width: "70px", render: (row) => <span className="rank-cell" title="NWR's own governed rank formula."><i /><b>#{String(row.overallRank)}</b></span> },
+    {
+      key: "overallAdp", label: "Market Rank (ADP)", sort: "number", align: "right",
+      render: (row) => {
+        const adp = formatAdpRoundPick(row.overallAdp as number | null, adpTeamCount, roomTeamCount);
+        return <span title={`Real market ADP. ${adp.title}`}>{adp.text}</span>;
+      },
+    },
     { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}{String(row.positionRank)}</small></span> },
     { key: "position", label: "Pos", sort: "text", align: "center", render: (row) => <span className="position-pill">{String(row.position)}</span> },
     { key: "tier", label: "Tiers", sort: "number", render: (row) => <span className="player-cell"><strong>{String(row.overallTierLabel ?? `Tier ${String(row.tier)}`)}</strong><small>{String(row.positionTierLabel ?? "")}</small></span> },
@@ -155,7 +185,7 @@ function rankingColumns(compact = false): TableColumn[] {
       ),
     },
   ];
-  return compact ? base.slice(0, 6) : [...base, { key: "sourceAsOf", label: "Source as of", sort: "text" }];
+  return compact ? [base[0]!, base[2]!, base[3]!, base[4]!, base[5]!, base[6]!] : base;
 }
 
 /**
@@ -233,26 +263,42 @@ export function RankingsContent({ data }: { data: RedraftBootstrap }) {
   // global Player Detail primitive as every other adopted surface --
   // Players/Rankings was a real, disclosed remaining adoption gap.
   const openPlayerDetail = usePlayerDetailOpener(data.activeProfileId, "PLAYERS_RANKINGS");
+  // Same real "known source team count only" guard `formatAdpRoundPick`
+  // already enforces in Cheat Sheets/Draft Room -- reused verbatim here so
+  // a different-sized ADP source's pick numbers are never silently
+  // reinterpreted as this league's own rounds.
+  const adpTeamCount = data.draftBoard?.adp?.teamCount ?? null;
+  const roomTeamCount = data.activeProfile?.teamCount ?? null;
   const columns = useMemo(
-    () => appendPlayerDetailColumn(rankingColumns(), (row) => openPlayerDetail({
+    () => appendPlayerDetailColumn(rankingColumns(false, adpTeamCount, roomTeamCount), (row) => openPlayerDetail({
       playerId: String(row.playerId),
       playerName: String(row.playerName),
       position: String(row.position),
       team: String(row.team),
     })),
-    [openPlayerDetail],
+    [adpTeamCount, openPlayerDetail, roomTeamCount],
   );
   if (data.rankings.length === 0) {
-    return <Panel title="Current-season board" eyebrow="0 ranked players"><NoGovernedRankings data={data} /></Panel>;
+    return <Panel title="War Room Rank · Rest of Season" eyebrow="0 ranked players"><NoGovernedRankings data={data} /></Panel>;
   }
-  return <Panel title="Current-season board" eyebrow={`Showing ${rows.length} of ${filteredRows.length} matches`}><div className="toolbar"><SearchInput value={query} onChange={setQuery} /><SegmentedControl label="Position" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Team" value={team} onChange={setTeam} options={teams.map((value) => ({ value, label: value === "ALL" ? "All teams" : value }))} /><SelectField label="Availability" value={availability} onChange={setAvailability} options={["Available", "Drafted", "All"].map((value) => ({ value, label: value }))} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /><Button icon="undo" onClick={reset} variant="ghost">Reset</Button></div>
+  return <Panel title="War Room Rank · Rest of Season" eyebrow={`Showing ${rows.length} of ${filteredRows.length} matches`}><div className="toolbar"><SearchInput value={query} onChange={setQuery} /><SegmentedControl label="Position" options={POSITION_OPTIONS} value={position} onChange={setPosition} /><SelectField label="Team" value={team} onChange={setTeam} options={teams.map((value) => ({ value, label: value === "ALL" ? "All teams" : value }))} /><SelectField label="Availability" value={availability} onChange={setAvailability} options={["Available", "Drafted", "All"].map((value) => ({ value, label: value }))} /><SelectField label="Board depth" value={depth} onChange={setDepth} options={BOARD_DEPTH_OPTIONS} /><Button icon="undo" onClick={reset} variant="ghost">Reset</Button></div>
+    {/* Dogfood Rebuild V1, Worker 9 (Item 1): freshness badge + expandable
+        detail (same shape as `ProviderStatusLine`, driven by the real
+        `data.status` fields) replaces the old per-row "Source as of"
+        column, which repeated the identical date on every single row. */}
+    <SeasonModelStatusLine status={data.status} />
     {/* Full Cycle V1, Worker 4 (Section 3C): "Proj pts"/"Value over
         replacement" below are the SAME season-level values every other
         REST_OF_SEASON-consuming surface (Waivers/FAAB/Compare) reads --
-        see `resolveSeasonProjectionBasisCaption`. The "Source as of" column
-        already on this table (non-compact) carries the same date;
-        this caption states what that date actually means. */}
+        this caption states what those season-total values actually mean
+        (not reduced for games already played), a separate fact from the
+        freshness badge above. See `resolveSeasonProjectionBasisCaption`. */}
     <p className="copy-muted">{resolveSeasonProjectionBasisCaption(data.status.sourceAsOf)}</p>
+    <p className="copy-muted">
+      Weekly (this-week, redraft-relevant) value lives on its own separate board --{" "}
+      <Link to="/weekly-rankings">open Weekly Rankings</Link>. War Room Rank here is a Rest-of-Season
+      authority and is never conflated with a single week's projection.
+    </p>
     <DataTable columns={columns} resetKey={tableResetKey} rows={rows} rowKey={(row) => String(row.playerId)} /></Panel>;
 }
 
