@@ -629,3 +629,68 @@ def test_combos_generates_both_size_1_and_size_2() -> None:
     sizes = sorted(len(c) for c in combos)
     assert sizes == [1, 1, 1, 2, 2, 2]
     assert ("a", "b") in combos and ("a", "c") in combos and ("b", "c") in combos
+
+
+# ---------------------------------------------------------------------------
+# K/DST trade-hole bug, closed -- Trade Finder / Trade Package Search
+# composition gap (`docs/codex/dogfood_rebuild_20260929/LEDGER.md`).
+#
+# `_roster_size_legal`'s `before_count` is `len(roster_before_ids)`. Worker 5
+# already fixed Trade Analysis / counter search by wiring `resolve_full_
+# roster_with_unranked_occupants` into their facade call sites (desktop_
+# facade.py) so a real K/DST roster occupant is no longer silently dropped
+# from that list. This proves the concrete, real consequence for `_roster_
+# size_legal` if `redraft_trade_finder`/`redraft_trade_package_search` had
+# kept feeding it the UNFIXED (K/DST-dropped) roster id list instead: a
+# roster that is really already full (a real K + a real DST occupying their
+# only slots, on top of one rostered QB) would incorrectly be reported as
+# having room for one more add -- exactly the kind of masked illegal-trade
+# bug `_roster_size_legal`'s own docstring warns about. The FIXED roster id
+# list (produced by `resolve_full_roster_with_unranked_occupants`, the same
+# function `desktop_facade.py` now wires into both call sites) correctly
+# reports the roster as full.
+# ---------------------------------------------------------------------------
+
+
+def test_roster_size_legal_reflects_real_kdst_occupants_when_fed_the_fixed_roster_list() -> None:
+    from src.services.waiver_engine_service import (
+        resolve_full_roster_with_unranked_occupants,
+        resolve_roster_canonical_ids,
+    )
+
+    profile = _profile(
+        roster=RosterSettings(qb=1, rb=0, wr=0, te=0, flex=0, k=1, dst=1, bench_size=0)
+    )
+    ranking_rows = [{"playerId": "my-qb1", "playerName": "My QB1", "position": "QB", "team": "TST"}]
+    # A real, catalog-resolvable kicker and team defense -- neither has (nor
+    # ever will have) a row in `ranking_rows`, matching NWR's real,
+    # permanent "K/DST are always manual" scope boundary.
+    players_catalog = {
+        "s-qb1": {"full_name": "My QB1", "position": "QB", "team": "TST"},
+        "3451": {"full_name": "Ka'imi Fairbairn", "position": "K", "team": "HOU"},
+        "NE": {"position": "DEF", "team": "NE"},
+    }
+    resolved = resolve_roster_canonical_ids(
+        roster_sleeper_player_ids=["s-qb1", "3451", "NE"],
+        players_catalog=players_catalog, ranking_rows=ranking_rows,
+    )
+    # Precondition: the plain resolver really does drop both K and DST.
+    assert set(resolved.unmatched_sleeper_player_ids) == {"3451", "NE"}
+    broken_roster_before_ids = resolved.canonical_player_ids
+    assert len(broken_roster_before_ids) == 1  # only the QB survives -- the real bug's precondition
+
+    fixed_roster_before_ids, _extra_manual_assets = resolve_full_roster_with_unranked_occupants(
+        resolved=resolved, players_catalog=players_catalog, manual_assets=(),
+    )
+    assert len(fixed_roster_before_ids) == 3  # QB + K + DST, the real roster size
+
+    # The real roster (QB + K + DST, 3 real occupied slots) is already at
+    # this league's total of 3 configured slots (qb=1, k=1, dst=1, bench=0)
+    # -- adding a player with no corresponding drop must be illegal.
+    assert not _roster_size_legal(fixed_roster_before_ids, (), ("incoming",), profile)
+    # The UNFIXED roster id list (what `redraft_trade_finder`/`redraft_
+    # trade_package_search` fed this exact function before this pass's fix)
+    # undercounts by exactly the 2 real K/DST occupants it silently dropped
+    # -- and as a direct, real consequence, incorrectly reports room for one
+    # more add on a roster that is genuinely already full.
+    assert _roster_size_legal(broken_roster_before_ids, (), ("incoming",), profile)

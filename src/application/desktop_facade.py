@@ -6192,6 +6192,54 @@ class DesktopBackendFacade:
             }
         )
 
+    @staticmethod
+    def _augment_names_positions_for_extended_ids(
+        *,
+        base_names: Mapping[str, str],
+        base_positions: Mapping[str, str],
+        synthetic_assets: Sequence[Mapping[str, Any]],
+        manual_pool: Sequence[Mapping[str, Any]],
+    ) -> tuple[dict[str, str], dict[str, str]]:
+        """K/DST trade-hole fix (Trade Finder / Trade Package Search): once
+        `resolve_full_roster_with_unranked_occupants` extends a roster's
+        canonical id list with a real K/DST occupant's id, that id is (by
+        construction) absent from `resolve_roster_canonical_ids`'s own
+        name/position maps -- it was never in the governed ranking to begin
+        with. Unlike `search_counter_offer_packages`'s existing call site
+        (where a candidate lacking a modeled value is filtered out before a
+        name is ever needed), Trade Finder's `rank_drop_candidates` ranks
+        EVERY roster id with no such filter, so a real K/DST occupant can
+        legitimately surface as a real drop candidate and needs a real
+        display name, not a raw synthetic/manual id string. Looks the name
+        up from whichever source actually has it -- the freshly synthesized
+        'NOT MODELED' row, or a pre-existing manual K/DST asset whose id was
+        reused -- falling back to the bare id only if neither source has a
+        name (should not happen for a real fix-produced id)."""
+
+        names = dict(base_names)
+        positions = dict(base_positions)
+        manual_by_id: dict[str, Mapping[str, Any]] = {}
+        for asset in manual_pool:
+            player_id = str(asset.get("player_id") or asset.get("playerId") or "")
+            if player_id:
+                manual_by_id[player_id] = asset
+        for asset in synthetic_assets:
+            player_id = str(asset.get("player_id") or "")
+            if not player_id:
+                continue
+            names.setdefault(player_id, str(asset.get("player_name") or player_id))
+            positions.setdefault(player_id, str(asset.get("position") or ""))
+        for player_id, asset in manual_by_id.items():
+            if player_id in names:
+                continue
+            name = asset.get("player_name") or asset.get("playerName")
+            position = asset.get("position")
+            if name:
+                names[player_id] = str(name)
+            if position:
+                positions[player_id] = str(position)
+        return names, positions
+
     def redraft_trade_finder(self) -> FacadePayload:
         """Trade Finder (NWR Overnight V3, Lane 8) -- only built because
         Lane 7 shipped and Opponent Rosters is a real, live capability.
@@ -6256,6 +6304,25 @@ class DesktopBackendFacade:
             roster_sleeper_player_ids=[player.provider_player_id for player in state.roster],
             players_catalog=players, ranking_rows=ranking_rows,
         )
+        manual_assets = self._manual_assets_for_profile(selected.profile_id)
+        # NWR Dogfood Rebuild V1, item 4 follow-up (K/DST composition gap in
+        # Trade Finder): `own_resolved.canonical_player_ids` silently drops
+        # every real K/DST roster occupant, exactly the same root cause
+        # already fixed for Trade Analysis / counter search -- see
+        # `resolve_full_roster_with_unranked_occupants`'s own docstring.
+        # Feeding the unaugmented list into `rank_drop_candidates`/
+        # `evaluate_trade` below would make a real, filled K/DST slot
+        # invisible to both composition reporting and the drop-candidate
+        # search. Reused exactly as-is; never re-implemented here.
+        own_ids, own_synthetic = resolve_full_roster_with_unranked_occupants(
+            resolved=own_resolved, players_catalog=players, manual_assets=manual_assets,
+        )
+        manual_for_evaluation: list[Mapping[str, Any]] = [*manual_assets, *own_synthetic]
+        own_player_names, own_player_positions = self._augment_names_positions_for_extended_ids(
+            base_names=own_resolved.player_names_by_canonical_id,
+            base_positions=own_resolved.player_positions_by_canonical_id,
+            synthetic_assets=own_synthetic, manual_pool=manual_for_evaluation,
+        )
         opponent_rows = [
             {
                 "rosterId": opponent.team_id,
@@ -6291,13 +6358,32 @@ class DesktopBackendFacade:
                 roster_sleeper_player_ids=opp_sleeper_ids, players_catalog=players,
                 ranking_rows=ranking_rows,
             )
+            # Same K/DST composition fix, applied to EVERY opponent roster
+            # Trade Finder searches, not just the owner's own side -- a
+            # real opponent's filled K/DST slot must be just as visible to
+            # `rank_drop_candidates`/`evaluate_trade` as the owner's own.
+            # `manual_for_evaluation` accumulates across owner + every
+            # opponent resolved so far, same threading pattern
+            # `search_counter_offer_packages`'s single-opponent call site
+            # already uses, generalized to N opponents -- so a K/DST
+            # identity already synthesized/reused for one roster is reused
+            # (never duplicated) if it recurs.
+            opp_ids, opp_synthetic = resolve_full_roster_with_unranked_occupants(
+                resolved=opp_resolved, players_catalog=players, manual_assets=manual_for_evaluation,
+            )
+            manual_for_evaluation = [*manual_for_evaluation, *opp_synthetic]
+            opp_names, opp_positions = self._augment_names_positions_for_extended_ids(
+                base_names=opp_resolved.player_names_by_canonical_id,
+                base_positions=opp_resolved.player_positions_by_canonical_id,
+                synthetic_assets=opp_synthetic, manual_pool=manual_for_evaluation,
+            )
             opponents.append(
                 {
                     "rosterId": opponent["rosterId"],
                     "teamName": opponent["teamName"],
-                    "canonicalIds": opp_resolved.canonical_player_ids,
-                    "names": opp_resolved.player_names_by_canonical_id,
-                    "positions": opp_resolved.player_positions_by_canonical_id,
+                    "canonicalIds": opp_ids,
+                    "names": opp_names,
+                    "positions": opp_positions,
                 }
             )
             # NWR Post-UI closure pass (bug 2): retained so the candidate
@@ -6305,7 +6391,11 @@ class DesktopBackendFacade:
             # alongside its canonical one -- the identity-boundary fix for
             # the old "Open in Analyze" button, which incorrectly passed
             # `myGivePlayerId`/`opponentGivePlayerId` (canonical) into an
-            # endpoint that requires raw Sleeper ids.
+            # endpoint that requires raw Sleeper ids. Real K/DST occupants
+            # resolved by the fix above are intentionally not added here --
+            # `canonical_id_by_sleeper_id` only ever reflects governed-
+            # ranking identity matches; a missing entry already degrades
+            # honestly to `None` below, never a fabricated id.
             sleeper_id_by_canonical_id_by_roster_id[opponent["rosterId"]] = {
                 canonical_id: sleeper_id
                 for sleeper_id, canonical_id in opp_resolved.canonical_id_by_sleeper_id.items()
@@ -6316,13 +6406,13 @@ class DesktopBackendFacade:
             canonical_id: sleeper_id
             for sleeper_id, canonical_id in own_resolved.canonical_id_by_sleeper_id.items()
         }
-        manual_assets = self._manual_assets_for_profile(selected.profile_id)
         status_overrides = load_status_overrides(self.repo_root)
         results = find_win_win_trades(
-            my_roster_canonical_ids=own_resolved.canonical_player_ids,
-            my_player_names=own_resolved.player_names_by_canonical_id,
-            my_player_positions=own_resolved.player_positions_by_canonical_id,
-            opponents=opponents, profile=selected, ranking=ranking, manual_assets=manual_assets,
+            my_roster_canonical_ids=own_ids,
+            my_player_names=own_player_names,
+            my_player_positions=own_player_positions,
+            opponents=opponents, profile=selected, ranking=ranking,
+            manual_assets=manual_for_evaluation,
             status_overrides=status_overrides,
         )
         # NWR pre-UI architecture pass (directive section 3): identification
@@ -6553,6 +6643,26 @@ class DesktopBackendFacade:
             roster_sleeper_player_ids=[player.provider_player_id for player in state.roster],
             players_catalog=players, ranking_rows=ranking_rows,
         )
+        manual_assets = self._manual_assets_for_profile(selected.profile_id)
+        # NWR Dogfood Rebuild V1, item 4 follow-up (K/DST composition gap in
+        # Trade Package Search): identical root cause/fix as Trade Finder
+        # above and the already-shipped Trade Analysis / counter search --
+        # `own_resolved.canonical_player_ids` silently drops every real
+        # K/DST roster occupant. Left unfixed, `_roster_size_legal` (trade_
+        # package_search_service.py) would undercount `before_count` by the
+        # number of real unranked occupants on the roster, which can mask a
+        # real illegal-roster-size package or reject a legal one -- see
+        # `resolve_full_roster_with_unranked_occupants`'s own docstring for
+        # the full root-cause trace. Reused exactly as-is.
+        own_ids, own_synthetic = resolve_full_roster_with_unranked_occupants(
+            resolved=own_resolved, players_catalog=players, manual_assets=manual_assets,
+        )
+        manual_for_evaluation: list[Mapping[str, Any]] = [*manual_assets, *own_synthetic]
+        own_player_names, own_player_positions = self._augment_names_positions_for_extended_ids(
+            base_names=own_resolved.player_names_by_canonical_id,
+            base_positions=own_resolved.player_positions_by_canonical_id,
+            synthetic_assets=own_synthetic, manual_pool=manual_for_evaluation,
+        )
         opponent_rows = [
             {
                 "rosterId": opponent.team_id,
@@ -6587,22 +6697,34 @@ class DesktopBackendFacade:
                 roster_sleeper_player_ids=opp_sleeper_ids, players_catalog=players,
                 ranking_rows=ranking_rows,
             )
+            # Same fix, applied to every real opponent roster this search
+            # considers -- same N-opponent accumulation pattern used in
+            # Trade Finder above.
+            opp_ids, opp_synthetic = resolve_full_roster_with_unranked_occupants(
+                resolved=opp_resolved, players_catalog=players, manual_assets=manual_for_evaluation,
+            )
+            manual_for_evaluation = [*manual_for_evaluation, *opp_synthetic]
+            opp_names, opp_positions = self._augment_names_positions_for_extended_ids(
+                base_names=opp_resolved.player_names_by_canonical_id,
+                base_positions=opp_resolved.player_positions_by_canonical_id,
+                synthetic_assets=opp_synthetic, manual_pool=manual_for_evaluation,
+            )
             opponents.append(
                 {
                     "rosterId": opponent["rosterId"],
                     "teamName": opponent["teamName"],
-                    "canonicalIds": opp_resolved.canonical_player_ids,
-                    "names": opp_resolved.player_names_by_canonical_id,
-                    "positions": opp_resolved.player_positions_by_canonical_id,
+                    "canonicalIds": opp_ids,
+                    "names": opp_names,
+                    "positions": opp_positions,
                 }
             )
-        manual_assets = self._manual_assets_for_profile(selected.profile_id)
         status_overrides = load_status_overrides(self.repo_root)
         search_kwargs: dict[str, Any] = dict(
-            my_roster_canonical_ids=own_resolved.canonical_player_ids,
-            my_player_names=own_resolved.player_names_by_canonical_id,
-            my_player_positions=own_resolved.player_positions_by_canonical_id,
-            opponents=opponents, profile=selected, ranking=ranking, manual_assets=manual_assets,
+            my_roster_canonical_ids=own_ids,
+            my_player_names=own_player_names,
+            my_player_positions=own_player_positions,
+            opponents=opponents, profile=selected, ranking=ranking,
+            manual_assets=manual_for_evaluation,
             status_overrides=status_overrides,
         )
         if limit is not None:
@@ -6616,16 +6738,28 @@ class DesktopBackendFacade:
                 roster_sleeper_player_ids=[str(target_player_sleeper_id)], players_catalog=players,
                 ranking_rows=ranking_rows,
             )
-            if not target_resolved.canonical_player_ids:
+            # Same fix: a real, catalog-resolvable K/DST target (e.g. the
+            # owner wants to search for packages to acquire a specific
+            # opponent-owned K/DST) must not be rejected as
+            # identity-unresolved just because it has no governed ranking
+            # row -- `target_resolved.canonical_player_ids` would otherwise
+            # always be empty for a real K/DST, unconditionally, per the
+            # same root cause documented above.
+            target_ids, target_synthetic = resolve_full_roster_with_unranked_occupants(
+                resolved=target_resolved, players_catalog=players,
+                manual_assets=manual_for_evaluation,
+            )
+            if not target_ids:
                 raise FacadeError(
                     "TRADE_PACKAGE_SEARCH_TARGET_IDENTITY_UNRESOLVED",
                     "The requested target player could not be identity-matched to the governed "
                     "ranking pool.",
                     status=409,
                 )
-            result = search_target_player_packages(
-                target_player_id=target_resolved.canonical_player_ids[0], **search_kwargs
-            )
+            if target_synthetic:
+                manual_for_evaluation = [*manual_for_evaluation, *target_synthetic]
+                search_kwargs["manual_assets"] = manual_for_evaluation
+            result = search_target_player_packages(target_player_id=target_ids[0], **search_kwargs)
 
         availability_status_by_id = self._player_availability_status_map()
 

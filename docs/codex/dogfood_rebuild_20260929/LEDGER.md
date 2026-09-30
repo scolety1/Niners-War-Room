@@ -721,3 +721,111 @@ The 4 skips are the same pre-existing "real local_exports data absent" condition
 - `docs/codex/dogfood_rebuild_20260929/LEDGER.md` — this entry.
 
 No governed valuation model touched. No Sleeper/ESPN calls made or needed (pure backend/test-infrastructure fix). No frontend touched. The 4 live dev servers (Redraft 18742/1422, Dynasty 18741/1421) were never restarted or queried — out of scope and unnecessary for this fix, confirmed by the grep above that nothing in the live app's call graph reaches this service. KHA/403N18th identity untouched. Work left uncommitted pending the coordinating session's review/commit-and-push per this dispatch's instructions.
+
+---
+
+# K/DST Trade Finder composition gap — closed
+
+Scoped dispatch, `upgrade/nwr-prospective-outcomes-v1-20260914` worktree, dispatch HEAD `e4fca3f1` (confirmed via `git log -1 --oneline` at session start — matched exactly; only pre-existing untracked entries were the two known `local_exports.backup-*` directories). Picks up Worker 5's own explicitly flagged open item ("Trade Finder (`redraft_trade_finder`) and Trade Package Search both build their own `own_resolved` the same way ... may exhibit an analogous composition gap ... not verified this pass").
+
+**Final disposition: `IMPLEMENTED_AND_LIVE_VERIFIED`.**
+
+## Confirmed the gap was real — INSPECTED CODE
+
+Read the current `desktop_facade.py` directly (line numbers below are the file's state at the start of this pass, before any edit):
+
+- `redraft_trade_finder()` (was ~line 6195): built `own_resolved` via plain `resolve_roster_canonical_ids()` (~line 6255) and fed `own_resolved.canonical_player_ids` directly into `find_win_win_trades()` (~line 6322, `my_roster_canonical_ids=own_resolved.canonical_player_ids`). Its opponent loop (~line 6286-6312) did the identical plain resolution per opponent and fed `opp_resolved.canonical_player_ids` into each `opponents[...]["canonicalIds"]` entry — so the gap existed for the owner's own roster AND every opponent roster the search considers.
+- `redraft_trade_package_search()` (was ~line 6459): identical pattern — plain `resolve_roster_canonical_ids()` for `own_resolved` (~line 6552) and each opponent (~line 6586-6589), feeding `own_resolved.canonical_player_ids`/`opp_resolved.canonical_player_ids` straight into `search_kwargs` (~line 6602), consumed by whichever of `search_win_win_packages`/`search_improve_position_packages`/`search_target_player_packages` actually ran.
+- `trade_finder_service.py::find_win_win_trades`: confirmed it feeds the roster list into `rank_drop_candidates()` (no "value known" filter — unlike `search_counter_offer_packages`, a K/DST occupant CAN legitimately surface as a real drop candidate here) and into `evaluate_trade(roster_before_ids=...)` twice (once per side).
+- `trade_package_search_service.py`: confirmed via grep — **zero** references to K/DST or `resolve_full_roster_with_unranked_occupants` anywhere in this file; it is a pure consumer of whatever roster-id list the facade hands it. `_roster_size_legal()` (~line 159-174) computes `before_count = len(roster_before_ids)` — directly vulnerable to the same undercount.
+
+## Reproduced live — LIVE OBSERVATION (real Fantasy Gamers league, before any fix)
+
+Verified process identity first: `Get-CimInstance Win32_Process` + `netstat -ano` confirmed all 4 dev servers identity-matched to this worktree (Redraft API PID 43684/18742, Dynasty API PID 22464/18741, Redraft preview PID 25852/1422, Dynasty preview PID 37864/1421) before any live call.
+
+`GET /api/v1/redraft/my-roster` confirmed the owner's real Fantasy Gamers roster genuinely has a real K (Tyler Loop, sleeper id `12711`, BAL) and a real DST (CHI, sleeper id `CHI`), both `identityStatus: "UNMATCHED_IDENTITY"`.
+
+**The exact symptom turned out to be broader than the prompt's hypothesis, not narrower** — confirmed by direct in-process invocation of the real facade's own resolution steps against the real roster (not the HTTP layer, to isolate composition from search-algorithm noise):
+
+- `resolve_roster_canonical_ids()` on the owner's real 15-player roster returned only **13** canonical ids (`len(state.roster) == 15`, `unmatched_sleeper_player_ids == ('12711', 'CHI')`) — a real 2-occupant undercount, exactly as hypothesized.
+- Feeding that 13-id list into `evaluate_trade(roster_before_ids=...)` for a real trade (give J.K. Dobbins, receive nothing) returned `starter_holes_before == ('K 0/1', 'DST 0/1')` — the **same false-starter-hole symptom** Worker 5 already fixed for Trade Analysis, now proven to reappear identically the moment Trade Finder's/Trade Package Search's own (unfixed) composition list was used instead of the fixed one.
+- `_roster_size_legal`'s `before_count` was **13** (broken) vs. **15** (real) — confirmed the dispatch's specific legality-masking concern is real, not hypothetical: see the new direct regression test below, which shows this exact undercount flips `_roster_size_legal`'s verdict from correctly-illegal (roster genuinely full) to incorrectly-legal.
+- `Trade Finder`'s own `rank_drop_candidates()`-driven search **never once considered the K or DST as a giveable candidate** (`distinct myGivePlayerName values` never included either) — not because of a filter, but because they were entirely absent from the roster list it searched over. `Trade Package Search`'s `TARGET_PLAYER` mode was separately, unconditionally broken for any real opponent-owned K/DST target: `target_resolved.canonical_player_ids` is **always** empty for a K/DST (the plain resolver structurally never matches them), so requesting a search against a real, catalog-resolvable opponent K/DST unconditionally raised `TRADE_PACKAGE_SEARCH_TARGET_IDENTITY_UNRESOLVED` — confirmed this is a second, distinct real manifestation of the same root cause, not called out explicitly in the original dispatch hypothesis but found and fixed in this pass since it lives in the exact same function.
+
+## Fix — exact locations
+
+`src/services/waiver_engine_service.py::resolve_full_roster_with_unranked_occupants` was **not modified** — reused exactly as-is, per the hard boundary.
+
+`src/application/desktop_facade.py`:
+
+1. New static helper `DesktopBackendFacade._augment_names_positions_for_extended_ids()` (added immediately before `redraft_trade_finder`) — merges a real display name/position into the `my_player_names`/`my_player_positions` maps for every id `resolve_full_roster_with_unranked_occupants` adds. **Why new, beyond the established pattern**: `search_counter_offer_packages` never needed this because its candidate list is pre-filtered to modeled-value-known assets; `find_win_win_trades`'s `rank_drop_candidates` has no such filter, so a real K/DST can legitimately become a real drop candidate here and needs a real name, not a raw synthetic/manual id string.
+2. `redraft_trade_finder()`: `own_resolved` is now extended via `resolve_full_roster_with_unranked_occupants()` immediately after resolution; the opponent loop calls the same function per opponent, threading an accumulating `manual_for_evaluation` list across owner + every opponent (generalizing `search_counter_offer_packages`'s own single-opponent `own_synthetic`/`opponent_synthetic` threading pattern to N opponents, so a K/DST identity already synthesized/reused for one roster is never re-synthesized for another). `find_win_win_trades(...)` now receives `my_roster_canonical_ids=own_ids`, `my_player_names=own_player_names` (augmented), `manual_assets=manual_for_evaluation` (accumulated); each `opponents[...]` entry now carries `opp_ids`/augmented names.
+3. `redraft_trade_package_search()`: identical fix for `own_ids`/each opponent, feeding `search_kwargs["manual_assets"]`. The `TARGET_PLAYER` branch additionally resolves `target_resolved` through the same fix function (`target_ids, target_synthetic = resolve_full_roster_with_unranked_occupants(resolved=target_resolved, ...)`) before rejecting as unresolved — closing the second, dispatch-unanticipated manifestation found above. `search_kwargs["manual_assets"]` is updated with `target_synthetic` before the search call so the resolved target's synthetic pool row is visible to the evaluator.
+4. Two minor line-length wraps (no logic change) to keep `ruff` byte-identical-count clean — see Tests below.
+
+## Dynasty-side K check — result: **NOT the same bug class, a real but narrower and different-rooted limitation found instead**
+
+Las Vegas Enginerds' real league config has a K slot and **no** DST slot (confirmed via `profile.roster_positions`). Checked whether Dynasty's `generate_dynasty_trade_counters()`/`evaluate_dynasty_trade()` have the same structural defect.
+
+**INSPECTED CODE + LIVE OBSERVATION**: Dynasty's registry is fundamentally different from Redraft's. Redraft's governed ranking *structurally, permanently* excludes K/DST (`_asset_pool`'s own "K/DST are always manual" comment) — every K/DST, no matter how real, is always absent. Dynasty's governed board (`rebuilt_full_player_board_value_review_rows.csv`, 240 rows) **does model K as a position** — confirmed 8 real kicker rows present (Brandon Aubrey, Cameron Dicker, Jason Myers, Eddy Pineiro, Jake Bates, Chris Boswell, Harrison Butker, Matt Prater). So the specific, structural "this position is always excluded from valuation" bug Redraft had does **not** exist in Dynasty.
+
+What IS real: the owner's actual current real K (Cam Little, JAX, real Sleeper starter id `11786`, confirmed via a live read-only Sleeper API call) happens to fall outside that 240-row cut — an ordinary, universal "outside the board" limitation that applies to any position beyond the cut, not a K/DST-specific defect. **Live-reproduced, this pass**: `generate_dynasty_trade_counters()`'s internal `roster_needs()` helper computed `('K',)` as a real need for the owner even though the owner's real K starter slot is genuinely filled (Cam Little) — because `owner_asset_ids`/`roster_needs()` are built entirely from `key_for_id` (the closed 240-row registry), and Cam Little's `current:11786` is not in it (`in_registry: False`, confirmed directly). This is a real, live, reproducible bug in its own right, but:
+
+- It is **not K-specific** — any real rostered player outside the top-240 cut at any position would trigger the identical miscount.
+- Dynasty has **no existing reusable fix function** analogous to `resolve_full_roster_with_unranked_occupants` — Redraft's fix works because Redraft already has a "manual K/DST asset" concept to fall back to; Dynasty's architecture has no equivalent "manual/unranked asset" concept anywhere (confirmed via grep — zero `manual_asset`/`MANUAL` references in `owner_asset_evidence_service.py`/`governed_asset_registry_service.py`). Building one from scratch would be a genuinely new feature (extending the registry or inventing a Dynasty-side unranked-occupant concept), not a "wire an existing fix into a new call site" change, and is explicitly out of this P0 dispatch's "reuse exactly as-is" scope.
+- The specific, honest give/receive identity check (`_trade_context`'s `TRADE_ASSET_NOT_FOUND`) already fails loud and correctly for Cam Little specifically — the same honest behavior Redraft's `gives`/`receives` check already has, confirmed un-broken.
+
+**Disposition**: Dynasty is **not fixed** in this pass — correctly out of scope, since there is no existing fix function to reuse and building one is a materially larger feature. Flagged below as a real, narrower, distinct finding for a dedicated future worker, not silently conflated with "the same bug" the dispatch hypothesized, and not swept under the rug.
+
+## New regression tests
+
+`tests/test_redraft_trade_finder_package_search_kdst_composition_fix.py` (new file, 5 tests, facade-level, using the same real-facade Sleeper-mocking pattern as `test_redraft_identity_boundary_opponent_and_trade_finder.py` — the real bundled Freeze V7 governed ranking, real player rows, a fake `SleeperHttpClient.get_json`, never a synthetic ranking double):
+
+- `test_trade_finder_feeds_the_real_kdst_occupants_into_find_win_win_trades` — proves `redraft_trade_finder()` now feeds `find_win_win_trades()` a 3-id owner roster (1 real skill player + K + DST, not 1), a 3-id roster for the opponent, real display names for the extended ids, and exactly 4 (never-duplicated) synthetic manual-asset rows across both sides.
+- `test_trade_finder_kdst_ids_never_collide_with_a_real_canonical_id` — sanity check on the synthetic id shape.
+- `test_trade_package_search_find_win_win_feeds_the_real_kdst_occupants` — same proof for `redraft_trade_package_search(mode="FIND_WIN_WIN")`.
+- `test_trade_package_search_target_player_resolves_a_real_opponent_kdst_instead_of_failing` — proves the second, dispatch-unanticipated manifestation is fixed: a real opponent-owned K/DST target now resolves and searches instead of unconditionally raising `TRADE_PACKAGE_SEARCH_TARGET_IDENTITY_UNRESOLVED`.
+- `test_trade_package_search_target_player_still_fails_honestly_for_a_genuinely_unknown_id` — proves the fix did not weaken the existing honest-failure behavior for a target id that is genuinely not in the Sleeper catalog at all.
+
+`tests/test_trade_package_search_service.py` (1 new test, following the file's existing `_roster_size_legal` direct-unit-test pattern, `test_roster_legality_allows_neutral_trade_on_live_roster_with_reserve_overage`):
+
+- `test_roster_size_legal_reflects_real_kdst_occupants_when_fed_the_fixed_roster_list` — direct, minimal proof of the dispatch's specific `_roster_size_legal` concern: builds a real 3-slot league (qb=1/k=1/dst=1/bench=0) with a real QB+K+DST roster (via the same fixture recipe Worker 5 used for the Trade Analysis regression test), and shows `_roster_size_legal` correctly rejects an add-with-no-drop on the FIXED (3-id) roster list but **incorrectly allows** the identical add on the BROKEN (1-id, K/DST-dropped) roster list — the exact real consequence the dispatch's item 2 hypothesized, now proven rather than assumed.
+
+## Trade Finder and Trade Analyzer now agree — proof
+
+**In-process** (direct facade invocation, real Fantasy Gamers roster, `resolve_full_roster_with_unranked_occupants` invoked the same way each real call site now does): Trade Analysis's own composition (`resolve_full_roster_with_unranked_occupants` applied to `own_resolved`) = **15** ids (13 skill + Tyler Loop + CHI). Trade Finder's `my_roster_canonical_ids` (captured via monkeypatching `find_win_win_trades`) = **15** ids, **identical as a set** to Trade Analysis's. Trade Package Search's `my_roster_canonical_ids` (captured via monkeypatching `search_win_win_packages`) = **15** ids, also identical as a set.
+
+**Live, via real HTTP against the restarted backend** (PID 2888, port 18742, identity-verified): `POST /api/v1/redraft/trade-analysis` for a real trade not touching K/DST (give J.K. Dobbins, receive nothing) now returns `starterHolesBefore: []`, `starterHolesAfter: []` — matching Trade Finder's/Trade Package Search's now-correct composition exactly, never a false `["K 0/1", "DST 0/1"]`.
+
+## Live re-verification (after the fix, restarted backend)
+
+The first restart attempt silently reused a **stale, pre-fix** backend process (PID 43684, already running since before this pass's edits) — the smoke script's own new `Start-Process` failed to bind port 18742 (`OSError: [WinError 10048] Only one usage of each socket address...`, confirmed in `backend.log.err`) and exited immediately, while the readiness probe happily received `200` from the OLD process still listening on that port. **Caught before trusting it**: killed the stale PID explicitly, freed port 18742, reran `nwr_release_gate_smoke.ps1 -Mode redraft -KeepRunning -SleeperLeagueId 1312983576827920384 -SleeperUsername scolety`, and re-verified process identity (new PID **2888**, `CommandLine` contains `C:\NWR\prospective-outcomes-v1` and `--mode redraft --port 18742`) before trusting it. The smoke script's own full run completed clean: cold/warm bootstrap 200, real Sleeper before/after byte-comparison IDENTICAL (0 writes), all named surfaces 200.
+
+After the confirmed-fresh restart, live HTTP calls against the real Fantasy Gamers league (PID 2888):
+
+- `GET /api/v1/redraft/my-roster` — unaffected, still shows the real K/DST as `UNMATCHED_IDENTITY` (this endpoint was never part of the bug — it already displayed the roster correctly; only trade tools' internal composition was wrong).
+- `GET /api/v1/redraft/trade-finder` — `4` candidates (down from the pre-fix `15`; a real, expected change in output now that the roster's true 15-player composition, not a falsely-13-player one, feeds the search's position-redundancy/starter-hole math).
+- `POST /api/v1/redraft/trade-package-search` (`FIND_WIN_WIN`) — `2` candidates, `900` packages evaluated, `200`.
+- `POST /api/v1/redraft/trade-package-search` (`TARGET_PLAYER`, target = a real opponent DST, `JAX`, confirmed real via `GET /api/v1/redraft/opponent-rosters`) — **succeeds** (`81` packages evaluated, `0` winning candidates, but a real search ran) instead of the pre-fix unconditional `TRADE_PACKAGE_SEARCH_TARGET_IDENTITY_UNRESOLVED`.
+
+## Tests — ACTUAL TEST RESULT
+
+Targeted suite: `tests/test_redraft_trade_finder_package_search_kdst_composition_fix.py` (5, new), `tests/test_trade_package_search_service.py` (28, incl. 1 new), `tests/test_trade_finder_service.py`, `tests/test_waiver_engine_service.py`, `tests/test_redraft_trade_analysis_service.py`, `tests/test_redraft_identity_boundary_opponent_and_trade_finder.py`, `tests/test_trade_package_search_facade_wiring.py`, `tests/test_dynasty_trade_counter_service.py`, `tests/test_dogfood_rebuild_v1_dynasty_status_override.py` — **157 passed**.
+
+Required `tests/test_desktop_application_api.py`: **47 passed, exactly 4 failed**, the same documented pre-existing names and no others: `test_dynasty_facade_composes_real_governed_workflows`, `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`, `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`, `test_facade_has_no_streamlit_or_app_component_dependency`.
+
+**Ruff**: `python -m ruff check` on `src/application/desktop_facade.py` — **126 findings both before and after** (verified via `git stash`/re-run comparison), zero new. `tests/test_trade_package_search_service.py` — **24 findings both before and after**, zero new (one E501 was introduced mid-pass by the new test's insertion point and immediately wrapped before this final count, following this codebase's own established practice). `tests/test_redraft_trade_finder_package_search_kdst_composition_fix.py` — **0 findings, fully clean** (two E501s introduced while drafting were wrapped before this final count).
+
+## Files changed
+
+- `src/application/desktop_facade.py` — new static helper `_augment_names_positions_for_extended_ids`; `redraft_trade_finder()` and `redraft_trade_package_search()` both wired to `resolve_full_roster_with_unranked_occupants()` for the owner's own roster AND every opponent roster (including the `TARGET_PLAYER` single-target resolution), with `manual_assets` accumulated across all sides to avoid duplicate synthetic entries.
+- `tests/test_redraft_trade_finder_package_search_kdst_composition_fix.py` — new file, 5 facade-level regression tests.
+- `tests/test_trade_package_search_service.py` — 1 new direct `_roster_size_legal` consequence test.
+- `docs/codex/dogfood_rebuild_20260929/LEDGER.md` — this entry.
+
+No governed valuation model touched (`marginal_roster_utility_v2`, `governed_asset_registry_service.py`'s value formula, any base board CSV, any projection snapshot — all confirmed untouched by `git diff`). `resolve_full_roster_with_unranked_occupants` itself was never modified — reused exactly as-is, per the hard boundary. No Sleeper/ESPN write endpoint was ever called (confirmed by the smoke script's own byte-identical before/after Sleeper comparison). KHA/403N18th untouched. Dynasty's own Python files were never touched (confirmed by `git status --short`), so the Dynasty backend was correctly left un-restarted. All 4 dev servers left running and identity-verified healthy at the end of this pass: Redraft API PID **2888** (18742), Dynasty API PID **22464** (18741), Redraft preview PID **25852** (1422), Dynasty preview PID **37864** (1421).
+
+## Open issues for the next worker
+
+1. **Dynasty's "outside the top-240 board" roster-composition/need-miscount limitation** (found this pass, live-reproduced with Cam Little/JAX K) is real but NOT K/DST-specific and NOT the same root cause as Redraft's bug — a dedicated future worker should decide whether Dynasty needs its own "unranked/manual occupant" concept (a real new feature, not a wiring fix) before attempting a fix.
+2. **The stale-backend-reuse failure mode observed this pass** (a new `Start-Process` silently losing a port-bind race to an already-running old-code process, with the readiness probe unable to tell the difference) is worth a standing caution for future workers using `nwr_release_gate_smoke.ps1`: always independently verify the freshly-reported PID is not a repeat of a PID that was already running before the restart was requested, not just that some process answers `200` on the target port.
