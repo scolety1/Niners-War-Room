@@ -62,13 +62,20 @@ class _FakeSleeperClient:
                     "starters": ["9493"],
                     "reserve": [],
                     "taxi": None,
-                    "settings": {"wins": 1, "losses": 0, "ties": 0, "fpts": 108, "fpts_decimal": 10},
+                    "settings": {
+                        "wins": 1,
+                        "losses": 0,
+                        "ties": 0,
+                        "fpts": 108,
+                        "fpts_decimal": 10,
+                        "waiver_budget_used": 35,
+                    },
                 },
                 {
                     "roster_id": 2,
                     "owner_id": "owner-2",
-                    "players": [],
-                    "starters": [],
+                    "players": ["9226"],
+                    "starters": ["9226"],
                     "reserve": [],
                     "taxi": None,
                     "settings": {"wins": 0, "losses": 1, "ties": 0, "fpts": 0, "fpts_decimal": 0},
@@ -196,7 +203,9 @@ def test_dynasty_bootstrap_with_league_profile_id_annotates_ownership(tmp_path: 
     # Every OTHER field on the row must be untouched -- this is an
     # annotation, never a recomputation.
     baseline_row = next(
-        row for row in facade.dynasty_bootstrap().data["rankings"] if row["assetId"] == "current:9493"
+        row
+        for row in facade.dynasty_bootstrap().data["rankings"]
+        if row["assetId"] == "current:9493"
     )
     for key, value in baseline_row.items():
         assert puka_row[key] == value
@@ -221,6 +230,55 @@ def test_dynasty_bootstrap_rejects_unknown_league_profile_id(tmp_path: Path) -> 
     with pytest.raises(FacadeError) as exc_info:
         facade.dynasty_bootstrap(league_profile_id="never-imported")
     assert exc_info.value.code == "DYNASTY_LEAGUE_PROFILE_NOT_FOUND"
+
+
+def test_dynasty_waivers_use_live_availability_and_remaining_faab(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade = _facade(tmp_path)
+    profile_id = _import_fixture_league(facade)
+    fake_client = _FakeSleeperClient()
+    monkeypatch.setattr(
+        facade,
+        "_sleeper_get_json",
+        lambda _client, path: fake_client.get_json(path),
+    )
+
+    result = facade.dynasty_waivers(league_profile_id=profile_id)
+
+    assert result.data["source"] == "SLEEPER_LIVE"
+    assert result.data["faabContext"] == {
+        "isFaabLeague": True,
+        "totalBudgetDollars": 100,
+        "remainingBudgetDollars": 65,
+        "source": "SLEEPER_LIVE",
+    }
+    assert all(
+        candidate["sleeperPlayerId"] not in {"9493", "9226"}
+        for candidate in result.data["candidates"]
+    )
+    assert result.data["writePolicy"] == "NO_SLEEPER_WRITES"
+
+
+def test_dynasty_waivers_fall_back_to_snapshot_without_guessing_faab(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    facade = _facade(tmp_path)
+    profile_id = _import_fixture_league(facade)
+
+    def fail_live_read(_client: object, _path: str) -> object:
+        raise OSError("fixture network unavailable")
+
+    monkeypatch.setattr(facade, "_sleeper_get_json", fail_live_read)
+
+    result = facade.dynasty_waivers(league_profile_id=profile_id)
+
+    assert result.data["source"] == "SLEEPER_SNAPSHOT"
+    assert result.data["faabContext"]["remainingBudgetDollars"] is None
+    assert result.warnings == (
+        "Live Sleeper availability could not be read; showing the last dated local "
+        "Dynasty snapshot. FAAB remaining is unavailable rather than guessed.",
+    )
 
 
 def test_import_dynasty_sleeper_league_unavailable_outside_dynasty_mode(tmp_path: Path) -> None:
@@ -377,7 +435,9 @@ def test_compare_dynasty_assets_with_league_profile_id_adds_ownership_without_to
     # Every comparison-verdict field is untouched -- same content, in the
     # same order, once the two new additive keys are stripped back out.
     annotated_core = {
-        key: value for key, value in annotated.data.items() if key not in {"ownership", "dynastyLeague"}
+        key: value
+        for key, value in annotated.data.items()
+        if key not in {"ownership", "dynastyLeague"}
     }
     assert json.dumps(annotated_core, sort_keys=True, default=str) == json.dumps(
         baseline.data, sort_keys=True, default=str
@@ -393,12 +453,10 @@ def test_compare_dynasty_assets_with_league_profile_id_adds_ownership_without_to
     assert all(not row["assetId"].startswith("pick:") for row in annotated.data["ownership"])
 
 
-def test_evaluate_dynasty_trade_with_league_profile_id_flags_a_real_non_roster_give_side(
+def test_hypothetical_dynasty_trade_with_league_profile_id_flags_a_non_roster_give_side(
     tmp_path: Path,
 ) -> None:
-    """The owner's explicit correctness requirement: flag (display-only) an
-    asset on the "give" side that is NOT actually on the real roster --
-    without touching the trade-value computation itself."""
+    """Explicit Hypothetical mode retains league-wide modeling and warnings."""
 
     facade = _facade(tmp_path)
     profile_id = _import_fixture_league(facade)
@@ -411,12 +469,16 @@ def test_evaluate_dynasty_trade_with_league_profile_id_flags_a_real_non_roster_g
     other_asset = current_ids[0]
 
     baseline = facade.evaluate_dynasty_trade(
-        give=[other_asset], receive=["current:9493"], team_window="Balanced"
+        give=[other_asset],
+        receive=["current:9493"],
+        team_window="Balanced",
+        trade_mode="HYPOTHETICAL",
     )
     annotated = facade.evaluate_dynasty_trade(
         give=[other_asset],
         receive=["current:9493"],
         team_window="Balanced",
+        trade_mode="HYPOTHETICAL",
         league_profile_id=profile_id,
     )
 
@@ -425,7 +487,9 @@ def test_evaluate_dynasty_trade_with_league_profile_id_flags_a_real_non_roster_g
     # structural proof `evaluate_trade_decision` never received
     # `league_profile_id` at all.
     annotated_core = {
-        key: value for key, value in annotated.data.items() if key not in {"ownership", "dynastyLeague"}
+        key: value
+        for key, value in annotated.data.items()
+        if key not in {"ownership", "dynastyLeague"}
     }
     assert json.dumps(annotated_core, sort_keys=True, default=str) == json.dumps(
         baseline.data, sort_keys=True, default=str
@@ -441,6 +505,55 @@ def test_evaluate_dynasty_trade_with_league_profile_id_flags_a_real_non_roster_g
     # The receive-side asset (Puka, current:9493) is correctly reported as
     # already on my roster -- a real, honest "already own this" signal too.
     assert ownership_by_asset["current:9493"]["isMyTeam"] is True
+
+
+def test_real_dynasty_trade_rejects_an_outgoing_asset_not_owned_by_owner(
+    tmp_path: Path,
+) -> None:
+    facade = _facade(tmp_path)
+    profile_id = _import_fixture_league(facade)
+    other_asset = next(
+        row["assetId"]
+        for row in facade.dynasty_bootstrap().data["assetOptions"]
+        if row["assetType"] == "Current Player" and row["assetId"] != "current:9493"
+    )
+    with pytest.raises(FacadeError) as exc:
+        facade.evaluate_dynasty_trade(
+            give=[other_asset],
+            receive=["current:9493"],
+            team_window="Balanced",
+            trade_mode="REAL",
+            league_profile_id=profile_id,
+        )
+    assert exc.value.code == "DYNASTY_TRADE_OUTGOING_NOT_OWNED"
+
+
+def test_real_dynasty_trade_accepts_only_the_selected_counterparty_roster(
+    tmp_path: Path,
+) -> None:
+    facade = _facade(tmp_path)
+    profile_id = _import_fixture_league(facade)
+    accepted = facade.evaluate_dynasty_trade(
+        give=["current:9493"],
+        receive=["current:9226"],
+        team_window="Balanced",
+        trade_mode="REAL",
+        counterparty_roster_id=2,
+        league_profile_id=profile_id,
+    )
+    assert accepted.data["tradeMode"] == "REAL"
+    assert accepted.data["counterpartyRosterId"] == 2
+
+    with pytest.raises(FacadeError) as exc:
+        facade.evaluate_dynasty_trade(
+            give=["current:9493"],
+            receive=["current:9226"],
+            team_window="Balanced",
+            trade_mode="REAL",
+            counterparty_roster_id=99,
+            league_profile_id=profile_id,
+        )
+    assert exc.value.code == "DYNASTY_TRADE_COUNTERPARTY_MISMATCH"
 
 
 def test_load_dynasty_league_profile_round_trips_persisted_state(tmp_path: Path) -> None:

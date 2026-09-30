@@ -80,9 +80,17 @@ class FakeFacade:
         give: list[str],
         receive: list[str],
         team_window: str,
+        trade_mode: str = "REAL",
+        counterparty_roster_id: int | None = None,
         league_profile_id: str | None = None,
     ) -> FacadePayload:
-        value = {"give": give, "receive": receive, "teamWindow": team_window}
+        value = {
+            "give": give,
+            "receive": receive,
+            "teamWindow": team_window,
+            "tradeMode": trade_mode,
+            "counterpartyRosterId": counterparty_roster_id,
+        }
         self.calls.append(("trade", value, league_profile_id))
         data = dict(value)
         if league_profile_id is not None:
@@ -94,6 +102,21 @@ class FakeFacade:
                 for asset_id in (*give, *receive)
             ]
         return FacadePayload(data=data)
+
+    def dynasty_waivers(self, *, league_profile_id: str | None = None) -> FacadePayload:
+        self.calls.append(("dynasty-waivers", league_profile_id))
+        return FacadePayload(
+            data={
+                "leagueName": "Fixture",
+                "source": "SLEEPER_LIVE",
+                "retrievedAtUtc": "2026-09-29T00:00:00+00:00",
+                "candidates": [],
+                "faabContext": {},
+                "rosterContext": {},
+                "method": {"notScored": []},
+                "writePolicy": "NO_SLEEPER_WRITES",
+            }
+        )
 
     def list_dynasty_trades(self) -> FacadePayload:
         self.calls.append(("trade-list", None))
@@ -529,7 +552,13 @@ def test_dynasty_routes_decode_ids_and_accept_canonical_receive_key() -> None:
     assert ("compare", [asset_id, "current:second"], None) in facade.calls
     assert (
         "trade",
-        {"give": [asset_id], "receive": ["pick:2027:1"], "teamWindow": "Balanced"},
+        {
+            "give": [asset_id],
+            "receive": ["pick:2027:1"],
+            "teamWindow": "Balanced",
+            "tradeMode": "REAL",
+            "counterpartyRosterId": None,
+        },
         None,
     ) in facade.calls
 
@@ -564,13 +593,34 @@ def test_dynasty_compare_and_trade_routes_pass_the_active_league_profile_id() ->
     assert ("compare", [asset_id, "current:second"], "profile-active") in facade.calls
     assert (
         "trade",
-        {"give": [asset_id], "receive": ["current:second"], "teamWindow": "Balanced"},
+        {
+            "give": [asset_id],
+            "receive": ["current:second"],
+            "teamWindow": "Balanced",
+            "tradeMode": "REAL",
+            "counterpartyRosterId": None,
+        },
         "profile-active",
     ) in facade.calls
     compare_ownership = {row["assetId"]: row["ownership"] for row in compare[2]["data"]["ownership"]}
     trade_ownership = {row["assetId"]: row["ownership"] for row in trade[2]["data"]["ownership"]}
     assert compare_ownership[asset_id]["leagueProfileId"] == "profile-active"
     assert trade_ownership[asset_id]["leagueProfileId"] == "profile-active"
+
+
+def test_dynasty_waiver_route_passes_the_active_league_profile_id() -> None:
+    facade = FakeFacade("dynasty")
+    facade.active_league_profile_id = "profile-active"
+    with running_server(facade) as server:
+        response = request(
+            server,
+            "GET",
+            "/api/v1/dynasty/waivers",
+            headers=authenticated_headers(),
+        )
+    assert response[0] == 200
+    assert response[2]["data"]["writePolicy"] == "NO_SLEEPER_WRITES"
+    assert ("dynasty-waivers", "profile-active") in facade.calls
 
 
 def test_dynasty_league_import_route_connects_and_persists_active_profile() -> None:

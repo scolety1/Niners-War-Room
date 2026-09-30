@@ -258,7 +258,7 @@ export function PlanningPage({ data }: { data: DynastyBootstrap }) {
           </section>
         </Panel>
       </div>
-      <Panel title="Governed asset context" eyebrow="Scenario Playground · no hidden value">
+      <Panel title="Governed asset context" eyebrow="Planning console · no hidden value">
         <section className="planning-canvas">
           <label className="form-field">
             <span>Asset</span>

@@ -6,10 +6,13 @@ describe("Dynasty lifecycle navigation", () => {
   it("uses the in-season hierarchy without Draft Cockpit", () => {
     const groups = buildDynastyNavigation("REGULAR_SEASON");
     expect(groups.map((group) => group.label)).toEqual([
-      "Home", "Team", "Trades", "Assets", "System",
+      "Home", "This Week", "Team", "Trades", "Assets", "System",
     ]);
     const items = groups.flatMap((group) => group.items);
     expect(items.map((item) => item.label)).not.toContain("Draft Cockpit");
+    expect(items.map((item) => item.label)).toContain("Waiver Wire");
+    expect(items.map((item) => item.label)).toContain("Analyze Trade");
+    expect(items.map((item) => item.label)).not.toContain("Trade Decision Lab");
     expect(items.every((item) => !item.shortcut)).toBe(true);
   });
 

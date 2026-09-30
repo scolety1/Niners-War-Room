@@ -135,6 +135,49 @@ describe("NwrApiClient trade workspace", () => {
   });
 });
 
+describe("NwrApiClient Dynasty in-season decisions", () => {
+  it("uses the read-only waiver route and sends explicit real-trade ownership context", async () => {
+    vi.stubGlobal("window", globalThis);
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({
+      contractVersion: "1.0.0",
+      mode: "dynasty",
+      data: {},
+      warnings: [],
+      errors: [],
+    }), { status: 200, headers: { "Content-Type": "application/json" } })));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new NwrApiClient("dynasty", {
+      mode: "dynasty",
+      apiBaseUrl: "http://127.0.0.1:18741",
+      token: "nwr-desktop-test-token-0123456789-abcdef",
+      contractVersion: "1.0.0",
+    });
+
+    await client.dynastyWaivers();
+    await client.evaluateTrade(
+      ["current:mine"],
+      ["current:theirs"],
+      "Balanced",
+      "REAL",
+      9,
+    );
+
+    const requests = fetchMock.mock.calls as [URL, RequestInit][];
+    expect(requests.map(([target]) => target.pathname)).toEqual([
+      "/api/v1/dynasty/waivers",
+      "/api/v1/dynasty/trades/evaluate",
+    ]);
+    expect(requests[0]?.[1].method ?? "GET").toBe("GET");
+    expect(JSON.parse(String(requests[1]?.[1].body))).toEqual({
+      give: ["current:mine"],
+      receive: ["current:theirs"],
+      teamWindow: "Balanced",
+      tradeMode: "REAL",
+      counterpartyRosterId: 9,
+    });
+  });
+});
+
 describe("NwrApiClient Redraft profile management", () => {
   it("uses isolated duplicate and strict edit routes", async () => {
     vi.stubGlobal("window", globalThis);

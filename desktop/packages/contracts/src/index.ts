@@ -407,6 +407,69 @@ export interface DynastyBootstrap {
   lifecycleContext?: LeagueLifecycleContext | null;
 }
 
+export interface DynastyWaiverDropCandidate {
+  assetId: string;
+  playerName: string;
+  position: string;
+  dynastyRank: number | null;
+  dynastyScore: number;
+  rosterStatus: "BENCH";
+}
+
+export interface DynastyWaiverCandidate {
+  assetId: string;
+  sleeperPlayerId: string;
+  playerName: string;
+  position: string;
+  team: string;
+  age: number | null;
+  dynastyRank: number | null;
+  dynastyScore: number;
+  priorityScore: number;
+  ageUpside: "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
+  rosterFit: "STARTER_NEED" | "DEPTH_NEED" | "ROSTER_UPGRADE" | "STASH_ONLY";
+  rosterFitReason: string;
+  stashValue: "HIGH" | "MEDIUM" | "LOW";
+  availability: "UNROSTERED";
+  faabBidLow: number | null;
+  faabBidHigh: number | null;
+  faabRationale: string;
+  dropCandidate: DynastyWaiverDropCandidate | null;
+  dropRequired: boolean | null;
+  transactionNetValue: number | null;
+  currentStatusOverride: DynastyCurrentStatusOverride | null;
+  shortTermUsability: "NOT_SCORED";
+  roleSignal: "NOT_SCORED";
+  injuryOpportunity: "NOT_SCORED";
+  taxiEligibility: "UNKNOWN";
+}
+
+export interface DynastyWaiversResult {
+  leagueName: string;
+  source: "SLEEPER_LIVE" | "SLEEPER_SNAPSHOT";
+  retrievedAtUtc: string;
+  candidates: DynastyWaiverCandidate[];
+  faabContext: {
+    isFaabLeague: boolean;
+    totalBudgetDollars: number | null;
+    remainingBudgetDollars: number | null;
+    source: "SLEEPER_LIVE" | "SLEEPER_SNAPSHOT" | "UNAVAILABLE";
+  };
+  rosterContext: {
+    activePlayerCount: number;
+    activeRosterCapacity: number;
+    openActiveRosterSlot: boolean;
+    reservePlayerCount: number;
+    taxiPlayerCount: number;
+  };
+  method: {
+    ranking: string;
+    faab: string;
+    notScored: string[];
+  };
+  writePolicy: "NO_SLEEPER_WRITES";
+}
+
 export interface PlayerDetail {
   assetId: string;
   name: string;
@@ -557,6 +620,8 @@ export interface TradeDecision {
   preferredSide: string;
   confidence: string;
   teamWindow: TeamWindow;
+  tradeMode?: "REAL" | "HYPOTHETICAL";
+  counterpartyRosterId?: number | null;
   summary: string;
   reasons: string[];
   mainUncertainty: string;

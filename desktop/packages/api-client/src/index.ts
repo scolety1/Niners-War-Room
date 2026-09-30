@@ -13,6 +13,7 @@ import {
   type DynastyComparison,
   type DynastyLeagueImportInput,
   type DynastyLeagueProfileSummary,
+  type DynastyWaiversResult,
   type DynastyWorkspace,
   type KdstStreamerResult,
   type LeagueWorkspaceContext,
@@ -249,11 +250,17 @@ export class NwrApiClient {
     give: string[],
     receive: string[],
     teamWindow: TeamWindow,
+    tradeMode: "REAL" | "HYPOTHETICAL" = "REAL",
+    counterpartyRosterId: number | null = null,
   ): Promise<TradeDecision> {
     return this.request("/api/v1/dynasty/trades/evaluate", {
       method: "POST",
-      body: JSON.stringify({ give, receive, teamWindow }),
+      body: JSON.stringify({ give, receive, teamWindow, tradeMode, counterpartyRosterId }),
     });
+  }
+
+  dynastyWaivers(): Promise<DynastyWaiversResult> {
+    return this.request("/api/v1/dynasty/waivers");
   }
 
   listSavedTrades(): Promise<TradeWorkspace> {

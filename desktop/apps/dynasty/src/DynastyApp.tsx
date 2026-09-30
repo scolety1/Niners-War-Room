@@ -19,11 +19,16 @@ import {
   RookieReviewPage,
   TeamWorkspacePage,
   TradeLabPage,
+  WaiverWirePage,
 } from "./pages";
 
 const NAV_HOME: NavigationGroup = {
   label: "Home",
   items: [{ label: "Command Center", path: "/", icon: "home" }],
+};
+const NAV_THIS_WEEK: NavigationGroup = {
+  label: "This Week",
+  items: [{ label: "Waiver Wire", path: "/waivers", icon: "activity" }],
 };
 const NAV_TEAM: NavigationGroup = {
   label: "Team",
@@ -37,7 +42,7 @@ const NAV_TEAM: NavigationGroup = {
 const NAV_TRADES: NavigationGroup = {
   label: "Trades",
   items: [
-    { label: "Trade Decision Lab", path: "/trades", icon: "trade" },
+    { label: "Analyze Trade", path: "/trades", icon: "trade" },
     { label: "Market Gaps", path: "/market", icon: "market" },
     { label: "Trade Block / Targets", path: "/workspace", icon: "target" },
   ],
@@ -64,7 +69,7 @@ const NAV_SYSTEM: NavigationGroup = {
 
 export function buildDynastyNavigation(phase: LeagueSeasonPhase | null): NavigationGroup[] {
   if (phase === "REGULAR_SEASON" || phase === "PLAYOFF_PUSH" || phase === "FANTASY_PLAYOFFS") {
-    return [NAV_HOME, NAV_TEAM, NAV_TRADES, NAV_ASSETS, NAV_SYSTEM];
+    return [NAV_HOME, NAV_THIS_WEEK, NAV_TEAM, NAV_TRADES, NAV_ASSETS, NAV_SYSTEM];
   }
   return [NAV_HOME, NAV_DRAFT, NAV_TEAM, NAV_TRADES, NAV_ASSETS, NAV_SYSTEM];
 }
@@ -85,9 +90,9 @@ const LEGACY_NAVIGATION: NavigationGroup[] = [
   {
     label: "Decisions",
     items: [
-      { label: "Trade Decision Lab", path: "/trades", icon: "trade" },
+      { label: "Analyze Trade", path: "/trades", icon: "trade" },
       { label: "My Board & Decisions", path: "/workspace", icon: "board" },
-      { label: "Scenario Playground", path: "/planning", icon: "target" },
+      { label: "Picks / Future Ledger", path: "/planning", icon: "target" },
     ],
   },
   { label: "Draft", items: [{ label: "Draft Cockpit", path: "/draft", icon: "draft" }] },
@@ -191,6 +196,7 @@ export function DynastyApp() {
         <Route path="/market" element={<MarketPage data={data} />} />
         <Route path="/rookies" element={<RookieReviewPage data={data} />} />
         <Route path="/trades" element={<TradeLabPage client={client} data={data} />} />
+        <Route path="/waivers" element={<WaiverWirePage client={client} />} />
         <Route path="/workspace" element={<TeamWorkspacePage client={client} data={data} />} />
         <Route path="/planning" element={<PlanningPage data={data} />} />
         <Route path="/draft" element={<DraftCockpitPage data={data} />} />

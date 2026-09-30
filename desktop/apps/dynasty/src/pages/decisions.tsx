@@ -26,6 +26,7 @@ import { matchesPlayerSearch } from "../lib/search";
 import { ownershipLookup, resolveOwnershipDisplay } from "../lib/ownership";
 
 const TRADE_SIDE_LIMIT = 6;
+export type TradeBuilderMode = "REAL" | "HYPOTHETICAL";
 
 // ----------------------------------------------------------------------
 // Dynasty League Import V1 (Worker 4): Compare + Trade Decision Lab
@@ -38,35 +39,48 @@ const TRADE_SIDE_LIMIT = 6;
 // guarantee.
 // ----------------------------------------------------------------------
 
-/** Real roster-owned asset ids from the already-annotated `assetOptions`
- * list (bootstrap-time truth) -- the "REAL default" the dispatch asked
- * for, used only to pre-fill the give side; the owner can always remove or
- * add manually afterward (see `fillTradeSideFromRoster`). */
-export function rosterOwnedAssetIds(assets: readonly AssetOption[]): string[] {
-  return assets
-    .filter((asset) => asset.ownership?.ownershipStatus === "OWNED" && asset.ownership.isMyTeam)
-    .map((asset) => asset.assetId);
+export interface TradeCounterparty {
+  rosterId: number;
+  teamName: string;
 }
 
-/** Appends real roster asset ids onto an existing manual selection --
- * never removes or reorders what the owner already picked, skips anything
- * already selected on either side, and still respects the side limit. A
- * real default sourced from actual roster ownership, not a forced
- * constraint: every asset it adds remains individually removable exactly
- * like a manually added one. */
-export function fillTradeSideFromRoster(
-  current: readonly string[],
-  other: readonly string[],
-  rosterAssetIds: readonly string[],
-  limit = TRADE_SIDE_LIMIT,
-): string[] {
-  const next = [...current];
-  for (const assetId of rosterAssetIds) {
-    if (next.length >= limit) break;
-    if (next.includes(assetId) || other.includes(assetId)) continue;
-    next.push(assetId);
+export function tradeCounterparties(assets: readonly AssetOption[]): TradeCounterparty[] {
+  const byRoster = new Map<number, string>();
+  for (const asset of assets) {
+    const ownership = asset.ownership;
+    if (
+      ownership?.ownershipStatus === "OWNED" &&
+      !ownership.isMyTeam &&
+      ownership.rosterId != null
+    ) {
+      byRoster.set(ownership.rosterId, ownership.rosterTeamName || `Roster ${ownership.rosterId}`);
+    }
   }
-  return next;
+  return [...byRoster.entries()]
+    .map(([rosterId, teamName]) => ({ rosterId, teamName }))
+    .sort((left, right) => left.teamName.localeCompare(right.teamName));
+}
+
+export function tradeAssetsForMode(
+  assets: readonly AssetOption[],
+  side: "give" | "receive",
+  mode: TradeBuilderMode,
+  counterpartyRosterId: number | null,
+): AssetOption[] {
+  if (mode === "HYPOTHETICAL") return assets.filter(canSelectAsset);
+  return assets.filter((asset) => {
+    if (!canSelectAsset(asset)) return false;
+    const ownership = asset.ownership;
+    if (side === "give") {
+      return ownership?.ownershipStatus === "OWNED" && ownership.isMyTeam;
+    }
+    return (
+      counterpartyRosterId != null &&
+      ownership?.ownershipStatus === "OWNED" &&
+      !ownership.isMyTeam &&
+      ownership.rosterId === counterpartyRosterId
+    );
+  });
 }
 
 export type TradeRosterWarningKind =
@@ -660,13 +674,23 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
 export function TradeLabPage({ client, data }: { client: NwrApiClient; data: DynastyBootstrap }) {
   const [search] = useSearchParams();
   const requestedAsset = search.get("asset") ?? "";
-  const initialAsset = data.assetOptions.some(
+  const requestedOption = data.assetOptions.find(
     (asset) => asset.assetId === requestedAsset && canSelectAsset(asset),
-  )
-    ? requestedAsset
-    : "";
-  const [give, setGive] = useState<string[]>(initialAsset ? [initialAsset] : []);
-  const [receive, setReceive] = useState<string[]>([]);
+  );
+  const requestedOwnership = requestedOption?.ownership;
+  const requestedIsMine = requestedOwnership?.ownershipStatus === "OWNED" && requestedOwnership.isMyTeam;
+  const requestedOpponentRoster =
+    requestedOwnership?.ownershipStatus === "OWNED" && !requestedOwnership.isMyTeam
+      ? requestedOwnership.rosterId
+      : null;
+  const [tradeMode, setTradeMode] = useState<TradeBuilderMode>("REAL");
+  const [counterpartyRosterId, setCounterpartyRosterId] = useState<number | null>(
+    requestedOpponentRoster,
+  );
+  const [give, setGive] = useState<string[]>(requestedIsMine && requestedAsset ? [requestedAsset] : []);
+  const [receive, setReceive] = useState<string[]>(
+    requestedOpponentRoster != null && requestedAsset ? [requestedAsset] : [],
+  );
   const [teamWindow, setTeamWindow] = useState<TeamWindow>("Balanced");
   const [decision, setDecision] = useState<TradeDecision | null>(null);
   const [evaluatedPackage, setEvaluatedPackage] = useState<{
@@ -711,18 +735,19 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
       ),
     [data.assetOptions],
   );
-  const rosterAssetIds = useMemo(() => rosterOwnedAssetIds(data.assetOptions), [data.assetOptions]);
+  const counterparties = useMemo(() => tradeCounterparties(data.assetOptions), [data.assetOptions]);
+  const outgoingAssets = useMemo(
+    () => tradeAssetsForMode(data.assetOptions, "give", tradeMode, counterpartyRosterId),
+    [counterpartyRosterId, data.assetOptions, tradeMode],
+  );
+  const incomingAssets = useMemo(
+    () => tradeAssetsForMode(data.assetOptions, "receive", tradeMode, counterpartyRosterId),
+    [counterpartyRosterId, data.assetOptions, tradeMode],
+  );
   const rosterWarnings = useMemo(
     () => resolveTradeRosterWarnings(give, receive, liveOwnership, nameForAsset),
     [give, receive, liveOwnership],
   );
-  const fillFromRoster = () => {
-    if (busy) return;
-    const next = fillTradeSideFromRoster(give, receive, rosterAssetIds);
-    if (next.length === give.length) return;
-    invalidateDecision();
-    setGive(next);
-  };
 
   useEffect(() => {
     if (!decision) return;
@@ -743,6 +768,8 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
   };
   const toggleSide = (side: "give" | "receive", assetId: string) => {
     if (busy) return;
+    const allowed = side === "give" ? outgoingAssets : incomingAssets;
+    if (!allowed.some((asset) => asset.assetId === assetId)) return;
     const current = side === "give" ? give : receive;
     const other = side === "give" ? receive : give;
     const next = nextTradeSide(current, other, assetId);
@@ -752,6 +779,21 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
     invalidateDecision();
     if (side === "give") setGive(next);
     else setReceive(next);
+  };
+  const changeTradeMode = (value: string) => {
+    const next = value === "Hypothetical" ? "HYPOTHETICAL" : "REAL";
+    if (busy || next === tradeMode) return;
+    invalidateDecision();
+    setTradeMode(next);
+    setGive([]);
+    setReceive([]);
+    setCounterpartyRosterId(null);
+  };
+  const changeCounterparty = (value: string) => {
+    if (busy) return;
+    invalidateDecision();
+    setCounterpartyRosterId(value ? Number(value) : null);
+    setReceive([]);
   };
   const changeTeamWindow = (value: string) => {
     if (busy || value === teamWindow) return;
@@ -772,6 +814,8 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
         requestedGive,
         requestedReceive,
         requestedWindow,
+        tradeMode,
+        counterpartyRosterId,
       );
       if (
         isCurrentDecisionRequest(
@@ -912,6 +956,21 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
     invalidateDecision();
     setGive([...scenario.give]);
     setReceive([...scenario.receive]);
+    const giveIsOwned = scenario.give.every(
+      (assetId) => liveOwnership.get(assetId)?.ownershipStatus === "OWNED" && liveOwnership.get(assetId)?.isMyTeam,
+    );
+    const receiveRosterIds = new Set(
+      scenario.receive
+        .map((assetId) => liveOwnership.get(assetId))
+        .filter((value): value is AssetOwnership => Boolean(value))
+        .filter((value) => value.ownershipStatus === "OWNED" && !value.isMyTeam && value.rosterId != null)
+        .map((value) => value.rosterId as number),
+    );
+    const realPackage = giveIsOwned && receiveRosterIds.size === 1 && scenario.receive.every(
+      (assetId) => receiveRosterIds.has(liveOwnership.get(assetId)?.rosterId ?? -1),
+    );
+    setTradeMode(realPackage ? "REAL" : "HYPOTHETICAL");
+    setCounterpartyRosterId(realPackage ? ([...receiveRosterIds][0] ?? null) : null);
     setTeamWindow(scenario.teamWindow);
     setTitle(scenario.title);
     setNotes(scenario.notes);
@@ -928,6 +987,8 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
     invalidateDecision();
     setGive([]);
     setReceive([]);
+    setTradeMode("REAL");
+    setCounterpartyRosterId(null);
     setTeamWindow("Balanced");
     setTitle("Trade scenario");
     setNotes("");
@@ -996,8 +1057,8 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
     <>
       <PageHeader
         eyebrow="Decision lab · Advisory only"
-        title="Trade Decision Lab"
-        description="Pressure-test the football decision across ten named dimensions. NWR never invents a hidden package score."
+        title="Analyze Trade"
+        description="Build a real opponent trade by default, then pressure-test it across ten named dimensions. League-wide hypotheticals are explicit."
         status={
           <>
             <StatusBadge tone="safe" label="Exact governed assets" />
@@ -1014,6 +1075,36 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
           </Button>
         }
       />
+      <div className="trade-window">
+        <span>Trade mode</span>
+        <div aria-disabled={busy || undefined} style={busy ? { opacity: 0.65, pointerEvents: "none" } : undefined}>
+          <SegmentedControl
+            label=""
+            options={["Real trade", "Hypothetical"]}
+            value={tradeMode === "REAL" ? "Real trade" : "Hypothetical"}
+            onChange={changeTradeMode}
+          />
+        </div>
+        <p>{tradeMode === "REAL"
+          ? "Outgoing is limited to your roster; incoming is limited to one selected opponent."
+          : "League-wide exploration only. Ownership warnings remain visible."}</p>
+      </div>
+      {tradeMode === "REAL" ? <div className="trade-window">
+        <label className="form-field">
+          <span>Trade partner</span>
+          <select
+            disabled={busy}
+            onChange={(event) => changeCounterparty(event.target.value)}
+            value={counterpartyRosterId ?? ""}
+          >
+            <option value="">Choose an opponent</option>
+            {counterparties.map((opponent) => <option key={opponent.rosterId} value={opponent.rosterId}>
+              {opponent.teamName}
+            </option>)}
+          </select>
+        </label>
+        <p>Selecting another opponent clears only the incoming side.</p>
+      </div> : null}
       <div className="trade-window">
         <span>Team direction</span>
         <div
@@ -1040,23 +1131,17 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
       ) : null}
       <div className="trade-builder">
         <Panel
-          action={
-            data.dynastyLeague && rosterAssetIds.length ? (
-              <Button
-                disabled={busy}
-                icon="layers"
-                onClick={fillFromRoster}
-                variant="ghost"
-              >
-                Fill from your roster
-              </Button>
-            ) : undefined
-          }
+          action={give.length ? <Button
+            disabled={busy}
+            icon="undo"
+            onClick={() => { invalidateDecision(); setGive([]); }}
+            variant="ghost"
+          >Clear outgoing</Button> : undefined}
           title="You give"
-          eyebrow="Current roster side"
+          eyebrow={tradeMode === "REAL" ? `${outgoingAssets.length} assets on your roster` : "Hypothetical league-wide side"}
         >
           <AssetPicker
-            assets={data.assetOptions}
+            assets={outgoingAssets}
             disabled={busy}
             selected={give}
             unavailable={new Set(receive)}
@@ -1077,9 +1162,16 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
           </span>
           <strong>FOR</strong>
         </div>
-        <Panel title="You receive" eyebrow="Incoming side">
+        <Panel
+          title="You receive"
+          eyebrow={tradeMode === "REAL"
+            ? counterpartyRosterId == null
+              ? "Choose a trade partner first"
+              : `${incomingAssets.length} assets on opponent roster`
+            : "Hypothetical league-wide side"}
+        >
           <AssetPicker
-            assets={data.assetOptions}
+            assets={incomingAssets}
             disabled={busy}
             selected={receive}
             unavailable={new Set(give)}

@@ -362,3 +362,88 @@ The additive Redraft bootstrap key assertion was updated to include `lifecycleCo
 7. Complete the remaining ESPN path.
 
 Also retain Worker 5's open investigation of analogous K/DST composition behavior in Trade Finder/Trade Package Search. Items 10+ were deliberately not implemented in this pass.
+
+---
+
+# Worker 7 (Codex) -- items 9-11 (Dynasty Waiver Wire + trade discoverability + ownership rules)
+
+Dispatch HEAD: `96a99736` (verified exactly with `git log -1 --oneline` before any edit). The only pre-existing worktree entries were the two known untracked `local_exports.backup-*` directories; neither was touched. All four starting listeners were identity-checked with `netstat`/`Get-CimInstance` before a server was restarted.
+
+## Item 9 -- real Dynasty Waiver Wire
+
+**INSPECTED CODE**: Dynasty had no `THIS WEEK` group, waiver route, weekly-lineup route, streamer route, or Dynasty waiver backend. Redraft's waiver engine correctly owns redraft replacement-value/season-horizon logic, so copying its candidate score would have violated the requested Dynasty lens. The reusable boundary is the real Sleeper league context (current roster ownership, settings, and FAAB used), while Dynasty ranking must consume the existing governed Dynasty asset rows unchanged.
+
+**IMPLEMENTED**:
+
+- Added `GET /api/v1/dynasty/waivers`, a typed API-client method/contract, and a first-class `/waivers` table page under a new in-season `THIS WEEK` navigation group.
+- Availability is a read-only Sleeper GET of the connected league and all rosters. If that optional read fails, the endpoint honestly falls back to the last dated local Dynasty snapshot, labels it `SLEEPER_SNAPSHOT`, and leaves remaining FAAB unknown rather than guessing. No Sleeper write path exists (`writePolicy: NO_SLEEPER_WRITES`).
+- The ranking consumes the existing governed `nwr_dynasty_score` without changing it. The separate, deterministic priority layer is exactly: governed Dynasty score + age/upside modifier (+3 through -1) + roster-fit modifier (+4 starter need, +2 depth need, up to +3 governed-value upgrade) - 5 only for a verified `SEASON_OUT` status. Dedicated starter slots determine needs; flex slots are not incorrectly counted as a simultaneous need for every eligible position.
+- Implemented dimensions: real current unrostered availability, long-term NWR value/rank, age/upside band, roster fit (`STARTER_NEED`, `DEPTH_NEED`, `ROSTER_UPGRADE`, `STASH_ONLY`), age/value-based stash band, verified current-status penalty, protected-slot-aware drop candidate, add/drop value net, and relative FAAB range against the real remaining budget. Positive FAAB ranges are capped at 35% of remaining budget and are explicitly a relative heuristic, never a predicted winning bid.
+- Drop safety: starters, reserve, and taxi assets are never suggested. A same-position bench drop is preferred; if none exists, the weakest governed-value bench asset is the fallback. An open active slot suppresses the drop requirement.
+- Explicitly deferred and visibly labeled `NOT_SCORED`/`UNKNOWN`: weekly short-term projection, live role/usage, injury-created opportunity, taxi eligibility, and a separate contingent-value model. Those need real Dynasty weekly evidence and were not fabricated from Redraft replacement logic.
+- `THIS WEEK` intentionally contains only Waiver Wire this pass. Dynasty has no genuine weekly lineup/start-sit or streamer service to expose; those remain follow-up work rather than empty nav destinations.
+
+**LIVE OBSERVATION**, final read-only HTTP after the last backend restart: Las Vegas Enginerds returned `SLEEPER_LIVE`, 25 real unrostered candidates, FAAB total `$100` / remaining `$100`, and a full 24/24 active roster. The rendered Chrome page showed `THIS WEEK -> Waiver Wire`, `LIVE SLEEPER AVAILABILITY`, `$100 FAAB LEFT`, `READ ONLY`, and the real 25-row table with NWR, age/upside, roster fit, stash, FAAB, and drop/net columns. No candidate payload was copied into the repository and no provider write was attempted.
+
+**INFERENCE**: the browser and direct endpoint agreed on league name, candidate count, live-source badge, FAAB balance, and candidate facts, so the page was using the real connected league response, not a fixture or hardcoded player list.
+
+## Item 10 -- Trade Finder discoverability and Scenario Playground disposition
+
+**INSPECTED CODE**, Redraft: the existing real package-search implementation already supports exactly `FIND_WIN_WIN`, `TARGET_PLAYER`, and `IMPROVE_POSITION`. Worker 6 had added a top-level `TRADES -> Trade Finder` route; this pass verified that route instead of duplicating the engine. `BUY_LOW` and `SELL_HIGH` are not implemented search modes today.
+
+**LIVE OBSERVATION**, Redraft Chrome / Fantasy Gamers: clicking the visible sidebar `Trade Finder` opened `/trade-finder`; the real search completed with **15 candidates across 8 opponent rosters, 900 packages evaluated**, and rendered packages plus before/after dimensions. Therefore Redraft Trade Finder is genuinely discoverable and functional.
+
+**INSPECTED CODE**, Dynasty: there is a governed package evaluator (`Trade Decision Lab`), market-gap view, and manual Trade Block/Targets workspace, but no Dynasty counter generator, win-win package search, target-player search, or Trade Finder backend. A nav label pretending otherwise would still be a product failure. This pass renamed the actual evaluator destination to the clearer `Analyze Trade`; `Market Gaps` and `Trade Block / Targets` remain visible peers. A real Dynasty `Trade Finder`/package-search destination remains a larger, precisely documented backend gap for the counter-generation pass.
+
+**INSPECTED CODE / DISPOSITION**, Scenario Playground: the route is not trade search. It is the distinct, locally persisted `Dynasty Planning Console` with six manual modules: Roster architecture, Future pick ledger, Keeper deadline, Drop deadline, Trade deadline, and Upcoming draft prep, plus checklists, notes, and governed-asset context that explicitly does not create hidden value. It is useful but not primary trade navigation. The vague `Scenario Playground` name is gone: the in-season nav keeps it demoted under Assets as `Picks / Future Ledger`, the page title remains `Dynasty Planning Console`, and its context eyebrow now says `Planning console · no hidden value`. It was not deleted because it owns a separate persistent planning workflow.
+
+## Item 11 -- Trade Decision Lab ownership rules
+
+**LIVE OBSERVATION, before fix**: on the real Las Vegas Enginerds Trade Decision Lab, Puka Nacua (owned by opponent roster 9; `ownership.isMyTeam=false`) appeared first in the outgoing selector and could be selected. The UI only warned after selection while still counting Puka as 1/6 outgoing. Clicking `Fill from your roster` then unexpectedly selected six real owner assets at once.
+
+**IMPLEMENTED**:
+
+- The default mode is now explicit `Real trade`. Its outgoing list contains only `OWNED && isMyTeam` assets (23 in the live league). Incoming is empty until one real opponent is selected, then contains only assets whose `ownership.rosterId` matches that counterparty.
+- Added explicit `Hypothetical` mode for league-wide modeling. Switching modes clears both sides; switching counterparties clears only incoming. Reopening an old saved package uses Real mode only if its ownership is valid, otherwise it is explicitly Hypothetical.
+- Enforcement is defense-in-depth: the backend rejects any unowned Real-mode outgoing asset, incoming assets from multiple/wrong opponent rosters, or a selected-counterparty mismatch. Exact error codes are `DYNASTY_TRADE_OUTGOING_NOT_OWNED`, `DYNASTY_TRADE_INCOMING_COUNTERPARTY_INVALID`, and `DYNASTY_TRADE_COUNTERPARTY_MISMATCH`.
+- Removed `Fill from your roster`. The safe replacement is `Clear outgoing`, shown only when the owner has deliberately selected something; it never adds assets.
+
+**LIVE OBSERVATION, after fix**: the rendered Real-mode page showed `23 ASSETS ON YOUR ROSTER`, 0/6 outgoing, and no bulk-fill button. Searching outgoing for `Puka Nacua` returned no selectable row. Selecting Achane changed the side to exactly 1/6 and exposed `Clear outgoing`; clicking it returned the count to 0/6. Direct HTTP with Puka outgoing returned HTTP 409 and `DYNASTY_TRADE_OUTGOING_NOT_OWNED`; the valid inverse package (owner's Achane out, roster 9's Puka in) returned success with `tradeMode=REAL` and `counterpartyRosterId=9`.
+
+## Tests and verification
+
+**ACTUAL TEST RESULT**, final targeted backend suite (`test_dynasty_waiver_service`, Dynasty league/facade wiring, desktop HTTP, trade-decision assistant, Dynasty status override, Dynasty Sleeper service, decision-bundle API): **127 passed**. This includes formula boundaries/determinism, flex-slot need correctness, FAAB caps and unavailable balance, full-league roster exclusion, unsupported-position exclusion (including no DST in this real no-DST format), protected drop slots, live/fallback facade behavior, HTTP contract, and Real/Hypothetical ownership enforcement.
+
+**ACTUAL TEST RESULT**, required `tests/test_desktop_application_api.py`: **47 passed, exactly the same 4 pre-existing failures and no others**:
+
+- `test_dynasty_facade_composes_real_governed_workflows`
+- `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`
+- `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`
+- `test_facade_has_no_streamlit_or_app_component_dependency`
+
+**ACTUAL TEST RESULT**, frontend: `npm run typecheck` passed. Full `npx vitest run` passed **532 tests in 34 files**. `npm run build` completed both production builds; Redraft emitted only its existing chunk-size advisory. The benchmark JSON rewritten by the benchmark test was restored byte-for-byte and is not part of this change.
+
+**ACTUAL TEST RESULT**, lint/diff: the new waiver service, its formula tests, and the touched Dynasty facade-wiring test are Ruff-clean. `git diff --check` passed. Existing whole-file lint debt in `desktop_facade.py`/`server.py` was not represented as newly clean.
+
+**LIVE OBSERVATION**, safety: all provider interaction was read-only GET. No Sleeper/ESPN transaction endpoint, KHA/403N18th identity field, governed formula, base-board CSV, projection snapshot, generated data pack, or owner AppData file was modified.
+
+**LIVE OBSERVATION**, final services: both authenticated API health payloads returned `data.status=ok`, and both Vite previews returned HTTP 200. All four listeners remain identity-matched to this worktree: Redraft API PID 36440 / port 18742, Dynasty API PID 20808 / port 18741, Redraft preview PID 25852 / port 1422, and Dynasty preview PID 37864 / port 1421.
+
+## Files changed
+
+- `src/services/dynasty_waiver_service.py`, `src/application/desktop_facade.py`, `src/desktop_api/server.py` -- deterministic Dynasty waiver service/endpoint and server-side real-trade ownership enforcement.
+- `desktop/packages/contracts/src/index.ts`, `desktop/packages/api-client/src/index.ts` -- typed waiver contract/client and explicit trade mode/counterparty fields.
+- `desktop/apps/dynasty/src/pages/waivers.tsx`, `pages/decisions.tsx`, `pages/system.tsx`, `pages/index.ts`, `DynastyApp.tsx` -- Waiver Wire, real/hypothetical chooser rules, safe clear action, clearer planning/trade labels, and navigation.
+- `tests/test_dynasty_waiver_service.py`, `tests/test_dynasty_league_import_facade_wiring.py`, `tests/test_desktop_http_api.py`, Dynasty lifecycle/decision tests, and API-client tests -- formula, fallback, contract, ownership, and navigation coverage.
+- `docs/codex/dogfood_rebuild_20260929/LEDGER.md` -- this entry.
+
+## Exact remaining work for the next worker
+
+1. Build a real Dynasty counter/package generator before adding a `Trade Finder` destination; add `BUY_LOW`/`SELL_HIGH` only when their search semantics and evidence are real. Redraft currently has three, not five, implemented modes.
+2. Add real Dynasty weekly lineup/start-sit and streamer evidence/routes; extend waiver ranking with weekly usability, live role/usage, injury-created opportunity, taxi eligibility, and separate contingent value only from governed inputs.
+3. Rebuild streamer horizons (today/this week/next week/ROS where supported).
+4. Restructure rankings while preserving Official, Market, War Room, and My Rank separation.
+5. Simplify cards/warnings without hiding source/date/limitation disclosures.
+6. Complete the honest ESPN path for KHA/403 N 18th.
+
+Counter generation, streamer horizons, rankings restructuring, card simplification, and ESPN were deliberately not attempted in this pass.

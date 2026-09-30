@@ -4,7 +4,6 @@ import type { AssetOption, AssetOwnership, BridgeDecision, DynastyComparison } f
 import {
   bridgeBadgeTone,
   bridgeDecisionGroups,
-  fillTradeSideFromRoster,
   isCurrentDecisionRequest,
   isSameTradePackage,
   nextTradeSide,
@@ -12,7 +11,8 @@ import {
   ownerDimensionLabel,
   canSelectAsset,
   resolveTradeRosterWarnings,
-  rosterOwnedAssetIds,
+  tradeAssetsForMode,
+  tradeCounterparties,
 } from "./decisions";
 
 const stribling: AssetOption = {
@@ -150,36 +150,47 @@ function assetWithOwnership(
   return { ...stribling, assetId, name: assetId, ownership: ownership(overrides) };
 }
 
-describe("Dynasty League Import V1 (Worker 4): Compare + Trade Decision Lab ownership wiring", () => {
-  it("collects only real roster-owned asset ids, never opponent or free-agent ones", () => {
+describe("real-trade ownership gating", () => {
+  it("limits outgoing to the owner's real roster and incoming to the selected opponent", () => {
     const assets: AssetOption[] = [
       assetWithOwnership("current:mine-1", { isMyTeam: true }),
-      assetWithOwnership("current:opponent", { isMyTeam: false, rosterTeamName: "Rocky Mountain High" }),
+      assetWithOwnership("current:opponent", {
+        isMyTeam: false,
+        rosterId: 9,
+        rosterTeamName: "Rocky Mountain High",
+      }),
+      assetWithOwnership("current:other-opponent", {
+        isMyTeam: false,
+        rosterId: 4,
+        rosterTeamName: "Fourth Team",
+      }),
       assetWithOwnership("current:free-agent", {
         ownershipStatus: "FREE_AGENT",
         isMyTeam: false,
+        rosterId: null,
         rosterTeamName: null,
       }),
       { ...stribling, assetId: "rookie:unresolved" },
     ];
-    expect(rosterOwnedAssetIds(assets)).toEqual(["current:mine-1"]);
+    expect(tradeAssetsForMode(assets, "give", "REAL", 9).map((asset) => asset.assetId))
+      .toEqual(["current:mine-1"]);
+    expect(tradeAssetsForMode(assets, "receive", "REAL", 9).map((asset) => asset.assetId))
+      .toEqual(["current:opponent"]);
+    expect(tradeAssetsForMode(assets, "receive", "REAL", null)).toEqual([]);
+    expect(tradeAssetsForMode(assets, "give", "HYPOTHETICAL", null)).toHaveLength(5);
   });
 
-  it("fills a trade side from real roster ownership without disturbing an existing manual selection", () => {
-    const roster = ["current:mine-1", "current:mine-2", "current:mine-3"];
-    // A prior manual pick is kept, in its original position, and never duplicated.
-    expect(fillTradeSideFromRoster(["current:mine-2"], [], roster, 6)).toEqual([
-      "current:mine-2",
-      "current:mine-1",
-      "current:mine-3",
+  it("builds one stable opponent choice per real roster", () => {
+    const assets = [
+      assetWithOwnership("current:a", { isMyTeam: false, rosterId: 9, rosterTeamName: "Rocky" }),
+      assetWithOwnership("current:b", { isMyTeam: false, rosterId: 9, rosterTeamName: "Rocky" }),
+      assetWithOwnership("current:c", { isMyTeam: false, rosterId: 4, rosterTeamName: "Alpha" }),
+      assetWithOwnership("current:mine", { isMyTeam: true }),
+    ];
+    expect(tradeCounterparties(assets)).toEqual([
+      { rosterId: 4, teamName: "Alpha" },
+      { rosterId: 9, teamName: "Rocky" },
     ]);
-    // Never adds an asset already selected on the OTHER side.
-    expect(fillTradeSideFromRoster([], ["current:mine-1"], roster, 6)).toEqual([
-      "current:mine-2",
-      "current:mine-3",
-    ]);
-    // Still respects the side limit -- a real default, not a forced dump of the whole roster.
-    expect(fillTradeSideFromRoster([], [], roster, 2)).toEqual(["current:mine-1", "current:mine-2"]);
   });
 
   it("flags a give-side asset the owner does not actually hold -- opponent, free agent, and unresolved rookie cases", () => {

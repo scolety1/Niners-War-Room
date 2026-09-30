@@ -119,6 +119,7 @@ _DYNASTY_PLANNING_MODULE = re.compile(r"^/api/v1/dynasty/planning/modules/([^/]+
 _DYNASTY_LEAGUE_IMPORT = "/api/v1/dynasty/league/import"
 _DYNASTY_LEAGUE_DISCONNECT = "/api/v1/dynasty/league/disconnect"
 _DYNASTY_LEAGUE_PROFILE = re.compile(r"^/api/v1/dynasty/league/([^/]+)$")
+_DYNASTY_WAIVERS = "/api/v1/dynasty/waivers"
 _PRODUCTION_DESKTOP_ORIGINS = frozenset(
     {
         "http://tauri.localhost",
@@ -377,6 +378,11 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
         if method == "GET" and path == "/api/v1/dynasty/trades":
             return self.server.facade.list_dynasty_trades()
 
+        if method == "GET" and path == _DYNASTY_WAIVERS:
+            return self.server.facade.dynasty_waivers(
+                league_profile_id=self.server.facade.dynasty_active_league_profile_id()
+            )
+
         if method == "POST" and path == _DYNASTY_LEAGUE_IMPORT:
             body = self._json_body()
             self._reject_unknown_fields(body, {"leagueId", "myOwnerId", "profileId"})
@@ -513,7 +519,10 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             )
         if method == "POST" and path == "/api/v1/dynasty/trades/evaluate":
             body = self._json_body()
-            self._reject_unknown_fields(body, {"give", "receive", "get", "teamWindow"})
+            self._reject_unknown_fields(
+                body,
+                {"give", "receive", "get", "teamWindow", "tradeMode", "counterpartyRosterId"},
+            )
             if "receive" in body and "get" in body:
                 raise self._invalid_body("Use receive without the legacy get alias.")
             give = body.get("give")
@@ -521,14 +530,25 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             if receive is None and "get" in body:
                 receive = body.get("get")
             team_window = body.get("teamWindow")
+            trade_mode = body.get("tradeMode", "REAL")
+            counterparty_roster_id = body.get("counterpartyRosterId")
             if not isinstance(give, list) or not isinstance(receive, list):
                 raise self._invalid_body("give and get must be arrays.")
             if not isinstance(team_window, str):
                 raise self._invalid_body("teamWindow must be a string.")
+            if trade_mode not in {"REAL", "HYPOTHETICAL"}:
+                raise self._invalid_body("tradeMode must be REAL or HYPOTHETICAL.")
+            if counterparty_roster_id is not None and (
+                not isinstance(counterparty_roster_id, int)
+                or isinstance(counterparty_roster_id, bool)
+            ):
+                raise self._invalid_body("counterpartyRosterId must be an integer or null.")
             return self.server.facade.evaluate_dynasty_trade(
                 give=give,
                 receive=receive,
                 team_window=team_window,
+                trade_mode=trade_mode,
+                counterparty_roster_id=counterparty_roster_id,
                 league_profile_id=self.server.facade.dynasty_active_league_profile_id(),
             )
         if method == "POST" and path == "/api/v1/dynasty/trades/export":

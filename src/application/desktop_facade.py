@@ -309,6 +309,7 @@ from src.services.dynasty_sleeper_league_service import (
     load_league_profile as load_dynasty_league_profile_document,
     set_active_league_profile as _set_active_dynasty_league_profile,
 )
+from src.services.dynasty_waiver_service import rank_dynasty_waiver_candidates
 from src.services.sleeper_import_service import SleeperHttpClient
 from src.services.sleeper_player_catalog_cache import get_sleeper_player_catalog
 from src.services.sleeper_league_context_service import (
@@ -911,6 +912,233 @@ class DesktopBackendFacade:
         if league_profile_id is None:
             return payload
         return self._annotate_dynasty_workspace_payload(payload, league_profile_id)
+
+    def dynasty_waivers(self, *, league_profile_id: str | None = None) -> FacadePayload:
+        """Build a read-only Dynasty-native waiver board.
+
+        Availability and FAAB context prefer a real, current Sleeper GET.
+        If that optional read fails, the last dated local Dynasty snapshot is
+        used for ownership only; a missing live FAAB balance is never guessed.
+        Governed Dynasty values are consumed unchanged.
+        """
+
+        self._require_mode("dynasty")
+        if not league_profile_id:
+            raise FacadeError(
+                "DYNASTY_LEAGUE_REQUIRED",
+                "Connect a Dynasty Sleeper league before opening Waiver Wire.",
+                status=409,
+            )
+        profile, persisted_snapshot = self._load_dynasty_league_state(league_profile_id)
+        roster_rows: Sequence[Mapping[str, Any]]
+        league_row: Mapping[str, Any]
+        source = "SLEEPER_SNAPSHOT"
+        retrieved_at = persisted_snapshot.fetched_at_utc
+        warnings: list[str] = []
+        try:
+            sleeper = SleeperHttpClient()
+            live_rosters = self._sleeper_get_json(
+                sleeper, f"league/{profile.league_id}/rosters"
+            )
+            live_league = self._sleeper_get_json(sleeper, f"league/{profile.league_id}")
+            if not isinstance(live_rosters, list) or not all(
+                isinstance(value, Mapping) for value in live_rosters
+            ):
+                raise ValueError("Sleeper roster response is malformed.")
+            if not isinstance(live_league, Mapping):
+                raise ValueError("Sleeper league response is malformed.")
+            roster_rows = live_rosters
+            league_row = live_league
+            source = "SLEEPER_LIVE"
+            retrieved_at = datetime.now(UTC).isoformat(timespec="seconds")
+        except (OSError, ValueError):
+            roster_rows = [
+                {
+                    "roster_id": roster.roster_id,
+                    "owner_id": roster.owner_id,
+                    "players": list(roster.players),
+                    "starters": list(roster.starters),
+                    "reserve": list(roster.reserve),
+                    "taxi": list(roster.taxi),
+                    "settings": {},
+                }
+                for roster in persisted_snapshot.rosters
+            ]
+            league_row = {
+                "settings": {
+                    "waiver_type": profile.waiver_type,
+                    "waiver_budget": profile.waiver_budget,
+                }
+            }
+            warnings.append(
+                "Live Sleeper availability could not be read; showing the last dated local "
+                "Dynasty snapshot. FAAB remaining is unavailable rather than guessed."
+            )
+
+        own_roster = next(
+            (
+                row
+                for row in roster_rows
+                if (
+                    profile.my_roster_id is not None
+                    and int(row.get("roster_id") or 0) == profile.my_roster_id
+                )
+                or (
+                    profile.my_owner_id
+                    and str(row.get("owner_id") or "") == profile.my_owner_id
+                )
+            ),
+            None,
+        )
+        if own_roster is None:
+            raise FacadeError(
+                "DYNASTY_WAIVER_ROSTER_NOT_FOUND",
+                "The connected owner's Dynasty roster could not be found.",
+                status=409,
+            )
+
+        def _ids(row: Mapping[str, Any], key: str) -> set[str]:
+            values = row.get(key)
+            return {str(value) for value in values} if isinstance(values, list) else set()
+
+        all_rostered_ids = {
+            str(player_id)
+            for roster in roster_rows
+            for player_id in (roster.get("players") or [])
+        }
+        owner_players = _ids(own_roster, "players")
+        owner_starters = _ids(own_roster, "starters") - {"0"}
+        owner_reserve = _ids(own_roster, "reserve")
+        owner_taxi = _ids(own_roster, "taxi")
+        owner_status = {
+            player_id: (
+                "RESERVE"
+                if player_id in owner_reserve
+                else "TAXI"
+                if player_id in owner_taxi
+                else "STARTER"
+                if player_id in owner_starters
+                else "BENCH"
+            )
+            for player_id in owner_players
+        }
+        active_players = owner_players - owner_reserve - owner_taxi
+        open_active_slot = len(active_players) < len(profile.roster_positions)
+
+        league_settings = (
+            league_row.get("settings") if isinstance(league_row.get("settings"), Mapping) else {}
+        )
+        roster_settings = (
+            own_roster.get("settings")
+            if isinstance(own_roster.get("settings"), Mapping)
+            else {}
+        )
+        waiver_type = league_settings.get("waiver_type")
+        total_budget = league_settings.get("waiver_budget")
+        budget_used = roster_settings.get("waiver_budget_used")
+        is_faab = waiver_type == 2
+        remaining_budget = (
+            max(0, int(total_budget) - int(budget_used))
+            if source == "SLEEPER_LIVE"
+            and is_faab
+            and isinstance(total_budget, int)
+            and isinstance(budget_used, int)
+            else None
+        )
+
+        snapshot = self._owner_snapshot()
+        candidates = rank_dynasty_waiver_candidates(
+            asset_rows=snapshot.evidence.rows,
+            all_rostered_player_ids=tuple(all_rostered_ids),
+            owner_roster_status_by_player_id=owner_status,
+            roster_positions=profile.roster_positions,
+            remaining_faab_budget=remaining_budget,
+            open_active_roster_slot=open_active_slot,
+        )
+
+        def _drop_payload(value: Any) -> dict[str, Any] | None:
+            if value is None:
+                return None
+            return {
+                "assetId": value.asset_id,
+                "playerName": value.player_name,
+                "position": value.position,
+                "dynastyRank": value.dynasty_rank,
+                "dynastyScore": value.dynasty_score,
+                "rosterStatus": value.roster_status,
+            }
+
+        candidate_rows = [
+            {
+                "assetId": row.asset_id,
+                "sleeperPlayerId": row.sleeper_player_id,
+                "playerName": row.player_name,
+                "position": row.position,
+                "team": row.team,
+                "age": row.age,
+                "dynastyRank": row.dynasty_rank,
+                "dynastyScore": row.dynasty_score,
+                "priorityScore": row.priority_score,
+                "ageUpside": row.age_upside,
+                "rosterFit": row.roster_fit,
+                "rosterFitReason": row.roster_fit_reason,
+                "stashValue": row.stash_value,
+                "availability": row.availability,
+                "faabBidLow": row.faab_bid_low,
+                "faabBidHigh": row.faab_bid_high,
+                "faabRationale": row.faab_rationale,
+                "dropCandidate": _drop_payload(row.drop_candidate),
+                "dropRequired": row.drop_required,
+                "transactionNetValue": row.transaction_net_value,
+                "currentStatusOverride": self._status_override_json(
+                    row.current_status_override
+                ),
+                "shortTermUsability": row.short_term_usability,
+                "roleSignal": row.role_signal,
+                "injuryOpportunity": row.injury_opportunity,
+                "taxiEligibility": row.taxi_eligibility,
+            }
+            for row in candidates
+        ]
+        return FacadePayload(
+            data={
+                "leagueName": profile.league_name,
+                "source": source,
+                "retrievedAtUtc": retrieved_at,
+                "candidates": candidate_rows,
+                "faabContext": {
+                    "isFaabLeague": is_faab,
+                    "totalBudgetDollars": total_budget if is_faab else None,
+                    "remainingBudgetDollars": remaining_budget,
+                    "source": source if remaining_budget is not None else "UNAVAILABLE",
+                },
+                "rosterContext": {
+                    "activePlayerCount": len(active_players),
+                    "activeRosterCapacity": len(profile.roster_positions),
+                    "openActiveRosterSlot": open_active_slot,
+                    "reservePlayerCount": len(owner_reserve),
+                    "taxiPlayerCount": len(owner_taxi),
+                },
+                "method": {
+                    "ranking": (
+                        "Governed long-term NWR value plus transparent age/upside, roster-fit, "
+                        "known current-status, and stash context."
+                    ),
+                    "faab": (
+                        "Relative Dynasty heuristic against the real remaining budget; not a "
+                        "predicted winning bid."
+                    ),
+                    "notScored": [
+                        "weekly projection",
+                        "live role/usage",
+                        "injury-created opportunity",
+                        "taxi eligibility",
+                    ],
+                },
+                "writePolicy": "NO_SLEEPER_WRITES",
+            },
+            warnings=tuple(warnings),
+        )
 
     def save_dynasty_personal_entry(
         self,
@@ -1601,20 +1829,80 @@ class DesktopBackendFacade:
         give: Sequence[str],
         receive: Sequence[str],
         team_window: str,
+        trade_mode: str = "REAL",
+        counterparty_roster_id: int | None = None,
         league_profile_id: str | None = None,
     ) -> FacadePayload:
         self._require_mode("dynasty")
+        if trade_mode not in {"REAL", "HYPOTHETICAL"}:
+            raise FacadeError(
+                "DYNASTY_TRADE_MODE_INVALID",
+                "trade_mode must be REAL or HYPOTHETICAL.",
+            )
         _snapshot, give_ids, receive_ids, lookup, key_for_id = self._trade_context(
             give=give,
             receive=receive,
             team_window=team_window,
         )
+        resolved_counterparty = counterparty_roster_id
+        if league_profile_id and trade_mode == "REAL":
+            profile, league_snapshot = self._load_dynasty_league_state(league_profile_id)
+            real_annotations = annotate_ownership(
+                [{"asset_id": value} for value in (*give_ids, *receive_ids)],
+                league_snapshot,
+                my_owner_id=profile.my_owner_id,
+            )
+            invalid_give = [
+                value
+                for value in give_ids
+                if not (
+                    real_annotations.get(value, {}).get("ownershipStatus") == "OWNED"
+                    and real_annotations.get(value, {}).get("isMyTeam") is True
+                )
+            ]
+            if invalid_give:
+                raise FacadeError(
+                    "DYNASTY_TRADE_OUTGOING_NOT_OWNED",
+                    "Real-trade outgoing assets must all be on the connected owner's roster. "
+                    "Use explicit Hypothetical mode for league-wide modeling.",
+                    status=409,
+                )
+            incoming_roster_ids = {
+                annotation.get("rosterId")
+                for value in receive_ids
+                if (
+                    (annotation := real_annotations.get(value, {})).get("ownershipStatus")
+                    == "OWNED"
+                    and annotation.get("isMyTeam") is False
+                    and annotation.get("rosterId") is not None
+                )
+            }
+            if len(incoming_roster_ids) != 1 or any(
+                real_annotations.get(value, {}).get("rosterId") not in incoming_roster_ids
+                for value in receive_ids
+            ):
+                raise FacadeError(
+                    "DYNASTY_TRADE_INCOMING_COUNTERPARTY_INVALID",
+                    "Real-trade incoming assets must all belong to one real opponent roster. "
+                    "Choose that opponent first, or use explicit Hypothetical mode.",
+                    status=409,
+                )
+            inferred_counterparty = next(iter(incoming_roster_ids))
+            if resolved_counterparty is not None and resolved_counterparty != inferred_counterparty:
+                raise FacadeError(
+                    "DYNASTY_TRADE_COUNTERPARTY_MISMATCH",
+                    "The selected trade partner does not own every incoming asset.",
+                    status=409,
+                )
+            resolved_counterparty = int(inferred_counterparty)
         state = replace_trade_state(
             [key_for_id[value] for value in give_ids],
             [key_for_id[value] for value in receive_ids],
         )
         decision = evaluate_trade_decision(state, lookup, team_window=team_window)
         data = self._trade_decision_payload(decision)
+        data["tradeMode"] = trade_mode
+        data["counterpartyRosterId"] = resolved_counterparty
         # Dogfood Rebuild V1 (Worker 4): real, sourced current-status
         # overrides (e.g. a season-ending injury) for any asset actually in
         # THIS trade -- display-only, built entirely from `lookup`'s own
