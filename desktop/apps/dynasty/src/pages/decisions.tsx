@@ -5,6 +5,7 @@ import type {
   AssetOwnershipEntry,
   DynastyBootstrap,
   DynastyComparison,
+  DynastyTradeCounterResult,
   TeamWindow,
   TradeDecision,
   TradeWorkspace,
@@ -693,6 +694,9 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
   );
   const [teamWindow, setTeamWindow] = useState<TeamWindow>("Balanced");
   const [decision, setDecision] = useState<TradeDecision | null>(null);
+  const [counters, setCounters] = useState<DynastyTradeCounterResult | null>(null);
+  const [counterError, setCounterError] = useState<NwrApiError | null>(null);
+  const [counterWorking, setCounterWorking] = useState(false);
   const [evaluatedPackage, setEvaluatedPackage] = useState<{
     give: string[];
     receive: string[];
@@ -711,7 +715,7 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
   const inputRevision = useRef(0);
   const requestSequence = useRef(0);
   const decisionResult = useRef<HTMLDivElement>(null);
-  const busy = evaluating || saving || exporting;
+  const busy = evaluating || saving || exporting || counterWorking;
 
   // Dynasty League Import V1 (Worker 4): real ownership context for the
   // trade builder, sourced from the already-annotated `assetOptions` list
@@ -761,6 +765,8 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
     inputRevision.current += 1;
     requestSequence.current += 1;
     setDecision(null);
+    setCounters(null);
+    setCounterError(null);
     setEvaluatedPackage(null);
     setError(null);
     setStatusMessage("");
@@ -862,6 +868,36 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
       ) {
         setEvaluating(false);
       }
+    }
+  };
+
+  const generateCounters = async () => {
+    if (
+      counterWorking
+      || tradeMode !== "REAL"
+      || counterpartyRosterId == null
+      || !evaluatedPackage
+      || !decision
+    ) return;
+    setCounterWorking(true);
+    setCounterError(null);
+    setCounters(null);
+    try {
+      setCounters(await client.generateDynastyTradeCounters({
+        give: evaluatedPackage.give,
+        receive: evaluatedPackage.receive,
+        teamWindow,
+        counterpartyRosterId,
+        limit: 5,
+      }));
+    } catch (reason) {
+      setCounterError(
+        reason instanceof NwrApiError
+          ? reason
+          : new NwrApiError("Counter offers could not be generated."),
+      );
+    } finally {
+      setCounterWorking(false);
     }
   };
 
@@ -1276,9 +1312,51 @@ export function TradeLabPage({ client, data }: { client: NwrApiClient; data: Dyn
             receive={evaluatedPackage?.receive ?? receive}
             nameForAsset={nameForAsset}
           />
+          {tradeMode === "REAL" && counterpartyRosterId != null ? (
+            <Panel title="Counter offers" eyebrow="Same verified opponent · bounded search">
+              <p className="copy-muted">Searches this opponent's actual roster, preserves the strongest requested incoming anchor, and re-runs the normal evaluator for both sides. No acceptance probability is estimated.</p>
+              <Button disabled={counterWorking} icon="trade" onClick={() => void generateCounters()}>
+                {counterWorking ? "Generating…" : "Generate counters"}
+              </Button>
+            </Panel>
+          ) : null}
+          {counterError ? <ErrorState message={counterError.message} recovery={counterError.recoveryAction} /> : null}
+          {counters ? <DynastyCounterResults result={counters} /> : null}
         </div>
       ) : null}
     </>
+  );
+}
+
+function DynastyCounterResults({ result }: { result: DynastyTradeCounterResult }) {
+  return (
+    <Panel
+      title={`${result.candidates.length} constructible counter${result.candidates.length === 1 ? "" : "s"}`}
+      eyebrow={`vs. ${result.counterpartyTeamName} · ${result.packagesEvaluated} evaluated`}
+    >
+      <p className="copy-muted">Preserved core asset: {result.preservedAnchorName}. {result.opponentWindowBasis}</p>
+      {result.candidates.length ? (
+        <div className="nwr-action-grid">
+          {result.candidates.map((candidate, index) => (
+            <article className="decision-explain" key={`${candidate.give.join("-")}-${candidate.receive.join("-")}-${index}`}>
+              <header>
+                <span>COUNTER {index + 1}</span>
+                <strong>Give {candidate.giveNames.join(" + ")} for {candidate.receiveNames.join(" + ")}</strong>
+              </header>
+              <p><b>What changed:</b> {candidate.changes.join(" ")}</p>
+              <p><b>Why this helps me:</b> {candidate.whyItHelpsYou}</p>
+              <p><b>Why it may make sense for them:</b> {candidate.whyItMayMakeSenseForThem}</p>
+              <p><b>NWR vs market:</b> {candidate.nwrVsMarket}</p>
+              <p><b>Main risk:</b> {candidate.mainRisk}</p>
+              <div className="toolbar">
+                <StatusBadge tone="safe" label={`Your view: ${candidate.ownerDecision.recommendation.replaceAll("_", " ")}`} />
+                <StatusBadge tone="review" label={`Their balanced view: ${candidate.opponentDecision.recommendation.replaceAll("_", " ")}`} />
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : <p>No alternative package survived the bounded legality search.</p>}
+    </Panel>
   );
 }
 

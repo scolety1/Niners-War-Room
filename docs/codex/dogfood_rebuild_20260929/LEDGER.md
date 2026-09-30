@@ -447,3 +447,101 @@ Dispatch HEAD: `96a99736` (verified exactly with `git log -1 --oneline` before a
 6. Complete the honest ESPN path for KHA/403 N 18th.
 
 Counter generation, streamer horizons, rankings restructuring, card simplification, and ESPN were deliberately not attempted in this pass.
+
+---
+
+# Worker 8 (Codex) -- current Dynasty value + exact-opponent counters + 1-4W Streamers
+
+Dispatch HEAD: `3f2b49d9` (verified exactly with `git log -1 --oneline` before any edit). The only pre-existing worktree entries were the two known untracked `local_exports.backup-*` directories; neither was touched. All four starting listeners were identity-checked with `netstat` and `Get-CimInstance` before either backend was restarted.
+
+## Item A -- Dynasty Current Rankings presentation
+
+**INSPECTED CODE**: the Rankings page was still led by the governed base-board rank/value even though each live row already carried the independently sourced `currentStatusOverride`, `marketRank`, `marketValue`, `marketBand`, and `marketGap` fields. That made the page look like a finished frozen-model board and forced the owner to infer current usability from secondary details.
+
+**IMPLEMENTED**, presentation-only:
+
+- Renamed the primary view `Current Dynasty Rankings` and made its question explicit: who is worth more right now, with the frozen base model and market reference visibly separated.
+- Reorganized the primary table to `Current NWR Rank`, `Player`, `Pos`, `Current Value`, `Base Model`, `Market`, `NWR Edge`, `Status`, and `Ownership`.
+- Current usability ordering uses the existing verified status layer. A blocking current-status override does not receive a fabricated injury discount: the row says `Unavailable now`, retains its exact governed base rank/score and market reference, and is moved out of the usable current ordinal. `TEAM_CORRECTION` is not treated as player unavailability.
+- Base `rank`, `nwrScore`, range, market rank/value/band, and market gap are displayed unchanged. No governed Dynasty valuation computation was modified.
+- No `Trend` column was invented because this repository does not currently admit a real time-series trend signal.
+- Added a pure ranking-presentation test proving base values remain byte-for-byte unchanged while a season-out row loses a current ordinal and usable rows close the ordinal gap.
+
+**LIVE OBSERVATION**, rendered Chrome against Las Vegas Enginerds: the page displayed the new current-value disclosure and columns. De'Von Achane retained base rank **#9**, governed score **61.3322**, market rank **#23**, market value **6116**, and NWR edge **+14**, while his verified `SEASON_OUT` status removed him from the current usable ordinal. The next healthy rows visibly closed the current order (for example George Pickens current #9/base #10, James Cook current #10/base #11, and Zay Flowers current #11/base #12). This is status-aware presentation, not a hidden score rewrite.
+
+## Item B -- Trade counter generation in both apps
+
+**IMPLEMENTED**, shared safety/design boundaries:
+
+- Added an explicit `Generate counters` action only after a valid analyzed real trade with one resolved counterparty. Hypothetical/mixed-owner packages remain ineligible.
+- Both searches are bounded, preserve the strongest requested incoming modeled asset as the anchor, search same-shape swaps and one-asset add-ons, cap output at five, and evaluate every candidate through the app's existing trade evaluator rather than a new value formula.
+- Ownership is enforced before search and every generated asset is drawn from the owner's or exact selected opponent's real roster. No cross-opponent asset can enter a candidate.
+- Candidate cards explain `What changed`, `Why this helps me`, `Why it may make sense for them`, `NWR vs market`, and `Main risk`, plus both sides' existing-model result. No acceptance probability, willingness forecast, or claim that the opponent will accept is generated.
+- Current picks were not added because verified per-roster pick ownership is not admitted in these connected league snapshots. No fake picks were constructed.
+
+**REDRAFT IMPLEMENTATION**: `search_counter_offer_packages()` reuses `evaluate_trade()` for both sides and ranks a bounded exact-opponent search by mutual utility. The facade resolves raw Sleeper IDs to canonical players, verifies outgoing ownership and the incoming counterparty, and excludes `RESERVE` entries from active lineup evaluation while retaining them for ownership validation. `_roster_size_legal()` now correctly tolerates a provider roster that is already over its configured active count due to reserve flattening: a counter may hold or reduce the real current count but may not worsen it. This fixes a live false-negative without weakening package ownership or active-slot legality.
+
+**REDRAFT LIVE DOGFOOD**, Fantasy Gamers: the owner's exact example is still real. Chris Olave and Jonathan Taylor are on the owner's roster; James Cook is owned by roster 1, `Show Me Your TDs`. The original package evaluated at **-144.8** net marginal utility and **-200.3** ROS value delta. The same-opponent counter search evaluated **120** bounded packages and rendered **5 constructible counters**. Example 1 was Travis Etienne + Michael Pittman for James Cook + Chris Godwin Jr. (owner utility **+22.8**, opponent utility **-7.3**); example 2 was Chris Olave + Travis Etienne for James Cook + Quinshon Judkins (owner **-15.7**, opponent **+5.6**). All named assets were verified on the respective two real rosters. The UI explicitly said there was no Redraft live-market overlay and no acceptance probability.
+
+**DYNASTY IMPLEMENTATION**: `generate_dynasty_trade_counters()` reuses `evaluate_trade_decision()` for the owner's selected team window and for an explicit `Balanced` opponent comparison because the other manager's actual competitive window is not verified. It incorporates the existing Dynasty NWR/market/status context and real roster-need signals; every card discloses that opponent-window limitation.
+
+**DYNASTY LIVE DOGFOOD**, Las Vegas Enginerds: a real Zay Flowers-for-Puka Nacua package against roster 9, `Rocky Mountain High`, analyzed as `COUNTER` with the counter action available. The bounded search evaluated **48** packages and returned **5** real alternatives. Examples included Drake Maye for Puka and De'Von Achane for Puka + Tyler Allgeier; the Achane card explicitly surfaced the verified `SEASON_OUT` risk rather than treating the base score as current availability. Exact ownership was preserved throughout.
+
+**LIVE BROWSER OBSERVATION**, Redraft: Chrome was driven through the actual Chris Olave + Jonathan Taylor / James Cook selection and analysis. The rendered page showed `SAME EXACT OPPONENT · REAL ROSTER SEARCH`, `VS. SHOW ME YOUR TDS · 120 EVALUATED`, `5 constructible counters`, all five package cards, both-side utilities, explanations, risks, and the no-acceptance-probability disclosure.
+
+## Item C -- Redraft Streamers 1-4 week horizons
+
+**INSPECTED CODE**: Worker 6's dedicated `/streamers` navigation destination was present, but the reused panel was still a FantasyPros-driven one-week presentation. It did not answer “best pickup now for the next N weeks” from NWR's own weekly projections.
+
+**IMPLEMENTED**:
+
+- Rebuilt the dedicated Streamers route around a new deterministic `redraft_streamers` facade/API and `streamer_horizon_service`.
+- Added real `1 Week`, `2 Weeks`, `3 Weeks`, and `4 Weeks` controls. Changing the horizon clears the previous result; the next request ranks by the selected cumulative projection window, so the control cannot merely relabel stale rows.
+- NWR's admitted weekly projections under the connected league's real scoring are the primary ordering authority. FantasyPros is explicitly not used as the ranking authority on this destination.
+- Candidates are the owner's current players plus genuinely available players; players owned by other teams are excluded. Positions are format-aware and include QB, TE, K, and DST only when relevant to the connected roster rules.
+- Each row shows `Player`, `Owned / Available`, `1W Value`, `2W Value`, `3W Value`, `4W Value`, `Schedule`, `Why`, and `Keep vs Stream`.
+- Extended the existing `weekly_game_lock_service` result additively with opponent and home/away context. Schedule is descriptive only; no undocumented matchup multiplier changes the projection score.
+- Missing future projection evidence yields `null`/not-enough-data rather than a made-up total. Bye weeks and actual schedule gaps remain visible.
+
+**REAL COVERAGE FINDING**: for the live Week 4 read, NWR had admitted weekly projection rows and real schedule/opponent coverage for all of Weeks **4, 5, 6, and 7**. Each week's four projection-provider reads returned `OK`/`LIVE`, roughly **9,418-9,422** raw rows with **983-1,044** nonzero rows. Therefore the 4-week result was genuinely supported in this live window; the implementation still degrades honestly when a later week is absent.
+
+**LIVE BROWSER OBSERVATION**, Fantasy Gamers: the 1-week QB order began Trevor Lawrence **19.0**, C.J. Stroud **17.8**, Drake Maye **17.4**. Selecting 4 Weeks cleared the old table; rerunning produced Drake Maye **80.7**, C.J. Stroud **63.1**, Jacoby Brissett **61.4**, proving the control changed the ranking window. TE also changed (Brenton Strange was #2 at 1W but fell behind Hunter Henry and Kyle Pitts at 4W). The live page displayed Weeks 4-7 opponents, all four cumulative value columns, ownership/availability, explanations, and Keep/Stream guidance for QB, TE, K, and DST. Example schedule evidence: CHI D/ST showed `W4 vs NYJ · W5 @ GB · W6 @ ATL · W7 vs NE` with **8.6 / 15.0 / 21.6 / 28.1** cumulative values.
+
+## Tests and verification
+
+**ACTUAL TEST RESULT**, final targeted backend suite (streamer horizon, Dynasty counter service, Redraft package/counter search, Dynasty facade wiring, desktop HTTP, Redraft trade analysis, and weekly lock/schedule): **113 passed**.
+
+**ACTUAL TEST RESULT**, required `tests/test_desktop_application_api.py`: **47 passed, exactly the same 4 pre-existing failures and no others**:
+
+- `test_dynasty_facade_composes_real_governed_workflows`
+- `test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`
+- `test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`
+- `test_facade_has_no_streamlit_or_app_component_dependency`
+
+**ACTUAL TEST RESULT**, required `tests/test_redraft_engine_v1_service.py`: unchanged confirmed baseline of **25 passed, 3 failed, 13 errors**. The three failures remain `test_projection_install_is_separate_and_hash_verified`, `test_projection_install_requires_separate_bound_approval_receipt`, and `test_review_only_stale_and_shallow_projection_evidence_fail_closed`; all 13 setup errors remain the documented fixture snapshot `no rankable player rows` path.
+
+**ACTUAL TEST RESULT**, frontend: `npm run typecheck` passed. Full `npx vitest run` passed **533 tests in 35 files**, including the new current-rank presentation test. `npm run build` completed both production Vite builds; the only build note was the existing-style Redraft chunk-size advisory.
+
+**ACTUAL TEST RESULT**, diff/lint: `git diff --check` passed. The two new backend services and their tests are Ruff-clean. Existing whole-file line-length debt in older touched services/facade was not represented as newly clean.
+
+**LIVE OBSERVATION**, safety: every provider call was read-only. No Sleeper/ESPN transaction endpoint, KHA/403N18th identity field, governed formula, base-board CSV, projection snapshot, generated data pack, credential, provider payload, or owner AppData file was modified or committed.
+
+**LIVE OBSERVATION**, final services: both authenticated API health payloads returned `data.status=ok`, and both Vite previews returned HTTP 200 after the final production build. All listeners remained identity-matched to this worktree: Redraft API PID **816** / port **18742**, Dynasty API PID **20704** / port **18741**, Redraft preview PID **25852** / port **1422**, and Dynasty preview PID **37864** / port **1421**.
+
+## Files changed
+
+- `src/services/dynasty_trade_counter_service.py`, `src/services/streamer_horizon_service.py` -- bounded Dynasty counter search and deterministic multi-week Streamer aggregation.
+- `src/services/trade_package_search_service.py`, `src/services/weekly_game_lock_service.py` -- exact-opponent Redraft counter search, live roster-size legality, and additive opponent/home-away context.
+- `src/application/desktop_facade.py`, `src/desktop_api/server.py` -- live league composition, ownership validation, counter/streamer endpoints, and response serialization.
+- `desktop/packages/contracts/src/index.ts`, `desktop/packages/api-client/src/index.ts` -- typed counter and streamer contracts/client calls.
+- `desktop/apps/dynasty/src/pages/rankings.tsx`, `pages/decisions.tsx` -- current-value presentation and real-trade counter action/cards.
+- `desktop/apps/redraft/src/trades.tsx`, `improve-team.tsx` -- same-opponent counter action/cards and the NWR-primary 1-4W Streamers page.
+- `tests/test_dynasty_trade_counter_service.py`, `tests/test_streamer_horizon_service.py`, `tests/test_trade_package_search_service.py`, `tests/test_dynasty_league_import_facade_wiring.py`, `desktop/apps/dynasty/src/current-rankings.test.ts` -- formula, ownership, legality, availability, and presentation coverage.
+- `docs/codex/dogfood_rebuild_20260929/LEDGER.md` -- this entry.
+
+## Exact remaining work
+
+1. Restructure Redraft Weekly and Rest-of-Season Rankings around owner-facing current/weekly questions and audit projection freshness; this pass changed only Dynasty Rankings and Streamers.
+2. Simplify card density and warning presentation without hiding source, date, status, or limitation disclosures.
+3. Complete the honest ESPN path for KHA / 403 N 18th without inventing unsupported capabilities or changing identity fields.
+4. Run the broader final owner browser dogfood and full-repository regression, then push only from the coordinating session. This worker does not push.

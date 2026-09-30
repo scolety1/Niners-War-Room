@@ -1,5 +1,5 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
-import type { RedraftBootstrap, TradeAnalysisResult, TradePackageCandidate, TradePackageSearchMode, TradePlayerImpact } from "@nwr/contracts";
+import type { RedraftBootstrap, RedraftTradeCounterResult, TradeAnalysisResult, TradePackageCandidate, TradePackageSearchMode, TradePlayerImpact } from "@nwr/contracts";
 import {
   Button,
   DataTable,
@@ -71,6 +71,9 @@ export function TradesPage({ client, data, defaultTab }: { client: NwrApiClient;
   const [result, setResult] = useState<TradeAnalysisResult | null>(null);
   const [analysisError, setAnalysisError] = useState<NwrApiError | null>(null);
   const [working, setWorking] = useState(false);
+  const [counters, setCounters] = useState<RedraftTradeCounterResult | null>(null);
+  const [counterError, setCounterError] = useState<NwrApiError | null>(null);
+  const [counterWorking, setCounterWorking] = useState(false);
   // Full Cycle V1, Worker 5 (Section 3D, Worker 3's open item #4): a
   // snapshot of exactly which Sleeper ids were submitted for the result
   // currently on screen, taken at analyze-time -- see `isTradeAnalysisStale`
@@ -123,6 +126,8 @@ export function TradesPage({ client, data, defaultTab }: { client: NwrApiClient;
     setWorking(true);
     setAnalysisError(null);
     setResult(null);
+    setCounters(null);
+    setCounterError(null);
     try {
       const next = await client.redraftTradeAnalysis(giveIds, receiveIds);
       setResult(next);
@@ -136,6 +141,20 @@ export function TradesPage({ client, data, defaultTab }: { client: NwrApiClient;
       setWorking(false);
     }
   }, [client, gives, receives]);
+
+  const generateCounters = useCallback(async () => {
+    if (!result || !analyzedGiveIds || !analyzedReceiveIds || counterWorking) return;
+    setCounterWorking(true);
+    setCounterError(null);
+    setCounters(null);
+    try {
+      setCounters(await client.redraftTradeCounters(analyzedGiveIds, analyzedReceiveIds, 5));
+    } catch (reason) {
+      setCounterError(reason instanceof NwrApiError ? reason : new NwrApiError("Counter offers could not be generated."));
+    } finally {
+      setCounterWorking(false);
+    }
+  }, [analyzedGiveIds, analyzedReceiveIds, client, counterWorking, result]);
 
   return <>
     <PageHeader
@@ -165,10 +184,14 @@ export function TradesPage({ client, data, defaultTab }: { client: NwrApiClient;
         <AnalyzeTab
           analyzedGiveIds={analyzedGiveIds}
           analyzedReceiveIds={analyzedReceiveIds}
+          counters={counters}
+          counterError={counterError}
+          counterWorking={counterWorking}
           error={analysisError}
           giveCandidates={giveCandidates}
           gives={gives}
           onAnalyze={() => void analyze()}
+          onGenerateCounters={() => void generateCounters()}
           onOpenPlayer={openPlayerDetail}
           receiveCandidates={receiveCandidates}
           receives={receives}
@@ -208,6 +231,10 @@ function AnalyzeTab({
   seasonSourceAsOf,
   analyzedGiveIds,
   analyzedReceiveIds,
+  counters,
+  counterError,
+  counterWorking,
+  onGenerateCounters,
 }: {
   gives: TradeSide[];
   setGives: (updater: (current: TradeSide[]) => TradeSide[]) => void;
@@ -223,6 +250,10 @@ function AnalyzeTab({
   seasonSourceAsOf: string | null | undefined;
   analyzedGiveIds: string[] | null;
   analyzedReceiveIds: string[] | null;
+  counters: RedraftTradeCounterResult | null;
+  counterError: NwrApiError | null;
+  counterWorking: boolean;
+  onGenerateCounters: () => void;
 }) {
   const impactColumns: TableColumn[] = useMemo(
     () => [
@@ -338,6 +369,14 @@ function AnalyzeTab({
           ))}
         </dl>
       </Panel>
+      <Panel title="Counter offers" eyebrow="Same exact opponent · real roster search">
+        <p className="copy-muted">Preserves the strongest requested incoming player, searches swaps and add-ons on the same opponent roster, and evaluates both sides with NWR's normal trade evaluator. No acceptance probability is generated.</p>
+        <Button disabled={counterWorking || stale} icon="trade" onClick={onGenerateCounters}>
+          {counterWorking ? "Generating…" : "Generate counters"}
+        </Button>
+      </Panel>
+      {counterError ? <ErrorState message={counterError.message} recovery={counterError.recoveryAction} /> : null}
+      {counters ? <RedraftCounterResults result={counters} /> : null}
     </> : null}
     {!result && !error && !working ? (
       <EmptyState title="No trade analyzed yet" message="Pick at least one player on each side above, then Analyze trade to see NWR's real before/after verdict." />
@@ -373,6 +412,32 @@ function AnalyzeTab({
 // patch -- flagged for the next worker rather than shipped half-working
 // or silently left broken.
 // ---------------------------------------------------------------------------
+
+function RedraftCounterResults({ result }: { result: RedraftTradeCounterResult }) {
+  return (
+    <Panel
+      title={`${result.candidates.length} constructible counter${result.candidates.length === 1 ? "" : "s"}`}
+      eyebrow={`vs. ${result.counterpartyTeamName} · ${result.packagesEvaluated} evaluated`}
+    >
+      {result.candidates.length ? <div className="nwr-action-grid">
+        {result.candidates.map((candidate, index) => (
+          <article className="decision-explain" key={`${candidate.youSend.join("-")}-${candidate.youReceive.join("-")}-${index}`}>
+            <header><span>COUNTER {index + 1}</span><strong>Give {candidate.youSendNames.join(" + ")} for {candidate.youReceiveNames.join(" + ")}</strong></header>
+            <p><b>What changed:</b> {candidate.whatChanged.join(" ")}</p>
+            <p><b>Why this helps me:</b> {candidate.whyItHelpsYou.join(" ")}</p>
+            <p><b>Why it may make sense for them:</b> {candidate.whyItMayFitThem.join(" ")}</p>
+            <p><b>NWR vs market:</b> {candidate.marketContext}</p>
+            <p><b>Main risk:</b> {candidate.mainRisk}</p>
+            <div className="toolbar">
+              <StatusBadge tone="safe" label={`Your utility ${candidate.ownerEvaluation.netMarginalUtility >= 0 ? "+" : ""}${formatNumber(candidate.ownerEvaluation.netMarginalUtility, 1)}`} />
+              <StatusBadge tone="review" label={`Their utility ${candidate.opponentEvaluation.netMarginalUtility >= 0 ? "+" : ""}${formatNumber(candidate.opponentEvaluation.netMarginalUtility, 1)}`} />
+            </div>
+          </article>
+        ))}
+      </div> : <EmptyState title="No constructible counters" message="The bounded search did not find another legal package around this offer." />}
+    </Panel>
+  );
+}
 
 const PACKAGE_SEARCH_MODES: Array<{ key: TradePackageSearchMode; label: string }> = [
   { key: "FIND_WIN_WIN", label: "Find win-win packages" },

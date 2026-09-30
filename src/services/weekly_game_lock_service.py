@@ -63,6 +63,8 @@ class WeeklyGameLockResult:
     fetched_at: str
     locked_teams: frozenset[str] = field(default_factory=frozenset)
     kickoff_utc_by_team: dict[str, str] = field(default_factory=dict)
+    opponent_by_team: dict[str, str] = field(default_factory=dict)
+    home_away_by_team: dict[str, str] = field(default_factory=dict)
     unknown_teams: frozenset[str] = field(default_factory=frozenset)
     issues: tuple[str, ...] = ()
     error: str | None = None
@@ -88,6 +90,14 @@ class WeeklyGameLockResult:
             # `desktop_facade.py`'s K/DST `positions` flattening).
             "kickoffUtcByTeam": [
                 {"team": team, "kickoffUtc": kickoff} for team, kickoff in sorted(self.kickoff_utc_by_team.items())
+            ],
+            "opponents": [
+                {
+                    "team": team,
+                    "opponent": opponent,
+                    "homeAway": self.home_away_by_team.get(team, ""),
+                }
+                for team, opponent in sorted(self.opponent_by_team.items())
             ],
             "unknownTeams": sorted(self.unknown_teams),
             "issues": list(self.issues),
@@ -148,10 +158,17 @@ def compute_weekly_game_lock(
     locked: set[str] = set()
     unknown: set[str] = set()
     kickoff_by_team: dict[str, str] = {}
+    opponent_by_team: dict[str, str] = {}
+    home_away_by_team: dict[str, str] = {}
     issues: list[str] = []
     for record in records:
         home = str(record.get("home_team") or "").upper().strip()
         away = str(record.get("away_team") or "").upper().strip()
+        if home and away:
+            opponent_by_team[home] = f"vs {away}"
+            opponent_by_team[away] = f"@ {home}"
+            home_away_by_team[home] = "HOME"
+            home_away_by_team[away] = "AWAY"
         gameday = record.get("gameday")
         gametime = record.get("gametime")
         if not gameday or not gametime:
@@ -180,5 +197,6 @@ def compute_weekly_game_lock(
         season=season, week=week, season_type=season_type, source=GAME_LOCK_SOURCE,
         source_status="OK", fetched_at=fetched_at.isoformat(),
         locked_teams=frozenset(locked), kickoff_utc_by_team=kickoff_by_team,
+        opponent_by_team=opponent_by_team, home_away_by_team=home_away_by_team,
         unknown_teams=frozenset(unknown), issues=tuple(issues),
     )

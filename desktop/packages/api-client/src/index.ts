@@ -13,9 +13,11 @@ import {
   type DynastyComparison,
   type DynastyLeagueImportInput,
   type DynastyLeagueProfileSummary,
+  type DynastyTradeCounterResult,
   type DynastyWaiversResult,
   type DynastyWorkspace,
   type KdstStreamerResult,
+  type StreamerHorizonResult,
   type LeagueWorkspaceContext,
   type MetricStatus,
   type OwnerDecisionInput,
@@ -38,6 +40,7 @@ import {
   type RedraftOpponentRostersResult,
   type RedraftProfileUpdateInput,
   type RedraftSleeperSyncResult,
+  type RedraftTradeCounterResult,
   type RuntimeDescriptor,
   type TradeAnalysisResult,
   type TradeBriefExport,
@@ -256,6 +259,19 @@ export class NwrApiClient {
     return this.request("/api/v1/dynasty/trades/evaluate", {
       method: "POST",
       body: JSON.stringify({ give, receive, teamWindow, tradeMode, counterpartyRosterId }),
+    });
+  }
+
+  generateDynastyTradeCounters(options: {
+    give: string[];
+    receive: string[];
+    teamWindow: TeamWindow;
+    counterpartyRosterId: number;
+    limit?: number;
+  }): Promise<DynastyTradeCounterResult> {
+    return this.request("/api/v1/dynasty/trades/counters", {
+      method: "POST",
+      body: JSON.stringify(options),
     });
   }
 
@@ -757,6 +773,13 @@ export class NwrApiClient {
     });
   }
 
+  redraftStreamers(week: number, horizonWeeks: 1 | 2 | 3 | 4): Promise<StreamerHorizonResult> {
+    return this.request("/api/v1/redraft/streamers", {
+      method: "POST",
+      body: JSON.stringify({ week, horizonWeeks }),
+    });
+  }
+
   // -------------------------------------------------------------------
   // In-season UI pass (2026-09-10): Start/Sit, Waivers/Add-Drop/FAAB,
   // Redraft Trade Analysis, Trade Finder, Weekly Home Actions. All six
@@ -799,6 +822,17 @@ export class NwrApiClient {
     return this.request("/api/v1/redraft/trade-analysis", {
       method: "POST",
       body: JSON.stringify({ givesSleeperPlayerIds, receivesSleeperPlayerIds }),
+    });
+  }
+
+  redraftTradeCounters(
+    givesSleeperPlayerIds: string[],
+    receivesSleeperPlayerIds: string[],
+    limit = 5,
+  ): Promise<RedraftTradeCounterResult> {
+    return this.request("/api/v1/redraft/trade-counters", {
+      method: "POST",
+      body: JSON.stringify({ givesSleeperPlayerIds, receivesSleeperPlayerIds, limit }),
     });
   }
 

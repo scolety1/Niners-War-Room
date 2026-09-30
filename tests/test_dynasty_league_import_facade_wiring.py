@@ -543,6 +543,8 @@ def test_real_dynasty_trade_accepts_only_the_selected_counterparty_roster(
     )
     assert accepted.data["tradeMode"] == "REAL"
     assert accepted.data["counterpartyRosterId"] == 2
+    assert accepted.data["counterStatus"] == "available"
+    assert "exact opponent" in accepted.data["counterMessage"].lower()
 
     with pytest.raises(FacadeError) as exc:
         facade.evaluate_dynasty_trade(

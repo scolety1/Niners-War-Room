@@ -39,10 +39,12 @@ _SLEEPER_REDRAFT_RESYNC = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/sleeper
 _PRACTICAL_MOCK_START = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/practical-mock$")
 _REDRAFT_NWR_PURE_MODE = re.compile(r"^/api/v1/redraft/profiles/([^/]+)/nwr-pure-mode$")
 _KDST_STREAMER = "/api/v1/redraft/kdst/streamer"
+_REDRAFT_STREAMERS = "/api/v1/redraft/streamers"
 _WEEKLY_PROJECTIONS = "/api/v1/redraft/weekly-projections"
 _WEEKLY_LINEUP = "/api/v1/redraft/weekly-lineup"
 _WAIVERS = "/api/v1/redraft/waivers"
 _TRADE_ANALYSIS = "/api/v1/redraft/trade-analysis"
+_TRADE_COUNTERS = "/api/v1/redraft/trade-counters"
 _TRADE_FINDER = "/api/v1/redraft/trade-finder"
 # NWR Post-UI Product V1 (2026-09-12, P1-3): the multi-player trade
 # PACKAGE SEARCH layer (1-for-1/2-for-1/1-for-2/2-for-2) -- distinct from
@@ -551,6 +553,34 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 counterparty_roster_id=counterparty_roster_id,
                 league_profile_id=self.server.facade.dynasty_active_league_profile_id(),
             )
+        if method == "POST" and path == "/api/v1/dynasty/trades/counters":
+            body = self._json_body()
+            self._reject_unknown_fields(
+                body, {"give", "receive", "teamWindow", "counterpartyRosterId", "limit"}
+            )
+            give = body.get("give")
+            receive = body.get("receive")
+            team_window = body.get("teamWindow")
+            counterparty_roster_id = body.get("counterpartyRosterId")
+            limit = body.get("limit", 5)
+            if not isinstance(give, list) or not all(isinstance(value, str) for value in give):
+                raise self._invalid_body("give must be an array of strings.")
+            if not isinstance(receive, list) or not all(isinstance(value, str) for value in receive):
+                raise self._invalid_body("receive must be an array of strings.")
+            if not isinstance(team_window, str):
+                raise self._invalid_body("teamWindow must be a string.")
+            if type(counterparty_roster_id) is not int:
+                raise self._invalid_body("counterpartyRosterId must be an integer.")
+            if type(limit) is not int or not 1 <= limit <= 5:
+                raise self._invalid_body("limit must be an integer from 1 through 5.")
+            return self.server.facade.generate_dynasty_trade_counters(
+                give=give,
+                receive=receive,
+                team_window=team_window,
+                counterparty_roster_id=counterparty_roster_id,
+                league_profile_id=self.server.facade.dynasty_active_league_profile_id(),
+                limit=limit,
+            )
         if method == "POST" and path == "/api/v1/dynasty/trades/export":
             body = self._json_body()
             self._reject_unknown_fields(
@@ -678,6 +708,18 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
             if type(week) is not int:
                 raise self._invalid_body("week must be an integer.")
             return self.server.facade.redraft_kdst_streamer(week=week)
+        if method == "POST" and path == _REDRAFT_STREAMERS:
+            body = self._json_body()
+            self._reject_unknown_fields(body, {"week", "horizonWeeks"})
+            week = body.get("week")
+            horizon_weeks = body.get("horizonWeeks")
+            if type(week) is not int:
+                raise self._invalid_body("week must be an integer.")
+            if type(horizon_weeks) is not int:
+                raise self._invalid_body("horizonWeeks must be an integer.")
+            return self.server.facade.redraft_streamers(
+                week=week, horizon_weeks=horizon_weeks
+            )
         if method == "POST" and path == _WEEKLY_PROJECTIONS:
             body = self._json_body()
             self._reject_unknown_fields(body, {"week", "forceRefresh"})
@@ -747,6 +789,25 @@ class DesktopApiRequestHandler(BaseHTTPRequestHandler):
                 raise self._invalid_body("receivesSleeperPlayerIds must be a list of strings.")
             return self.server.facade.redraft_trade_analysis(
                 gives_sleeper_player_ids=gives, receives_sleeper_player_ids=receives
+            )
+        if method == "POST" and path == _TRADE_COUNTERS:
+            body = self._json_body()
+            self._reject_unknown_fields(
+                body, {"givesSleeperPlayerIds", "receivesSleeperPlayerIds", "limit"}
+            )
+            gives = body.get("givesSleeperPlayerIds")
+            receives = body.get("receivesSleeperPlayerIds")
+            limit = body.get("limit", 5)
+            if not isinstance(gives, list) or not all(isinstance(value, str) for value in gives):
+                raise self._invalid_body("givesSleeperPlayerIds must be a list of strings.")
+            if not isinstance(receives, list) or not all(isinstance(value, str) for value in receives):
+                raise self._invalid_body("receivesSleeperPlayerIds must be a list of strings.")
+            if type(limit) is not int or not 1 <= limit <= 5:
+                raise self._invalid_body("limit must be an integer from 1 through 5.")
+            return self.server.facade.redraft_trade_counters(
+                gives_sleeper_player_ids=gives,
+                receives_sleeper_player_ids=receives,
+                limit=limit,
             )
         if method == "POST" and path == _TRADE_PACKAGE_SEARCH:
             body = self._json_body()

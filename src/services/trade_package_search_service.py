@@ -76,8 +76,9 @@ own math, `marginal_roster_utility_v2`'s own computation,
 from __future__ import annotations
 
 import itertools
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Literal, Mapping, Sequence
+from typing import Any, Literal
 
 from src.services.current_player_status_overrides_service import StatusOverride
 from src.services.redraft_engine_v1_service import LeagueProfile, RankingResult
@@ -120,6 +121,24 @@ class TradePackageSearchResult:
     truncated: bool  # True if a hard search cap was hit before exhausting the space
 
 
+@dataclass(frozen=True)
+class TradeCounterSearchResult:
+    """Bounded alternatives to one already-analyzed, real trade.
+
+    This deliberately carries the same two unmodified ``TradeEvaluation``
+    objects as package search.  ``joint_utility`` is used only to order the
+    constructible ideas; it is not an acceptance probability or a new player
+    value.
+    """
+
+    candidates: tuple[TradePackageCandidate, ...]
+    packages_evaluated: int
+    opponent_roster_id: str
+    opponent_team_name: str
+    preserved_anchor_id: str
+    truncated: bool
+
+
 def _opp_ids(opponent: Mapping[str, Any]) -> tuple[str, ...]:
     return tuple(opponent.get("canonicalIds") or ())
 
@@ -145,8 +164,14 @@ def _roster_size_legal(
     gates doc for why position maxima are intentionally not enforced here.
     """
 
-    after_count = len(roster_before_ids) - len(set(gives_ids)) + len(set(receives_ids))
-    return 0 <= after_count <= _total_roster_slots(profile)
+    before_count = len(roster_before_ids)
+    after_count = before_count - len(set(gives_ids)) + len(set(receives_ids))
+    # Live provider rosters can legitimately exceed the configured active
+    # slots because reserve designations are flattened in this read model.
+    # A counter remains constructible when it does not worsen that existing
+    # overage; packages that add another occupied slot are still rejected.
+    maximum = max(before_count, _total_roster_slots(profile))
+    return 0 <= after_count <= maximum
 
 
 def _weakest_first_pool_ids(
@@ -521,4 +546,180 @@ def search_improve_position_packages(
         my_player_positions=my_player_positions, opponents=opponents, profile=profile, ranking=ranking,
         manual_assets=manual_assets, status_overrides=status_overrides, mode="IMPROVE_POSITION",
         improve_position=position, candidates_per_side=candidates_per_side, limit=limit,
+    )
+
+
+def search_counter_offer_packages(
+    *,
+    my_roster_canonical_ids: Sequence[str],
+    my_player_names: Mapping[str, str],
+    my_player_positions: Mapping[str, str],
+    opponent: Mapping[str, Any],
+    original_gives_ids: Sequence[str],
+    original_receives_ids: Sequence[str],
+    profile: LeagueProfile,
+    ranking: RankingResult,
+    manual_assets: Sequence[Mapping[str, Any]],
+    status_overrides: Sequence[StatusOverride] = (),
+    limit: int = 5,
+    max_evaluated: int = 120,
+) -> TradeCounterSearchResult:
+    """Generate real alternatives against the *same* real counterparty.
+
+    Candidate generation stays intentionally small.  It preserves the best
+    modeled incoming asset as the desired anchor, then explores nearby
+    outgoing swaps and one opponent add-on.  Every candidate is evaluated
+    from both rosters with the normal ``evaluate_trade`` function.  No
+    acceptance likelihood is computed.
+    """
+
+    my_ids = tuple(dict.fromkeys(str(value) for value in my_roster_canonical_ids))
+    opp_ids = _opp_ids(opponent)
+    gives = tuple(dict.fromkeys(str(value) for value in original_gives_ids))
+    receives = tuple(dict.fromkeys(str(value) for value in original_receives_ids))
+    if not gives or not receives:
+        raise ValueError("Counter generation requires assets on both original trade sides.")
+    if any(value not in my_ids for value in gives):
+        raise ValueError("Every original outgoing asset must be on the owner's real roster.")
+    if any(value not in opp_ids for value in receives):
+        raise ValueError("Every original incoming asset must be on the selected opponent roster.")
+
+    pool = _asset_pool(ranking, manual_assets)
+
+    def value_for(player_id: str) -> float | None:
+        row = pool.get(player_id) or {}
+        raw = row.get("replacement_adjusted_value")
+        try:
+            return float(raw) if raw is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    modeled_receives = [value for value in receives if value_for(value) is not None]
+    anchor = (
+        max(modeled_receives, key=lambda value: value_for(value) or 0.0)
+        if modeled_receives
+        else receives[0]
+    )
+    original_values = [value_for(value) for value in gives]
+    target_value = max(
+        (value for value in original_values if value is not None),
+        default=value_for(anchor) or 0.0,
+    )
+
+    nearby_owner = sorted(
+        (value for value in my_ids if value not in gives and value_for(value) is not None),
+        key=lambda value: (abs((value_for(value) or 0.0) - target_value), value),
+    )[:6]
+    give_pool = tuple(dict.fromkeys((*gives, *nearby_owner)))
+    give_sizes = sorted({max(1, len(gives) - 1), min(MAX_PACKAGE_SIZE, len(gives))})
+    give_combos = [tuple(gives)]
+    give_combos.extend(
+        combo
+        for size in give_sizes
+        for combo in itertools.combinations(give_pool, size)
+        if tuple(combo) != tuple(gives)
+    )
+    give_combos.sort(
+        key=lambda combo: (
+            len(set(combo).symmetric_difference(gives)),
+            abs(len(combo) - len(gives)),
+            combo,
+        )
+    )
+
+    opponent_addons = sorted(
+        (value for value in opp_ids if value not in receives and value_for(value) is not None),
+        key=lambda value: (value_for(value) or 0.0, value),
+    )[:6]
+    receive_combos: list[tuple[str, ...]] = [tuple(receives)]
+    if (anchor,) not in receive_combos:
+        receive_combos.append((anchor,))
+    receive_combos.extend((anchor, value) for value in opponent_addons)
+    # If the original offer had a secondary piece, also search a direct
+    # same-shape swap for it while retaining the requested anchor.
+    if len(receives) > 1:
+        receive_combos.extend((anchor, value) for value in opponent_addons)
+    receive_combos = list(dict.fromkeys(receive_combos))
+
+    candidates: list[TradePackageCandidate] = []
+    evaluated = 0
+    truncated = False
+    original_signature = (frozenset(gives), frozenset(receives))
+    for gives_ids in give_combos:
+        for receives_ids in receive_combos:
+            if evaluated >= max_evaluated:
+                truncated = True
+                break
+            signature = (frozenset(gives_ids), frozenset(receives_ids))
+            if anchor not in receives_ids or signature == original_signature:
+                continue
+            if set(gives_ids) & set(receives_ids):
+                continue
+            if abs((len(gives_ids) + len(receives_ids)) - (len(gives) + len(receives))) > 1:
+                continue
+            if not _roster_size_legal(my_ids, gives_ids, receives_ids, profile):
+                continue
+            if not _roster_size_legal(opp_ids, receives_ids, gives_ids, profile):
+                continue
+            evaluated += 1
+            try:
+                owner_eval = evaluate_trade(
+                    roster_before_ids=my_ids,
+                    gives_ids=gives_ids,
+                    receives_ids=receives_ids,
+                    profile=profile,
+                    ranking=ranking,
+                    manual_assets=manual_assets,
+                    status_overrides=status_overrides,
+                )
+                opponent_eval = evaluate_trade(
+                    roster_before_ids=opp_ids,
+                    gives_ids=receives_ids,
+                    receives_ids=gives_ids,
+                    profile=profile,
+                    ranking=ranking,
+                    manual_assets=manual_assets,
+                    status_overrides=status_overrides,
+                )
+            except TradeAnalysisError:
+                continue
+            candidates.append(
+                TradePackageCandidate(
+                    opponent_roster_id=str(opponent.get("rosterId") or ""),
+                    opponent_team_name=str(opponent.get("teamName") or ""),
+                    package_shape=_package_shape(len(gives_ids), len(receives_ids)),
+                    you_send=tuple(gives_ids),
+                    you_receive=tuple(receives_ids),
+                    you_send_names=tuple(impact.player_name for impact in owner_eval.gives),
+                    you_receive_names=tuple(impact.player_name for impact in owner_eval.receives),
+                    owner_evaluation=owner_eval,
+                    opponent_evaluation=opponent_eval,
+                    why_it_helps_you=_explain(owner_eval),
+                    why_it_may_fit_them=_explain(opponent_eval),
+                )
+            )
+        if truncated:
+            break
+
+    def order_key(candidate: TradePackageCandidate) -> tuple[float, float, int, tuple[str, ...]]:
+        owner_utility = candidate.owner_evaluation.net_marginal_utility or 0.0
+        opponent_utility = candidate.opponent_evaluation.net_marginal_utility or 0.0
+        mutation_count = len(set(candidate.you_send).symmetric_difference(gives)) + len(
+            set(candidate.you_receive).symmetric_difference(receives)
+        )
+        return (
+            min(owner_utility, opponent_utility),
+            owner_utility + opponent_utility,
+            -mutation_count,
+            candidate.you_send,
+        )
+
+    candidates.sort(key=order_key, reverse=True)
+    return TradeCounterSearchResult(
+        candidates=tuple(candidates[: max(1, min(limit, 5))]),
+        packages_evaluated=evaluated,
+        opponent_roster_id=str(opponent.get("rosterId") or ""),
+        opponent_team_name=str(opponent.get("teamName") or ""),
+        preserved_anchor_id=anchor,
+        truncated=truncated,
     )

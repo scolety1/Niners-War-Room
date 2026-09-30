@@ -1,9 +1,9 @@
 import { NwrApiError, type NwrApiClient } from "@nwr/api-client";
 import type {
-  ExternalConsensusStatus,
-  KdstStreamerResult,
   RedraftBootstrap,
   RedraftFreeAgentsResult,
+  StreamerHorizonResult,
+  StreamerHorizonRow,
   WaiverAddCandidate,
   WaiversResult,
 } from "@nwr/contracts";
@@ -28,17 +28,14 @@ import { useSearchParams } from "react-router-dom";
 
 import { DecisionExplain } from "./decision-explain";
 import {
-  explainStreamerPlay,
   explainWaiverTarget,
   hasRetainedRowsAfterFailedRefresh,
   hasTrustworthyFaabBudget,
   isFaabContextPending,
   resolveFaabDisplay,
-  selectPrimaryStreamerRow,
 } from "./improve-team-explain";
 import { AddDropDetail } from "./in-season";
 import { leagueFormat } from "./league-context";
-import { STREAMER_HORIZON_OPTIONS, STREAMER_HORIZON_WEEKS, type StreamerHorizon } from "./pages";
 import { usePlayerDetailOpener } from "./player-detail-context";
 import { playerAvailabilityBadgeLabel, playerAvailabilityBadgeTone } from "./player-detail-state";
 import { SnapshotProvenanceNotice } from "./snapshot-provenance";
@@ -56,6 +53,15 @@ import {
   useProviderWeek,
   useWeekSelection,
 } from "./weekly-shared";
+
+const STREAMER_HORIZON_OPTIONS = ["1 Week", "2 Weeks", "3 Weeks", "4 Weeks"] as const;
+type StreamerHorizon = (typeof STREAMER_HORIZON_OPTIONS)[number];
+const STREAMER_HORIZON_WEEKS: Record<StreamerHorizon, 1 | 2 | 3 | 4> = {
+  "1 Week": 1,
+  "2 Weeks": 2,
+  "3 Weeks": 3,
+  "4 Weeks": 4,
+};
 
 /**
  * NWR UI expansion pass (2026-09-12, Improve Team surface): ONE coherent
@@ -202,17 +208,16 @@ export function ImproveTeamPage({
     [waivers, position],
   );
 
-  // K/DST Streamer read -- own week/horizon, independent of the Waivers
+  // NWR projection-based streamer read -- own week/horizon, independent of the Waivers
   // week above (a streamer decision and a weekly-lineup decision are real,
   // separate NFL weeks the owner may be planning at once). W1 fix: was
   // `useState(1)` -- now derived from the same real provider-week source,
   // with its own independent manual override.
   const { week: streamerWeek, manualWeekOverride: manualStreamerWeekOverride, setManualWeekOverride: setManualStreamerWeekOverride, usingProviderWeek: usingProviderStreamerWeek } = useWeekSelection(providerWeek, profileIdForWeek);
-  const [streamerHorizon, setStreamerHorizon] = useState<StreamerHorizon>("This Week");
-  const [streamerResults, setStreamerResults] = useState<KdstStreamerResult[]>([]);
+  const [streamerHorizon, setStreamerHorizon] = useState<StreamerHorizon>("1 Week");
+  const [streamerResult, setStreamerResult] = useState<StreamerHorizonResult | null>(null);
   const [streamerError, setStreamerError] = useState<NwrApiError | null>(null);
   const [streamerWorking, setStreamerWorking] = useState(false);
-  const provider: ExternalConsensusStatus | undefined = data.externalConsensus;
   // W9 fix (Sunday Readiness overnight, Worker 4): results/error were
   // already cleared on profile change here, but an ALREADY IN-FLIGHT
   // `loadStreamers()` request (kicked off before the switch) had no
@@ -230,34 +235,24 @@ export function ImproveTeamPage({
   useEffect(() => {
     streamerGuardRef.current.supersede();
     streamerGuardRef.current = createStaleResponseGuard();
-    setStreamerResults([]);
+    setStreamerResult(null);
     setStreamerError(null);
   }, [data.activeProfileId]);
   const loadStreamers = useCallback(async () => {
     // W1 fix: never load streamers for an unresolved week (would have
     // silently meant "Week 1" before this pass).
-    if (streamerWorking || !provider?.configured || streamerWeek == null) return;
+    if (streamerWorking || streamerWeek == null) return;
     const guard = streamerGuardRef.current;
     setStreamerWorking(true);
     setStreamerError(null);
-    setStreamerResults([]);
+    setStreamerResult(null);
     const weekCount = STREAMER_HORIZON_WEEKS[streamerHorizon];
-    const loaded: KdstStreamerResult[] = [];
     try {
-      // Sequential, not parallel -- mirrors WeeklyToolsPage's own reasoning:
-      // caps this at 3 real FantasyPros ECR reads, never a burst. Also
-      // checked mid-loop (not just at the end) so a league switch during a
-      // multi-week streamer read stops issuing further requests for the
-      // now-inactive league, not just discards the final result.
-      for (let offset = 0; offset < weekCount; offset += 1) {
-        if (guard.isStale()) return;
-        const targetWeek = Math.min(18, streamerWeek + offset);
-        loaded.push(await client.kdstStreamer(targetWeek));
-      }
-      if (!guard.isStale()) setStreamerResults(loaded);
+      const loaded = await client.redraftStreamers(streamerWeek, weekCount);
+      if (!guard.isStale()) setStreamerResult(loaded);
     } catch (reason) {
       if (!guard.isStale()) {
-        setStreamerError(reason instanceof NwrApiError ? reason : new NwrApiError("K/DST Streamer could not read its sources."));
+        setStreamerError(reason instanceof NwrApiError ? reason : new NwrApiError("Streamers could not read NWR weekly projections."));
       }
     } finally {
       // Always clear the spinner, even for a superseded request -- it is
@@ -266,7 +261,7 @@ export function ImproveTeamPage({
       // the newly active league would be its own real bug.
       setStreamerWorking(false);
     }
-  }, [streamerWorking, provider, streamerHorizon, streamerWeek, client]);
+  }, [streamerWorking, streamerHorizon, streamerWeek, client]);
 
   // Free Agents read -- the browse/deep-search mode of this same workspace.
   const { result: freeAgents, error: freeAgentsError, working: freeAgentsWorking } = useFreeAgents(
@@ -300,7 +295,7 @@ export function ImproveTeamPage({
       eyebrow={data.activeProfile ? leagueFormat(data.activeProfile) : "Choose a league"}
       title={section === "streamers" ? "Streamers" : section === "waivers" ? "Waiver Wire" : "Improve Team"}
       description={section === "streamers"
-        ? "Weekly K/DST streaming decisions from the existing provider-scored consensus and real league availability."
+        ? "Best available QB, TE, K, and DST pickups for the next 1-4 weeks, ranked by NWR weekly projections in this league's scoring."
         : "Ranked waiver targets, add/drop pairings, claim order or FAAB guidance, and the live free-agent pool."}
       status={waivers ? <StatusBadge tone="safe" label={`${waivers.addCandidates.length} targets`} /> : undefined}
     />
@@ -406,9 +401,8 @@ export function ImproveTeamPage({
         horizon={streamerHorizon}
         onLoad={() => void loadStreamers()}
         onOpenPlayer={openPlayerDetail}
-        provider={provider}
-        results={streamerResults}
-        setHorizon={setStreamerHorizon}
+        result={streamerResult}
+        setHorizon={(value) => { setStreamerHorizon(value); setStreamerResult(null); }}
         setWeek={setManualStreamerWeekOverride}
         week={streamerWeek ?? providerWeek ?? 1}
         working={streamerWorking}
@@ -988,21 +982,6 @@ function OrderedClaimBuilder({ waivers }: { waivers: WaiversResult }) {
 // authority -- that renders as an honest "no status issue" absence, not a
 // fabricated one, the same degrade-honestly rule every other surface here
 // already follows for an unmatched identity.
-function streamerPlayerId(row: { position: string; playerName: string }): string {
-  return `kdst-${row.position}-${row.playerName}`;
-}
-
-// Real display bug found + fixed (Work Unit 7, waiver night V4 pass):
-// `rosterStatus`/`recommendation` are backend enum values with underscores
-// ("YOUR_STARTER", "ROSTERED_ELSEWHERE") and were rendered raw (no
-// `render` on the "Sleeper status" column, and `StatusBadge`'s `label`
-// passed the raw enum through unchanged) -- every OTHER enum-shaped value
-// already surfaced in this same file is humanized before display (see
-// `result.writeBehavior.replaceAll("_", " ")` a few lines below). This is
-// presentation-only: the real underlying ownership classification
-// (`YOUR_STARTER`/`YOUR_ROSTER`/`ROSTERED`/`AVAILABLE`) is unchanged and
-// still verified correct against the real Fantasy Gamers league (Ka'imi
-// Fairbairn K and New England DST both resolve `YOUR_STARTER` live).
 function humanizeStreamerEnum(value: string): string {
   return value.replaceAll("_", " ");
 }
@@ -1010,13 +989,17 @@ function humanizeStreamerEnum(value: string): string {
 function buildStreamerColumns(onOpenPlayer: PlayerViewer): TableColumn[] {
   const base: TableColumn[] = [
     { key: "playerName", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.playerName)}</strong><small>{String(row.team)} · {String(row.position)}</small></span> },
-    { key: "ecr", label: "FantasyPros ECR", sort: "number", align: "right" },
-    { key: "tier", label: "Tier", sort: "number" },
-    { key: "rosterStatus", label: "Sleeper status", sort: "text", render: (row) => humanizeStreamerEnum(String(row.rosterStatus)) },
-    { key: "recommendation", label: "Action", sort: "text", render: (row) => <StatusBadge tone={String(row.recommendation) === "ADD" || String(row.recommendation) === "START" ? "safe" : "review"} label={humanizeStreamerEnum(String(row.recommendation))} /> },
+    { key: "availability", label: "Owned / available", sort: "text" },
+    { key: "value1w", label: "1W value", sort: "number", align: "right", render: (row) => row.value1w == null ? "—" : formatNumber(Number(row.value1w), 1) },
+    { key: "value2w", label: "2W value", sort: "number", align: "right", render: (row) => row.value2w == null ? "—" : formatNumber(Number(row.value2w), 1) },
+    { key: "value3w", label: "3W value", sort: "number", align: "right", render: (row) => row.value3w == null ? "—" : formatNumber(Number(row.value3w), 1) },
+    { key: "value4w", label: "4W value", sort: "number", align: "right", render: (row) => row.value4w == null ? "—" : formatNumber(Number(row.value4w), 1) },
+    { key: "schedule", label: "Schedule", sort: "text", render: (row) => (row.schedule as string[]).join(" · ") },
+    { key: "why", label: "Why", sort: "text" },
+    { key: "action", label: "Keep vs stream", sort: "text", render: (row) => <StatusBadge tone={String(row.action) === "STREAM" ? "safe" : "review"} label={humanizeStreamerEnum(String(row.action))} /> },
   ];
   return appendPlayerDetailColumn(base, (row) => onOpenPlayer({
-    playerId: streamerPlayerId({ position: String(row.position), playerName: String(row.playerName) }),
+    playerId: `streamer-${String(row.sleeperPlayerId)}`,
     playerName: String(row.playerName),
     position: String(row.position),
     team: String(row.team),
@@ -1024,24 +1007,22 @@ function buildStreamerColumns(onOpenPlayer: PlayerViewer): TableColumn[] {
 }
 
 function StreamersTab({
-  provider,
   week,
   setWeek,
   horizon,
   setHorizon,
-  results,
+  result,
   error,
   working,
   onLoad,
   onOpenPlayer,
   hasProfile,
 }: {
-  provider: ExternalConsensusStatus | undefined;
   week: number;
   setWeek: (week: number) => void;
   horizon: StreamerHorizon;
   setHorizon: (horizon: StreamerHorizon) => void;
-  results: KdstStreamerResult[];
+  result: StreamerHorizonResult | null;
   error: NwrApiError | null;
   working: boolean;
   onLoad: () => void;
@@ -1050,65 +1031,29 @@ function StreamersTab({
 }) {
   const columns = useMemo(() => buildStreamerColumns(onOpenPlayer), [onOpenPlayer]);
   return <>
-    <Panel title="External consensus authority" eyebrow={provider?.authority ?? "EXTERNAL CONSENSUS — FANTASYPROS"}>
-      <p>{provider?.message ?? "Provider status is unavailable."}</p>
-      <p className="copy-muted">Use a FantasyPros API key authorized for your account in the local Desktop environment, then restart. No API key is shown, stored in a profile, or sent to Sleeper.</p>
+    <Panel title="NWR streamer horizon" eyebrow="NWR weekly projections · league scoring · real schedule">
+      <p>Who is the best pickup now for the next N weeks? NWR weekly projections set the order; schedule is context and FantasyPros is not the scoring authority.</p>
       <div className="profile-edit-actions">
         <label className="form-field"><span>NFL week</span><input min={1} max={18} type="number" value={week} onChange={(event) => setWeek(Number(event.target.value))} /></label>
         <SegmentedControl label="Horizon" options={STREAMER_HORIZON_OPTIONS as unknown as string[]} value={horizon} onChange={(value) => setHorizon(value as StreamerHorizon)} />
-        <Button disabled={!provider?.configured || working || !hasProfile} icon="activity" onClick={onLoad}>{working ? "Reading…" : `Refresh K/DST ECR (${horizon})`}</Button>
+        <Button disabled={working || !hasProfile} icon="activity" onClick={onLoad}>{working ? "Ranking…" : `Rank streamers (${horizon})`}</Button>
       </div>
     </Panel>
-    {!provider?.configured ? <EmptyState title="Provider key required" message="K/DST streaming needs a FantasyPros API key configured in this Desktop install." /> : null}
     {error ? <ErrorState message={error.message} recovery={error.recoveryAction} /> : null}
-    {provider?.configured && !working && results.length === 0 ? (
-      <EmptyState title="No streamer read yet" message="Refresh K/DST ECR above to see this week's start/add/hold guidance." />
+    {!working && !result ? (
+      <EmptyState title="No streamer read yet" message="Rank QB, TE, K, and DST options from NWR weekly projections over the selected horizon." />
     ) : null}
-    {results.map((result) => (
-      <div key={result.week}>
-        <p className="draft-feedback">Week {result.week} · {result.writeBehavior.replaceAll("_", " ")} · provider-scored ECR only; schedule, betting, weather, and hidden weights are not used.</p>
-        {(["K", "DST"] as const).map((pos) => {
-          const rows = result.positions.filter((row) => row.position === pos);
-          // Real bug fix (Waiver-Night Hardening, Worker B): this used to
-          // re-derive "top" inline here, checking only START/ADD (omitting
-          // HOLD) -- diverging from the backend's own actionable-row
-          // selection and, in a real bench-K/DST-owned scenario, able to
-          // fall through to an opponent's ROSTERED_ELSEWHERE row instead.
-          // See `selectPrimaryStreamerRow`'s own doc comment.
-          const { top, alternative: alternativeRow } = selectPrimaryStreamerRow(rows);
-          const ownUnranked = result.ownRosterUnranked?.filter((entry) => entry.position === pos) ?? [];
-          const explanation = top ? explainStreamerPlay(top, alternativeRow) : null;
-          return (
-            <div key={`${result.week}-${pos}`}>
-              {explanation && top ? (
-                <div className="nwr-action-grid">
-                  <DecisionExplain
-                    headline={explanation.headline}
-                    why={explanation.why}
-                    thisWeekImpact={explanation.thisWeekImpact}
-                    alternative={explanation.alternative}
-                    tone={explanation.tone}
-                    actions={<Button variant="ghost" onClick={() => onOpenPlayer({ playerId: streamerPlayerId(top), playerName: top.playerName, position: top.position, team: top.team })}>View {top.playerName}</Button>}
-                  />
-                </div>
-              ) : <EmptyState title="No available recommendation" message={`No ${pos} streamer read for Week ${result.week}.`} />}
-              {ownUnranked.length ? (
-                <div className="alert-strip">
-                  <strong>Your current {pos} isn't in this week's rankings</strong>
-                  <span>
-                    {ownUnranked.map((entry) => entry.team ? `${entry.playerName} (${entry.team})` : entry.playerName).join(", ")}{" "}
-                    is outside FantasyPros' real current {pos} consensus and could not be evaluated or compared above.
-                  </span>
-                </div>
-              ) : null}
-              <Panel title={`Week ${result.week} · ${pos} streamer actions`} eyebrow="FantasyPros ECR (provider-scored) · Sleeper availability">
-                {rows.length ? <DataTable columns={columns} rows={rows as unknown as Array<Record<string, unknown>>} rowKey={(row) => `${pos}-${String(row.playerName)}-${String(row.ecr)}`} /> : <EmptyState title="No candidates" message={`No ${pos} rows returned for Week ${result.week}.`} />}
-              </Panel>
-            </div>
-          );
-        })}
-      </div>
-    ))}
+    {result ? <>
+      <p className="draft-feedback">Weeks {result.requestedWeeks.join(", ")} · selected {result.horizonWeeks}W · {result.writeBehavior.replaceAll("_", " ")}</p>
+      {result.limitations.map((message) => <div className="alert-strip" key={message}><strong>Coverage</strong><span>{message}</span></div>)}
+      {(["QB", "TE", "K", "DST"] as const).map((position) => {
+        const rows = result.rows.filter((row: StreamerHorizonRow) => row.position === position);
+        if (!rows.length) return null;
+        return <Panel key={position} title={`${position} streamers`} eyebrow={`${result.horizonWeeks}W NWR projection order · owner + available`}>
+          <DataTable columns={columns} rows={rows as unknown as Array<Record<string, unknown>>} rowKey={(row) => `${position}-${String(row.sleeperPlayerId)}`} />
+        </Panel>;
+      })}
+    </> : null}
   </>;
 }
 

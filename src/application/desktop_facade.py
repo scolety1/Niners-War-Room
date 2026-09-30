@@ -43,6 +43,7 @@ from src.services.draft_day_trade_lab_service import (
     build_registry_trade_item_lookup,
     replace_trade_state,
 )
+from src.services.dynasty_trade_counter_service import generate_dynasty_trade_counters
 from src.services.fantasypros_kdst_consensus_service import (
     FantasyProsConsensusClient,
     FantasyProsProviderError,
@@ -225,6 +226,7 @@ from src.services.weekly_lineup_optimizer_service import (
     simulate_this_week_add_drop,
 )
 from src.services.weekly_game_lock_service import compute_weekly_game_lock
+from src.services.streamer_horizon_service import build_streamer_horizon
 from src.services.waiver_engine_service import (
     describe_unmatched_roster_players,
     filter_legal_drop_candidates,
@@ -238,6 +240,7 @@ from src.services.waiver_engine_service import (
 from src.services.redraft_trade_analysis_service import TradeAnalysisError, evaluate_trade
 from src.services.trade_finder_service import find_win_win_trades
 from src.services.trade_package_search_service import (
+    search_counter_offer_packages,
     search_improve_position_packages,
     search_target_player_packages,
     search_win_win_packages,
@@ -1823,6 +1826,136 @@ class DesktopBackendFacade:
             }
         return FacadePayload(data=data)
 
+    def generate_dynasty_trade_counters(
+        self,
+        *,
+        give: Sequence[str],
+        receive: Sequence[str],
+        team_window: str,
+        counterparty_roster_id: int,
+        league_profile_id: str | None,
+        limit: int = 5,
+    ) -> FacadePayload:
+        """Search one verified opponent roster for bounded counter packages."""
+
+        self._require_mode("dynasty")
+        if not league_profile_id:
+            raise FacadeError(
+                "DYNASTY_COUNTER_LEAGUE_REQUIRED",
+                "Connect the real Dynasty league before generating counters.",
+                status=409,
+            )
+        snapshot, give_ids, receive_ids, lookup, key_for_id = self._trade_context(
+            give=give, receive=receive, team_window=team_window
+        )
+        profile, league_snapshot = self._load_dynasty_league_state(league_profile_id)
+        annotations = annotate_ownership(
+            [{"asset_id": value} for value in key_for_id],
+            league_snapshot,
+            my_owner_id=profile.my_owner_id,
+        )
+        owner_asset_ids = [
+            asset_id
+            for asset_id, annotation in annotations.items()
+            if annotation.get("ownershipStatus") == "OWNED"
+            and annotation.get("isMyTeam") is True
+        ]
+        opponent_asset_ids = [
+            asset_id
+            for asset_id, annotation in annotations.items()
+            if annotation.get("ownershipStatus") == "OWNED"
+            and annotation.get("rosterId") == counterparty_roster_id
+        ]
+        if any(value not in owner_asset_ids for value in give_ids):
+            raise FacadeError(
+                "DYNASTY_COUNTER_OUTGOING_NOT_OWNED",
+                "Every outgoing asset must still be on your verified roster.",
+                status=409,
+            )
+        if any(value not in opponent_asset_ids for value in receive_ids):
+            raise FacadeError(
+                "DYNASTY_COUNTERPARTY_REQUIRED",
+                "Choose the exact team that owns every incoming asset before generating counters.",
+                status=409,
+            )
+
+        roster_by_id = {roster.roster_id: roster for roster in league_snapshot.rosters}
+        owner_roster = roster_by_id.get(profile.my_roster_id)
+        opponent_roster = roster_by_id.get(counterparty_roster_id)
+        if owner_roster is None or opponent_roster is None:
+            raise FacadeError(
+                "DYNASTY_COUNTERPARTY_REQUIRED",
+                "The selected opponent is not present in the verified league snapshot.",
+                status=409,
+            )
+
+        required = Counter(
+            position
+            for position in profile.roster_positions
+            if position in {"QB", "RB", "WR", "TE", "K"}
+        )
+
+        def roster_needs(roster) -> tuple[str, ...]:
+            counts: Counter[str] = Counter()
+            for sleeper_id in roster.starters:
+                asset_id = f"current:{sleeper_id}"
+                key = key_for_id.get(asset_id)
+                if key:
+                    counts[_text(lookup[key].get("position"))] += 1
+            return tuple(
+                position for position, count in sorted(required.items()) if counts[position] < count
+            )
+
+        try:
+            result = generate_dynasty_trade_counters(
+                original_give_ids=give_ids,
+                original_receive_ids=receive_ids,
+                owner_asset_ids=owner_asset_ids,
+                opponent_asset_ids=opponent_asset_ids,
+                lookup=lookup,
+                key_for_id=key_for_id,
+                team_window=team_window,
+                owner_need_positions=roster_needs(owner_roster),
+                opponent_need_positions=roster_needs(opponent_roster),
+                limit=limit,
+            )
+        except ValueError as exc:
+            raise FacadeError("DYNASTY_COUNTER_INVALID", str(exc), status=422) from exc
+
+        name_by_id = {
+            asset_id: _text(lookup[key].get("player")) or asset_id
+            for asset_id, key in key_for_id.items()
+        }
+        opponent_team_name = opponent_roster.team_name or f"Roster {counterparty_roster_id}"
+        return FacadePayload(
+            data={
+                "counterpartyRosterId": counterparty_roster_id,
+                "counterpartyTeamName": opponent_team_name,
+                "preservedAnchorId": result.preserved_anchor_id,
+                "preservedAnchorName": name_by_id.get(result.preserved_anchor_id, result.preserved_anchor_id),
+                "packagesEvaluated": result.packages_evaluated,
+                "truncated": result.truncated,
+                "opponentWindowBasis": result.opponent_window_basis,
+                "candidates": [
+                    {
+                        "give": list(candidate.give),
+                        "giveNames": [name_by_id.get(value, value) for value in candidate.give],
+                        "receive": list(candidate.receive),
+                        "receiveNames": [name_by_id.get(value, value) for value in candidate.receive],
+                        "changes": list(candidate.changes),
+                        "whyItHelpsYou": candidate.why_it_helps_you,
+                        "whyItMayMakeSenseForThem": candidate.why_it_may_make_sense_for_them,
+                        "nwrVsMarket": candidate.nwr_vs_market,
+                        "mainRisk": candidate.main_risk,
+                        "ownerDecision": self._trade_decision_payload(candidate.owner_decision),
+                        "opponentDecision": self._trade_decision_payload(candidate.opponent_decision),
+                    }
+                    for candidate in result.candidates
+                ],
+                "writeBehavior": "NO_SLEEPER_WRITES",
+            }
+        )
+
     def evaluate_dynasty_trade(
         self,
         *,
@@ -1967,6 +2100,12 @@ class DesktopBackendFacade:
                 "leagueId": profile.league_id,
                 "myOwnerId": profile.my_owner_id,
             }
+            if trade_mode == "REAL" and resolved_counterparty is not None:
+                data["counterStatus"] = "available"
+                data["counterMessage"] = (
+                    "Generate Counters searches this exact opponent's verified roster and "
+                    "re-evaluates every constructible package."
+                )
         return FacadePayload(data=data)
 
     def list_dynasty_trades(self) -> FacadePayload:
@@ -3364,6 +3503,179 @@ class DesktopBackendFacade:
                 "verifiedAtUtc": override.verified_at_utc,
                 "sources": list(override.sources),
                 "correctedTeam": override.corrected_team,
+            }
+        )
+
+    def redraft_streamers(self, *, week: int, horizon_weeks: int) -> FacadePayload:
+        """Rank QB/TE/K/DST streamers from NWR weekly projections over 1-4 weeks."""
+
+        self._require_mode("redraft")
+        if not isinstance(week, int) or isinstance(week, bool) or not 1 <= week <= 18:
+            raise FacadeError("STREAMER_WEEK_INVALID", "Week must be from 1 through 18.")
+        if (
+            not isinstance(horizon_weeks, int)
+            or isinstance(horizon_weeks, bool)
+            or not 1 <= horizon_weeks <= 4
+        ):
+            raise FacadeError(
+                "STREAMER_HORIZON_INVALID", "horizonWeeks must be from 1 through 4."
+            )
+        try:
+            state = self._resolve_canonical_league_state(include_opponent_rosters=True)
+        except (CanonicalLeagueStateError, OSError, ValueError) as exc:
+            raise FacadeError(
+                "STREAMER_READ_FAILED",
+                "Current league roster data could not be read.",
+                status=503,
+            ) from exc
+        selected = active_profile(self.redraft_root)
+        if selected is None:
+            raise FacadeError(
+                "SLEEPER_REDRAFT_PROFILE_REQUIRED",
+                "Activate a verified Redraft league first.",
+                status=409,
+            )
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            ranking_rows = self._redraft_ranking_payloads(ranking, None)
+        except FacadeError as exc:
+            if exc.code != "REDRAFT_RANKINGS_UNAVAILABLE":
+                raise
+            ranking_rows = []
+        try:
+            players = (
+                self._sleeper_get_json(SleeperHttpClient(), "players/nfl")
+                if state.provider == "sleeper"
+                else self._canonical_player_catalog(state, include_opponents=True)
+            )
+        except (OSError, ValueError) as exc:
+            raise FacadeError(
+                "STREAMER_READ_FAILED", "The player catalog could not be read.", status=503
+            ) from exc
+        sleeper_scoring_settings: Mapping[str, Any] | None = None
+        if state.provider == "sleeper":
+            try:
+                league_raw = self._sleeper_get_json(
+                    SleeperHttpClient(), f"league/{state.provider_league_id}"
+                )
+                raw_scoring = league_raw.get("scoring_settings") if isinstance(league_raw, Mapping) else None
+                if isinstance(raw_scoring, Mapping):
+                    sleeper_scoring_settings = raw_scoring
+            except (OSError, ValueError):
+                sleeper_scoring_settings = None
+
+        requested_weeks = range(week, min(18, week + 3) + 1)
+        weekly_rows: dict[int, list[dict[str, Any]]] = {}
+        provider_health: list[dict[str, Any]] = []
+        schedule_opponents: dict[int, Mapping[str, str]] = {}
+        limitations: list[str] = []
+        for target_week in requested_weeks:
+            try:
+                raw, health = get_weekly_projections(
+                    provider=default_weekly_projection_provider(),
+                    season=selected.season,
+                    week=target_week,
+                    season_type="regular",
+                    league_id=state.provider_league_id,
+                    redraft_root=self.redraft_root,
+                )
+                projection = build_weekly_projection_rows(
+                    raw_projections=raw,
+                    players=players,
+                    ranking_rows=ranking_rows,
+                    scoring=selected.scoring,
+                    season=selected.season,
+                    week=target_week,
+                    season_type="regular",
+                    league_id=state.provider_league_id,
+                    fetched_at=health.retrieved_at,
+                    sleeper_scoring_settings=sleeper_scoring_settings,
+                )
+                weekly_rows[target_week] = [
+                    {
+                        "sleeperPlayerId": row.sleeper_player_id,
+                        "playerName": row.player_name,
+                        "position": row.position,
+                        "team": row.team,
+                        "projectedPoints": row.projected_points,
+                    }
+                    for row in projection.rows
+                ]
+                provider_health.append(health.to_dict())
+            except (WeeklyProjectionError, OSError, ValueError) as exc:
+                limitations.append(f"Week {target_week} projections unavailable: {exc}")
+            schedule = compute_weekly_game_lock(season=selected.season, week=target_week)
+            if schedule.source_status == "OK" and schedule.opponent_by_team:
+                schedule_opponents[target_week] = schedule.opponent_by_team
+            else:
+                limitations.append(f"Week {target_week} schedule context unavailable.")
+        if not weekly_rows:
+            raise FacadeError(
+                "STREAMER_PROJECTIONS_UNAVAILABLE",
+                "NWR weekly projections are unavailable for every week in this window.",
+                status=503,
+            )
+
+        relevant_positions: list[str] = []
+        if selected.roster.qb > 0 or selected.roster.superflex > 0:
+            relevant_positions.append("QB")
+        if selected.roster.te > 0:
+            relevant_positions.append("TE")
+        if selected.roster.k > 0:
+            relevant_positions.append("K")
+        if selected.roster.dst > 0:
+            relevant_positions.append("DST")
+        own_ids = [player.provider_player_id for player in state.roster]
+        owned_ids = list(own_ids)
+        if state.opponent_rosters:
+            owned_ids.extend(
+                player.provider_player_id
+                for opponent in state.opponent_rosters
+                for player in opponent.roster
+            )
+        result = build_streamer_horizon(
+            start_week=week,
+            horizon_weeks=horizon_weeks,
+            weekly_rows=weekly_rows,
+            schedule_opponents=schedule_opponents,
+            own_player_ids=own_ids,
+            owned_player_ids=owned_ids,
+            relevant_positions=relevant_positions,
+        )
+        return FacadePayload(
+            data={
+                "leagueId": state.provider_league_id,
+                "startWeek": result.start_week,
+                "horizonWeeks": result.horizon_weeks,
+                "requestedWeeks": list(result.requested_weeks),
+                "projectionWeeksAvailable": list(result.projection_weeks_available),
+                "scheduleWeeksAvailable": list(result.schedule_weeks_available),
+                "authority": "NWR_WEEKLY_PROJECTIONS",
+                "method": (
+                    "Connected-league scoring applied to NWR's admitted weekly projections; "
+                    "selected-horizon totals determine row order. Schedule is context only."
+                ),
+                "providerHealth": provider_health,
+                "limitations": list(dict.fromkeys((*limitations, *result.limitations))),
+                "rows": [
+                    {
+                        "sleeperPlayerId": row.sleeper_player_id,
+                        "playerName": row.player_name,
+                        "position": row.position,
+                        "team": row.team,
+                        "availability": row.availability,
+                        "value1w": row.values[0],
+                        "value2w": row.values[1],
+                        "value3w": row.values[2],
+                        "value4w": row.values[3],
+                        "selectedHorizonValue": row.selected_horizon_value,
+                        "schedule": list(row.schedule),
+                        "why": row.why,
+                        "action": row.action,
+                    }
+                    for row in result.rows
+                ],
+                "writeBehavior": "NO_SLEEPER_WRITES",
             }
         )
 
@@ -5653,6 +5965,230 @@ class DesktopBackendFacade:
                 "championshipEquityNote": evaluation.championship_equity_note,
                 "writeBehavior": "NO_SLEEPER_WRITES",
                 **({"leagueStateProvenance": provenance} if provenance else {}),
+            }
+        )
+
+    def redraft_trade_counters(
+        self,
+        *,
+        gives_sleeper_player_ids: Sequence[str],
+        receives_sleeper_player_ids: Sequence[str],
+        limit: int = 5,
+    ) -> FacadePayload:
+        """Generate bounded counters against the incoming assets' exact owner."""
+
+        self._require_mode("redraft")
+        try:
+            state = self._resolve_canonical_league_state(include_opponent_rosters=True)
+        except (CanonicalLeagueStateError, OSError, ValueError) as exc:
+            raise FacadeError(
+                "TRADE_COUNTER_READ_FAILED",
+                "Current owner and opponent rosters could not be read.",
+                status=503,
+            ) from exc
+        selected = active_profile(self.redraft_root)
+        if selected is None:
+            raise FacadeError(
+                "SLEEPER_REDRAFT_PROFILE_REQUIRED",
+                "Activate a verified Redraft league first.",
+                status=409,
+            )
+        if state.opponent_rosters is None:
+            raise FacadeError(
+                "TRADE_COUNTERPARTY_REQUIRED",
+                "Opponent rosters are unavailable; select or refresh the team that made the offer.",
+                status=409,
+            )
+        own_provider_ids = {player.provider_player_id for player in state.roster}
+        if any(str(value) not in own_provider_ids for value in gives_sleeper_player_ids):
+            raise FacadeError(
+                "TRADE_COUNTER_OUTGOING_NOT_OWNED",
+                "Every outgoing player must still be on your real roster.",
+                status=409,
+            )
+        receive_ids = {str(value) for value in receives_sleeper_player_ids}
+        counterparties = [
+            opponent
+            for opponent in state.opponent_rosters
+            if receive_ids
+            and receive_ids.issubset({player.provider_player_id for player in opponent.roster})
+        ]
+        if len(counterparties) != 1:
+            raise FacadeError(
+                "TRADE_COUNTERPARTY_REQUIRED",
+                "NWR could not determine one exact team that owns every incoming player. "
+                "Select which team made the offer, then analyze again.",
+                status=409,
+            )
+        counterparty = counterparties[0]
+        try:
+            ranking = self._redraft_ranking_for_profile(selected.profile_id)
+            ranking_rows = self._redraft_ranking_payloads(ranking, None)
+        except FacadeError as exc:
+            raise FacadeError(
+                "TRADE_COUNTER_RANKINGS_UNAVAILABLE",
+                "The governed Redraft ranking is required to evaluate counters.",
+                status=409,
+            ) from exc
+        players = self._canonical_player_catalog(state, include_opponents=True)
+        # The evaluator's roster-size authority models active slots plus
+        # bench; provider reserve entries remain owned and were used above
+        # for ownership validation, but must not consume an active slot in
+        # either side's before/after evaluation.
+        own_active_provider_ids = [
+            player.provider_player_id for player in state.roster if player.slot != "RESERVE"
+        ]
+        own_resolved = resolve_roster_canonical_ids(
+            roster_sleeper_player_ids=own_active_provider_ids,
+            players_catalog=players,
+            ranking_rows=ranking_rows,
+        )
+        opponent_provider_ids = [
+            player.provider_player_id
+            for player in counterparty.roster
+            if player.slot != "RESERVE"
+        ]
+        opponent_resolved = resolve_roster_canonical_ids(
+            roster_sleeper_player_ids=opponent_provider_ids,
+            players_catalog=players,
+            ranking_rows=ranking_rows,
+        )
+        gives_resolved = resolve_roster_canonical_ids(
+            roster_sleeper_player_ids=[str(value) for value in gives_sleeper_player_ids],
+            players_catalog=players,
+            ranking_rows=ranking_rows,
+        )
+        receives_resolved = resolve_roster_canonical_ids(
+            roster_sleeper_player_ids=[str(value) for value in receives_sleeper_player_ids],
+            players_catalog=players,
+            ranking_rows=ranking_rows,
+        )
+        if gives_resolved.unmatched_sleeper_player_ids or receives_resolved.unmatched_sleeper_player_ids:
+            raise FacadeError(
+                "TRADE_COUNTER_IDENTITY_UNRESOLVED",
+                "One or more players in the analyzed offer could not be matched to NWR's governed pool.",
+                status=409,
+            )
+        manual_assets = self._manual_assets_for_profile(selected.profile_id)
+        own_ids, own_synthetic = resolve_full_roster_with_unranked_occupants(
+            resolved=own_resolved, players_catalog=players, manual_assets=manual_assets
+        )
+        opponent_ids, opponent_synthetic = resolve_full_roster_with_unranked_occupants(
+            resolved=opponent_resolved,
+            players_catalog=players,
+            manual_assets=(*manual_assets, *own_synthetic),
+        )
+        manual_for_evaluation = (*manual_assets, *own_synthetic, *opponent_synthetic)
+        opponent_payload = {
+            "rosterId": counterparty.team_id,
+            "teamName": counterparty.team_name,
+            "canonicalIds": opponent_ids,
+            "names": opponent_resolved.player_names_by_canonical_id,
+            "positions": opponent_resolved.player_positions_by_canonical_id,
+        }
+        try:
+            result = search_counter_offer_packages(
+                my_roster_canonical_ids=own_ids,
+                my_player_names=own_resolved.player_names_by_canonical_id,
+                my_player_positions=own_resolved.player_positions_by_canonical_id,
+                opponent=opponent_payload,
+                original_gives_ids=gives_resolved.canonical_player_ids,
+                original_receives_ids=receives_resolved.canonical_player_ids,
+                profile=selected,
+                ranking=ranking,
+                manual_assets=manual_for_evaluation,
+                status_overrides=load_status_overrides(self.repo_root),
+                limit=limit,
+            )
+        except ValueError as exc:
+            raise FacadeError("TRADE_COUNTER_INVALID", str(exc), status=422) from exc
+
+        availability_status_by_id = self._player_availability_status_map()
+
+        def impact_payload(impact):
+            return {
+                "playerId": impact.player_id,
+                "playerName": impact.player_name,
+                "position": impact.position,
+                "rosReplacementValue": impact.ros_replacement_value,
+                "rosReplacementValueKnown": impact.ros_replacement_value_known,
+                "marginalUtility": impact.marginal_utility,
+                "becomesStarter": impact.becomes_starter,
+                "statusFlag": impact.status_flag,
+                "playerAvailabilityStatus": availability_status_by_id.get(impact.player_id),
+            }
+
+        def evaluation_payload(evaluation):
+            return {
+                "gives": [impact_payload(value) for value in evaluation.gives],
+                "receives": [impact_payload(value) for value in evaluation.receives],
+                "rosValueDelta": evaluation.ros_value_delta,
+                "rosValueDeltaAllKnown": evaluation.ros_value_delta_all_known,
+                "netMarginalUtility": evaluation.net_marginal_utility,
+                "startingLineupValueBefore": evaluation.starting_lineup_value_before,
+                "startingLineupValueAfter": evaluation.starting_lineup_value_after,
+                "startingLineupValueDelta": evaluation.starting_lineup_value_delta,
+                "benchContingencyValueBefore": evaluation.bench_contingency_value_before,
+                "benchContingencyValueAfter": evaluation.bench_contingency_value_after,
+                "starterHolesBefore": list(evaluation.starter_holes_before),
+                "starterHolesAfter": list(evaluation.starter_holes_after),
+                "positionRedundancyBefore": dict(evaluation.position_redundancy_before),
+                "positionRedundancyAfter": dict(evaluation.position_redundancy_after),
+                "riskFlags": list(evaluation.risk_flags),
+            }
+
+        original_give_names = set(gives_resolved.player_names_by_canonical_id.values())
+        original_receive_names = set(receives_resolved.player_names_by_canonical_id.values())
+
+        def changed(candidate) -> list[str]:
+            notes: list[str] = []
+            send_names = set(candidate.you_send_names)
+            receive_names = set(candidate.you_receive_names)
+            if kept := original_give_names - send_names:
+                notes.append("Keep " + ", ".join(sorted(kept)) + ".")
+            if added := send_names - original_give_names:
+                notes.append("Swap in " + ", ".join(sorted(added)) + " on your outgoing side.")
+            if removed := original_receive_names - receive_names:
+                notes.append("Remove " + ", ".join(sorted(removed)) + " from the return.")
+            if added := receive_names - original_receive_names:
+                notes.append("Ask for " + ", ".join(sorted(added)) + " as an add-on.")
+            return notes or ["Rebalanced the same constructible player package."]
+
+        return FacadePayload(
+            data={
+                "leagueId": state.provider_league_id,
+                "counterpartyRosterId": result.opponent_roster_id,
+                "counterpartyTeamName": result.opponent_team_name,
+                "preservedAnchorPlayerId": result.preserved_anchor_id,
+                "packagesEvaluated": result.packages_evaluated,
+                "truncated": result.truncated,
+                "candidates": [
+                    {
+                        "opponentRosterId": candidate.opponent_roster_id,
+                        "opponentTeamName": candidate.opponent_team_name,
+                        "packageShape": candidate.package_shape,
+                        "youSend": list(candidate.you_send),
+                        "youSendNames": list(candidate.you_send_names),
+                        "youReceive": list(candidate.you_receive),
+                        "youReceiveNames": list(candidate.you_receive_names),
+                        "ownerEvaluation": evaluation_payload(candidate.owner_evaluation),
+                        "opponentEvaluation": evaluation_payload(candidate.opponent_evaluation),
+                        "whatChanged": changed(candidate),
+                        "whyItHelpsYou": list(candidate.why_it_helps_you),
+                        "whyItMayFitThem": list(candidate.why_it_may_fit_them),
+                        "marketContext": (
+                            "No live market overlay is admitted for Redraft trade analysis; "
+                            "these counters use NWR ROS value and real roster fit only."
+                        ),
+                        "mainRisk": (
+                            "; ".join(candidate.owner_evaluation.risk_flags)
+                            or "; ".join(candidate.opponent_evaluation.risk_flags)
+                            or "The other manager's priorities are not verified; this is a constructible idea, not an acceptance forecast."
+                        ),
+                    }
+                    for candidate in result.candidates
+                ],
+                "writeBehavior": "NO_SLEEPER_WRITES",
             }
         )
 

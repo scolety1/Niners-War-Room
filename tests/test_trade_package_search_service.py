@@ -20,10 +20,58 @@ from src.services.trade_package_search_service import (
     _drop_dominated,
     _passes_utility_gates,
     _roster_size_legal,
+    search_counter_offer_packages,
     search_improve_position_packages,
     search_target_player_packages,
     search_win_win_packages,
 )
+
+
+def test_counter_search_stays_on_exact_opponent_and_preserves_requested_anchor() -> None:
+    kwargs = _two_team_search_kwargs()
+    opponent = kwargs.pop("opponents")[0]
+    result = search_counter_offer_packages(
+        **kwargs,
+        opponent=opponent,
+        original_gives_ids=("my-rb4", "my-rb5"),
+        original_receives_ids=("opp-wr4",),
+    )
+    assert 1 <= len(result.candidates) <= 5
+    assert result.opponent_roster_id == "2"
+    assert result.preserved_anchor_id == "opp-wr4"
+    for candidate in result.candidates:
+        assert candidate.opponent_roster_id == "2"
+        assert "opp-wr4" in candidate.you_receive
+        assert set(candidate.you_send).issubset(set(_my_ids()))
+        assert set(candidate.you_receive).issubset(set(_opp_ids()))
+
+
+def test_counter_search_never_claims_acceptance_probability() -> None:
+    kwargs = _two_team_search_kwargs()
+    opponent = kwargs.pop("opponents")[0]
+    result = search_counter_offer_packages(
+        **kwargs,
+        opponent=opponent,
+        original_gives_ids=("my-rb4", "my-rb5"),
+        original_receives_ids=("opp-wr4",),
+    )
+    copy = " ".join(
+        note
+        for candidate in result.candidates
+        for note in (*candidate.why_it_helps_you, *candidate.why_it_may_fit_them)
+    ).casefold()
+    assert "acceptance" not in copy
+    assert "likely to accept" not in copy
+
+
+def test_roster_legality_allows_neutral_trade_on_live_roster_with_reserve_overage() -> None:
+    profile = _profile(
+        roster=RosterSettings(qb=1, rb=2, wr=2, te=1, flex=1, k=1, dst=1, bench_size=6)
+    )
+    roster = tuple(f"player-{index}" for index in range(16))
+
+    assert _roster_size_legal(roster, ("player-0",), ("incoming",), profile)
+    assert not _roster_size_legal(roster, (), ("incoming",), profile)
 
 
 def _row(player_id, name, position, value, rank):

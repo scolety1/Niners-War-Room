@@ -641,6 +641,32 @@ export interface TradeDecision {
   assetStatusNotices?: Array<{ assetId: string; playerName: string } & DynastyCurrentStatusOverride>;
 }
 
+export interface DynastyTradeCounterCandidate {
+  give: string[];
+  giveNames: string[];
+  receive: string[];
+  receiveNames: string[];
+  changes: string[];
+  whyItHelpsYou: string;
+  whyItMayMakeSenseForThem: string;
+  nwrVsMarket: string;
+  mainRisk: string;
+  ownerDecision: TradeDecision;
+  opponentDecision: TradeDecision;
+}
+
+export interface DynastyTradeCounterResult {
+  counterpartyRosterId: number;
+  counterpartyTeamName: string;
+  preservedAnchorId: string;
+  preservedAnchorName: string;
+  packagesEvaluated: number;
+  truncated: boolean;
+  opponentWindowBasis: string;
+  candidates: DynastyTradeCounterCandidate[];
+  writeBehavior: string;
+}
+
 export interface SavedTradeScenario {
   scenarioId: string;
   title: string;
@@ -1095,6 +1121,37 @@ export interface KdstStreamerResult {
   // DecisionResultEnvelope PER POSITION -- same flat-list reasoning as
   // `positions`/`traceIds` above.
   decisionEnvelopes?: Array<{ position: "K" | "DST"; decisionEnvelope: DecisionResultEnvelope }>;
+}
+
+export interface StreamerHorizonRow {
+  sleeperPlayerId: string;
+  playerName: string;
+  position: "QB" | "TE" | "K" | "DST";
+  team: string;
+  availability: "ON YOUR ROSTER" | "AVAILABLE";
+  value1w: number | null;
+  value2w: number | null;
+  value3w: number | null;
+  value4w: number | null;
+  selectedHorizonValue: number | null;
+  schedule: string[];
+  why: string;
+  action: "KEEP CURRENT" | "STREAM" | "ROSTER DEPTH" | "NOT ENOUGH DATA";
+}
+
+export interface StreamerHorizonResult {
+  leagueId: string;
+  startWeek: number;
+  horizonWeeks: 1 | 2 | 3 | 4;
+  requestedWeeks: number[];
+  projectionWeeksAvailable: number[];
+  scheduleWeeksAvailable: number[];
+  authority: "NWR_WEEKLY_PROJECTIONS";
+  method: string;
+  providerHealth: WeeklyProjectionProviderHealth[];
+  limitations: string[];
+  rows: StreamerHorizonRow[];
+  writeBehavior: string;
 }
 
 export interface RedraftFreeAgent {
@@ -1798,6 +1855,23 @@ export interface TradePackageSearchResult {
   truncated: boolean;
   writeBehavior: string;
   leagueStateProvenance?: LeagueStateProvenance;
+}
+
+export interface RedraftTradeCounterCandidate extends TradePackageCandidate {
+  whatChanged: string[];
+  marketContext: string;
+  mainRisk: string;
+}
+
+export interface RedraftTradeCounterResult {
+  leagueId: string;
+  counterpartyRosterId: string;
+  counterpartyTeamName: string;
+  preservedAnchorPlayerId: string;
+  packagesEvaluated: number;
+  truncated: boolean;
+  candidates: RedraftTradeCounterCandidate[];
+  writeBehavior: string;
 }
 
 export interface WeeklyHomeAction {

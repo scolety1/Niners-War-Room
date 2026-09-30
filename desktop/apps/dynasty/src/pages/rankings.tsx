@@ -15,9 +15,9 @@ function OwnershipBadge({ ownership }: { ownership: AssetOwnership | undefined }
 // Dogfood Rebuild V1 (Worker 4): the Dynasty "Finished V1" board never
 // consumed the real current-status-override authority before this fix (a
 // real season-ending injury could sit unflagged at the top of the board --
-// see LEDGER for the full De'Von Achane trace). This is the one place that
-// authority becomes visible on the Rankings table; it never changes rank,
-// score, or row order -- purely an additive badge next to the player name.
+// see LEDGER for the full De'Von Achane trace). The current-use presentation
+// may move a verified unavailable player out of the usable ordinal, but it
+// never changes the governed base rank or score shown alongside that view.
 const STATUS_OVERRIDE_LABEL: Record<DynastyCurrentStatusOverride["kind"], string> = {
   SEASON_OUT: "Season out",
   NOT_WITH_TEAM: "Not with team",
@@ -49,6 +49,26 @@ function marketClass(value: unknown) {
 }
 
 function rankingRecords(rows: DynastyRanking[]) { return rows.map((row) => ({ ...row })); }
+
+type CurrentDynastyRanking = DynastyRanking & { currentRank: number | null };
+
+function blocksCurrentUsability(row: DynastyRanking): boolean {
+  return Boolean(row.currentStatusOverride && row.currentStatusOverride.kind !== "TEAM_CORRECTION");
+}
+
+export function currentDynastyRankingRows(rows: DynastyRanking[]): CurrentDynastyRanking[] {
+  const ordered = [...rows].sort((left, right) => {
+    const statusDelta = Number(blocksCurrentUsability(left)) - Number(blocksCurrentUsability(right));
+    if (statusDelta) return statusDelta;
+    return (left.rank ?? Number.MAX_SAFE_INTEGER) - (right.rank ?? Number.MAX_SAFE_INTEGER);
+  });
+  let currentRank = 0;
+  return ordered.map((row) => {
+    if (blocksCurrentUsability(row)) return { ...row, currentRank: null };
+    currentRank += 1;
+    return { ...row, currentRank };
+  });
+}
 
 export function assetExplorerRows(
   rows: AssetOption[],
@@ -125,12 +145,13 @@ export function RankingsPage({ data }: { data: DynastyBootstrap }) {
   const [market, setMarket] = useState("All");
   const [limit, setLimit] = useState("50");
   const [tableResetKey, setTableResetKey] = useState(0);
-  const filtered = useMemo(() => data.rankings.filter((row) => {
+  const currentRows = useMemo(() => currentDynastyRankingRows(data.rankings), [data.rankings]);
+  const filtered = useMemo(() => currentRows.filter((row) => {
     if (position !== "ALL" && row.position !== position) return false;
     if (team !== "ALL" && row.team !== team) return false;
     if (market !== "All" && row.marketBand !== market) return false;
     return !query.trim() || `${row.player} ${row.team}`.toLowerCase().includes(query.trim().toLowerCase());
-  }).slice(0, Number(limit)), [data.rankings, limit, market, position, query, team]);
+  }).slice(0, Number(limit)), [currentRows, limit, market, position, query, team]);
   const positions = ["ALL", ...new Set(data.rankings.map((row) => row.position).filter(Boolean))];
   const teams = ["ALL", ...new Set(data.rankings.map((row) => row.team).filter(Boolean))].sort();
   const markets = ["All", ...new Set(data.rankings.map((row) => row.marketBand).filter(Boolean))];
@@ -143,22 +164,21 @@ export function RankingsPage({ data }: { data: DynastyBootstrap }) {
     setTableResetKey((value) => value + 1);
   };
   return <>
-    <PageHeader eyebrow="Players · Finished V1 order" title="Dynasty Rankings" description="The accepted long-term board, translated for owner decisions without changing its authority." status={<><StatusBadge tone="safe" label={`${data.rankings.length} ranked players`} /><StatusBadge tone="review" label={`Market ${data.marketFreshness.sourceAsOf || "date unavailable"}`} /></>} actions={<Button icon="compare" onClick={() => navigate("/compare")}>Open Compare</Button>} />
-    <Panel title="Full player board" eyebrow="Rank · range · market · risk">
+    <PageHeader eyebrow="Players · Current decision view" title="Current Dynasty Rankings" description="Who is worth more right now: current usability first, with the frozen base model and market reference kept visibly separate." status={<><StatusBadge tone="safe" label={`${data.rankings.length} ranked players`} /><StatusBadge tone="review" label={`Market ${data.marketFreshness.sourceAsOf || "date unavailable"}`} /></>} actions={<Button icon="compare" onClick={() => navigate("/compare")}>Open Compare</Button>} />
+    <div className="alert-strip"><strong>Current rank is a usability view</strong><span>Verified season-out or unavailable statuses leave the current ordinal instead of receiving a made-up injury discount. Base NWR rank and score remain unchanged beside it.</span></div>
+    <Panel title="Current player value" eyebrow="Current rank · base model · market · status">
       <div className="toolbar"><SearchInput value={query} onChange={setQuery} placeholder="Find a player or team…" /><SegmentedControl label="Position" options={positions} value={position} onChange={setPosition} /><SelectField label="Team" value={team} onChange={setTeam} options={teams.map((value) => ({ value, label: value === "ALL" ? "All teams" : value }))} /><SelectField label="Market view" value={market} onChange={setMarket} options={markets.map((value) => ({ value, label: ownerLabel(value) }))} /><SelectField label="Show" value={limit} onChange={setLimit} options={[25,50,100,data.rankings.length].map((value) => ({ value: String(value), label: `${value} rows` }))} /><Button icon="undo" onClick={reset} variant="ghost">Reset</Button></div>
       <DataTable columns={[
-        { key: "rank", label: "Rank", sort: "number", width: "65px", render: (row) => <span className="rank-cell"><i /><b>#{String(row.rank ?? "—")}</b></span> },
+        { key: "currentRank", label: "Current NWR rank", sort: "number", width: "105px", render: (row) => row.currentRank == null ? <StatusBadge tone="blocked" label="Unavailable" /> : <span className="rank-cell"><i /><b>#{String(row.currentRank)}</b></span> },
         { key: "player", label: "Player", sort: "text", render: (row) => <span className="player-cell"><strong>{String(row.player)} </strong><CurrentStatusBadge override={row.currentStatusOverride as DynastyCurrentStatusOverride | null | undefined} /><small>{ownerLabel(row.team)} · Age {String(row.age ?? "—")}</small></span> },
         { key: "position", label: "Pos", sort: "text", align: "center", render: (row) => <span className="position-pill">{String(row.position)}</span> },
-        { key: "positionRank", label: "Pos rank", sort: "text", render: (row) => <OwnerValue value={row.positionRank} /> },
-        { key: "nwrScore", label: "NWR score", sort: "number", align: "right", render: (row) => formatNumber(row.nwrScore as number, 2) },
-        { key: "range", label: "Expected window", sort: "text", render: (row) => <OwnerValue value={row.range} /> },
-        { key: "marketBand", label: "Market", sort: "text", render: (row) => <span className={`market-signal market-signal--${marketClass(row.marketBand)}`}><i />{ownerLabel(row.marketBand)}</span> },
-        { key: "marketGap", label: "Gap", sort: "number", align: "right", render: (row) => row.marketGap == null ? "—" : `${(row.marketGap as number) > 0 ? "+" : ""}${formatNumber(row.marketGap as number, 0)}` },
-        { key: "confidence", label: "Confidence", sort: "text", render: (row) => <OwnerValue value={row.confidence} /> },
-        { key: "risk", label: "Risk", sort: "text", render: (row) => <OwnerValue value={row.risk} /> },
+        { key: "nwrScore", label: "Current value", sort: "number", align: "right", render: (row) => blocksCurrentUsability(row as unknown as DynastyRanking) ? <span title="No numeric injury discount is admitted.">Unavailable now</span> : formatNumber(row.nwrScore as number, 2) },
+        { key: "rank", label: "Base model", sort: "number", render: (row) => <span className="player-cell"><strong>#{String(row.rank ?? "—")}</strong><small>{formatNumber(row.nwrScore as number, 2)} · {ownerLabel(row.range)}</small></span> },
+        { key: "marketRank", label: "Market", sort: "number", render: (row) => <span className="player-cell"><strong>{row.marketRank == null ? "No match" : `#${String(row.marketRank)}`}</strong><small>{row.marketValue == null ? ownerLabel(row.marketBand) : `${formatNumber(row.marketValue as number, 0)} · ${ownerLabel(row.marketBand)}`}</small></span> },
+        { key: "marketGap", label: "NWR edge", sort: "number", align: "right", render: (row) => row.marketGap == null ? "—" : `${(row.marketGap as number) > 0 ? "+" : ""}${formatNumber(row.marketGap as number, 0)}` },
+        { key: "currentStatusOverride", label: "Status", sort: "text", render: (row) => row.currentStatusOverride ? <CurrentStatusBadge override={row.currentStatusOverride as DynastyCurrentStatusOverride} /> : <span className="copy-muted">No known override</span> },
         ...(data.dynastyLeague ? [OWNERSHIP_COLUMN] : []),
-      ]} resetKey={tableResetKey} rows={rankingRecords(filtered)} rowKey={(row) => String(row.assetId)} onRowClick={(row) => navigate(`/players/${encodeURIComponent(String(row.assetId))}`)} />
+      ]} resetKey={tableResetKey} rows={filtered.map((row) => ({ ...row }))} rowKey={(row) => String(row.assetId)} onRowClick={(row) => navigate(`/players/${encodeURIComponent(String(row.assetId))}`)} />
     </Panel>
   </>;
 }
