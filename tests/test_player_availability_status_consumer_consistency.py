@@ -136,8 +136,14 @@ def test_every_migrated_surface_reads_the_same_helper_name() -> None:
     facade_source = inspect.getsource(desktop_facade_module)
     call_count = facade_source.count("self._player_availability_status_map()")
     # Lineup, Waivers, Trade Analysis, Trade Finder, Draft v1, Draft v2,
-    # Trade Package Search (NWR Post-UI Product V1 P1-3) == 7.
-    assert call_count == 7, (
-        f"expected exactly 7 call sites (Lineup/Waivers/Trades x2/Draft x2/"
-        f"Trade Package Search), found {call_count}"
+    # Trade Package Search (NWR Post-UI Product V1 P1-3) == 7, plus Trade
+    # Counters (`redraft_trade_counters`, Dogfood Rebuild V1, Worker 8,
+    # commit 9b600619 -- added after this test was first written) == 8.
+    # The new surface correctly reuses this SAME canonical helper rather
+    # than inventing a competing one, which is exactly the single-authority
+    # property this test exists to protect -- it just never had its
+    # hardcoded count updated for the additional legitimate call site.
+    assert call_count == 8, (
+        f"expected exactly 8 call sites (Lineup/Waivers/Trades x2/Draft x2/"
+        f"Trade Package Search/Trade Counters), found {call_count}"
     )

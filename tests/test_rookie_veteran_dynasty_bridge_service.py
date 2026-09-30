@@ -197,5 +197,5 @@ def test_tracked_redraft_bridge_is_currently_computable() -> None:
     context = load_redraft_bridge_context()
 
     assert context.errors == ()
-    assert len(context.by_player_id) == 608
+    assert len(context.by_player_id) == 564
     assert context.source_sha256

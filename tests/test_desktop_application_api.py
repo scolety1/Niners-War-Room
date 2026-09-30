@@ -851,7 +851,18 @@ def test_redraft_bootstrap_udk_rankings_is_a_list_with_no_active_profile(
 
 def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    # This test asserts the specific, deterministic "FantasyPros key not
+    # configured" bootstrap contract below (`externalConsensus.configured
+    # is False`). Whether that key happens to be set is real local machine/
+    # shell environment state (confirmed: this worktree's own dev shell has
+    # a real `NWR_FANTASYPROS_API_KEY` set for live K/DST consensus work),
+    # not something this test should be at the mercy of -- explicitly force
+    # the unconfigured precondition the same way every other test in this
+    # file already forces `NWR_DYNASTY_RANKINGS_ROOT`, rather than silently
+    # depending on whatever the invoking shell happens to have set.
+    monkeypatch.delenv("NWR_FANTASYPROS_API_KEY", raising=False)
     store = tmp_path / "redraft-store"
     facade = DesktopBackendFacade(
         repo_root=REPO_ROOT,
@@ -949,6 +960,16 @@ def test_redraft_bootstrap_seeds_once_and_matches_desktop_contract(
             "practicalMode",
             "provider",
             "providerLeagueId",
+            # NWR PURE -- EXPERIMENTAL mode toggle (commit a5b9d8cf, present
+            # since before this cycle's own baseline, `git show b5061437`):
+            # same real, already-pre-existing "additive key never added to
+            # this assertion" pattern as `marketProviderAdp`/
+            # `leagueCapabilities` above -- masked from view until now
+            # because this whole test was failing earlier at the
+            # `externalConsensus` step (this machine's real, locally
+            # configured `NWR_FANTASYPROS_API_KEY`), before ever reaching
+            # this assertion.
+            "nwrPureExperimental",
         }
         for row in first.data["presets"]
     )
@@ -1394,17 +1415,36 @@ def test_launcher_repo_root_validation_is_frozen_aware(tmp_path: Path) -> None:
 
 
 def test_facade_has_no_streamlit_or_app_component_dependency() -> None:
+    # Checks MODULE names only (`import x` -> `x`; `from x import y` -> `x`),
+    # never the individual symbols a `from ... import ...` pulls in. The
+    # prior version of this check applied the "app"/"streamlit" prefix test
+    # to every imported SYMBOL name too (`alias.name` on an `ImportFrom`
+    # node is the imported attribute, e.g. "apply_status_overrides_to_ranking"
+    # from `from src.services.x import apply_status_overrides_to_ranking`,
+    # not a module path) -- a real false positive already present at this
+    # cycle's own pre-cycle baseline (`git show b5061437`), confirmed by
+    # grep: `apply_status_overrides_to_ranking`, `apply_catch_up_paste`,
+    # `approve_owner_platform_manual_match`, `append_correction_record`, and
+    # `append_owner_test_event` are all real `src.services.*` function
+    # imports whose names happen to start with "app" and are not any kind
+    # of Streamlit/legacy-`app`-package coupling. Corrected to inspect
+    # `ast.Import` aliases (true module names) and `ast.ImportFrom.module`
+    # (the module being imported from) instead of every imported symbol.
     source = (REPO_ROOT / "src" / "application" / "desktop_facade.py").read_text(encoding="utf-8")
     tree = ast.parse(source)
-    imports = {
+    module_names = {
         alias.name
         for node in ast.walk(tree)
-        if isinstance(node, (ast.Import, ast.ImportFrom))
+        if isinstance(node, ast.Import)
         for alias in node.names
+    } | {
+        node.module
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom) and node.module
     }
 
-    assert all(not name.startswith("streamlit") for name in imports)
-    assert all(not name.startswith("app") for name in imports)
+    assert all(not name.startswith("streamlit") for name in module_names)
+    assert all(not name.startswith("app") for name in module_names)
 
 
 def _synthetic_ranking_for(profile: LeagueProfile) -> RankingResult:

@@ -101,6 +101,22 @@ def _mock_sleeper(monkeypatch: pytest.MonkeyPatch) -> None:
             return USERS
         if path == "players/nfl":
             return PLAYERS
+        # `redraft_bootstrap()` additively gained a real
+        # `LeagueLifecycleContext` composition (Dogfood Rebuild V1, Worker
+        # 6, commit 96a99736 -- after this test file was first written) that
+        # reads two more small, GET-only, best-effort provider documents via
+        # `_live_sleeper_lifecycle_evidence`: the global NFL week/season-type
+        # state and this league's own bare settings document. Both are
+        # optional and a failed/absent read never blocks bootstrap (see
+        # `_live_sleeper_lifecycle_evidence`'s own `except (OSError,
+        # ValueError): pass`) -- but this mock's unconditional
+        # `AssertionError` fallback isn't one of those two caught types, so
+        # it was crashing bootstrap outright instead of exercising the real
+        # "read succeeded" path. Real, minimal, schema-accurate values.
+        if path == "state/nfl":
+            return {"season_type": "regular", "week": 4, "season": "2026"}
+        if path == "league/9999":
+            return {"status": "in_season", "settings": {"playoff_week_start": 15}}
         raise AssertionError(f"unexpected Sleeper GET path: {path}")
 
     monkeypatch.setattr(desktop_facade_module.SleeperHttpClient, "get_json", _get_json)

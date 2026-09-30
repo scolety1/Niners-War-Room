@@ -28,11 +28,29 @@ from src.services.redraft_engine_v1_service import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
+# Repointed from the abandoned 608-row "candidate_v1_20260809" packet to the
+# real, currently-governed, already-owner-approved "Freeze V7" combined
+# veteran+rookie admission (564 rows: 491 veteran + 73 rookie, admitted
+# 2026-09-08, valid_until 2026-10-08) -- the same snapshot
+# `desktop_facade.py`'s own `REDRAFT_SEED_SOURCE_RELATIVE`/`REDRAFT_SEED_SHA256`
+# already use for the live Redraft app. The 608-row packet's own
+# `source_as_of` aged past this module's 30-day freshness gate, which made
+# every real Dynasty Compare "rookie vs. veteran" bridge comparison silently
+# fall back to INSUFFICIENT EVIDENCE for every pair, including established
+# veterans with real current-season projections (found via
+# tests/test_desktop_application_api.py::
+# test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware and
+# tests/test_rookie_veteran_dynasty_bridge_service.py::
+# test_tracked_redraft_bridge_is_currently_computable, both pre-existing
+# failures this fix resolves as a side effect, not new tests written to
+# justify the change). The 608-row packet itself is left in place, untouched
+# (still used by tests/test_redraft_profile_practical_mode_toggle.py's own
+# fixture) -- only this module's pointer moves.
 REDRAFT_PACKET_RELATIVE = Path(
-    "docs/hq/model/nwr_redraft_2026_rookie_projection_candidate_v1_20260809"
+    "docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912"
 )
-REDRAFT_SOURCE_NAME = "GOVERNED_COMBINED_608_PROJECTION_SNAPSHOT.csv"
-REDRAFT_SOURCE_SHA256 = "e483caaedc236140bcdfeccdd759bf8726a4b231bbaf3e9fdc461873d3921c25"
+REDRAFT_SOURCE_NAME = "GOVERNED_COMBINED_564_PROJECTION_SNAPSHOT.csv"
+REDRAFT_SOURCE_SHA256 = "b87c7296647b83a6103209a2995827766b7957a35270edb1624d7a61102929f4"
 
 BRIDGE_MODE = "ROOKIE_VETERAN"
 PRODUCTION = "PRODUCTION"
