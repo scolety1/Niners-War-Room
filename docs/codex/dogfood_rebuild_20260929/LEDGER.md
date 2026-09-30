@@ -829,3 +829,53 @@ No governed valuation model touched (`marginal_roster_utility_v2`, `governed_ass
 
 1. **Dynasty's "outside the top-240 board" roster-composition/need-miscount limitation** (found this pass, live-reproduced with Cam Little/JAX K) is real but NOT K/DST-specific and NOT the same root cause as Redraft's bug — a dedicated future worker should decide whether Dynasty needs its own "unranked/manual occupant" concept (a real new feature, not a wiring fix) before attempting a fix.
 2. **The stale-backend-reuse failure mode observed this pass** (a new `Start-Process` silently losing a port-bind race to an already-running old-code process, with the readiness probe unable to tell the difference) is worth a standing caution for future workers using `nwr_release_gate_smoke.ps1`: always independently verify the freshly-reported PID is not a repeat of a PID that was already running before the restart was requested, not just that some process answers `200` on the target port.
+
+---
+
+# Exact full-suite failure reconciliation (P0 owner directive — exact names, not counts)
+
+Scoped dispatch, `upgrade/nwr-prospective-outcomes-v1-20260914` worktree, dispatch HEAD `2fe3165e` (confirmed via `git log -1 --oneline` at session start — matched exactly; only pre-existing untracked entries were the two known `local_exports.backup-*` directories). Final HEAD after this pass: **`295a4a6e`**. Full per-test detail lives in `docs/codex/dogfood_rebuild_20260929/FULL_SUITE_FAILURE_INVENTORY.md`; this entry is the summary.
+
+**The owner's own words, addressed directly**: *"DID THE CURRENT UPGRADE INTRODUCE ANY NEW FAILURE OR ERROR? Prove that by exact names, not counts."* Answer: **no** — proven by exact-name diff against a real pre-cycle baseline, not by count similarity, with the diffing methodology itself independently audited and corrected mid-pass (see below).
+
+## Methodology, including a real self-caught measurement defect
+
+Baseline commit `b5061437` (confirmed via `git log --oneline -1 2512e06f~1` to be the exact commit immediately before this cycle's first commit). Both full suites run via `python -m pytest tests/ -q`, every `FAILED`/`ERROR` node id captured verbatim and diffed by exact string.
+
+**A real methodology defect was found and fixed before trusting any number**: the first two baseline runs used an isolated `git worktree add` under this session's own deeply-nested scratchpad directory. That produced ~110 extra spurious failures, traced live to Windows' 260-character `MAX_PATH` limit — several `docs/hq/<long-descriptive-name>/...` tracked-file paths, once prefixed by that deep scratch path, exceeded 260 characters and raised `FileNotFoundError` even though the files genuinely exist (confirmed directly: `ls` showed the file present at the exact path Python's `io.open()` claimed didn't exist). The live worktree's much shorter `C:\NWR\prospective-outcomes-v1\...` root never approaches that limit for the same relative paths, so this only ever affected the isolated baseline comparison, never the real current-HEAD measurement. Fixed by rebuilding the baseline worktree at a 15-character path (`C:\nwrtmp\bl_wt`) and rerunning; the corrected baseline came back with ~112 fewer failures, and the previously-inflated "FIXED" set shrank from a spurious 120 to a real, evidence-backed 8. A second, independent defect (this session's own concurrent edits contaminating an in-flight background full-suite run) was also caught and discarded before trusting any current-HEAD number — see the inventory doc's Methodology section for both, in full.
+
+The real, gitignored `local_exports/` directory (19 MB, 246 files) was copied read-only from the live worktree into the baseline worktree before every baseline run, so the diff isolates code, not local-data-completeness drift. The live worktree's `local_exports/` was only ever read from, never modified.
+
+## Exact counts and sets
+
+| | Failed | Error | Total |
+|---|---|---|---|
+| Baseline `b5061437` (corrected) | 329 | 13 | **342** |
+| Current HEAD `295a4a6e` (reproduced twice, byte-identical) | 323 / 321 | 13 | **334** |
+
+- **NEW = 0.** Zero tests fail at current HEAD that did not already fail at the corrected baseline — the current upgrade cycle introduced no new test regression, by exact name. One apparent candidate (`test_routine_refresh_service.py`'s `test_routine_refresh_dry_run_does_not_mutate_files` / `test_routine_refresh_partial_failure_reports_sleeper_error`, present in only the FIRST of two identical current-HEAD reruns) was investigated, not assumed away: confirmed, via isolated rerun and a rerun combined with the two files this pass touched, that both pass cleanly every time — genuine, reproducible, order/state-dependent flakiness elsewhere in the ~5700-test suite, unrelated to this cycle's or this pass's diff.
+- **FIXED = 8 exact tests** (full list and explanation in the inventory doc): 3 from this pass's own fixes to `tests/test_desktop_application_api.py` (2 of the 4 famous backend failures below), 1 from this pass's rookie-veteran-bridge fix reflected in `tests/test_rookie_veteran_dynasty_bridge_service.py`, 3 from this cycle's own earlier P0 test-suite corruption-hazard fix (commit `e4fca3f1`, already documented above in this ledger — now honest `pytest.skip`s), and 1 (`test_nwr_pure_experiment_service.py::test_build_git_provenance_against_the_real_worktree_returns_real_values`) that is **not a real fix** — it asserts live git-provenance facts about whichever commit it runs against and necessarily differs between `b5061437` and `295a4a6e`; flagged honestly rather than miscounted.
+- **UNCHANGED = 334 exact tests**, genuinely pre-existing at both ends, every one individually classified by TEST NAME / FILE / AREA / CURRENT-PRODUCT-OR-LEGACY / ROOT CAUSE / ACTION in the inventory doc. Programmatically cross-checked: **zero** of the 334 missing from the doc, **zero** extra, **zero** file-level test-count mismatches.
+
+`git status --short` for the whole repo, captured immediately before and after the final full-suite run: byte-identical both times (only the 2 pre-existing untracked `local_exports.backup-*` dirs). No new test-induced tracked-file-mutation hazard found this pass, beyond the one already fixed and documented earlier in this ledger.
+
+## The four long-running backend-API failures — final dispositions (full detail in the inventory doc)
+
+1. **`test_dynasty_facade_composes_real_governed_workflows`** — `ENVIRONMENT_DEPENDENCY`, left honestly failing. One field (`marketMatched: 239` real vs. `230` hardcoded) driven by the live, machine-shared `%LOCALAPPDATA%\NinersWarRoom\data\refresh_data` DynastyProcess snapshot, confirmed untouched by any file this cycle changed; not forced green since there is no stable number to hardcode against a source that "can change schema/values day to day."
+2. **`test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`** — `REAL_CURRENT_DEFECT`, **FIXED**. `rookie_veteran_dynasty_bridge_service.py` was reading an abandoned 608-row candidate snapshot whose freshness had genuinely expired, silently degrading every real Dynasty Compare "rookie vs. veteran" comparison (including two established veterans) to `INSUFFICIENT EVIDENCE`. Repointed to the same governed Freeze V7 snapshot every other live surface already uses; verified the real win-now VBD gap for the test's own named players produces the exact value it already expected.
+3. **`test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`** — `EXPECTED_CONTRACT_CHANGE` (two stacked stale assertions), **FIXED**. This dev shell's real `NWR_FANTASYPROS_API_KEY` was never forced closed by the test (now `monkeypatch.delenv`'d, matching the file's own existing pattern), which unmasked a second, real additive `nwrPureExperimental` preset key never added to the test's expected set (same "additive key never added to the assertion" pattern the test's own comments already document twice). Zero production code touched.
+4. **`test_facade_has_no_streamlit_or_app_component_dependency`** — `OBSOLETE_TEST`, **FIXED**. The AST-based dependency check applied its "app"/"streamlit" prefix test to every `ast.ImportFrom` imported SYMBOL name, not the module name, false-triggering on real function imports like `apply_status_overrides_to_ranking`. Corrected to inspect module names only; confirmed the facade genuinely has zero real Streamlit/legacy-`app` coupling.
+
+`tests/test_desktop_application_api.py` final state: **50 passed, 1 failed** (the one honestly-left `ENVIRONMENT_DEPENDENCY` case) — down from the 4 failures documented as "pre-existing baseline" across this entire multi-month project, by exact name, not estimate.
+
+## Files changed this pass
+
+- `src/services/rookie_veteran_dynasty_bridge_service.py` — repointed the abandoned 608-row candidate snapshot to the governed Freeze V7 (564-row) snapshot.
+- `tests/test_rookie_veteran_dynasty_bridge_service.py` — updated the one real (non-synthetic) consumer's hardcoded row count (608 → 564).
+- `tests/test_desktop_application_api.py` — fixed 2 of the 4 famous backend failures (module-name AST check; forced `NWR_FANTASYPROS_API_KEY` precondition + `nwrPureExperimental` key).
+- `tests/test_redraft_canonical_state_caller_conversions.py` — the shared Sleeper mock never anticipated the two additional real, optional GET calls (`state/nfl`, bare `league/{id}`) that `redraft_bootstrap()` now makes via the additive `LeagueLifecycleContext` composition (Worker 6, earlier this cycle); added both.
+- `tests/test_player_availability_status_consumer_consistency.py` — the canonical single-authority call-count canary was hardcoded at 7; `redraft_trade_counters` (Worker 8, earlier this cycle) correctly reuses the same canonical helper as a real 8th call site; updated the count.
+- `docs/codex/dogfood_rebuild_20260929/FULL_SUITE_FAILURE_INVENTORY.md` — new, full per-test inventory.
+- `docs/codex/dogfood_rebuild_20260929/LEDGER.md` — this entry.
+
+No governed valuation model touched. No Sleeper/ESPN write endpoint called (all fixes were either pure test-mock/assertion corrections or a data-source-pointer fix reusing an already-governed snapshot). KHA/403N18th untouched. The 4 live dev servers were never restarted or queried — out of scope for a pure backend-test-investigation dispatch, and this pass made zero API-behavior changes that would require a restart to observe. The temporary baseline worktree (rebuilt once at a short path mid-pass, per the methodology correction above) was removed via `git worktree remove` at the end of this pass; `git worktree list` confirms no stray entry remains.
