@@ -12,6 +12,10 @@ from src.services.redraft_engine_v1_service import (
     ScoringSettings,
 )
 from src.services.redraft_trade_analysis_service import TradeAnalysisError, evaluate_trade
+from src.services.waiver_engine_service import (
+    resolve_full_roster_with_unranked_occupants,
+    resolve_roster_canonical_ids,
+)
 
 
 def _row(player_id, name, position, value, rank):
@@ -206,3 +210,76 @@ def test_unranked_manual_asset_ros_value_is_honestly_unknown_not_silently_zero()
     # And the top-level delta must be flagged as partial/not-fully-known,
     # since it silently summed a real known value against an unknown one.
     assert result.ros_value_delta_all_known is False
+
+
+def test_real_kdst_roster_occupants_are_reported_filled_not_holes_before_and_after_trade() -> None:
+    """NWR Dogfood Rebuild V1, item 4 -- real, owner-reported P0 bug.
+
+    Live-reproduced against the real Fantasy Gamers Sleeper league
+    (2026-09-29): the owner has a real, real-catalog-resolvable kicker
+    and team defense rostered, yet Trade Analysis reported
+    `starterHolesBefore`/`starterHolesAfter` as `["K 0/1", "DST 0/1"]`
+    for a trade that never touched either position. Root cause: the
+    facade fed `resolve_roster_canonical_ids`'s `canonical_player_ids`
+    straight into `evaluate_trade` as `roster_before_ids` --  and that
+    resolver's own `ranking_by_identity` is sourced only from the
+    governed ranking, which structurally never has K/DST rows (NWR has
+    no ranked model for them), so a real K/DST occupant is ALWAYS
+    dropped, making a filled slot look empty.
+
+    This test builds a realistic roster (a real kicker + a real team
+    defense resolved from a Sleeper-shaped catalog, exactly like the live
+    reproduction) the same way `desktop_facade.redraft_trade_analysis`
+    now does -- `resolve_roster_canonical_ids` followed by the real fix,
+    `resolve_full_roster_with_unranked_occupants` -- and proves the K/DST
+    slots are reported FILLED, never a hole, both BEFORE and AFTER a
+    trade that only swaps two skill-position players.
+    """
+
+    ranking = _ranking()
+    ranking_rows = [
+        {
+            "playerId": row.player_id, "playerName": row.player_name,
+            "position": row.position, "team": row.team,
+        }
+        for row in ranking.rows
+    ]
+    # A Sleeper-shaped players/nfl catalog entry per rostered skill player,
+    # plus a real kicker and a real team defense -- neither has (or ever
+    # will have) a row in `ranking_rows`, matching NWR's real, permanent
+    # "K/DST are always manual" scope boundary.
+    players_catalog = {
+        "s-qb1": {"full_name": "QB One", "position": "QB", "team": "TST"},
+        "s-rb1": {"full_name": "RB One", "position": "RB", "team": "TST"},
+        "s-rb2": {"full_name": "RB Two", "position": "RB", "team": "TST"},
+        "s-rb3": {"full_name": "RB Three", "position": "RB", "team": "TST"},
+        "s-wr1": {"full_name": "WR One", "position": "WR", "team": "TST"},
+        "s-wr2": {"full_name": "WR Two", "position": "WR", "team": "TST"},
+        "s-te1": {"full_name": "TE One", "position": "TE", "team": "TST"},
+        "3451": {"full_name": "Ka'imi Fairbairn", "position": "K", "team": "HOU"},
+        "NE": {"position": "DEF", "team": "NE"},
+    }
+    resolved = resolve_roster_canonical_ids(
+        roster_sleeper_player_ids=list(players_catalog),
+        players_catalog=players_catalog, ranking_rows=ranking_rows,
+    )
+    # Confirm the bug's real precondition: the resolver drops the K/DST.
+    assert set(resolved.unmatched_sleeper_player_ids) == {"3451", "NE"}
+    assert "qb1" in resolved.canonical_player_ids
+
+    roster_before_ids, extra_manual_assets = resolve_full_roster_with_unranked_occupants(
+        resolved=resolved, players_catalog=players_catalog, manual_assets=(),
+    )
+
+    result = evaluate_trade(
+        roster_before_ids=roster_before_ids,
+        gives_ids=["rb3"],
+        receives_ids=["wr-star"],
+        profile=ranking.profile,
+        ranking=ranking,
+        manual_assets=extra_manual_assets,
+    )
+    # The real correctness assertion: neither K nor DST is reported as a
+    # hole, before or after a trade that never touches either position.
+    assert result.starter_holes_before == ()
+    assert result.starter_holes_after == ()

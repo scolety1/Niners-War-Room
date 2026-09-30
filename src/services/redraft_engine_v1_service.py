@@ -151,6 +151,22 @@ class LeagueProfile:
     provider: str = "local"
     provider_league_id: str | None = None
     schema_version: int = SCHEMA_VERSION
+    # NWR Dogfood Rebuild V1 (item 5): a presentation-only flag -- never
+    # read by any ranking/scoring/legality computation. Real profile data
+    # is never deleted for this; only Redraft's own profile SELECTOR
+    # consults this field (see `visible_in_redraft_selector` below). Two
+    # genuinely different real cases both set this True:
+    #   * a real league that another NWR app already owns end-to-end (the
+    #     owner's dynasty league, "Las Vegas Enginerds," is selectable in
+    #     the DYNASTY app via its own, completely separate profile store
+    #     at local_exports/dynasty_v1/league_profiles/ -- this Redraft-side
+    #     profile is a real, harmless leftover import, never read by
+    #     Dynasty, but confusingly re-offered as a REDRAFT league too).
+    #   * a development/test/fixture profile never meant for the owner's
+    #     real-league selector (e.g. "Isolation Check Local").
+    # Defaults False so every existing and future real Redraft-only league
+    # (Fantasy Gamers, KHA, 403 N 18th, ...) is unaffected.
+    hidden_from_redraft_selector: bool = False
 
 
 @dataclass(frozen=True)
@@ -387,6 +403,7 @@ def _profile_from_document(document: Mapping[str, Any]) -> LeagueProfile:
                 str(document["provider_league_id"]) if document.get("provider_league_id") else None
             ),
             schema_version=int(document.get("schema_version", 0)),
+            hidden_from_redraft_selector=bool(document.get("hidden_from_redraft_selector", False)),
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise RedraftValidationError(f"Invalid league profile document: {exc}") from exc
@@ -428,6 +445,19 @@ def list_profiles(root: str | Path, *, include_archived: bool = False) -> tuple[
         if include_archived or not profile.archived:
             profiles.append(profile)
     return tuple(sorted(profiles, key=lambda item: (item.league_name.casefold(), item.profile_id)))
+
+
+def selectable_profiles(profiles: Sequence[LeagueProfile]) -> tuple[LeagueProfile, ...]:
+    """NWR Dogfood Rebuild V1 (item 5): the presentation-layer filter for
+    Redraft's own profile selector -- excludes any profile marked
+    `hidden_from_redraft_selector` (a real, dynasty-owned league re-listed
+    here by mistake, or a development/test/fixture profile). Real profile
+    data is never deleted or archived by this filter; `list_profiles`
+    itself, profile activation/editing, and every non-selector consumer
+    are all completely unaffected -- only what Redraft's UI offers to
+    switch to changes."""
+
+    return tuple(profile for profile in profiles if not profile.hidden_from_redraft_selector)
 
 
 def profile_store_errors(root: str | Path) -> tuple[str, ...]:

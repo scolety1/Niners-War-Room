@@ -18,6 +18,7 @@ from src.services.waiver_engine_service import (
     pair_add_drop,
     rank_drop_candidates,
     rank_waiver_candidates,
+    resolve_full_roster_with_unranked_occupants,
     resolve_roster_canonical_ids,
     suggest_faab_bids,
 )
@@ -608,6 +609,96 @@ def test_describe_unmatched_roster_players_preserves_order_and_empty_input() -> 
     }
     described = describe_unmatched_roster_players(["3451", "NE"], players_catalog)
     assert [item.sleeper_id for item in described] == ["3451", "NE"]
+
+
+# ---------------------------------------------------------------------------
+# NWR Dogfood Rebuild V1 (item 4): real K/DST false-starter-hole bug.
+#
+# Live-reproduced against the real Fantasy Gamers Sleeper roster
+# (2026-09-29): a real rostered kicker (Ka'imi Fairbairn) and a real
+# rostered defense (CIN) both resolve cleanly in the Sleeper catalog but
+# are always `UNMATCHED_IDENTITY` under `resolve_roster_canonical_ids`,
+# because that resolver's own `ranking_by_identity` is sourced only from
+# the governed ranking, which structurally never has K/DST rows. Trade
+# Analysis fed the resulting (K/DST-less) `canonical_player_ids` straight
+# into `evaluate_trade` as `roster_before_ids`, so a trade that never
+# touched K/DST still reported `starter_holes_before`/`_after` as
+# `('K 0/1', 'DST 0/1')` even though the roster actually had both --
+# owner-reported, confirmed live, fixed via
+# `resolve_full_roster_with_unranked_occupants` (see its docstring for
+# the full trace); a real end-to-end regression using `evaluate_trade`
+# lives in test_redraft_trade_analysis_service.py.
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_full_roster_with_unranked_occupants_synthesizes_not_modeled_rows() -> None:
+    """No manual K/DST assets loaded (the real, current Fantasy Gamers
+    state) -- a real kicker and a real team defense must still be
+    recovered as real roster occupants, not silently dropped."""
+
+    ranking_rows = [{"playerId": "qb1", "playerName": "QB One", "position": "QB", "team": "AAA"}]
+    players_catalog = {
+        "s1": {"full_name": "QB One", "position": "QB", "team": "AAA"},
+        "3451": {"full_name": "Ka'imi Fairbairn", "position": "K", "team": "HOU"},
+        "NE": {"position": "DEF", "team": "NE"},
+    }
+    resolved = resolve_roster_canonical_ids(
+        roster_sleeper_player_ids=["s1", "3451", "NE"],
+        players_catalog=players_catalog, ranking_rows=ranking_rows,
+    )
+    assert resolved.canonical_player_ids == ("qb1",)
+    assert set(resolved.unmatched_sleeper_player_ids) == {"3451", "NE"}
+
+    roster_ids, extra_assets = resolve_full_roster_with_unranked_occupants(
+        resolved=resolved, players_catalog=players_catalog, manual_assets=(),
+    )
+    assert "qb1" in roster_ids
+    assert len(roster_ids) == 3  # the QB plus one recovered K and one recovered DST
+    assert len(extra_assets) == 2
+    by_position = {asset["position"]: asset for asset in extra_assets}
+    assert by_position["K"]["player_name"] == "Ka'imi Fairbairn"
+    assert by_position["DST"]["player_name"] == "NE D/ST"
+    # The synthesized ids must actually appear in roster_ids (never orphaned).
+    assert by_position["K"]["player_id"] in roster_ids
+    assert by_position["DST"]["player_id"] in roster_ids
+
+
+def test_resolve_full_roster_with_unranked_occupants_reuses_an_existing_manual_asset_id() -> None:
+    """A league that already has a real manual K/DST asset loaded (e.g.
+    403 N 18th, KHA) must resolve to THAT asset's own id -- never a second,
+    competing synthesized entry -- so its real manual valuation is used."""
+
+    ranking_rows: list[dict[str, object]] = []
+    players_catalog = {
+        "3451": {"full_name": "Ka'imi Fairbairn", "position": "K", "team": "HOU"},
+    }
+    manual_assets = [
+        {"player_id": "udk-k-9", "player_name": "Ka'imi Fairbairn", "position": "K", "team": "HOU"},
+    ]
+    resolved = resolve_roster_canonical_ids(
+        roster_sleeper_player_ids=["3451"], players_catalog=players_catalog,
+        ranking_rows=ranking_rows,
+    )
+    roster_ids, extra_assets = resolve_full_roster_with_unranked_occupants(
+        resolved=resolved, players_catalog=players_catalog, manual_assets=manual_assets,
+    )
+    assert roster_ids == ("udk-k-9",)
+    assert extra_assets == ()  # no new synthesized entry -- the real manual asset id was reused
+
+
+def test_resolve_full_roster_with_unranked_occupants_leaves_unknown_ids_unmatched() -> None:
+    """A genuinely unresolvable (non-K/DST) identity gap must NOT be
+    silently absorbed by this fix -- only real, catalog-resolvable K/DST
+    occupants are recovered."""
+
+    resolved = resolve_roster_canonical_ids(
+        roster_sleeper_player_ids=["ghost-id"], players_catalog={}, ranking_rows=[],
+    )
+    roster_ids, extra_assets = resolve_full_roster_with_unranked_occupants(
+        resolved=resolved, players_catalog={}, manual_assets=(),
+    )
+    assert roster_ids == ()
+    assert extra_assets == ()
 
 
 # ---------------------------------------------------------------------------

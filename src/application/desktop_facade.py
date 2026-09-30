@@ -203,6 +203,7 @@ from src.services.redraft_engine_v1_service import (
     reconcile_sleeper_profile_identities,
     redraft_store_root,
     save_profile,
+    selectable_profiles,
     set_active_profile,
     undo_last_draft_pick,
     utc_now,
@@ -230,6 +231,7 @@ from src.services.waiver_engine_service import (
     pair_add_drop,
     rank_drop_candidates,
     rank_waiver_candidates,
+    resolve_full_roster_with_unranked_occupants,
     resolve_roster_canonical_ids,
     suggest_faab_bids,
 )
@@ -2141,7 +2143,19 @@ class DesktopBackendFacade:
         warnings: list[str] = list(seed_warnings)
         try:
             reconcile_sleeper_profile_identities(self.redraft_root)
-            profiles = list_profiles(self.redraft_root, include_archived=False)
+            # NWR Dogfood Rebuild V1 (item 5): the owner found "Las Vegas
+            # Enginerds" (their real DYNASTY league, already owned
+            # end-to-end by the separate Dynasty app/profile store)
+            # confusingly selectable here, alongside development/test/
+            # fixture profiles. Presentation-only: `selectable_profiles`
+            # never deletes, archives, or mutates any profile -- it only
+            # filters what THIS selector list offers. The currently active
+            # profile is never forced off of a hidden profile by this
+            # filter (a hidden profile stays fully activatable/functional
+            # if it is already active); it just will not be re-offered.
+            profiles = selectable_profiles(
+                list_profiles(self.redraft_root, include_archived=False)
+            )
             raw_selected_id = active_profile_id(self.redraft_root)
             selected = active_profile(self.redraft_root)
         except OSError as exc:
@@ -5046,13 +5060,29 @@ class DesktopBackendFacade:
                 status=409,
             )
         manual_assets = self._manual_assets_for_profile(selected.profile_id)
+        # NWR Dogfood Rebuild V1, item 4 (K/DST false starter-hole fix):
+        # `own_resolved.canonical_player_ids` silently drops every real
+        # K/DST roster occupant (see `resolve_full_roster_with_unranked_
+        # occupants`'s own docstring for the full root-cause trace) --
+        # feeding that directly to `evaluate_trade` as `roster_before_ids`
+        # made a real, filled K/DST slot look empty. Augment with real,
+        # catalog-resolvable K/DST occupants (matched to an existing
+        # manual asset's id when one exists, else a synthesized "NOT
+        # MODELED" pool row) so roster composition reports them as
+        # filled. `gives`/`receives` resolution above is unchanged -- a
+        # trade actually involving an unresolved player must still fail
+        # loudly via TRADE_ANALYSIS_IDENTITY_UNRESOLVED.
+        roster_before_ids, synthetic_manual_assets = resolve_full_roster_with_unranked_occupants(
+            resolved=own_resolved, players_catalog=players, manual_assets=manual_assets,
+        )
+        manual_assets_for_evaluation = (*manual_assets, *synthetic_manual_assets)
         status_overrides = load_status_overrides(self.repo_root)
         try:
             evaluation = evaluate_trade(
-                roster_before_ids=own_resolved.canonical_player_ids,
+                roster_before_ids=roster_before_ids,
                 gives_ids=gives_resolved.canonical_player_ids,
                 receives_ids=receives_resolved.canonical_player_ids,
-                profile=selected, ranking=ranking, manual_assets=manual_assets,
+                profile=selected, ranking=ranking, manual_assets=manual_assets_for_evaluation,
                 status_overrides=status_overrides,
             )
         except TradeAnalysisError as exc:

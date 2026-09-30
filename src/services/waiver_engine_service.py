@@ -197,6 +197,100 @@ def describe_unmatched_roster_players(
     return tuple(out)
 
 
+def resolve_full_roster_with_unranked_occupants(
+    *,
+    resolved: ResolvedRoster,
+    players_catalog: Mapping[str, Mapping[str, Any]],
+    manual_assets: Sequence[Mapping[str, Any]],
+) -> tuple[tuple[str, ...], tuple[dict[str, Any], ...]]:
+    """Real fix for the K/DST false-starter-hole bug (NWR Dogfood Rebuild
+    V1, item 4). `resolve_roster_canonical_ids`'s own `ranking_by_identity`
+    is sourced only from the governed ranking, which structurally never
+    contains K/DST rows (see `_asset_pool`'s own "K/DST are always
+    manual" comment) -- so a real, catalog-resolvable K/DST roster
+    occupant ALWAYS lands in `unmatched_sleeper_player_ids` and is
+    silently dropped from `canonical_player_ids`. That is a deliberate,
+    disclosed, correct scope boundary for WAIVER ranking (K/DST have no
+    ranked value to rank -- see `_OUT_OF_RANKED_MODEL_SCOPE_POSITIONS`
+    above), but it is WRONG when that same resolved roster is used to
+    report starter-slot composition (Trade Analysis's roster-before/
+    roster-after): a dropped player reads to `_select_starting_lineup`
+    as an EMPTY slot, not as a real slot NWR simply has no valuation for.
+    Reproduced live against the real Fantasy Gamers Sleeper league
+    (2026-09-29): a real rostered kicker (Ka'imi Fairbairn) and a real
+    rostered defense (CIN) both resolve cleanly in the Sleeper player
+    catalog but are reported `UNMATCHED_IDENTITY` by
+    `resolve_roster_canonical_ids`, purely because neither has a governed
+    ranking row -- and Trade Analysis then reported "K 0/1"/"DST 0/1"
+    starter holes for a roster that actually rosters both.
+
+    Extends the already-matched canonical ids with one additional id per
+    real, catalog-resolvable K/DST occupant (`OUT_OF_RANKED_MODEL_SCOPE`,
+    per `describe_unmatched_roster_players`): reusing an existing manual
+    K/DST asset's own id when this occupant's name/position/team identity
+    already matches one loaded for this profile (so a real manual
+    valuation is used, never a second competing entry), or else
+    synthesizing one new "NOT MODELED" row -- identical in shape to the
+    manual K/DST rows `_asset_pool` already builds from `manual_assets`
+    -- when no manual data exists yet for this occupant. No new identity
+    system: reuses the same `_identity()`/`_sleeper_position()` matcher
+    every other K/DST lookup in this codebase already uses. Genuinely
+    `UNKNOWN_TO_CATALOG` occupants are left exactly as unmatched as
+    before -- this only concerns real, resolvable roster occupants that
+    are merely outside NWR's ranked model, never a real identity gap.
+    """
+
+    manual_by_identity: dict[tuple[str, str, str], str] = {}
+    for raw in manual_assets:
+        manual_id = str(raw.get("player_id") or raw.get("playerId") or "")
+        if not manual_id:
+            continue
+        identity = _identity(
+            raw.get("player_name") or raw.get("playerName"),
+            raw.get("position"),
+            raw.get("team"),
+            allowed_positions=SLEEPER_FANTASY_POSITIONS,
+        )
+        if identity != ("", "", ""):
+            manual_by_identity.setdefault(identity, manual_id)
+
+    extra_ids: list[str] = []
+    extra_assets: list[dict[str, Any]] = []
+    unmatched_items = describe_unmatched_roster_players(
+        resolved.unmatched_sleeper_player_ids, players_catalog
+    )
+    for item in unmatched_items:
+        if item.category != "OUT_OF_RANKED_MODEL_SCOPE":
+            continue
+        entry = players_catalog.get(item.sleeper_id)
+        if not isinstance(entry, Mapping):
+            continue
+        position = _sleeper_position(entry.get("position"))
+        team = str(entry.get("team") or "").upper().strip()
+        name = str(entry.get("full_name") or entry.get("search_full_name") or "").strip()
+        if position == "DST" and not name and team:
+            name = f"{team} D/ST"
+        identity = _identity(name, position, team, allowed_positions=SLEEPER_FANTASY_POSITIONS)
+        matched_manual_id = manual_by_identity.get(identity)
+        if matched_manual_id:
+            extra_ids.append(matched_manual_id)
+            continue
+        synthetic_id = f"unranked_roster_occupant:{item.sleeper_id}"
+        extra_ids.append(synthetic_id)
+        extra_assets.append(
+            {
+                "player_id": synthetic_id,
+                "player_name": name or item.label,
+                "position": position,
+                "team": team,
+            }
+        )
+    return (
+        tuple(resolved.canonical_player_ids) + tuple(extra_ids),
+        tuple(extra_assets),
+    )
+
+
 @dataclass(frozen=True)
 class WaiverCandidate:
     sleeper_player_id: str

@@ -46,6 +46,7 @@ from src.services.redraft_engine_v1_service import (
     save_profile,
     score_projection,
     score_projection_availability_adjusted,
+    selectable_profiles,
     set_active_profile,
     undo_last_draft_pick,
 )
@@ -530,6 +531,75 @@ def test_receipt_backed_sleeper_profile_identity_migration_preserves_existing_se
     assert reconciled[0].scoring.reception == 1.0
     assert reconciled[0].provider == "sleeper"
     assert reconciled[0].provider_league_id == "1312983576827920384"
+
+
+def test_selectable_profiles_hides_flagged_profiles_but_list_profiles_still_sees_them(
+    tmp_path: Path,
+) -> None:
+    """NWR Dogfood Rebuild V1, item 5 -- real product-confusion bug: the
+    owner's real DYNASTY league ("Las Vegas Enginerds," already owned
+    end-to-end by the separate Dynasty app/profile store) and development/
+    test/fixture profiles were all confusingly re-offered in Redraft's own
+    profile selector. Fix is presentation-only: `hidden_from_redraft_
+    selector` never deletes or archives a profile, and `list_profiles` --
+    the function every non-selector consumer (activation, editing,
+    reconciliation, the Sleeper identity boundary) already relies on --
+    must keep returning every real profile exactly as before. Only
+    `selectable_profiles` (the new function `desktop_facade.
+    redraft_bootstrap` wires into what the frontend selector renders)
+    excludes flagged profiles."""
+
+    visible = create_profile(tmp_path, builtin_presets()[0], league_name="Fantasy Gamers")
+    hidden_dynasty_owned = create_profile(
+        tmp_path, builtin_presets()[0], league_name="Las Vegas Enginerds"
+    )
+    save_profile(tmp_path, replace(hidden_dynasty_owned, hidden_from_redraft_selector=True))
+    hidden_fixture = create_profile(
+        tmp_path, builtin_presets()[0], league_name="Isolation Check Local"
+    )
+    save_profile(tmp_path, replace(hidden_fixture, hidden_from_redraft_selector=True))
+
+    all_profiles = list_profiles(tmp_path)
+    assert {profile.profile_id for profile in all_profiles} == {
+        visible.profile_id, hidden_dynasty_owned.profile_id, hidden_fixture.profile_id,
+    }
+
+    shown = selectable_profiles(all_profiles)
+    assert {profile.profile_id for profile in shown} == {visible.profile_id}
+
+    # The hidden profile remains fully real and functional -- it is not
+    # deleted, archived, or blocked from activation, only un-offered by
+    # the selector.
+    assert load_profile(tmp_path, hidden_dynasty_owned.profile_id).league_name == (
+        "Las Vegas Enginerds"
+    )
+    activated = set_active_profile(tmp_path, hidden_dynasty_owned.profile_id)
+    assert activated.profile_id == hidden_dynasty_owned.profile_id
+    assert active_profile(tmp_path) == activated
+
+
+def test_hidden_from_redraft_selector_defaults_false_for_every_existing_and_new_profile(
+    tmp_path: Path,
+) -> None:
+    """Backward compatibility: a profile document written before this fix
+    (no `hidden_from_redraft_selector` key at all) and a brand-new profile
+    must both default to visible -- this fix must never silently hide a
+    real league it wasn't explicitly told to hide."""
+
+    created = create_profile(tmp_path, builtin_presets()[0], league_name="KHA")
+    assert created.hidden_from_redraft_selector is False
+
+    profile_path = tmp_path / "profiles" / f"{created.profile_id}.json"
+    document = json.loads(profile_path.read_text(encoding="utf-8"))
+    assert "hidden_from_redraft_selector" not in document or document[
+        "hidden_from_redraft_selector"
+    ] is False
+    del document["hidden_from_redraft_selector"]
+    profile_path.write_text(json.dumps(document), encoding="utf-8")
+
+    reloaded = load_profile(tmp_path, created.profile_id)
+    assert reloaded.hidden_from_redraft_selector is False
+    assert selectable_profiles((reloaded,)) == (reloaded,)
 
 
 def test_malformed_profile_is_reported_without_hiding_healthy_profiles(tmp_path: Path) -> None:
