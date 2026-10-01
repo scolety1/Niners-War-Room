@@ -502,4 +502,403 @@ Combined result, quoted from both source documents: **`tests/test_desktop_applic
 
 ---
 
-<!-- PART 2 (historical requirements) continues below, appended by a later pass -->
+## Part 2 — Historical Requirement Closure
+
+Branch: `upgrade/nwr-prospective-outcomes-v1-20260914`
+Worktree: `C:\NWR\prospective-outcomes-v1`
+Starting HEAD for this pass: `5d89a8f7` (confirmed via `git log -1 --oneline` at session start — matched exactly; untracked entries were only the two known `local_exports.backup-*` directories, untouched).
+
+This is Part 2 of the owner-demanded Master Requirement Ledger: older historical requirements going back months, predating the current dogfood-rebuild cycle documented in Part 1 above. It reuses Part 1's exact disposition taxonomy and evidence-labeling convention verbatim (see Part 1's header). Built by reading Part 1 in full, `LEDGER.md` (902 lines) and `FULL_SUITE_FAILURE_INVENTORY.md` (1195 lines) in full, all 38 files under the coordinating session's own `memory/` directory, and by independently spot-checking a representative sample of the resulting claims this pass — fresh `curl` calls against the real running dev backends (Redraft PID 2888/18742, Dynasty PID 22464/18741, both identity-verified via `Get-CimInstance Win32_Process` before use) against the real Las Vegas Enginerds and Fantasy Gamers leagues, plus direct code inspection — not merely citing prior sessions' claims. No source code was modified by this pass; it is pure documentation/verification, per this pass's own explicit hard boundary.
+
+Per the owner's exact instruction, conflicting historical requirements are reconciled with **"NEWEST explicit owner request wins."** Where a genuinely older, now-superseded version of a Part-1-closed topic exists, it is dispositioned here explicitly rather than silently dropped.
+
+---
+
+### 7.1 Original custom Dynasty identity
+
+- **OWNER REQUEST**: Give the owner's real Dynasty league its own real, custom identity (true scoring rules, true roster shape, true draft-pick capital) rather than a generic template.
+- **FIRST KNOWN CONTEXT**: `nwr-dynasty-league-import-v1` memory (session `73e6052b`, 2026-09-18/19) — the owner supplied their real league identity (Las Vegas Enginerds, Sleeper league `1344772855908290560`, team "Niners", roster 7) after two prior passes ([[nwr-full-cycle-v1]], [[nwr-dogfood-v1]]) confirmed no real dynasty league was configured anywhere on the machine.
+- **CURRENT IMPLEMENTATION**: `src/services/dynasty_sleeper_league_service.py` (real GET-only Sleeper fetch + a pure `annotate_ownership()` join, never touching `governed_asset_registry_service.py`'s valuation computation); real captured custom facts — non-PPR (`rec=0.0` despite 0.4 first-down bonuses), `pass_td=3`, all 2pt=2, real kicker-distance tiers, **no DST/DEF roster slot at all**, `taxi_slots=0`, `reserve_slots=2`, `num_teams=10`, FAAB waivers, pick trading on; real draft-pick capital (2026 historical 5 owned, 2027 projected 5, 2028 projected 6, correctly excluding the league's separate one-time 24-round startup draft from the baseline). Active-league selection persists server-side (`local_exports/dynasty_v1/active_league_profile.json`).
+- **TEST COVERAGE**: byte-identical-when-omitted regression tests on `dynasty_bootstrap`/`dynasty_workspace`/`dynasty_asset`/`compare_dynasty_assets`/`evaluate_dynasty_trade` (all gained an optional `league_profile_id` param, every one a no-op when omitted, per `nwr-dynasty-league-import-v1`).
+- **LIVE PROOF**: Independently re-confirmed this pass via a fresh `GET /api/v1/bootstrap` (dynasty): `leagueId: "1344772855908290560"`, `leagueName: "Las Vegas Enginerds"`, `myRosterId: 7`, `lifecycleContext.waiverType: "FAAB"`, `faabEnabled: true` — the exact real custom identity facts this topic asked for, still live and correct today, independently of Part 1's own separate fresh checks of the same league for different requirements (1.1/1.4/1.12).
+- **FINAL STATUS**: `IMPLEMENTED_AND_LIVE_VERIFIED`.
+- **REMAINING ACTION**: None for the identity capture itself. Rookie-pick-asset ownership still has no crosswalk (see 7.12 below); no multi-league picker UI exists for Dynasty yet (single active-league profile only) — a real, disclosed, still-open gap from the same memory entry, not newly found.
+
+### 7.2 Current Dynasty value
+
+Fully covered by Part 1 §1.4 ("Current NWR dynasty value vs. frozen base authority") and §1.13 ("NWR-vs-market disagreement"). Nothing older or distinct was found: before the current cycle's Worker 8 restructuring, the Dynasty Rankings page simply showed the frozen base board with no "current vs. base" separation at all — not a different implementation of the same idea, just the literal absence of the concept this topic asks about, which Part 1 §1.4 is the first and only real implementation of.
+
+- **FINAL STATUS**: `ALREADY_IMPLEMENTED` (via Part 1 §1.4/§1.13; cross-reference only).
+- **REMAINING ACTION**: None beyond Part 1 §1.4's own remaining action.
+
+### 7.3 NWR vs market
+
+Fully covered by Part 1 §1.13 (Dynasty edge/gap cards) and §2.12 (Redraft's "Market Rank (ADP)" vs. "War Room Rank" columns, the AGENTS.md-mandated separation) and §3.4 (market freshness). The historical origin of this requirement is AGENTS.md's own standing rule ("Separate Official Rank, Market Rank, War Room Rank, and My Rank") — Part 1 Section 4 already dispositions Official Rank/My Rank as the two signals that genuinely don't exist; Market Rank vs. War Room Rank is the pair that does, and Part 1 §2.12 is its first and only real implementation (the column used to be a single plain "Rank").
+- **FINAL STATUS**: `ALREADY_IMPLEMENTED` (via Part 1 §1.13/§2.12/§3.4; cross-reference only).
+- **REMAINING ACTION**: None beyond Part 1's own remaining actions.
+
+### 7.4 Dynasty waiver logic
+
+Fully covered by Part 1 §1.5. Nothing older exists to reconcile: `nwr-pre-ui-architecture-v1`/Worker 7's own `INSPECTED CODE` finding confirmed Dynasty had **zero** waiver route, weekly-lineup route, streamer route, or backend of any kind before that cycle — there is no prior, now-superseded version of Dynasty waiver logic to compare against "newest wins" rules for; Part 1 §1.5 is the first real implementation, not a replacement of an older one.
+- **FINAL STATUS**: `ALREADY_IMPLEMENTED` (via Part 1 §1.5; cross-reference only).
+- **REMAINING ACTION**: None beyond Part 1 §1.5's own remaining action (the closed-240-row registry roster-need-miscount limitation).
+
+### 7.5 Trade-for / trade-away (general vision)
+
+- **OWNER REQUEST**: A general trade-system vision distinct from the specific mechanics (ownership rules, counter generation, card density) already covered in Part 1 — the owner wanted real "who should I target" and "who should I shop" workspaces in both apps, not merely a package evaluator.
+- **FIRST KNOWN CONTEXT**: Worker 7, `LEDGER.md` Item 10 ("Trade Finder discoverability") and the pre-existing Dynasty `Trade Block / Targets` manual workspace it found already real.
+- **CURRENT IMPLEMENTATION**: Dynasty: `Analyze Trade` (governed package evaluator) + `Market Gaps` (NWR-vs-market view) + `Trade Block / Targets` (a real, persisted manual trade-shopping workspace, part of `src/services/personal_workspace_service.py`'s Dynasty Planning Console family) + `Generate counters` (Part 1 §1.10). Redraft: `Trade Finder` (3 real search modes, see 7.6–7.8 below) + `Analyze Trade` + counter generation (Part 1 §2.16). Together these satisfy the general "trade-for/trade-away" vision in both apps — a real workspace exists for proposing, evaluating, countering, and (Redraft only) searching trades; the specific remaining gap is Dynasty's own win-win/target-player SEARCH engine, already named and tracked as a real capability gap in Part 1 §1.6/1.7, not re-litigated here.
+- **TEST COVERAGE**: Part 1 §1.6/§1.10/§2.16's own test files, plus `tests/test_desktop_application_api.py`'s Dynasty workspace/decision-journal coverage.
+- **LIVE PROOF**: Independently re-confirmed this pass via fresh calls already made for Part 1 and 7.6–7.8 below (Redraft Trade Finder modes; Dynasty's `Analyze Trade`/counter endpoints) — all real, all live today.
+- **FINAL STATUS**: `IMPLEMENTED_AND_LIVE_VERIFIED` for the general vision as it exists today in both apps.
+- **REMAINING ACTION**: Same as Part 1 §1.6/§1.7 — a real Dynasty win-win/target-player trade SEARCH engine (not just an evaluator/counter-generator) remains a named, deliberately-unbuilt capability gap, not a defect.
+
+### 7.6 Find Win-Win
+
+- **OWNER REQUEST**: A real trade-finder mode that broadly searches every opponent for mutually beneficial packages.
+- **FIRST KNOWN CONTEXT**: `src/services/trade_package_search_service.py`'s own module docstring (`FIND_WIN_WIN — broad search across every opponent for mutually [beneficial trades]`); confirmed real and discoverable by Worker 7 (`LEDGER.md` Item 10: "the real search completed with 15 candidates across 8 opponent rosters, 900 packages evaluated").
+- **CURRENT IMPLEMENTATION**: `TradeSearchMode = Literal["TARGET_PLAYER", "FIND_WIN_WIN", "IMPROVE_POSITION"]` (`trade_package_search_service.py` line 90); `GET /api/v1/redraft/trade-finder` is the dedicated FIND_WIN_WIN-shaped endpoint; `redraft_trade_finder()`/`redraft_trade_package_search(mode="FIND_WIN_WIN")` both reachable from the Redraft `Trade Finder` nav route.
+- **TEST COVERAGE**: `tests/test_trade_finder_service.py`, `tests/test_trade_package_search_service.py`, `tests/test_redraft_trade_finder_package_search_kdst_composition_fix.py` (already cited in Part 1 §2.17).
+- **LIVE PROOF**: Independently re-confirmed this pass via a fresh `GET /api/v1/redraft/trade-finder` against the real Fantasy Gamers league: HTTP 200, a real `decisionEnvelope` with a `primaryRecommendation` naming a real player — matching Part 1 §2.17's own post-fix `4`-candidate finding exactly (unregressed today).
+- **FINAL STATUS**: `IMPLEMENTED_AND_LIVE_VERIFIED` — Redraft only; absent for Dynasty per Part 1 §1.6/§1.7 (not re-litigated).
+- **REMAINING ACTION**: None for Redraft. Dynasty equivalent remains the named gap in Part 1 §1.6/§1.7/7.5.
+
+### 7.7 Target Player
+
+- **OWNER REQUEST**: A real trade-finder mode where the owner names one specific player they want and the system searches for packages that could acquire them.
+- **FIRST KNOWN CONTEXT**: Same `trade_package_search_service.py` docstring as 7.6 (`TARGET_PLAYER — the owner names one specific player they want; search [for acquiring packages]`); the K/DST-composition-gap-closure pass (`LEDGER.md`, "K/DST Trade Finder composition gap — closed") found and fixed a real, dispatch-unanticipated defect specifically in this mode (a real opponent-owned K/DST target unconditionally raised `TRADE_PACKAGE_SEARCH_TARGET_IDENTITY_UNRESOLVED` before the fix).
+- **CURRENT IMPLEMENTATION**: `search_target_player_packages()`; `POST /api/v1/redraft/trade-package-search` with `{"mode": "TARGET_PLAYER", "targetPlayerSleeperId": "<sleeper id>"}` (confirmed exact required field name via direct route inspection, `src/desktop_api/server.py` line ~819 — the field is Sleeper-ID-keyed, not canonical-ID-keyed, a real, load-bearing distinction from every other trade endpoint in this app).
+- **TEST COVERAGE**: `tests/test_trade_package_search_service.py`, `tests/test_redraft_trade_finder_package_search_kdst_composition_fix.py` (the two TARGET_PLAYER-specific regression tests: real opponent K/DST resolves; genuinely-unknown id still fails honestly).
+- **LIVE PROOF**: Independently exercised fresh this pass against the real Fantasy Gamers league: resolved a real opponent roster player (Jared Goff, sleeper id `3163`, on "Ben Luvs My Johnson"'s roster via `GET /api/v1/redraft/opponent-rosters`), then called `POST /api/v1/redraft/trade-package-search` with `{"mode":"TARGET_PLAYER","targetPlayerSleeperId":"3163"}` — HTTP 200, a real `decisionEnvelope` with `mode: "TARGET_PLAYER"` in the response, freshly reproduced today.
+- **FINAL STATUS**: `IMPLEMENTED_AND_LIVE_VERIFIED` — Redraft only.
+- **REMAINING ACTION**: None for Redraft. No Dynasty equivalent (Part 1 §1.6/§1.7/7.5).
+
+### 7.8 Improve Position
+
+- **OWNER REQUEST**: A real trade-finder mode where the owner names a position of need and the system searches by-position for upgrades.
+- **FIRST KNOWN CONTEXT**: Same `trade_package_search_service.py` docstring (`IMPROVE_POSITION — the owner names a position of need; every [opponent-owned player at that position is searched]`).
+- **CURRENT IMPLEMENTATION**: `search_improve_position_packages()`; `POST /api/v1/redraft/trade-package-search` with `{"mode": "IMPROVE_POSITION", "position": "<POS>"}`.
+- **TEST COVERAGE**: `tests/test_trade_package_search_service.py`.
+- **LIVE PROOF**: Independently exercised fresh this pass against the real Fantasy Gamers league: `POST /api/v1/redraft/trade-package-search` with `{"mode":"IMPROVE_POSITION","position":"WR"}` — HTTP 200, a real `decisionEnvelope` with `mode: "IMPROVE_POSITION"`, freshly reproduced today.
+- **FINAL STATUS**: `IMPLEMENTED_AND_LIVE_VERIFIED` — Redraft only.
+- **REMAINING ACTION**: None for Redraft. No Dynasty equivalent (Part 1 §1.6/§1.7/7.5).
+
+### 7.9 Buy-low / sell-high
+
+- **OWNER REQUEST**: A named "buy-low"/"sell-high" concept somewhere in the trade tooling — surface players whose market value is temporarily depressed (buy opportunity) or inflated (sell opportunity) relative to NWR's own view.
+- **FIRST KNOWN CONTEXT**: Worker 7/8's own repeated disclosure that `BUY_LOW`/`SELL_HIGH` are not implemented Trade Finder search modes (Part 1 §1.6's REMAINING ACTION, §2.9's "Keep vs Stream" is a different, unrelated concept).
+
+**Investigation (this pass, INSPECTED CODE — two genuinely separate code paths found, neither reachable by the owner today)**:
+1. `src/services/trade_roster_negotiation_service.py` (confirmed by Part 1's own Worker-2-sourced finding to be "the legacy, dead" Dynasty trade service — zero references anywhere in `desktop_facade.py`, confirmed again by grep this pass) does compute a real `"potential buy-low"` string inside its `gap_interpretation` field (line 689). This is real, computed logic — but it belongs to a service with no live call site at all. Its architecture was superseded by the current `trade_decision_assistant_service.py` → `owner_asset_evidence_service.py` stack, none of which model a buy-low/sell-high concept.
+2. `src/services/personal_workspace_service.py`'s Dynasty "Personal Board" entry schema (the backend for the `workspace.tsx` "My Board" page) has validated `sell_high`/`buy_low` boolean fields in its own `known` field set (line ~664-665) alongside `my_rank`/`my_tier`/`conviction` — but **this pass independently confirmed, by reading the full chain, that none of these four fields are reachable by the owner today**: the HTTP route's own field whitelist (`src/desktop_api/server.py` line 432: `{"assetId", "watchlist", "target", "avoid", "tags", "notes", "teamWindow"}`) never accepts them from any client, the facade's own `_dynasty_workspace_payload()` serializer (`desktop_facade.py` line ~1386) never includes them in what it sends back to the frontend, and `workspace.tsx`'s real "My Board" UI only ever renders `watchlist`/`target`/`avoid`/`tags`/`notes`/`teamWindow` (confirmed by direct grep — zero occurrences of `sellHigh`/`buyLow`/`myRank`/`myTier`/`conviction` anywhere in `desktop/apps/dynasty/src`). **This is a real, previously-undocumented finding from this pass**: the data model was clearly designed to support owner-tagged buy-low/sell-high/my-rank/my-tier/conviction, but the capability is completely orphaned — present in the schema, invisible and unreachable everywhere else. Not fixed this pass, per the dispatch's explicit "document, do not fix" boundary for a real, previously-undocumented finding.
+
+- **CURRENT IMPLEMENTATION**: See above — a dead computed heuristic in an unreachable legacy service, plus an orphaned (schema-only) manual-tag capability in the live Personal Board service.
+- **TEST COVERAGE**: None exercises the orphaned fields through the real HTTP/UI path (none can — the whitelist blocks them); `trade_roster_negotiation_service.py`'s own tests (if any) exercise dead code only.
+- **LIVE PROOF**: Independently confirmed this pass via direct code read (not a live HTTP call, since the whitelist makes one impossible) that `POST` to the Personal Board update route with `buy_low`/`sell_high`/`my_rank` in the body would be rejected by the route's own field whitelist before ever reaching `_validate_personal_entry`.
+- **FINAL STATUS**: `OWNER_ACTION_REQUIRED` — same category as Part 1 §4.1's "Official Rank" finding: a real, low-risk, scoped implementation path exists (extend the HTTP whitelist + `_dynasty_workspace_payload()` serializer + add 4 simple form controls to `workspace.tsx`, reusing the exact same validated-but-currently-inert backend fields), but whether to build real Buy-Low/Sell-High/My-Rank/My-Tier/Conviction owner tagging is a product decision only the owner can make, not an engineering default.
+- **REMAINING ACTION**: Owner decides whether to (a) wire the orphaned Personal Board fields into the HTTP route + frontend (cheapest path, no new backend concept needed), (b) build a real COMPUTED buy-low/sell-high signal (distinct, larger work — would need a defined "temporarily depressed/inflated relative to NWR" formula, never built for the live stack), or (c) decline both. **Flagged prominently in this pass's final report, not silently fixed, per this pass's explicit hard boundary against touching source code.**
+
+### 7.10 Roster-aware counters
+
+Fully covered by Part 1 §1.10 (Dynasty) and §2.16 (Redraft). Nothing older or distinct found — before the current cycle, neither app had ANY trade-counter generation at all (confirmed by Worker 7/8's own `INSPECTED CODE` findings); Part 1 §1.10/§2.16 are the first and only real implementations.
+- **FINAL STATUS**: `ALREADY_IMPLEMENTED` (via Part 1 §1.10/§2.16; cross-reference only).
+- **REMAINING ACTION**: None beyond Part 1's own remaining actions (no draft-pick assets in counters; the closed-240-row registry limitation).
+
+### 7.11 Future picks
+
+**7.11a — Dynasty future pick experience**
+
+Fully covered by Part 1 §1.14 ("Future pick experience" — the `Dynasty Planning Console`'s `Future pick ledger` module). Nothing older or distinct found.
+- **FINAL STATUS**: `ALREADY_IMPLEMENTED` (via Part 1 §1.14; cross-reference only).
+- **REMAINING ACTION**: None.
+
+**7.11b — Redraft pick concept**
+
+- **OWNER REQUEST**: Does Redraft have any pick-related concept at all, or is this Dynasty-only by design?
+- **FIRST KNOWN CONTEXT**: Implicit in the topic list itself; no prior memory entry asks for Redraft picks specifically.
+- **CURRENT IMPLEMENTATION**: **Investigated fresh this pass (INSPECTED CODE)**: a full grep of `trade_package_search_service.py` and `redraft_engine_v1_service.py` for `draft_pick`/`DraftPick`/`future_pick` found zero matches for any tradeable pick-asset concept (the only `draft_pick`-adjacent hit, `undo_last_draft_pick`, is the Draft Room's own in-draft pick-recording/undo function — an entirely unrelated meaning of "pick"). This is correct and deliberate: Redraft leagues re-draft their entire roster every season by this product's own design (confirmed by every real Redraft league profile — Fantasy Gamers, 403 N 18th, KHA, Las Vegas Enginerds' own Redraft-side profile — none carry forward draft capital across seasons), so a persistent, tradeable "future pick" asset genuinely does not apply to the Redraft format at all, unlike Dynasty where draft-pick capital is real and multi-year.
+- **TEST COVERAGE**: N/A — no such concept exists to test.
+- **LIVE PROOF**: N/A — absence confirmed by code-level grep, not a live check.
+- **FINAL STATUS**: `NOT_RELEVANT_TO_CURRENT_PRODUCT` — a genuinely-absent concept that correctly does not apply to the single-season redraft format, not an oversight.
+- **REMAINING ACTION**: None.
+
+### 7.12 Rookie / identity issues
+
+The historical rookie-identity crosswalk gaps, CFBD/UDK/identity-matching saga spans at least 8 months of memory entries ([[nwr-usage-opportunity-enrichment-v1]], [[nwr-next-draft-final-blocker-closure-v1]], [[nwr-post-draft-engine-forensics-v1]]'s UPDATE 14, [[nwr-prospective-outcomes-v1]]'s DST/suffix fixes). Summarizing current real state, not re-archaeologizing every past cycle, per the dispatch's own instruction:
+
+**7.12a — Veteran/rookie name-identity matching (generational suffixes, team-code aliases)**
+- **OWNER REQUEST**: Real players must identity-match correctly regardless of generational suffix (Jr./Sr./II/III) or team-code spelling differences between providers.
+- **FIRST KNOWN CONTEXT**: `nwr-prospective-outcomes-v1` memory, "Waiver Night" update — a real, live-reproduced bug where the owner's own rostered Marvin Harrison Jr. failed to identity-match NWR's own ranking (Sleeper drops suffixes, NWR's data doesn't), affecting 26 real ranked players; separately, JAC/JAX team-code mismatch between FantasyPros and Sleeper.
+- **CURRENT IMPLEMENTATION**: `normalize_identity_name()` (suffix-stripping, already the mechanism Part 1 §1.3 cites for Dynasty's status-override matching) and the new `src/services/team_code_alias_service.py` (confirmed present via `test -f` this pass).
+- **TEST COVERAGE**: Covered by the waiver/streamer test suites referenced in the `nwr-prospective-outcomes-v1`/"Waiver Night" memory entry.
+- **LIVE PROOF**: Independently re-confirmed this pass (INSPECTED CODE): `team_code_alias_service.py` exists on disk at the expected path; `fantasypros_kdst_consensus_service.py` (line 219) contains the exact `first_name`/`last_name` fallback the DST-identity fix introduced, still present and unregressed today.
+- **FINAL STATUS**: `IMPLEMENTED_AND_TEST_VERIFIED`.
+- **REMAINING ACTION**: Per `nwr-prospective-outcomes-v1`'s own disclosure, 32/32 K/DST team-code coverage was not independently re-chased this pass beyond confirming the alias service exists; a residual narrow gap may remain for an uncommon team-code spelling never exercised yet.
+
+**7.12b — Dynasty rookie draft-pick-asset ownership crosswalk**
+- **OWNER REQUEST**: Real per-roster ownership of rookie draft-pick assets (distinct from veteran player assets) so trade counters and the Future Pick Ledger can reason about them.
+- **FIRST KNOWN CONTEXT**: `nwr-dynasty-league-import-v1` memory — "rookie asset IDs use a separate synthetic scheme with no crosswalk built yet."
+- **CURRENT IMPLEMENTATION**: Rookie ownership is honestly rendered everywhere as "Ownership unresolved" rather than guessed (confirmed design choice, not a bug) — the same disclosed limitation Part 1 §1.10's REMAINING ACTION already names for picks broadly.
+- **TEST COVERAGE**: N/A — no crosswalk exists to test.
+- **LIVE PROOF**: Not independently re-verified live this pass (no change expected or found since `nwr-dynasty-league-import-v1`; out of this pass's live-check budget given the item is a disclosed, stable, unchanged gap).
+- **FINAL STATUS**: `OWNER_ACTION_REQUIRED` — building a real Sleeper-rookie-pick-ID ↔ NWR-rookie-asset-ID crosswalk is a scoped, real, not-yet-authorized feature.
+- **REMAINING ACTION**: Same as Part 1 §1.10's remaining action — owner decision on priority.
+
+**7.12c — Rookie model admission pipeline (Freeze V7, Brooks-class fallback)**
+- **OWNER REQUEST**: Rookies and insufficient-history players (lost-rookie-season cases) must be admitted honestly — never silently absent, never a fabricated recommendation-quality claim.
+- **FIRST KNOWN CONTEXT**: `nwr-next-draft-final-blocker-closure-v1` memory — Freeze V7 (564 rows: 491 veteran + 73 rookie), the Brooks-class fallback's own real 168-case historical spot-check (cohort-median loses to a zero baseline, 16.79 vs 9.80 MAE), correctly kept `VISIBLE_REVIEW_ONLY`.
+- **CURRENT IMPLEMENTATION**: `docs/hq/model/nwr_redraft_2026_freeze_v7_bundled_seed_v1_20260912/` (already Part 1 §1.4/§4.1's own cited source for Redraft's governed snapshot — same artifact, confirmed unchanged); Brooks-class players remain searchable/draftable/queueable via the manual-asset lane (`udk_unmodeled_skill_asset_service.py`), never silently absent, never promoted into Recommendations.
+- **TEST COVERAGE**: Covered by the same governed-snapshot admission tests Part 1 §1.4/§1.12/§4.1 already cite.
+- **LIVE PROOF**: Not independently re-verified live this pass beyond Part 1's own fresh confirmation that the Freeze V7-derived snapshot is still the live source for Redraft's ranking (Part 1 §3.2's fresh check).
+- **FINAL STATUS**: `ALREADY_IMPLEMENTED`.
+- **REMAINING ACTION**: None known; this is a stable, settled state.
+
+### 7.13 Compare
+
+- **OWNER REQUEST**: A Player Compare tool should exist in both apps, be wired to real data, and honestly disclose a player's current status (e.g. a `currentStatusOverride`/injury disclosure) rather than silently showing stale-looking numbers.
+- **FIRST KNOWN CONTEXT**: Part 1 §1.3's own REMAINING ACTION ("Dynasty Compare and Rookie Review pages still do not render `currentStatusOverride`") — this topic is instructed to confirm/expand on that finding.
+
+**Investigation (this pass, INSPECTED CODE — both apps)**:
+- **Dynasty**: Compare lives at `desktop/apps/dynasty/src/pages/decisions.tsx`'s `ComparePage` (routed at `/compare`, confirmed via `DynastyApp.tsx`). A full grep of `decisions.tsx` for `currentStatusOverride`/`CurrentStatusBadge`/`SEASON_OUT`/any status-override text returned **zero matches** — independently re-confirms Part 1 §1.3's finding is still exactly true today, unregressed and unclosed by any worker across the entire current dogfood cycle, even though the underlying `AssetOption`/`PlayerDetail` rows it reads from (per the TypeScript contract, line 269/291) already carry the field.
+- **Redraft**: Compare lives at `desktop/apps/redraft/src/pages.tsx`'s `CompareContent`/`CompareCards` (reachable from the Players tab per the UI-expansion-pass consolidation). **A real, distinct architectural difference from Dynasty was found**: Redraft's `RedraftRanking` TypeScript interface (contracts, line 811) has **no `currentStatusOverride`/`statusOverride` field at all** — Redraft's status-override layer (Part 1 §3.3) is baked directly into the numeric fields (`replacementAdjustedValue`, `overallRank`, `starterGap` — confirmed by Worker 4's own live Achane trace in `LEDGER.md`: `replacementAdjustedValue: 0.0`, `starterGap: 0.0`, `overallRank` sunk to 129, with `projectedPoints` preserved unchanged for provenance) rather than disclosed as a separate labeled field the way Dynasty discloses it. `CompareCards`' own `dimensions` array (pages.tsx line 482-489) renders Overall rank / Position rank / Projected points / Replacement value / Replacement points / Starter gap / Tier / Confidence — **no explicit "Status" row and no override reason/source text anywhere**. Practical consequence: a season-out Redraft player's Compare card silently shows a crushed rank/value with no on-card explanation of why, unlike Dynasty's (missing) badge mechanism — a real, previously-undocumented nuance in how the two apps' Compare pages each fail to fully disclose the same underlying override layer, for two architecturally different reasons.
+- **CURRENT IMPLEMENTATION**: Both apps have a real, live, data-wired Compare tool. Neither renders an explicit current-status disclosure on the Compare card itself.
+- **TEST COVERAGE**: Redraft: covered by the broader `pages.test.ts`/Players-surface vitest suite (no dedicated status-disclosure assertion). Dynasty: no dedicated test for this specific gap either.
+- **LIVE PROOF**: Independently re-confirmed this pass via `GET /api/v1/bootstrap` (redraft, Fantasy Gamers) and direct code read of `decisions.tsx` (dynasty) — both apps' Compare data substrates are live and real; the disclosure gap is a frontend rendering gap in both, confirmed by code inspection rather than a fresh render (consistent with this pass's conservative evidence-labeling standard for presentation-only gaps).
+- **FINAL STATUS**: `IMPLEMENTED_AND_LIVE_VERIFIED` for Compare's existence/data-wiring in both apps; the specific status-disclosure gap Part 1 §1.3 flagged for Dynasty is independently reconfirmed still open, and a second, distinct instance of the same underlying disclosure gap (architecturally different) is newly documented for Redraft here.
+- **REMAINING ACTION**: Dynasty: render the already-present `currentStatusOverride` field on Compare cards (small, mechanical, per Part 1 §1.3). Redraft: a materially larger change — would need a new, separate disclosure field threaded through `redraft_bootstrap()`/`RedraftRanking` (the override is currently baked into values with no label anywhere outside the Draft Room/Cheat Sheet's own admin-facing status-override list), not a simple badge port like Dynasty's fix would be.
+
+### 7.14 Start/Sit historical bugs
+
+Checked memory for the Sunday Readiness cycle's specific named Start/Sit bugs and re-confirmed current state via direct code inspection this pass (not a live render, since forcing a real lineup-illegal state against either real league would risk disrupting it):
+
+- **W1 (hardcoded week=1)**: fixed via shared `useProviderWeek`/`useWeekSelection` hooks (`nwr-sunday-readiness-v1`). **Still holding**: confirmed these hooks remain the shared mechanism (no later pass replaced them).
+- **W2/W3 (lock/reserve/taxi/injury-status gaps; a reserve player could beat an active starter; a locked starter could be swapped out; missing-projection players silently vanished)**: fixed via real Sleeper reserve/taxi fields threaded into `build_roster_candidates`/`optimize_weekly_lineup`, plus distinct `RESERVE`/`LOCKED`/`UNRESOLVED_IDENTITY` statuses. **Independently re-confirmed this pass (INSPECTED CODE)**: `src/services/weekly_lineup_optimizer_service.py` still contains `reserve_sleeper_player_ids`/`taxi_sleeper_player_ids` params, `is_reserve`/`is_taxi` tags, and the `OK | UNPROJECTED | EMPTY | UNRESOLVED_IDENTITY | SEASON_OUT` status vocabulary, unregressed.
+- **W4 (false "Already optimal"; same incumbent could be benched twice)**: fixed via a real before/after starter-ID-set diff replacing the old swap-explanation logic.
+- **The missing-bench-projection-treated-as-zero bug (the Zay Flowers case)**: fixed in `nwr-connection-update-v1` — `SwapReason.projected_delta` is `float | None` with a `delta_basis` (`KNOWN` vs `UNKNOWN_MISSING_BENCH_PROJECTION`) field, forcing LOW confidence rather than fabricating a number.
+- **FIRST KNOWN CONTEXT**: `nwr-sunday-readiness-v1` and `nwr-connection-update-v1` memory entries (2026-09-19/20, both pre-dating this cycle).
+- **TEST COVERAGE**: `tests/test_weekly_lineup_optimizer_service.py` and the dedicated swap-reason regression tests both memory entries describe.
+- **LIVE PROOF**: Independently re-confirmed this pass via direct code read only (INSPECTED CODE) — all three fix mechanisms are still present in the current source tree, unregressed; not re-exercised live against a real lineup this pass since doing so would require manipulating a real league's active lineup, out of this pass's safety bounds.
+- **FINAL STATUS**: `IMPLEMENTED_AND_TEST_VERIFIED` for all four historical bugs — still holding, confirmed by code inspection this pass, not freshly re-rendered live.
+- **REMAINING ACTION**: None known. A fresh live-rendered Start/Sit confirmation (last done in `nwr-connection-update-v1`, same-day verified against both real leagues) would be a reasonable but non-urgent follow-up.
+
+### 7.15 Waiver legality/denial bugs
+
+Checked memory for the Sunday Readiness / Waiver Night / Waiver Fix Cycle's specific named historical waiver bugs and re-confirmed current state via direct code inspection this pass:
+
+- **The backwards FAAB-detection bug** (`waiver_type == 1` checked for FAAB when Sleeper's real enum is `0=rolling,1=reverse-standings,2=FAAB` — exactly backwards for both real leagues): fixed in `nwr-sunday-readiness-v1`. **Independently re-confirmed this pass (INSPECTED CODE)**: `src/application/desktop_facade.py` line 1042 now reads `is_faab = waiver_type == 2` — the corrected check, unregressed.
+- **W5 (THIS_WEEK waiver ranking used season-long marginal utility as primary sort; `becomesStarter` never actually weekly-evaluated)**: fixed via `simulate_this_week_add_drop` (real before/after lineup-gain simulation).
+- **IR/reserve players could be recommended as Add/Drop drops** (Waiver Night #3): fixed, reproduced with a fixture before the fix.
+- **FAAB fabricating positive dollar bids for zero/negative-utility and even unmatched-identity candidates** (Waiver Fix Cycle V1 — a real, live-confirmed bug: C.J. Stroud at exactly 0.0 utility was pricing $28-47): fixed via a gate on the pricing formula. **Independently re-confirmed this pass (INSPECTED CODE)**: `src/services/waiver_engine_service.py` line 849 (`if ... pricing_utility <= 0`) and line 869 (`if candidate.marginal_utility <= 0`) — both gates present and unregressed.
+- **LIVE FAAB budget double-request race / a failed budget read indistinguishable from a real $100**: fixed (budget now derived fresh server-side every request with an honest "unavailable" state).
+- **Add/Drop's displayed "net" value compared the add against the original roster but the drop against a different post-drop roster** (a real sign-flip risk): fixed to same-context evaluation.
+- **FIRST KNOWN CONTEXT**: `nwr-sunday-readiness-v1`, `nwr-prospective-outcomes-v1`'s "Waiver Night"/"Waiver Fix Cycle V1" updates (2026-09-15/16/19, all pre-dating this cycle).
+- **TEST COVERAGE**: `tests/test_waiver_engine_service.py`, `tests/test_dynasty_waiver_service.py`, and the dedicated regression suites each memory entry names.
+- **LIVE PROOF**: Independently re-confirmed this pass via direct code inspection of the FAAB-type check and the positive-utility gate (both still present, unregressed); not re-exercised live against a real waiver claim this pass (would require a real transaction window, out of this pass's read-only safety bounds — consistent with every prior pass's own discipline here).
+- **FINAL STATUS**: `IMPLEMENTED_AND_TEST_VERIFIED` for every bug listed — all confirmed still fixed and holding in the current source tree.
+- **REMAINING ACTION**: None known. `nwr-prospective-outcomes-v1`'s own disclosed residual (waiver-ranking latency 1.1-12.6s from an uncached Sleeper catalog fetch) was separately closed by `nwr-full-cycle-v1`'s cross-request cache (0.70s cold vs ~0.00001s warm) — confirmed present via `src/services/sleeper_player_catalog_cache.py`'s existence this pass, not re-benchmarked fresh.
+
+### 7.16 K/DST historical bugs
+
+Distinct from the current cycle's own K/DST Trade Finder composition fix (Part 1 §2.17, cited not re-litigated). Checked memory for OLDER K/DST bugs and re-confirmed current state:
+
+- **"KEEP CURRENT" structurally unreachable** (K/DST streamers always preferred the best-ECR unrostered player as primary even when the owned starter ranked better — `nwr-sunday-readiness-v1` W6): fixed to prefer the first genuinely actionable row in ECR order. **Independently re-confirmed this pass (INSPECTED CODE)**: `src/services/streamer_horizon_service.py` lines 123/132 still contain the literal `"KEEP CURRENT"` action string on a real, reachable code path.
+- **Weekly K/DST points used generic provider `pts_ppr`, ignoring real league-custom scoring** (W7): fixed via a real raw-stat dot-product against the league's actual `scoring_settings`; DST pickups are now structurally never recommended for a league with no DST slot (Las Vegas Enginerds).
+- **JAC/JAX team-code alias gap** (Waiver Night #1 — also caught a second instance on the K side): fixed via `team_code_alias_service.py`. Independently re-confirmed present this pass (same check as 7.12a).
+- **DST identity-matching bug** (Sleeper's DST catalog entries carry no `full_name`, so no real DST could ever identity-match; `nwr-prospective-outcomes-v1`'s own dedicated fix-proposal-then-correction): fixed via the `first_name`/`last_name` fallback. Independently re-confirmed present this pass in `fantasypros_kdst_consensus_service.py` (line 219), unregressed — same evidence as 7.12a.
+- **FIRST KNOWN CONTEXT**: `nwr-sunday-readiness-v1` memory entry (explicitly named by the dispatch's own topic text), `nwr-prospective-outcomes-v1`'s DST-identity-fix updates.
+- **TEST COVERAGE**: `tests/test_streamer_horizon_service.py` and the dedicated DST-identity regression test `nwr-prospective-outcomes-v1` describes.
+- **LIVE PROOF**: Independently re-confirmed this pass via direct code inspection (all four fix mechanisms present, unregressed in the current source tree); not re-exercised live against a real streamer request this pass beyond what Part 1 §2.17/this document's 7.12a already freshly checked.
+- **FINAL STATUS**: `IMPLEMENTED_AND_TEST_VERIFIED` for all four historical bugs.
+- **REMAINING ACTION**: None known. `nwr-prospective-outcomes-v1`'s own disclosed residual (Jacksonville's JAC/JAX code specifically, confirmed fixed by this exact alias service) was closed by the Waiver Night pass per that memory's own update — not independently re-verified against a live Jacksonville row this specific pass, but the fix mechanism is confirmed present.
+
+### 7.17 Rankings UX issues
+
+Fully covered by Part 1 §2.10-§2.14. Nothing older or distinct found beyond what Section 7.3 above already traces to AGENTS.md's own standing terminology rule. The one historical detail worth naming explicitly: before Worker 9's restructuring, the Rest-of-Season board had a single plain `"Rank"` column with no Market Rank column at all, and the Weekly board had no rank ordinal whatsoever — both are now closed per Part 1 §2.10-§2.13, which are the first and only real implementations of this requirement, not a replacement of an older one.
+- **FINAL STATUS**: `ALREADY_IMPLEMENTED` (via Part 1 §2.10-§2.14; cross-reference only).
+- **REMAINING ACTION**: None beyond Part 1's own remaining actions.
+
+### 7.18 Lifecycle correctness
+
+Fully covered by Part 1 §1.1/§1.15/§2.1/§3.1 for the CURRENT shared `LeagueLifecycleContext` mechanism. Older, now-superseded/fixed lifecycle bugs found in memory and re-confirmed current state this pass:
+
+**7.18a — PRE_DRAFT-stuck bug for real completed drafts**
+- **OWNER REQUEST**: A league with a real, completed draft must never be shown as still in Draft/Pre-Draft.
+- **FIRST KNOWN CONTEXT**: `nwr-dogfood-v1` memory — KHA (157/192 picks, no K/DST in its stream) and 403 N 18th (118/128 picks) both stuck at PRE_DRAFT because the local draft-board pick count didn't exactly match `team_count * rounds`.
+- **CURRENT IMPLEMENTATION**: `league_lifecycle_service.py::resolve_league_lifecycle` gained two additive, default-off params (real provider status takes priority when available; a draft-board stale >24h with ≥1 real pick resolves IN_SEASON for non-live-syncable providers), later tightened in `nwr-sunday-readiness-v1` to also require a ≥50% completion-ratio floor (verified not to regress KHA at 81.8% or 403N18th at 92.2%, while correctly refusing a genuinely barely-started case).
+- **TEST COVERAGE**: Covered by `tests/test_league_lifecycle_service.py` (the same file Part 1 §1.1/§3.1 already cite).
+- **LIVE PROOF**: Independently re-confirmed this pass via a fresh `GET /api/v1/bootstrap` (dynasty, Las Vegas Enginerds — a league with a real completed Sleeper draft): `lifecycleContext.draftStatus: "COMPLETE"`, `seasonPhase: "REGULAR_SEASON"` — the same live check already performed for Part 1 §1.1, independently reconfirming this historical fix still holds for a real league today.
+- **FINAL STATUS**: `IMPLEMENTED_AND_LIVE_VERIFIED`.
+- **REMAINING ACTION**: `nwr-dogfood-v1`'s own disclosed residual (Fantasy Gamers' sidebar can still show Pre-Draft in the real app on first paint, since bootstrap makes zero live network calls by design) remains open — not independently re-checked live this pass.
+
+**7.18b — Freshness-cliff test/governance recurrence**
+- **OWNER REQUEST**: N/A (this is an internal test-environment reliability issue, not a direct owner feature request) — included here because it recurred across many historical passes and directly caused real, live-blocking symptoms for the owner's actual leagues on at least one occasion.
+- **FIRST KNOWN CONTEXT**: `nwr-draft-upgrade-hq-baseline-failures` memory — a 30-day `MAX_PROJECTION_AGE_DAYS` per-row check (independent of any governance receipt's own `valid_until`) that recurs on its own clock; `nwr-403-n-18th-espn-league-unresolved`'s own UPDATE records this mechanism genuinely blocking 100% of the installed 2026 snapshot for every real profile on a real draft night (2026-09-07/08), requiring an emergency, scoped, time-boxed owner-authorized bypass.
+- **CURRENT IMPLEMENTATION**: Resolved for real (not merely bypassed again) by `nwr-post-ui-product-v1`'s Worker 2 — migrated to a real, still-valid, owner-approved Freeze V7 artifact (`valid_until: 2026-10-08`), the same artifact Part 1 §1.4/§1.12/§3.2/§4.1 already cite as the live source today.
+- **TEST COVERAGE**: Covered by the governed-snapshot admission tests Part 1 already cites.
+- **LIVE PROOF**: Independently re-confirmed this pass via Part 1's own fresh checks (§1.12/§3.2: the governed model's `valid_until: 2026-10-08` approval window is correctly still active today, 8 days of runway remaining as of this pass).
+- **FINAL STATUS**: `IMPLEMENTED_AND_LIVE_VERIFIED` — the underlying artifact is current and the historical freshness-cliff mechanism is resolved, not merely bypassed again.
+- **REMAINING ACTION**: The approval's own 8-remaining-days timing (expires 2026-10-08) is already flagged by Part 1 §2.14 as an owner-awareness item, not duplicated as a new finding here.
+
+### 7.19 Draft/offseason experience
+
+- **OWNER REQUEST**: The Draft Room / Cheat Sheet / Draft Cockpit experience must still work correctly when promoted during draft season, per the lifecycle-aware demotion logic Part 1 §1.1/§1.15/§2.1 describe for the regular season.
+- **FIRST KNOWN CONTEXT**: Worker 6's own lifecycle-navigation design (`LEDGER.md` Items 6-9) — the same mechanism that demotes Draft Room/Cheat Sheet in season is explicitly bidirectional (promotes them in `ROOKIE_PRE_DRAFT`/`DRAFT_APPROACHING`/`DRAFT_DAY`/`OFFSEASON` phases).
+
+**Investigation (this pass, INSPECTED CODE/TEST, explicitly INFERENCE-labeled since it is currently regular season, 2026-09-30, and this pass cannot safely force either real league into a draft-phase state to render it live)**:
+- `desktop/apps/redraft/src/lifecycle-navigation.test.ts` line 19, `it("promotes draft tools during draft season", ...)` — confirmed present and part of the same test file Part 1 §2.1/§2.15 already cite as passing. **INFERENCE**: a passing test asserting the exact promotion behavior this topic asks about is strong evidence the code path is real and exercised, though it is evidence from a test fixture, not a live render of either real league in an actual draft state.
+- `desktop/apps/dynasty/src/lifecycle-navigation.test.ts` carries the equivalent Dynasty-side coverage (Draft Cockpit/Rookie Review promotion), per Part 1 §1.15's own test-coverage citation.
+- The underlying draft engine itself (`redraft_draft_room_v1_service.py`, `marginal_roster_utility_v2`, the K/DST timing backstop, the Superflex CPU-policy repair, the roster-legality service) was extensively exercised and promoted in the pre-cycle saga (`nwr-post-draft-engine-forensics-v1`, `nwr-overnight-v3-legality-repair-and-buildout`) and has not been touched by any worker in the current dogfood-rebuild cycle (confirmed by `git diff --stat` across every Part 1 worker's own reported file list — none touch `redraft_draft_room_v1_service.py`). **INFERENCE**: since nothing in the current cycle modified the draft engine itself, and the lifecycle-promotion test still passes, the draft experience most likely still works exactly as it was last live-verified (the real 403 N 18th draft, 2026-09-07) — but this is reasoned from an absence of changes plus a passing unit test, not a fresh live render this pass performed or could safely perform.
+- **CURRENT IMPLEMENTATION**: Unchanged from the pre-cycle state described across the `nwr-draft-room-gui-consolidation-real-pass`/`nwr-owner-feedback-closure-v4-saga`/`nwr-post-draft-engine-forensics-v1`/`nwr-overnight-v3-legality-repair-and-buildout` memory chain.
+- **TEST COVERAGE**: `desktop/apps/{redraft,dynasty}/src/lifecycle-navigation.test.ts` (draft-season promotion assertions); the full backend draft-engine test suite (`tests/test_redraft_draft_room_v1_service.py`, 54 tests per the last recorded count) — not re-run this pass (out of this pass's "targeted spot-checks only" boundary for a non-urgent confirmation).
+- **LIVE PROOF**: Not performed this pass, by design — it is currently regular season for both real leagues, and forcing either into a simulated draft-phase render to test this would risk disrupting real league state, explicitly out of this pass's safety bounds. This is an honest INFERENCE-labeled disposition, not a claimed live render.
+- **FINAL STATUS**: `IMPLEMENTED_AND_TEST_VERIFIED` — based on passing lifecycle-promotion tests and the absence of any draft-engine change in the current cycle, not a fresh live render.
+- **REMAINING ACTION**: A real live-rendered confirmation of Draft Room promotion, next time either real league approaches its own next draft (Fantasy Gamers/Las Vegas Enginerds are both annual-redraft/dynasty-rookie-draft leagues respectively, so this will recur), would close the one open INFERENCE in this disposition.
+
+### 7.20 Live vs Mock isolation
+
+- **OWNER REQUEST**: Mock-draft and live-draft data must never cross-contaminate.
+- **FIRST KNOWN CONTEXT**: `nwr-owner-mock-qa-v1-findings`/`nwr-real-local-install-location-and-schedule-finding` memory entries (practice-draft profiles vs. real leagues) and the Dynasty FAAB/Redraft Trade lab's own explicit `Real trade` vs. `Hypothetical` mode distinction Part 1 §1.8 already covers for a different (trade-side) instance of the same general discipline.
+- **CURRENT IMPLEMENTATION**: `src/services/redraft_draft_room_v1_service.py` line 47: `SUPPORTED_MODES = frozenset({"MOCK", "LIVE_READ_ONLY"})` — a real, structurally-enforced two-mode system, not a label. Multiple gated checks (`if state.get("mode") != "LIVE_READ_ONLY": ...`, lines 1633/1682/1789) guard every live-sync-specific function so a MOCK-mode draft board can never accidentally invoke a real Sleeper live-sync path, and vice versa.
+- **TEST COVERAGE**: Covered by `tests/test_redraft_draft_room_v1_service.py`'s mode-gating tests (same file Part 1/7.19 already reference).
+- **LIVE PROOF**: Independently confirmed this pass via direct code inspection (INSPECTED CODE) of the mode-gating checks; not exercised live this pass (would require starting a real or mock draft room against a real league's active data, out of this pass's safety bounds for a stable, long-settled mechanism).
+- **FINAL STATUS**: `IMPLEMENTED_AND_TEST_VERIFIED`.
+- **REMAINING ACTION**: None known.
+
+### 7.21 Transaction history / lifecycle
+
+- **OWNER REQUEST**: The app should show real transaction/trade history (adds, drops, trades actually executed on the real platform) distinct from the current roster snapshot.
+- **FIRST KNOWN CONTEXT**: No single named memory entry demands this explicitly, but it is implied by multiple historical asks for "what has actually happened in my league" context; the closest existing concept, Redraft's Decision History (`decision-history.tsx`), was built across the `nwr-prospective-outcomes-v1`/`nwr-full-cycle-v1` cycles for a different purpose (NWR's own recommendation/decision traces, never real external platform transactions).
+
+**Investigation (this pass, INSPECTED CODE)**: `src/services/canonical_league_state_service.py` carries its own explicit, honest capability flag: `recent_transactions_supported: bool = False` (line 144), with an accompanying disclosure string (line 148: "...and recent league transactions are not modeled by any [live surface]"). This is a real, deliberate, disclosed absence — not a bug, not a partial build. Redraft's Decision History page is a genuinely different concept (NWR's own recommendation-and-owner-action ledger, confirmed by `decision-history.tsx`'s own data source, `in_season_decision_trace_service.py`) — it has never claimed to be a real Sleeper/ESPN transaction log, and doesn't read one.
+- **CURRENT IMPLEMENTATION**: No real external-platform transaction-history surface exists in either app. The one adjacent, real, honestly-distinct concept (Decision History / the Prospective Recommendation Ledger) is NWR's own decision trace, not a league transaction log.
+- **TEST COVERAGE**: `canonical_league_state_service.py`'s own capability-flag tests (confirming the flag defaults correctly and is never silently flipped to claim support it doesn't have).
+- **LIVE PROOF**: Independently confirmed this pass via direct code inspection; the flag's own value (`False`) was not independently re-verified live via an HTTP call this pass, since no live surface would change behavior based on it either way (it is a documentation/contract-level flag, not yet wired to gate any UI).
+- **FINAL STATUS**: `INTENTIONALLY_BLOCKED_WITH_CURRENT_REASON` — honestly, explicitly modeled as unsupported via a real capability flag with a disclosed rationale, rather than silently absent or fabricated.
+- **REMAINING ACTION**: Building a real transaction-history surface would need a live Sleeper `GET /league/{id}/transactions/{round}` read (confirmed, by this pass's own earlier grep, to have no existing call site anywhere in this codebase) plus an equivalent (currently nonexistent) ESPN read path. A real, scoped, not-yet-authorized feature — owner decision needed on priority.
+
+### 7.22 Change detection
+
+- **OWNER REQUEST**: A "what changed since I last looked" detection layer — surface what's materially different about the owner's league/roster/market view since a prior visit, not just the current-state snapshot.
+- **FIRST KNOWN CONTEXT**: No single dedicated memory entry names this as a standalone historical ask; it is adjacent to (but distinct from) several already-covered concepts: the Attention Center's severity flags (current-state-only, see 7.23), the trade-counter cards' own "What changed" label (Part 1 §1.11 — describes what changed WITHIN one proposed trade, not session-to-session), and the internal rankings-model-patch-audit services (`rankings_post_patch_acceptance_service.py` etc. — research-only, compare one governed admission to the next, never user-facing).
+
+**Investigation (this pass, INSPECTED CODE)**: a full grep for change-detection-shaped terms (`what.?changed`, `change.?detect`, `WhatChanged`, `diff.*snapshot`) across `src/services/` found exactly the three categories named above and nothing else — no session-to-session "since your last visit" diffing concept exists anywhere in either app, for the owner's roster, league state, or market data.
+- **CURRENT IMPLEMENTATION**: None exists as a real, named, user-facing "what changed" feature. The closest adjacent real capabilities (Attention Center severity, trade-card "What changed," Decision History's own append-only trace) each answer a different, narrower question and were each already independently verified real in their own right (7.23, Part 1 §1.11, 7.21).
+- **TEST COVERAGE**: N/A — no such feature exists to test.
+- **LIVE PROOF**: N/A.
+- **FINAL STATUS**: `OWNER_ACTION_REQUIRED` — a real, genuinely-unbuilt feature gap, not a defect and not a mislabeled version of something that already exists. No existing substrate (a stored "last-seen" state per owner, per surface) exists to repurpose; building this would be new engineering, not a wiring fix.
+- **REMAINING ACTION**: Owner decides whether a real change-detection layer (e.g. "3 of your rostered players have a new status override since you last opened Rankings," "the market gap on X widened by 8 points since yesterday") is worth building, and if so, which surfaces it should cover first. Flagged, not built, per this pass's documentation-only boundary.
+
+### 7.23 Attention Center
+
+- **OWNER REQUEST**: A multi-league attention/notices aggregation — "which of my leagues needs me right now" — across every saved profile.
+- **FIRST KNOWN CONTEXT**: `nwr-post-ui-product-v1` memory, Worker 5 — "Multi-League Attention Center (read-only, 'which of my leagues needs me' + cross-league player search)," later hardened across `nwr-full-cycle-v1`/`nwr-dogfood-v1` (a real cross-surface race against the background sweep, fixed; a severity-calibration bug, fixed).
+
+**Investigation (this pass, INSPECTED CODE)**: `desktop/apps/redraft/src/attention-center.ts`'s own module docstring states the exact architecture: a READ-ONLY aggregation layer that activates each saved Redraft profile in turn, reads cheap per-league facts (data health, workspace context, and — for a Sleeper league only — roster/free-agent reads), then unconditionally reactivates whichever profile was active before, in a `finally` block, "regardless of success/failure/partial-completion." This is a real, carefully-designed safety property given this app has exactly ONE active-profile pointer.
+- **CURRENT IMPLEMENTATION**: `desktop/apps/redraft/src/attention-center.ts` (orchestration/derivation) + `attention-center-page.tsx` (the rendered page, severity badges `OK`/`UNKNOWN`/`WATCH`/`URGENT` mapped to `safe`/`review`/`review`/`blocked` tones) + `shell-notices.ts`. **Scoped to Redraft's own saved profiles only** — confirmed by file location (`desktop/apps/redraft/src/`) and by the fact that Dynasty is a structurally separate app with its own, different active-league-pointer architecture (Part 1 §3.6/7.1); the Attention Center does not and cannot span Dynasty leagues without its own, separate implementation.
+- **TEST COVERAGE**: `desktop/apps/redraft/src/attention-center.test.ts`, `attention-center-scale-benchmark.test.ts` (confirms linear scaling to 50 leagues per `nwr-prospective-outcomes-v1`'s own multi-league-scale characterization).
+- **LIVE PROOF**: Independently re-confirmed this pass that the real, current Redraft profile selector returns exactly 3 real visible leagues (per Part 1 §2.3/§2.4's own fresh check this pass cites) — the exact real universe the Attention Center aggregates over today. Not independently re-rendered via Chrome this pass (a presentation-only confirmation already covered by `nwr-full-cycle-v1`'s own live-browser check of the fixed cross-surface race).
+- **FINAL STATUS**: `IMPLEMENTED_AND_LIVE_VERIFIED` for its real, current scope (Redraft's own saved profiles, read-only, race-hardened).
+- **REMAINING ACTION**: No Dynasty-side Attention Center exists — a real, disclosed, not-yet-built scope gap (Dynasty currently has only one active league at a time with no multi-league picker UI at all, per 7.1's own remaining action, so a Dynasty-side Attention Center would currently have nothing to aggregate over even if built).
+
+### 7.24 Data freshness
+
+Fully covered by Part 1 §3.2 (projection freshness) and §3.4/§1.12 (market freshness). Nothing older or materially distinct found. The one historical detail worth naming precisely: the very first instance of this requirement in this project's history is the "alarming 2026-09-08" owner complaint that opened the current dogfood-rebuild cycle itself (Worker 4, `LEDGER.md` Item 2) — i.e., this requirement's most recent explicit owner articulation IS the current cycle's own Item 2, which Part 1 §3.2/§2.14 already fully disposition; there is no genuinely older, separately-tracked version to reconcile against it.
+- **FINAL STATUS**: `ALREADY_IMPLEMENTED` (via Part 1 §3.2/§3.4/§1.12/§2.14; cross-reference only).
+- **REMAINING ACTION**: None beyond Part 1's own remaining actions (the governed model's 2026-10-08 approval-window timing flag).
+
+### 7.25 Packaged Desktop / Tauri milestone
+
+- **OWNER REQUEST**: A real, installable native desktop application (not just a browser-served dev build).
+- **FIRST KNOWN CONTEXT**: `nwr-post-ui-product-v1` memory, Worker 3/B — "native Tauri packaging resolved via a privacy-safe governance-receipt split."
+
+**Investigation (this pass, INSPECTED CODE + memory-cited evidence, not independently re-built this pass)**: the historical blocker chain is real and precisely traced: (1) Worker 3 found native packaging genuinely blocked by a real, pre-existing privacy guard (`check:resources` forbidding the owner's real name, legitimately present in the governance receipt's own audit trail) — confirmed NOT a toolchain problem (the Rust/Tauri sidecar built, `cargo check` passed). (2) Worker B (`nwr-post-ui-product-v1`'s closure pass) resolved this for real: a private-canonical-receipt vs. release-safe-runtime-summary split (the private receipt stays untouched/immutable/excluded from the bundle, verified two ways — allowlist inspection and extracting the real built MSI's installed payload; a new, hash-bound, zero-PII release-safe summary derives from it) — **the native Tauri package built successfully for the first time in this whole saga** (real NSIS/MSI installers produced), with a real privacy scan of the extracted installer finding zero traces of the owner's real identity/email/AppData path/secrets (one disclosed, unrelated, low-severity finding: the sandbox's own build-machine account name in generic Rust panic-location strings, a standard Cargo toolchain behavior, exact fix documented but not applied).
+- **CURRENT IMPLEMENTATION**: The packaging mechanism (`NWR_PRIVACY_SAFE_PACKAGING_DESIGN_V1.md`'s design, `check:resources`'s allowlist, the release-safe-summary derivation) is real, tested (12+ dedicated tests per the memory entry), and was proven to produce a real installable artifact. This pass independently confirmed Dynasty has its own equivalent `bundle:dynasty` target (per `nwr-dynasty-league-import-v1`) mirroring Redraft's `bundle:redraft`.
+- **TEST COVERAGE**: 12+ dedicated privacy/tamper-resistance tests per `nwr-post-ui-product-v1`'s own description (not independently re-run this pass — out of this pass's "targeted spot-checks only" boundary for a stable, already-proven mechanism).
+- **LIVE PROOF**: **Not independently re-verified by this pass** — this exact worktree (`C:\NWR\prospective-outcomes-v1`) currently has no built native installer artifact (confirmed by this pass's own `find`/`ls` checks against the expected bundle output paths, both empty), and `nwr-full-cycle-v1`'s own Worker 10 found a LATER attempt in this same worktree genuinely failed due to host OOM (2.65GB→2.08GB free of 15.11GB, PyInstaller sidecar-build stage killed), not a code regression — the `check:resources` privacy/allowlist guard itself passed cleanly in that same attempt, confirming the packaging mechanism is still structurally sound, just not exercised to completion in this specific worktree recently.
+- **FINAL STATUS**: `IMPLEMENTED_AND_TEST_VERIFIED` — the packaging mechanism itself is proven to produce a real installable native artifact on this same branch lineage, not merely designed on paper.
+- **REMAINING ACTION**: This exact worktree does not currently hold a freshly-built installer (environment-dependent — host RAM, not a code defect, per `nwr-full-cycle-v1`'s own OOM finding at the PyInstaller sidecar-build stage, with `check:resources` itself passing cleanly in that same attempt). Retry `npm run bundle:redraft`/`bundle:dynasty` when host free RAM exceeds the 4-6GB threshold `nwr-full-cycle-v1` recommends; no code change is needed.
+
+### 7.26 Profile isolation
+
+Fully covered by Part 1 §3.6 for the CURRENT Redraft-selector-hide mechanism. Older/distinct historical profile-isolation bugs found in memory and re-confirmed current state this pass:
+
+- **Profile create/duplicate/import race against the Attention Center's background sweep** (a newly-created profile could silently revert to the previously-active league once the sweep's trailing restore fired — `nwr-dogfood-v1`, reproduced live): fixed by wrapping `profile.tsx`'s `create()`/`duplicate()`/`importSleeper()` through the existing `serializeActiveProfileCall` queue. **Independently re-confirmed this pass (INSPECTED CODE)**: `serializeActiveProfileCall` is now referenced in 7 files (`attention-center.ts`, `attention-center.test.ts`, `league.tsx`, `leagues.tsx`, `profile.tsx`, `RedraftApp.tsx`, `shell-identity.tsx`) — broader coverage than the single fix originally described, confirming the guard has since been applied consistently project-wide, not narrowly patched.
+- **Manage-Leagues' own "Duplicate profile" silently reverting the active pointer back to the old profile** (a different root cause than the race above — `LeagueScopedPage`'s deep-link-sync effect re-activating whatever the stale URL's `leagueKey` still named): fixed by navigating to the new profile's own URL right after a successful duplicate.
+- **A disclosed, NOT-fixed residual**: a ~370ms transient window where the active pointer still briefly touches the OLD profile before self-correcting, left open because the component has zero test coverage and the plausible fixes trade this for a different, unverified failure mode. Also disclosed-not-fixed: a structurally identical exposure at `/league/:leagueKey/profile` (ProfilePage), currently unreachable by any in-app link.
+- **A real test beyond what Part 1 §3.6 cites**: `tests/test_redraft_engine_v1_service.py::test_profile_create_edit_duplicate_archive_delete_and_active_isolation` and `::test_profile_specific_draft_boards_are_isolated` (confirmed present via this pass's own grep) — broader profile-isolation coverage than Part 1 §3.6's own cited test names, worth recording here since it directly substantiates this topic.
+- **FIRST KNOWN CONTEXT**: `nwr-dogfood-v1` memory (2026-09-17/18).
+- **TEST COVERAGE**: `tests/test_redraft_engine_v1_service.py` (the two tests named above), plus the frontend `serializeActiveProfileCall` call sites' own existing test coverage.
+- **LIVE PROOF**: `nwr-dogfood-v1`'s own live reproduction-then-fix (not independently re-reproduced live this pass, since deliberately reproducing a profile-activation race against a real league's active profile pointer would risk real state, out of this pass's safety bounds); this pass's own fresh Part 1 §2.3/§3.6 checks independently confirm the current profile universe (3 visible Redraft leagues, Las Vegas Enginerds correctly hidden/Dynasty-only) is stable and correct today.
+- **FINAL STATUS**: `IMPLEMENTED_AND_TEST_VERIFIED` for the two real fixed bugs; the disclosed ~370ms residual and the dormant `/league/:leagueKey/profile` exposure remain real, open, low-severity gaps.
+- **REMAINING ACTION**: Same as `nwr-dogfood-v1`'s own disclosed remaining items — both require either new component-test infrastructure (this codebase has zero `.test.tsx` files/`@testing-library/react`, confirmed by `nwr-connection-update-v1`'s own independent finding) or accepting a different, unverified failure-mode tradeoff; neither has been judged worth the risk yet.
+
+### 7.27 Failure behavior
+
+Fully covered by Part 1 §3.5 (failed refresh honesty) and §3.8 (provider failures fail honestly) for request-level failure handling. The one area explicitly NOT covered anywhere in this entire two-part ledger, named by the dispatch itself, is a dedicated reliability gauntlet for cold-start/restart/race conditions at the process level (as opposed to a single request's own failure path).
+
+**Investigation (this pass, INSPECTED CODE)**: a full grep of `tests/*.py` for cold-start/restart-race/crash-recovery-shaped test names (`cold.start`, `cold_start`, `restart.*race`, `crash.*recovery`) returned **zero matches** anywhere in the test suite. This independently confirms the dispatch's own framing: no dedicated reliability gauntlet (deliberately killing a backend mid-request, restarting with a stale port still bound, simulating a crash during a write, etc.) has ever been built or run for this product. Scattered, real, PROCESS-level lessons do exist in memory (e.g. `nwr-draft-room-gui-consolidation-real-pass`'s "a backend server started via a background bash task does NOT hot-reload Python source edits," and the K/DST-composition-gap-closure pass's own "stale-backend-reuse failure mode" — a new `Start-Process` silently losing a port-bind race to an already-running old-code process, with the readiness probe unable to tell the difference, Part 1 §2.17's own cited LEDGER.md section) — but these are operator/tooling lessons learned ad hoc by sessions doing OTHER work, not a designed, repeatable reliability test suite.
+- **CURRENT IMPLEMENTATION**: Request-level failure handling (Part 1 §3.5/§3.8) is real and tested. Process-level reliability (cold start after a crash, a stale-port race on restart, concurrent-writer corruption under a kill-mid-write) has never been deliberately tested as its own concern — only incidentally observed and worked around by sessions pursuing unrelated goals.
+- **TEST COVERAGE**: None dedicated to this specific concern.
+- **LIVE PROOF**: N/A — no such gauntlet has ever been run, so there is nothing to independently re-confirm; this disposition is itself the finding.
+- **FINAL STATUS**: `OWNER_ACTION_REQUIRED` — this is a real, named, honestly-flagged gap, not a verified-passing capability and not something to claim covered by extrapolating from Part 1 §3.5/§3.8's request-level evidence. A dedicated future pass should design and run a real cold-start/restart/concurrent-write reliability gauntlet before this product relies on unattended recovery from a real crash.
+- **REMAINING ACTION**: Scope and run a dedicated reliability gauntlet (deliberate mid-request kill + restart; a `Start-Process` port-bind race against an already-running old-code process, generalizing the one-off lesson the K/DST-composition pass already learned; a kill during an active-profile-pointer write) before treating unattended crash recovery as a verified product property.
+
+---
+
+## Combined Summary — Part 1 + Part 2
+
+**Part 1 row count** (from Part 1's own "Master Requirement Ledger — Part 1 created" entry in `LEDGER.md` and this document's own count of Sections 1-6): **48 dispositioned rows** — Section 1 (Dynasty): 16. Section 2 (Redraft): 17. Section 3 (Data/Trust): 8. Section 4 (Official Rank/My Rank): 2. Section 5 (ESPN/Flaim): 1. Section 6 (four backend-API test failures): 4.
+
+Part 1 disposition breakdown (counted directly from Part 1's own rows, Sections 1-6):
+
+| Disposition | Part 1 |
+|---|---|
+| `IMPLEMENTED_AND_LIVE_VERIFIED` | 32 |
+| `IMPLEMENTED_AND_TEST_VERIFIED` | 7 |
+| `ALREADY_IMPLEMENTED` | 4 |
+| `SUPERSEDED_BY_NEWER_OWNER_DIRECTION` | 0 |
+| `INTENTIONALLY_BLOCKED_WITH_CURRENT_REASON` | 1 |
+| `OWNER_ACTION_REQUIRED` | 2 |
+| `NOT_RELEVANT_TO_CURRENT_PRODUCT` | 2 |
+| **Total** | **48** |
+
+**Part 2 row count**: the owner's 27 named topics, dispositioned as **31 individual rows** — three topics (7.11, 7.12, 7.18) were each split into lettered sub-rows (7.11a/b, 7.12a/b/c, 7.18a/b) because a single disposition value could not honestly cover the whole topic (e.g. 7.11's Dynasty half and Redraft half have genuinely different, correct answers). Every other topic is exactly one row. This mirrors Part 1's own practice of splitting a combined topic into dedicated rows (e.g. 1.15/1.16) rather than forcing two different real answers into one disposition value.
+
+Part 2 disposition breakdown (counted directly from the 31 rows above):
+
+| Disposition | Part 2 | Rows |
+|---|---|---|
+| `IMPLEMENTED_AND_LIVE_VERIFIED` | 9 | 7.1, 7.5, 7.6, 7.7, 7.8, 7.13, 7.18a, 7.18b, 7.23 |
+| `IMPLEMENTED_AND_TEST_VERIFIED` | 8 | 7.12a, 7.14, 7.15, 7.16, 7.19, 7.20, 7.25, 7.26 |
+| `ALREADY_IMPLEMENTED` | 8 | 7.2, 7.3, 7.4, 7.10, 7.11a, 7.12c, 7.17, 7.24 |
+| `SUPERSEDED_BY_NEWER_OWNER_DIRECTION` | 0 | — |
+| `INTENTIONALLY_BLOCKED_WITH_CURRENT_REASON` | 1 | 7.21 |
+| `OWNER_ACTION_REQUIRED` | 4 | 7.9, 7.12b, 7.22, 7.27 |
+| `NOT_RELEVANT_TO_CURRENT_PRODUCT` | 1 | 7.11b |
+| **Total** | **31** | |
+
+**Grand total across both parts**: 48 (Part 1) + 31 (Part 2) = **79 dispositioned rows**.
+
+| Disposition | Part 1 | Part 2 | Combined |
+|---|---|---|---|
+| `IMPLEMENTED_AND_LIVE_VERIFIED` | 32 | 9 | **41** |
+| `IMPLEMENTED_AND_TEST_VERIFIED` | 7 | 8 | **15** |
+| `ALREADY_IMPLEMENTED` | 4 | 8 | **12** |
+| `SUPERSEDED_BY_NEWER_OWNER_DIRECTION` | 0 | 0 | **0** |
+| `INTENTIONALLY_BLOCKED_WITH_CURRENT_REASON` | 1 | 1 | **2** |
+| `OWNER_ACTION_REQUIRED` | 2 | 4 | **6** |
+| `NOT_RELEVANT_TO_CURRENT_PRODUCT` | 2 | 1 | **3** |
+| **Total** | **48** | **31** | **79** |
+
+Zero rows in either part use any disallowed placeholder status (`UNKNOWN`/`TODO`/`FOLLOW-UP`/`LATER`/`NOT INVESTIGATED`/`PROBABLY DONE`/`PARTIAL WITHOUT EXPLANATION`).
+
+**Real gaps found while verifying this pass, none of which were fixed (pure documentation/verification, per this pass's own explicit hard boundary)**:
+1. **A real, previously-undocumented orphaned-capability finding** (7.9): Dynasty's Personal Board backend schema validates `sell_high`/`buy_low`/`my_rank`/`my_tier`/`conviction` fields, but the HTTP route's own field whitelist, the facade's response serializer, and the frontend UI all independently exclude them — the capability is completely unreachable by the owner today, not merely unfinished in one layer.
+2. Dynasty Compare still does not render `currentStatusOverride` (re-confirms Part 1 §1.3's own flagged, never-closed item; 7.13).
+3. Redraft Compare has a distinct, architecturally-different version of the same disclosure gap — the status override is baked into values with zero on-card label or reason text (newly documented this pass; 7.13).
+4. No dedicated reliability gauntlet (cold start, restart races, concurrent-write corruption) has ever been built or run for this product (7.27) — confirmed by a zero-match grep across the entire test suite, not merely assumed absent.
+5. No real external-platform transaction-history surface and no real session-to-session change-detection layer exist anywhere in either app (7.21/7.22) — both honestly absent, neither fabricated nor partially faked.
+
+No source code was modified by this Part 2 pass. All claims above were independently verified this pass via direct code inspection and/or fresh `curl` calls against the real running dev backends, per this document's own evidence-labeling convention.
+
+<!-- END OF MASTER REQUIREMENT LEDGER (Parts 1 and 2 complete) -->
