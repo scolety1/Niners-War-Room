@@ -164,14 +164,24 @@ Every row in this entire document (this pass's Sections 1–6, and whatever Part
 - **FINAL STATUS**: `IMPLEMENTED_AND_TEST_VERIFIED`.
 - **REMAINING ACTION**: Worker 8 noted that real per-roster draft-pick ownership is not currently admitted into the connected league snapshots, so picks cannot yet participate in computed trade counters (see 1.10) — a disclosed limitation, not a defect in the Planning Console itself.
 
-### 1.15 Regular-season demotion of draft tools / weird nav numbers removed
+### 1.15 Regular-season demotion of draft tools
 
-- **OWNER REQUEST**: Draft Cockpit/Rookie Review should not clutter in-season navigation; the visible `1 2 3 4` numbers beside nav items were confusing and should go.
+- **OWNER REQUEST**: Draft Cockpit/Rookie Review should not clutter in-season navigation.
 - **FIRST KNOWN CONTEXT**: Worker 6, Items 8–9, `LEDGER.md` lines 298–305.
-- **CURRENT IMPLEMENTATION**: All visible Dynasty nav `shortcut` properties were removed (keyboard/command-palette navigation remains available without visual ordinals). Draft Cockpit and Rookie Review are promoted only in draft/offseason phases and absent from the in-season hierarchy, driven by the same `lifecycleContext.seasonPhase` as 1.1.
+- **CURRENT IMPLEMENTATION**: Draft Cockpit and Rookie Review are promoted only in draft/offseason phases and absent from the in-season hierarchy, driven by the same `lifecycleContext.seasonPhase` as 1.1 (`desktop/apps/dynasty/src/DynastyApp.tsx`).
 - **TEST COVERAGE**: `desktop/apps/dynasty/src/lifecycle-navigation.test.ts`.
-- **LIVE PROOF**: Independently re-confirmed this pass that `lifecycleContext.seasonPhase` returns `"REGULAR_SEASON"` for the live Las Vegas Enginerds league (same check as 1.1), which is the exact field the nav-demotion logic keys off of; the absence of the `1 2 3 4` ordinals in the rendered sidebar itself is a frontend-only visual fact recorded live by Worker 6's own Chrome session (line 308), not re-rendered by this pass.
+- **LIVE PROOF**: Independently re-confirmed this pass that `lifecycleContext.seasonPhase` returns `"REGULAR_SEASON"` for the live Las Vegas Enginerds league (same check as 1.1), which is the exact field the nav-demotion logic keys off of; the absence of Draft Cockpit in the rendered sidebar itself is a frontend-only visual fact recorded live by Worker 6's own Chrome session (line 308), not re-rendered by this pass.
 - **FINAL STATUS**: `IMPLEMENTED_AND_LIVE_VERIFIED`.
+- **REMAINING ACTION**: None.
+
+### 1.16 Weird nav numbers removed
+
+- **OWNER REQUEST**: the visible `1 2 3 4` numbers beside Dynasty nav items were confusing and should go.
+- **FIRST KNOWN CONTEXT**: Worker 6, Items 8–9, `LEDGER.md` lines 298–305.
+- **CURRENT IMPLEMENTATION**: all visible Dynasty nav `shortcut` properties were removed from `DynastyApp.tsx`'s rendered nav (keyboard/command-palette navigation remains available without visual ordinals).
+- **TEST COVERAGE**: `desktop/apps/dynasty/src/lifecycle-navigation.test.ts`.
+- **LIVE PROOF**: this is a static UI-labeling change with no backend data dependency to re-check via HTTP. Worker 6's own rendered-Chrome session this cycle directly confirmed the accessibility tree/rendered nav contained no visible `1 2 3 4` ordinals (line 308); not independently re-rendered via Chrome this pass.
+- **FINAL STATUS**: `IMPLEMENTED_AND_LIVE_VERIFIED` (citing Worker 6's own live Chrome verification this cycle).
 - **REMAINING ACTION**: None.
 
 ---
@@ -483,7 +493,7 @@ This matches and independently confirms `LEDGER.md`'s own "ESPN / Flaim completi
 
 Per the dispatch's instruction, these are cited, not re-litigated. Full detail: `docs/codex/dogfood_rebuild_20260929/LEDGER.md`'s `# Exact full-suite failure reconciliation` section (lines 835–882) and `docs/codex/dogfood_rebuild_20260929/FULL_SUITE_FAILURE_INVENTORY.md`'s `## The four long-running backend-API failures -- final disposition` section (lines 41–80), both independently re-read by this pass and confirmed internally consistent with each other and with the dispatch's own stated expectations.
 
-1. **`test_dynasty_facade_composes_real_governed_workflows`** — **`INTENTIONALLY_BLOCKED_WITH_CURRENT_REASON`**. Classified `ENVIRONMENT_DEPENDENCY`: fails at exactly one field (`marketMatched: 239` real vs. `230` hardcoded in the test), driven by the live, machine-wide, non-reproducible `%LOCALAPPDATA%\NinersWarRoom\data\refresh_data` DynastyProcess snapshot (confirmed by this pass's own `marketFreshness` live check, 3.4/1.12, to be the same real, independently-aging data source). Deliberately not forced green, since hardcoding a new number against a source that "can change schema/values day to day" would only be correct until the next refresh.
+1. **`test_dynasty_facade_composes_real_governed_workflows`** — **`INTENTIONALLY_BLOCKED_WITH_CURRENT_REASON`**. Classified `ENVIRONMENT_DEPENDENCY`: fails at exactly one field (`marketMatched: 239` real vs. `230` hardcoded in the test), driven by the live, machine-wide, non-reproducible `%LOCALAPPDATA%\NinersWarRoom\data\refresh_data` DynastyProcess snapshot (this pass's own fresh `marketFreshness` live check — see sections 1.12/3.4 above — independently confirms this is the same real, independently-aging data source, still live and still drifting today). Deliberately not forced green, since hardcoding a new number against a source that "can change schema/values day to day" would only be correct until the next refresh.
 2. **`test_desktop_rookie_veteran_bridge_is_source_separated_and_trade_aware`** — **`IMPLEMENTED_AND_TEST_VERIFIED`**. Fixed: `rookie_veteran_dynasty_bridge_service.py`'s stale pointer to an abandoned 608-row candidate snapshot was repointed to the real, currently-governed Freeze V7 (564-row) snapshot every other live surface already uses.
 3. **`test_redraft_bootstrap_seeds_once_and_matches_desktop_contract`** — **`IMPLEMENTED_AND_TEST_VERIFIED`**. Fixed: two stacked stale test assertions (an unforced real `NWR_FANTASYPROS_API_KEY` precondition, and a missing `nwrPureExperimental` preset key never added to the test's expected key set) — zero production code changed.
 4. **`test_facade_has_no_streamlit_or_app_component_dependency`** — **`IMPLEMENTED_AND_TEST_VERIFIED`**. Fixed: a real AST-check bug in the test itself (it inspected every imported symbol name, not module name, false-triggering on real function imports like `apply_status_overrides_to_ranking`) — corrected to inspect module names only; the facade genuinely has zero real Streamlit/legacy-`app` coupling.
