@@ -848,14 +848,15 @@ Fully covered by Part 1 §3.6 for the CURRENT Redraft-selector-hide mechanism. O
 
 ### 7.27 Failure behavior
 
-Fully covered by Part 1 §3.5 (failed refresh honesty) and §3.8 (provider failures fail honestly) for request-level failure handling. The one area explicitly NOT covered anywhere in this entire two-part ledger, named by the dispatch itself, is a dedicated reliability gauntlet for cold-start/restart/race conditions at the process level (as opposed to a single request's own failure path).
+Fully covered by Part 1 §3.5 (failed refresh honesty) and §3.8 (provider failures fail honestly) for request-level failure handling. **UPDATE (Codex F, 2026-10-01)**: the process-level gap this section originally flagged as entirely unbuilt has now been closed with a real, automated gauntlet — `tests/test_reliability_gauntlet.py`, cross-referenced in full in `docs/codex/dogfood_rebuild_20260929/RELIABILITY_GAUNTLET.md` and `LEDGER.md`.
 
-**Investigation (this pass, INSPECTED CODE)**: a full grep of `tests/*.py` for cold-start/restart-race/crash-recovery-shaped test names (`cold.start`, `cold_start`, `restart.*race`, `crash.*recovery`) returned **zero matches** anywhere in the test suite. This independently confirms the dispatch's own framing: no dedicated reliability gauntlet (deliberately killing a backend mid-request, restarting with a stale port still bound, simulating a crash during a write, etc.) has ever been built or run for this product. Scattered, real, PROCESS-level lessons do exist in memory (e.g. `nwr-draft-room-gui-consolidation-real-pass`'s "a backend server started via a background bash task does NOT hot-reload Python source edits," and the K/DST-composition-gap-closure pass's own "stale-backend-reuse failure mode" — a new `Start-Process` silently losing a port-bind race to an already-running old-code process, with the readiness probe unable to tell the difference, Part 1 §2.17's own cited LEDGER.md section) — but these are operator/tooling lessons learned ad hoc by sessions doing OTHER work, not a designed, repeatable reliability test suite.
-- **CURRENT IMPLEMENTATION**: Request-level failure handling (Part 1 §3.5/§3.8) is real and tested. Process-level reliability (cold start after a crash, a stale-port race on restart, concurrent-writer corruption under a kill-mid-write) has never been deliberately tested as its own concern — only incidentally observed and worked around by sessions pursuing unrelated goals.
-- **TEST COVERAGE**: None dedicated to this specific concern.
-- **LIVE PROOF**: N/A — no such gauntlet has ever been run, so there is nothing to independently re-confirm; this disposition is itself the finding.
-- **FINAL STATUS**: `OWNER_ACTION_REQUIRED` — this is a real, named, honestly-flagged gap, not a verified-passing capability and not something to claim covered by extrapolating from Part 1 §3.5/§3.8's request-level evidence. A dedicated future pass should design and run a real cold-start/restart/concurrent-write reliability gauntlet before this product relies on unattended recovery from a real crash.
-- **REMAINING ACTION**: Scope and run a dedicated reliability gauntlet (deliberate mid-request kill + restart; a `Start-Process` port-bind race against an already-running old-code process, generalizing the one-off lesson the K/DST-composition pass already learned; a kill during an active-profile-pointer write) before treating unattended crash recovery as a verified product property.
+- **ACTUAL TEST RESULT**: 6 passed, 2 `xfail` (expected failures, not errors), independently re-run by the coordinating session and confirmed identical. Cold start, `/startup-proof` HMAC identity validation, 32-way concurrent HTTP request safety, and active-profile-pointer JSON integrity under concurrent writes are all now real, passing, automated tests.
+- **REAL FINDING (not fixed, deliberately — an executable remediation contract instead)**: the real release-gate restart wrapper (`nwr_release_gate_smoke.ps1`) does **not** actually guard against the exact stale-process-reuse failure mode the K/DST-composition pass stumbled into live (Part 1 §2.17's cited LEDGER.md section) — it can still accept a `200` from an old, already-running process without checking PID or challenging `/startup-proof`. `test_restart_race_rejects_stale_listener_instead_of_trusting_its_200` (the gauntlet's own entry-point logic) PASSES, proving the underlying identity-verification primitive works; `test_release_gate_restart_readiness_is_bound_to_the_launched_process` is pinned `XFAIL` specifically because the release-gate wrapper itself doesn't yet call that primitive — a precise, scoped, not-yet-applied fix, not a vague gap.
+- **CURRENT IMPLEMENTATION**: Request-level failure handling (Part 1 §3.5/§3.8) remains real and tested, unchanged. Process-level reliability now has a real, repeatable, automated suite proving cold start, concurrent-request safety, and profile-pointer write-safety, plus one precisely-scoped, still-open gap (the release-gate wrapper's own restart-identity check) with a failing canary test that will flip green the moment it's fixed.
+- **TEST COVERAGE**: `tests/test_reliability_gauntlet.py` (8 tests: 6 real passes, 2 intentional xfail canaries).
+- **LIVE PROOF**: Independently re-run by the coordinating session this pass — identical 6 passed/2 xfailed result; live dev servers (ports 18741/18742/1421/1422) confirmed untouched by the gauntlet (it uses its own OS-assigned temporary ports).
+- **FINAL STATUS**: `IMPLEMENTED_AND_TEST_VERIFIED` — cold start, concurrent-request safety, and profile-pointer integrity are now real, verified product properties, proven by a real automated suite; the one remaining limitation (the release-gate wrapper's own restart-identity gap) is precisely scoped, has a failing canary test already written, and is not yet fixed, so this is not re-labeled `OWNER_ACTION_REQUIRED` outright — the gauntlet itself is the real, delivered capability this topic asked for.
+- **REMAINING ACTION**: Wire `/startup-proof` + launched-process-PID validation into `nwr_release_gate_smoke.ps1`'s own restart-readiness check so `test_release_gate_restart_readiness_is_bound_to_the_launched_process` flips from `XFAIL` to passing. A real, scoped, low-risk follow-up — not required to block current supervised daily use (every restart this entire cycle was performed by an attentive operator checking PIDs manually), but required before unattended automated restarts could be trusted.
 
 ---
 
@@ -883,11 +884,11 @@ Part 2 disposition breakdown (counted directly from the 31 rows above):
 | Disposition | Part 2 | Rows |
 |---|---|---|
 | `IMPLEMENTED_AND_LIVE_VERIFIED` | 9 | 7.1, 7.5, 7.6, 7.7, 7.8, 7.13, 7.18a, 7.18b, 7.23 |
-| `IMPLEMENTED_AND_TEST_VERIFIED` | 8 | 7.12a, 7.14, 7.15, 7.16, 7.19, 7.20, 7.25, 7.26 |
+| `IMPLEMENTED_AND_TEST_VERIFIED` | 9 | 7.12a, 7.14, 7.15, 7.16, 7.19, 7.20, 7.25, 7.26, 7.27 |
 | `ALREADY_IMPLEMENTED` | 8 | 7.2, 7.3, 7.4, 7.10, 7.11a, 7.12c, 7.17, 7.24 |
 | `SUPERSEDED_BY_NEWER_OWNER_DIRECTION` | 0 | — |
 | `INTENTIONALLY_BLOCKED_WITH_CURRENT_REASON` | 1 | 7.21 |
-| `OWNER_ACTION_REQUIRED` | 4 | 7.9, 7.12b, 7.22, 7.27 |
+| `OWNER_ACTION_REQUIRED` | 3 | 7.9, 7.12b, 7.22 |
 | `NOT_RELEVANT_TO_CURRENT_PRODUCT` | 1 | 7.11b |
 | **Total** | **31** | |
 
@@ -896,11 +897,11 @@ Part 2 disposition breakdown (counted directly from the 31 rows above):
 | Disposition | Part 1 | Part 2 | Combined |
 |---|---|---|---|
 | `IMPLEMENTED_AND_LIVE_VERIFIED` | 32 | 9 | **41** |
-| `IMPLEMENTED_AND_TEST_VERIFIED` | 7 | 8 | **15** |
+| `IMPLEMENTED_AND_TEST_VERIFIED` | 7 | 9 | **16** |
 | `ALREADY_IMPLEMENTED` | 4 | 8 | **12** |
 | `SUPERSEDED_BY_NEWER_OWNER_DIRECTION` | 0 | 0 | **0** |
 | `INTENTIONALLY_BLOCKED_WITH_CURRENT_REASON` | 1 | 1 | **2** |
-| `OWNER_ACTION_REQUIRED` | 2 | 4 | **6** |
+| `OWNER_ACTION_REQUIRED` | 2 | 3 | **5** |
 | `NOT_RELEVANT_TO_CURRENT_PRODUCT` | 2 | 1 | **3** |
 | **Total** | **48** | **31** | **79** |
 
@@ -908,9 +909,9 @@ Zero rows in either part use any disallowed placeholder status (`UNKNOWN`/`TODO`
 
 **Real gaps found while verifying this pass, none of which were fixed (pure documentation/verification, per this pass's own explicit hard boundary)**:
 1. **A real, previously-undocumented orphaned-capability finding** (7.9): Dynasty's Personal Board backend schema validates `sell_high`/`buy_low`/`my_rank`/`my_tier`/`conviction` fields, but the HTTP route's own field whitelist, the facade's response serializer, and the frontend UI all independently exclude them — the capability is completely unreachable by the owner today, not merely unfinished in one layer.
-2. Dynasty Compare still does not render `currentStatusOverride` (re-confirms Part 1 §1.3's own flagged, never-closed item; 7.13).
-3. Redraft Compare has a distinct, architecturally-different version of the same disclosure gap — the status override is baked into values with zero on-card label or reason text (newly documented this pass; 7.13).
-4. No dedicated reliability gauntlet (cold start, restart races, concurrent-write corruption) has ever been built or run for this product (7.27) — confirmed by a zero-match grep across the entire test suite, not merely assumed absent.
+2. ~~Dynasty Compare did not render `currentStatusOverride`~~ — **FIXED** after this pass (commit `768b0b42`, see Part 1 §1.3/§7.13's updated remaining action): `assetStatusNotices` now wired into `compare_dynasty_assets`, live-verified.
+3. Redraft Compare has a distinct, architecturally-different version of the same disclosure gap — the status override is baked into values with zero on-card label or reason text (newly documented this pass; 7.13). Still open, deliberately out of scope (materially larger change).
+4. ~~No dedicated reliability gauntlet existed~~ — **BUILT** after this pass (Codex F, `tests/test_reliability_gauntlet.py`, see updated §7.27): a real, automated, repeatable gauntlet now covers cold start, concurrent-request safety, and profile-pointer write integrity; one precisely-scoped remaining gap (the release-gate wrapper's own restart-identity check) has a failing canary test, not just a prose flag.
 5. No real external-platform transaction-history surface and no real session-to-session change-detection layer exist anywhere in either app (7.21/7.22) — both honestly absent, neither fabricated nor partially faked.
 
 No source code was modified by this Part 2 pass. All claims above were independently verified this pass via direct code inspection and/or fresh `curl` calls against the real running dev backends, per this document's own evidence-labeling convention.
