@@ -963,6 +963,94 @@ This explicitly closes Master Requirement Ledger Sec 1.3's and Sec 7.13's remain
 
 ---
 
+# Reliability gauntlet - automated coverage added, two real gaps pinned
+
+Scoped dispatch, `upgrade/nwr-prospective-outcomes-v1-20260914` worktree,
+dispatch HEAD `7462cb7c` (confirmed exactly before any work). The two known
+untracked `local_exports.backup-*` directories were present at start and were
+never touched. A concurrent ESPN/Flaim worker committed `cde1beb0` during this
+pass in the same worktree; its files were not edited or staged by this work.
+
+Built `tests/test_reliability_gauntlet.py`, the first dedicated automated
+process/concurrent-write reliability suite in the repository, closing the
+zero-test-coverage finding in Master Requirement Ledger section 7.27 with a
+more precise disposition: **process/pointer/HTTP coverage now exists, but
+section 7.27 remains partially open because two real automated canaries are
+XFAIL**. Full design, evidence, and exact follow-up are in
+`RELIABILITY_GAUNTLET.md`.
+
+## Exact findings
+
+1. **Cold start: PASS.** A real `scripts/run_nwr_desktop_api.py` Redraft
+   process starts on an OS-assigned high port with isolated state/AppData,
+   emits its startup identity record, returns authenticated `/healthz`, and
+   answers a fresh `/startup-proof` challenge with the correct HMAC over
+   protocol/mode/actual-port/challenge. The assertion is identity-verifying,
+   not a bare `200` probe.
+2. **Restart race: backend entry point PASS; release-gate wrapper XFAIL.** A
+   separate dummy process binds an OS-assigned port and returns `200` as an
+   old process. Starting the real backend on that port exits nonzero with the
+   bind error and emits no startup identity, while the deliberately naive
+   readiness request still gets `200` from the dummy. The gauntlet catches
+   this exact stale-process-reuse class by trusting the launched process and
+   identity record. Inspection of the real
+   `desktop/scripts/nwr_release_gate_smoke.ps1` readiness block confirms it
+   still checks only `/api/v1/bootstrap`; it neither checks that
+   `$backendProc` survived nor validates `/startup-proof`. The exact live bug
+   from the K/DST Trade Finder pass can therefore still fool that wrapper.
+   This is pinned as a strict expected-failure remediation contract, not
+   redefined as passing behavior.
+3. **Concurrent profile-pointer integrity: PASS, with one availability gap.**
+   Confirmed real paths are Redraft `active_profile.json` and Dynasty
+   `active_league_profile.json` under their respective store roots. Both real
+   public persistence functions use temp-file + `os.replace`. Concurrent
+   calls left both destination files as complete, parseable JSON; no partial
+   document or leftover temp file was observed. Dynasty also passed a forced
+   same-second timestamp bucket. Redraft's UUID temp files avoid temp-name
+   collision, but repeated 32-writer waves on Windows produced destination
+   replace contention: some `set_active_profile()` calls raised the service's
+   persistence error while the published pointer remained valid. This is an
+   availability/serialization gap, pinned as the second XFAIL canary; it is
+   not JSON corruption.
+4. **Concurrent HTTP race: PASS.** A separate real temporary backend handled
+   32 barrier-released requests (24 `/healthz`, eight `/api/v1/bootstrap`)
+   with all HTTP 200 JSON responses, no process crash, a successful final
+   health check, all isolated-state JSON parseable, and no temp file left.
+
+Every backend/dummy process used an OS-assigned port and was torn down in a
+`finally` path. Ports 18741/18742/1421/1422 were never bound, probed, stopped,
+or killed. `NWR_REDRAFT_HOME`, `NWR_DYNASTY_LEAGUE_HOME`, `APPDATA`, and
+`LOCALAPPDATA` were redirected to pytest-local roots; the owner's AppData and
+real local profile pointers were untouched.
+
+## Actual test results
+
+- `tests/test_reliability_gauntlet.py`: **6 passed, 2 xfailed**. XFAILs are
+  exactly the release-gate process-identity guard and Redraft concurrent-writer
+  success canaries above.
+- Ruff 0.14.1 on the new test: **clean**.
+- Combined gauntlet + required `tests/test_desktop_application_api.py`:
+  **56 passed, 2 xfailed, 1 failed**. Subtracting the eight new gauntlet cases,
+  the standard baseline remains **50 passed, 1 failed** at the same existing
+  node, `test_dynasty_facade_composes_real_governed_workflows`. On this
+  machine `marketMatched` happened to equal its hardcoded 230, so the same
+  node proceeded to its next stale exact-key assertion and rejected the
+  already-shipped additive `currentStatusOverride` ranking field. No new test
+  node failed.
+- `git status --short -- docs/model_v4 local_exports/model_v4` was empty both
+  before and after the combined run; the prior P0 canonical-doc corruption
+  hazard remained closed.
+
+**Final disposition:** not yet trusted for unattended release-gate restarts or
+guaranteed concurrent Redraft activation. Section 7.27 is no longer a
+zero-coverage gap, but remains precisely open until the smoke wrapper binds
+readiness to its launched process via the existing startup-proof protocol and
+Redraft serializes/retries pointer replacement. No governed valuation formula,
+base board CSV, projection snapshot, generated data pack, provider write path,
+KHA/403N18th identity field, ESPN/Flaim file, or owner AppData was touched.
+
+---
+
 # Codex A — authenticated ESPN/Flaim capture and fail-closed activation disposition
 
 Scoped dispatch, `upgrade/nwr-prospective-outcomes-v1-20260914` worktree, starting HEAD `7462cb7c` (confirmed exactly via `git log -1 --oneline` before any work). Read this full ledger (962 lines at dispatch start), Master Requirement Ledger Section 5, and all of `src/services/espn_flaim_snapshot_service.py`, `src/services/espn_flaim_snapshot_import_service.py`, and `scripts/refresh_espn_flaim_snapshot.py` before provider inspection or file changes.
