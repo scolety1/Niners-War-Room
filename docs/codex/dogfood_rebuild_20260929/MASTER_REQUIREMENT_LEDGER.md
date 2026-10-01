@@ -466,26 +466,40 @@ A genuinely separate, **legacy, CLI/Streamlit-only** pipeline (`fact_official_ra
 
 ## Section 5 — ESPN / Flaim — final disposition
 
-**Final disposition: `OWNER_ACTION_REQUIRED`.**
+The final architecture is provider-neutral below the authenticated fetch boundary:
 
-This pass independently re-read the four pipeline files the dispatch named, confirming them real, substantive, and tested (not stubs):
+```text
+AUTHENTICATED PROVIDER FETCH
+        ↓
+PRIVATE RAW CAPTURE
+        ↓
+DETERMINISTIC NWR TRANSFORM
+        ↓
+VALIDATION
+        ↓
+ATOMIC SNAPSHOT
+        ↓
+CANONICAL LEAGUE STATE
+        ↓
+NWR DECISION TOOLS
+```
 
-- `src/services/league_capability_service.py::capabilities_from_espn_flaim_snapshot()` (line 166) — a real function computing `LeagueCapabilities` from a parsed ESPN/Flaim snapshot; its own docstring explains standings are deliberately modeled as always `NONE` because "the July 2026 audit found Flaim's standings 'materially misrepresented'" — a real, disclosed, conservative design choice, not an oversight.
-- `src/services/espn_flaim_snapshot_service.py` (274 lines) — real snapshot schema/loader.
-- `src/services/espn_flaim_snapshot_import_service.py` (571 lines) — real validate/transform/write pipeline.
-- `scripts/refresh_espn_flaim_snapshot.py` (137 lines) — real CLI entry point.
-- Test coverage confirmed present and real: `tests/test_espn_flaim_snapshot_import_pipeline.py`, `tests/test_espn_flaim_snapshot_service.py`.
+NWR owns and tests everything from the private raw capture downward. `src/services/espn_flaim_snapshot_service.py`, `src/services/espn_flaim_snapshot_import_service.py`, and `scripts/refresh_espn_flaim_snapshot.py` remain the authoritative schema, deterministic transform/validation/activation service, and preview-by-default CLI. `src/services/league_capability_service.py::capabilities_from_espn_flaim_snapshot()` remains the capability boundary after activation.
 
-This matches and independently confirms `LEDGER.md`'s own "ESPN / Flaim completion" section (lines 657–664), which states, quoted verbatim: *"`src/services/league_capability_service.py`'s `capabilities_from_espn_flaim_snapshot()` and the full `espn_flaim_snapshot_service.py` / `espn_flaim_snapshot_import_service.py` / `scripts/refresh_espn_flaim_snapshot.py` transform/validate/write pipeline already exist, are tested against synthetic fixtures, and will grant full `has_verified_identity` capability the moment a real ESPN snapshot is imported... No open TODO/FIXME found in the import service."* That section also records the coordinating session's own direct `mcp__flaim__authenticate` call, dated today (2026-09-30), confirming Flaim is still unauthenticated and returned a fresh, session-scoped OAuth URL.
+**LIVE OBSERVATION (2026-10-01):** this Codex session had a separate, authenticated, read-only Flaim Fantasy connector. `get_user_session` returned both real ESPN leagues with the expected identities. Real `get_league_info`, `get_roster`, and `get_free_agents` calls succeeded for both leagues. Private, gitignored `nwr_espn_flaim_raw_capture_v1` files were saved under `local_exports/redraft_v1/espn_flaim_captures/`; neither raw payload nor generated snapshot is tracked by git.
 
-- **WHY**: The Flaim MCP server requires an interactive OAuth authorization that the owner must complete in their own browser. No Claude session — coordinating or worker — can complete this headlessly; it is a real, external, owner-only action, not an engineering gap.
-- **EXACT ACTION**: The owner opens the real OAuth authorization URL that `mcp__flaim__authenticate` returns (it is session-scoped and regenerated every time that tool is called — never hardcode or reuse a previously-seen URL) in their own browser and completes the authorization flow. If the browser redirect page fails to load, the owner instead copies the resulting `http://localhost:<port>/callback?code=...&state=...` URL and pastes it back into a Claude Code session that has Flaim MCP access, for that session to call `mcp__flaim__complete_authentication`.
-- **EXPECTED SUCCESS SIGNAL**: Flaim's MCP tools become available/authenticated — a `claude mcp list` (or equivalent check) shows Flaim as authenticated rather than "Needs authentication," and a subsequent `mcp__flaim__authenticate` call no longer returns a fresh authorization URL.
-- **WHAT NWR WILL DO NEXT**: Once authenticated, an agent session with Flaim access calls Flaim's `get_league_info`/`get_roster`/`get_free_agents` for KHA (ESPN league `1298250946`) and 403 N 18th (ESPN league `1009373442`), saves the raw capture, and the existing, already-tested `espn_flaim_snapshot_import_service.py` pipeline validates and writes it. This is already-built, already-tested work being exercised for the first time with real data — not new engineering.
-- **WHAT BECOMES TRUSTED**: KHA and 403 N 18th both gain a real `has_verified_identity` capability (via `capabilities_from_espn_flaim_snapshot()`) and become usable in the same way Fantasy Gamers and Las Vegas Enginerds already are today — real roster/free-agent/trade/waiver functionality, not merely a profile shell.
+**ACTUAL TEST RESULT:** the importer preview accepted both captures and passed every schema/profile/provider/team identity check:
 
-- **FINAL STATUS**: `OWNER_ACTION_REQUIRED`.
-- **REMAINING ACTION**: As stated in EXACT ACTION above. No further engineering cycle should be spent attempting to work around this; the downstream pipeline is confirmed ready and waiting.
+- KHA: provider league `1298250946`, team `4`, `Colety Crusaders`, season `2026`, 16 teams, 13 current roster players, and a real bounded 100-player available pool.
+- 403 N 18th and friends: provider league `1009373442`, team `5`, `Spencer's Smart Team`, season `2026`, 8 teams, 17 current roster players, and a real bounded 100-player available pool.
+
+**INSPECTED CODE + LIVE OBSERVATION:** activation was deliberately withheld for both leagues. Flaim's current `get_league_info` response exposed `H2H_POINTS`, matchup periods, tie rules, and roster construction, but did not expose the league's actual per-stat scoring multipliers. The raw captures therefore contain no invented scoring rows, and the deterministic importer correctly reports `Scoring completeness: UNKNOWN`. The provider responses also exposed free-agent-versus-waiver state and waiver-clear timestamps, but the current `nwr_espn_flaim_raw_capture_v1`/snapshot schema has no fields for those facts, so they were observed but not silently forced into another field.
+
+- **KHA FINAL STATUS:** `OWNER_ACTION_REQUIRED`.
+- **403 N 18th FINAL STATUS:** `OWNER_ACTION_REQUIRED`.
+- **EXACT ACTION:** provide a real authenticated ESPN/Flaim export or capture that includes each league's exact per-stat scoring multipliers. Do not describe the league only as standard, half-PPR, or PPR. The capture must identify each provider scoring setting and numeric value so NWR can map it honestly, re-run preview, and activate only after the scoring check passes.
+- **EXPECTED SUCCESS SIGNAL:** importer preview reports real scoring rows with an honest `PARTIAL` or `COMPLETE` classification appropriate to the supplied provider fields, all existing identity/roster/pool checks still pass, and only then the snapshot is atomically activated and live-verified.
+- **CURRENT TRUST BOUNDARY:** the real captures and preview results prove authenticated provider access, league identity, roster, lineup-slot classification, and bounded availability. Neither league is `LIVE_IN_NWR`; no active snapshot was written, no profile identity field was hand-edited, and no OAuth work is requested.
 
 ---
 

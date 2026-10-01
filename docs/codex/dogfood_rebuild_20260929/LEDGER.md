@@ -960,3 +960,51 @@ Closes the real, repeatedly-flagged-but-never-closed trust gap Part 1 Sec 1.3 an
 No governed valuation model touched (`marginal_roster_utility_v2`, `governed_asset_registry_service.py`, base board CSVs, and projection snapshots all untouched, confirmed by `git status --short` showing only the files listed above). No Sleeper or ESPN write endpoint was called. KHA/403N18th identity fields untouched. Redraft backend untouched (zero Redraft Python files modified) and its dev server was never restarted by this pass. All four dev servers (Dynasty backend, Dynasty preview, Redraft backend, Redraft preview) confirmed listening and healthy at the end of this pass.
 
 This explicitly closes Master Requirement Ledger Sec 1.3's and Sec 7.13's remaining-action item for Dynasty Compare, and Part 2's gap-list item 2. Redraft Compare's own, distinct, larger-change gap (Part 2 gap-list item 3) remains open and intentionally undisturbed.
+
+---
+
+# Codex A — authenticated ESPN/Flaim capture and fail-closed activation disposition
+
+Scoped dispatch, `upgrade/nwr-prospective-outcomes-v1-20260914` worktree, starting HEAD `7462cb7c` (confirmed exactly via `git log -1 --oneline` before any work). Read this full ledger (962 lines at dispatch start), Master Requirement Ledger Section 5, and all of `src/services/espn_flaim_snapshot_service.py`, `src/services/espn_flaim_snapshot_import_service.py`, and `scripts/refresh_espn_flaim_snapshot.py` before provider inspection or file changes.
+
+## Step 1 — access-path inspection
+
+- **INSPECTED CODE:** broad `flaim`/`espn` search across `src/`, `scripts/`, and `config/` found the existing snapshot/canonical-state/capability consumers and the three deterministic import files, but no direct ESPN network client, no ESPN scraping code, and no separate repository-side Flaim client. No `espn.com`, ESPN cookie (`espn_s2`/`SWID`), or ESPN HTTP-client reference exists in those Python paths.
+- **LIVE OBSERVATION:** no `FLAIM`/`ESPN` environment-variable names were present; no `flaim` or `espn` CLI binary was installed; no credential-like Flaim/ESPN file existed under `src/`, `scripts/`, or `config/`. No secret value was read or printed.
+- **LIVE OBSERVATION:** unlike the Claude-only MCP state recorded by the older ledger entry, this Codex session exposed a separate read-only Flaim Fantasy connector. Its real `get_user_session` call succeeded and returned four active leagues, including KHA (`1298250946`, team `4`, `Colety Crusaders`) and 403 N 18th and friends (`1009373442`, team `5`, `Spencer's Smart Team`) for season 2026. That successful authenticated response moved this run onto the real-access path; no OAuth, browser automation, or ESPN scraping was attempted.
+- **INSPECTED CODE:** `.gitignore` ignores the entire `local_exports/` tree. Both private raw captures were written only below that ignored root; no provider payload, generated snapshot, or credential was added to git.
+
+## Real provider capture and deterministic preview
+
+### KHA
+
+- **LIVE OBSERVATION:** authenticated `get_league_info` returned league `1298250946`, `2026 KHA High Stakes League`, season `2026`, 16 teams, and team `4` named `Colety Crusaders`. Authenticated `get_roster` returned 13 current players: 8 starters, 4 bench, and 1 reserve/IR; every returned player mapped deterministically to `STARTER`, `BENCH`, or `RESERVE`. Authenticated `get_free_agents(count=100)` returned 100 real available players, ordered by ESPN-wide roster rate: 87 free agents and 13 waivers, with a waiver-clear timestamp on all 13 waiver rows.
+- **LIVE OBSERVATION:** saved private raw capture `local_exports/redraft_v1/espn_flaim_captures/20261001T065245Z--kha--1298250946.json`, retrieved at `2026-10-01T06:52:45.221Z`, in the exact `nwr_espn_flaim_raw_capture_v1` envelope. Source SHA-256: `7a10d19f9c8453f491cafa7c19c9b0bd9ec87d6b7d2663055e83bd127e38e0ae`.
+- **ACTUAL TEST RESULT:** preview CLI accepted the capture: exact provider league/team identity, profile name/season/team count, schema, 13-player roster, 100-player `BOUNDED` pool, and retrieval timestamp all passed. It reported `Scoring completeness: UNKNOWN` and wrote nothing.
+
+### 403 N 18th and friends
+
+- **LIVE OBSERVATION:** authenticated `get_league_info` returned league `1009373442`, `403 N 18th and friends`, season `2026`, 8 teams, and team `5` named `Spencer's Smart Team`. Authenticated `get_roster` returned 17 current players: 9 starters, 7 bench, and 1 reserve/IR; every returned player mapped deterministically to `STARTER`, `BENCH`, or `RESERVE`. Authenticated `get_free_agents(count=100)` returned 100 real available players, ordered by ESPN-wide roster rate: 95 free agents and 5 waivers, with a waiver-clear timestamp on all 5 waiver rows.
+- **LIVE OBSERVATION:** saved private raw capture `local_exports/redraft_v1/espn_flaim_captures/20261001T065402Z--403-n-18th--1009373442.json`, retrieved at `2026-10-01T06:54:02.612Z`, in the exact `nwr_espn_flaim_raw_capture_v1` envelope. Source SHA-256: `f0652d1b0b0114f28cfa675effafa3964c320a7de55ba5aab8be42671ed9c814`.
+- **ACTUAL TEST RESULT:** preview CLI accepted the capture: exact provider league/team identity, profile name/season/team count, schema, 17-player roster, 100-player `BOUNDED` pool, and retrieval timestamp all passed. It reported `Scoring completeness: UNKNOWN` and wrote nothing.
+
+## Why activation correctly stopped
+
+- **INSPECTED CODE + LIVE OBSERVATION:** both real `get_league_info` responses exposed `H2H_POINTS`, matchup periods, tie rules, and roster construction, but did not expose any per-stat scoring multipliers. The raw-capture contract requires numeric provider scoring rows; `transform_flaim_raw_capture()` truthfully classifies an empty list as `UNKNOWN`. Standard/PPR/half-PPR was not guessed, and scoring values were not reverse-engineered from player results.
+- **INSPECTED CODE:** the current raw/snapshot schema has no acquisition-state or waiver-clear-time fields. Those facts were real and observed in the provider responses, and the bounded-pool description records their aggregate presence, but the transform does not persist them. No extra field was fabricated or overloaded.
+- **FINAL DECISION:** neither capture was activated because the explicit real-league-scoring gate did not pass. Therefore no Redraft backend restart and no ESPN-profile live UI verification were performed. No active snapshot exists for either profile, and neither profile identity document was edited.
+- **EXACT NEXT INPUT:** a real authenticated ESPN/Flaim scoring export or capture containing every league scoring setting name and numeric multiplier. Once supplied, rebuild the private capture, preview again, and activate only if the real scoring validation passes along with the already-passing identity/roster/pool checks.
+
+## Verification, documentation, and process safety
+
+- **ACTUAL TEST RESULT:** `tests/test_espn_flaim_snapshot_import_pipeline.py` plus `tests/test_espn_flaim_snapshot_service.py` passed **13/13** with the repository-local short `--basetemp .codex-tmp/t`. The first default-temp attempt produced 13 setup errors from the known inaccessible Windows pytest temp root; a second overly long repository-local basetemp produced 12 passes plus one Windows path-length failure. Neither was a product failure; the short-path rerun was clean.
+- **LIVE OBSERVATION:** all four pre-existing dev servers were left untouched and listening. Identity check after capture/preview: Redraft API PID `2888` on `18742`, Dynasty API PID `34952` on `18741`, Redraft preview PID `25852` on `1422`, Dynasty preview PID `25968` on `1421`; every command line contains `C:\NWR\prospective-outcomes-v1`.
+- **INSPECTED CODE:** Master Requirement Ledger Section 5 now records the real authenticated-provider → private-capture → deterministic-transform → validation → atomic-snapshot → canonical-state architecture and replaces the obsolete Claude-OAuth-centric disposition. No external-capture contract was created because authenticated access genuinely existed in this Codex session and the real capture was completed.
+- No governed valuation formula, base-board CSV, projection snapshot, generated data pack, Sleeper/ESPN write endpoint, owner AppData, Fantasy Gamers state, or Las Vegas Enginerds state was touched.
+
+## Final taxonomy
+
+- **KHA (`1298250946` / team `4` / `Colety Crusaders`): `OWNER_ACTION_REQUIRED`.** The exact required action is provision of the real per-stat scoring multiplier export/capture; authenticated identity, roster, lineup classification, and bounded availability already passed preview.
+- **403 N 18th and friends (`1009373442` / team `5` / `Spencer's Smart Team`): `OWNER_ACTION_REQUIRED`.** The exact required action is provision of the real per-stat scoring multiplier export/capture; authenticated identity, roster, lineup classification, and bounded availability already passed preview.
+
+Neither league is `LIVE_IN_NWR`, and neither requires another OAuth attempt.
