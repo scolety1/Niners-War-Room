@@ -1782,6 +1782,35 @@ class DesktopBackendFacade:
             "warnings": list(dict.fromkeys(compare_warnings)),
             "bridge": bridge.as_payload() if bridge is not None else None,
         }
+        # Owner Feedback Closure (gap closure, Dynasty Compare): real,
+        # verified `current_status_override` disclosure (e.g. a season-
+        # ending injury) for any asset actually in THIS comparison --
+        # display-only, same exact mechanism `evaluate_dynasty_trade`'s own
+        # `assetStatusNotices` already proves out (see `_trade_context`/
+        # the comment above its own `asset_status_notices` block). Built
+        # from `snapshot.evidence.by_id` -- NOT `snapshot.compare.frame`,
+        # whose rows (`player_compare_universe_service._compare_row`) never
+        # carry `current_status_override` through at all -- and never read
+        # by `build_owner_compare_summary`/`build_player_compare_decision_
+        # summary`/`_comparison_dimensions` above, so `leans`/`ranges`/
+        # `players`/`bridge` are completely unaffected. Scoped strictly to
+        # `normalized` (the assets actually requested in THIS comparison),
+        # the same "don't iterate the whole registry universe" discipline
+        # the trade path's own fix comment documents.
+        asset_status_notices = []
+        for asset_id in normalized:
+            evidence_row = snapshot.evidence.by_id.get(asset_id, {})
+            override = self._status_override_json(evidence_row.get("current_status_override"))
+            if override is not None:
+                asset_status_notices.append(
+                    {
+                        "assetId": asset_id,
+                        "playerName": _text(evidence_row.get("asset_name")) or "Unknown asset",
+                        **override,
+                    }
+                )
+        if asset_status_notices:
+            data["assetStatusNotices"] = asset_status_notices
         # Dynasty League Import V1 (Worker 4): a real ownership ANNOTATION
         # layer only, applied strictly after every comparison score/verdict
         # field above has already been fully computed from `rows`. This

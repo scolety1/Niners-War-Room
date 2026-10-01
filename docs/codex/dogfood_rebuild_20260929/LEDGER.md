@@ -920,3 +920,43 @@ Appended `## Part 2 — Historical Requirement Closure` to `docs/codex/dogfood_r
 5. No real external-platform transaction-history surface and no real session-to-session change-detection layer exist anywhere in either app — both honestly absent, neither fabricated nor partially faked.
 
 No governed valuation model touched. No Sleeper/ESPN write endpoint called (every live check this pass was a `GET` or an advisory-only `POST`). KHA/403N18th untouched. All four dev servers left running, unrestarted, identity-verified healthy throughout.
+
+---
+
+# Dynasty Compare — currentStatusOverride wired (closes a master-ledger-flagged gap)
+
+Scoped dispatch, `upgrade/nwr-prospective-outcomes-v1-20260914` worktree, dispatch HEAD `46a8fb4e` (confirmed via `git log -1 --oneline` at session start — matched exactly; untracked entries were only the two known `local_exports.backup-*` directories).
+
+Closes the real, repeatedly-flagged-but-never-closed trust gap Part 1 Sec 1.3 and Sec 7.13, and Part 2's own gap list (item 2): Dynasty Rankings, Asset Options, Player Detail, and the Trade Decision Lab (`assetStatusNotices`) all surfaced a real, verified `currentStatusOverride` (e.g. De Von Achane's real SEASON_OUT ACL injury, verified+sourced 2026-09-29), but Dynasty Compare never rendered it at all — a season-out player could be selected into a comparison with zero on-card disclosure of current unavailability. Redraft Compare's own, architecturally different and materially larger version of this same gap (Part 2 gap-list item 3) remains open and intentionally undisturbed, per this dispatch's explicit scope boundary.
+
+**Approach**: reused the exact `assetStatusNotices` mechanism `evaluate_dynasty_trade` already proved out for the Trade Decision Lab. No new pattern invented.
+
+**Backend** (`src/application/desktop_facade.py`, `compare_dynasty_assets`): added a display-only `assetStatusNotices` block to the response `data` dict, built the same way the trade path's `_trade_context` builds its own, except sourced from `snapshot.evidence.by_id` rather than `snapshot.compare.frame` — confirmed by direct read that `player_compare_universe_service._compare_row` never carries `current_status_override` through onto compare rows at all. Scoped strictly to `normalized` (the assets actually requested in this comparison, not the whole registry universe), the same scoping discipline the trade path's own fix comment documents as a previously-caught-and-fixed bug class. Omitted entirely (not an empty array) when no compared asset has a known override. Never read by `build_owner_compare_summary`/`build_player_compare_decision_summary`/`_comparison_dimensions`, which fully compute `leans`/`ranges`/`players`/`bridge` before this block runs, so base governed values are structurally unaffected.
+
+**Contract** (`desktop/packages/contracts/src/index.ts`): added `assetStatusNotices` (optional array of `{assetId, playerName}` plus the shared `DynastyCurrentStatusOverride` fields) to `DynastyComparison`, directly beside the existing `ownership`/`dynastyLeague` fields. Identical shape and optionality to `TradeDecision.assetStatusNotices`.
+
+**Frontend**:
+- `desktop/apps/dynasty/src/pages/rankings.tsx`: exported the previously-local `CurrentStatusBadge` component and `STATUS_OVERRIDE_LABEL` map so there is exactly one implementation across the app.
+- `desktop/apps/dynasty/src/pages/decisions.tsx` (`ComparisonResult`): imports `CurrentStatusBadge` from `rankings.tsx`; builds a `statusOverrides` lookup Map from `result.assetStatusNotices`; renders the badge in both per-player panels, the ranges panel (floor/expected/ceiling, titled by player) and the Advantages-and-uncertainty panel, next to the existing `OwnershipTag`, inside the panel body rather than the header (consistent with the already-documented header-overlap-bug avoidance for `OwnershipTag`).
+- Optional polish (small, clean, reusing the same components, not blocking the main fix): `AssetPicker` now shows the badge inline next to a candidate's name before selection, and `SelectedChips` shows it on each selected chip. Both consume `AssetOption.currentStatusOverride`, already present on the contract and already populated server-side.
+
+**Test results**:
+- `tests/test_dogfood_rebuild_v1_dynasty_status_override.py`: added `test_dynasty_compare_asset_status_notices_scoped_to_compared_assets_only`, mirroring the existing trade-scoping regression test with the same two real committed overrides (Jayden Higgins SEASON_OUT; Puka Nacua/Zay Flowers healthy). Asserts exactly one notice for the overridden asset, none leaked when it is excluded, and base `players` fields present and untouched. Result: 9 of 9 passed (was 8 of 8 before this pass).
+- `tests/test_desktop_application_api.py`: 50 passed, 1 failed, the exact known baseline case (`test_dynasty_facade_composes_real_governed_workflows`, `marketMatched` ENVIRONMENT_DEPENDENCY drift, 239 vs 230) and nothing else.
+- `tests/test_desktop_http_api.py` plus `tests/test_dynasty_league_import_facade_wiring.py`: 74 of 74 passed.
+- Combined run of all three files: 116 passed, 1 failed (same known case); no new failures anywhere touched.
+- `npm run typecheck` (both apps): clean, zero errors.
+- `npx vitest run`: 35 test files, 536 tests, all passed.
+- `npm run build` (Dynasty app): succeeded (vite build, 48 modules, 247ms).
+
+**Live proof**:
+- Backend restarted via the documented command (`nwr_release_gate_smoke.ps1 -Mode dynasty -KeepRunning`) after stopping the pre-edit backend/preview processes (old backend on port 18741 and old preview on port 1421, both confirmed via `Get-NetTCPConnection` plus `Get-CimInstance Win32_Process` before being stopped, to avoid the script's own bind-conflict failure mode when a port is already in use). New backend process confirmed with CommandLine containing the exact worktree path; the release-gate report showed a clean packaging gate (check:resources and cargo check both exit 0), `backendReady: true`, and zero findings.
+- Fresh bootstrap call confirmed De Von Achane's real asset id is still current:9226 (unchanged from the prior session's note) and Puka Nacua's is current:9493.
+- A real `POST` to the dynasty compare endpoint with those two asset ids returned zero errors; `assetStatusNotices` contained exactly one entry, for the Achane asset id, with kind SEASON_OUT and the real sourced reason/effective date/verification timestamp; Puka Nacua carried no entry; `players`, `leans`, and `ranges` were all present and populated normally.
+- Live Chrome render of the real Compare page for this exact comparison: the asset-selection chip row showed an "ON YOUR ROSTER" plus "SEASON OUT" badge beside Achane's name and only an ownership badge beside Nacua's; both the ranges panel and the Advantages-and-uncertainty panel rendered the same two badges under Achane's panel title and only the ownership badge under Nacua's — confirmed via screenshot and a zoomed crop of both panel headers side by side.
+
+**Files changed**: `src/application/desktop_facade.py`, `desktop/packages/contracts/src/index.ts`, `desktop/apps/dynasty/src/pages/rankings.tsx`, `desktop/apps/dynasty/src/pages/decisions.tsx`, `tests/test_dogfood_rebuild_v1_dynasty_status_override.py`, this ledger entry.
+
+No governed valuation model touched (`marginal_roster_utility_v2`, `governed_asset_registry_service.py`, base board CSVs, and projection snapshots all untouched, confirmed by `git status --short` showing only the files listed above). No Sleeper or ESPN write endpoint was called. KHA/403N18th identity fields untouched. Redraft backend untouched (zero Redraft Python files modified) and its dev server was never restarted by this pass. All four dev servers (Dynasty backend, Dynasty preview, Redraft backend, Redraft preview) confirmed listening and healthy at the end of this pass.
+
+This explicitly closes Master Requirement Ledger Sec 1.3's and Sec 7.13's remaining-action item for Dynasty Compare, and Part 2's gap-list item 2. Redraft Compare's own, distinct, larger-change gap (Part 2 gap-list item 3) remains open and intentionally undisturbed.

@@ -226,3 +226,38 @@ def test_dynasty_trade_asset_status_notices_scoped_to_trade_assets_only(
         give=[healthy_a], receive=[healthy_b], team_window="Balanced"
     )
     assert "assetStatusNotices" not in without_override.data
+
+
+def test_dynasty_compare_asset_status_notices_scoped_to_compared_assets_only(
+    _real_dynasty_facade: DesktopBackendFacade,
+) -> None:
+    """Owner feedback closure (gap closure, Dynasty Compare): Compare never
+    surfaced `currentStatusOverride` at all before this fix (Master
+    Requirement Ledger Sec1.3/Sec7.13's long-standing "REMAINING ACTION").
+    Mirrors `test_dynasty_trade_asset_status_notices_scoped_to_trade_assets_
+    only` above -- same real committed overrides, same scoping discipline:
+    a comparison that includes the overridden asset surfaces exactly one
+    notice for that asset, and a comparison that omits it carries no leaked
+    notice from elsewhere in the registry."""
+
+    bootstrap = _real_dynasty_facade.dynasty_bootstrap()
+    by_name = {row["player"]: row["assetId"] for row in bootstrap.data["rankings"]}
+    higgins_id = by_name["Jayden Higgins"]
+    healthy_a = by_name["Puka Nacua"]
+    healthy_b = by_name["Zay Flowers"]
+
+    with_override = _real_dynasty_facade.compare_dynasty_assets([higgins_id, healthy_a])
+    notices = with_override.data.get("assetStatusNotices")
+    assert notices is not None
+    assert [notice["assetId"] for notice in notices] == [higgins_id]
+    assert notices[0]["kind"] == "SEASON_OUT"
+    assert notices[0]["playerName"] == "Jayden Higgins"
+    # Base governed comparison fields are present and untouched by this
+    # purely additive disclosure layer.
+    assert {player["assetId"] for player in with_override.data["players"]} == {
+        higgins_id,
+        healthy_a,
+    }
+
+    without_override = _real_dynasty_facade.compare_dynasty_assets([healthy_a, healthy_b])
+    assert "assetStatusNotices" not in without_override.data

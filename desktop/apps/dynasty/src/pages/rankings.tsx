@@ -18,14 +18,17 @@ function OwnershipBadge({ ownership }: { ownership: AssetOwnership | undefined }
 // see LEDGER for the full De'Von Achane trace). The current-use presentation
 // may move a verified unavailable player out of the usable ordinal, but it
 // never changes the governed base rank or score shown alongside that view.
-const STATUS_OVERRIDE_LABEL: Record<DynastyCurrentStatusOverride["kind"], string> = {
+// Exported (gap closure, Dynasty Compare) so decisions.tsx's ComparisonResult
+// can reuse the exact same badge/label mapping instead of duplicating it --
+// see LEDGER's "Dynasty Compare -- currentStatusOverride wired" entry.
+export const STATUS_OVERRIDE_LABEL: Record<DynastyCurrentStatusOverride["kind"], string> = {
   SEASON_OUT: "Season out",
   NOT_WITH_TEAM: "Not with team",
   ADMINISTRATIVE_EXEMPT: "Exempt",
   TEAM_CORRECTION: "Team correction",
 };
 
-function CurrentStatusBadge({ override }: { override: DynastyCurrentStatusOverride | null | undefined }) {
+export function CurrentStatusBadge({ override }: { override: DynastyCurrentStatusOverride | null | undefined }) {
   if (!override) return null;
   const tone = override.kind === "TEAM_CORRECTION" ? "review" : "blocked";
   return <StatusBadge tone={tone} label={STATUS_OVERRIDE_LABEL[override.kind] ?? override.kind} />;

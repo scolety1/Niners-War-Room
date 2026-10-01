@@ -5,6 +5,7 @@ import type {
   AssetOwnershipEntry,
   DynastyBootstrap,
   DynastyComparison,
+  DynastyCurrentStatusOverride,
   DynastyTradeCounterResult,
   TeamWindow,
   TradeDecision,
@@ -25,6 +26,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { matchesPlayerSearch } from "../lib/search";
 import { ownershipLookup, resolveOwnershipDisplay } from "../lib/ownership";
+// Gap closure (Dynasty Compare): reuse Rankings' own badge/label mapping
+// rather than duplicating status-badge rendering a second time -- see
+// LEDGER's "Dynasty Compare -- currentStatusOverride wired" entry.
+import { CurrentStatusBadge } from "./rankings";
 
 const TRADE_SIDE_LIMIT = 6;
 export type TradeBuilderMode = "REAL" | "HYPOTHETICAL";
@@ -295,7 +300,9 @@ function AssetPicker({
               type="button"
             >
               <span>
-                <strong>{asset.name}</strong>
+                <strong>
+                  {asset.name} <CurrentStatusBadge override={asset.currentStatusOverride} />
+                </strong>
                 <small>
                   {asset.assetType} · {asset.position || "—"}{" "}
                   {asset.team ? `· ${asset.team}` : ""}
@@ -336,6 +343,7 @@ function SelectedChips({
           {lookup.get(assetId)?.ownership ? (
             <OwnershipTag ownership={lookup.get(assetId)?.ownership} />
           ) : null}
+          <CurrentStatusBadge override={lookup.get(assetId)?.currentStatusOverride} />
           <button
             aria-label={`Remove ${lookup.get(assetId)?.name ?? assetId}`}
             disabled={disabled}
@@ -511,6 +519,19 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
   // as extra display context next to each player's own panel; it never
   // feeds into any lean/range/dimension/advantage value above.
   const ownership = useMemo(() => ownershipLookup(result.ownership), [result.ownership]);
+  // Gap closure (Dynasty Compare): `result.assetStatusNotices` is the SAME
+  // display-only, additive annotation `evaluate_dynasty_trade`'s own
+  // `assetStatusNotices` already proves out (see `compare_dynasty_assets`
+  // in `desktop_facade.py`) -- never read by any lean/range/dimension/
+  // advantage value above. Omitted entirely (not an empty array) when no
+  // compared asset has a known override, so this map is simply empty then.
+  const statusOverrides = useMemo(() => {
+    const map = new Map<string, DynastyCurrentStatusOverride>();
+    for (const notice of result.assetStatusNotices ?? []) {
+      map.set(notice.assetId, notice);
+    }
+    return map;
+  }, [result.assetStatusNotices]);
   return (
     <div className="comparison-result">
       <div className="section-title">
@@ -594,7 +615,7 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
       <div className="advantage-grid">
         {result.ranges.map((range) => (
           <Panel key={range.assetId} title={range.player} eyebrow={range.ageWindow}>
-            {ownership.get(range.assetId) ? (
+            {ownership.get(range.assetId) || statusOverrides.get(range.assetId) ? (
               // Rendered in the panel BODY, never the header, to avoid a
               // real, reproduced-live overlap bug: `.panel__header` does
               // not wrap, and a wide ownership badge next to a long
@@ -602,6 +623,7 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
               // visually overlapped and clipped the eyebrow text.
               <div className="panel-ownership-line">
                 <OwnershipTag ownership={ownership.get(range.assetId)} />
+                <CurrentStatusBadge override={statusOverrides.get(range.assetId)} />
               </div>
             ) : null}
             <div className="range-grid">
@@ -637,9 +659,10 @@ function ComparisonResult({ result }: { result: DynastyComparison }) {
       <div className="advantage-grid">
         {result.players.map((player) => (
           <Panel key={player.assetId} title={player.player} eyebrow="Advantages & uncertainty">
-            {ownership.get(player.assetId) ? (
+            {ownership.get(player.assetId) || statusOverrides.get(player.assetId) ? (
               <div className="panel-ownership-line">
                 <OwnershipTag ownership={ownership.get(player.assetId)} />
+                <CurrentStatusBadge override={statusOverrides.get(player.assetId)} />
               </div>
             ) : null}
             <div className="pros-cons">

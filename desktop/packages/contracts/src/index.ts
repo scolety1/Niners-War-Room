@@ -601,6 +601,14 @@ export interface DynastyComparison {
   bridge?: RookieVeteranBridge | null;
   ownership?: AssetOwnershipEntry[];
   dynastyLeague?: DynastyLeagueContext;
+  /** Owner feedback closure (gap closure, Dynasty Compare): real, sourced
+   * current-status overrides (e.g. a season-ending injury) for any asset
+   * actually in this comparison. Display-only -- never read by `leans`/
+   * `ranges`/`players`/`bridge` above, which come from a completely
+   * separate evidence path. Omitted (not present as an empty array) when
+   * no compared asset has a known override. Same exact shape as
+   * `TradeDecision.assetStatusNotices` below. */
+  assetStatusNotices?: Array<{ assetId: string; playerName: string } & DynastyCurrentStatusOverride>;
 }
 
 export type TeamWindow = "Contending" | "Balanced" | "Rebuilding";
