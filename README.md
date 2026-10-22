@@ -1,10 +1,29 @@
-# Niners Dynasty: War Room
+# Niners War Room
 
-Private, local-first fantasy football decision engine for the Las Vegas Enginerds keeper/dynasty hybrid league.
+Local-first fantasy-football decision support that makes league-specific tradeoffs, data quality and uncertainty visible.
 
-V1 is the Drop Deadline Command Center. It focuses on each roster's league-rank
-top-five release pressure, keeper/drop decisions, pick values, trade leverage,
-and league pressure using local CSV/SQLite snapshots.
+## The problem
+
+A generic ranking does not answer a keeper, drop or trade decision when league rules, roster pressure and market liquidity disagree. Niners War Room turns those competing signals into inspectable comparisons using local CSV and SQLite snapshots.
+
+My contribution is defining the domain-specific decision criteria, choosing how the product should explain its recommendations, and directing AI-assisted development and evaluation.
+
+## What to explore
+
+- **Decision models:** keeper value, drop pressure, pick value and trade liquidity, with distinct meanings rather than one opaque score.
+- **Trust and provenance:** import validation, source/override review, and readiness labels that can withhold recommendations.
+- **Historical replay:** frozen as-of inputs kept separate from later outcome labels to support calibration without future-data leakage.
+- **Draft workflow:** inspect available players, compare options, record picks, undo mistakes and save local scenarios.
+
+Start with the [keeper model](src/models/keeper_scores.py), [trust-status service](src/services/trust_status_service.py), and the setup and workflow sections below.
+
+## Current stage and limits
+
+This is an implemented application with ongoing development. The default branch is a baseline, while later upgrade work may live on separate branches. Review the branch and dated evidence before treating an experiment as adopted behavior.
+
+Readiness labels describe the selected data pack and the application's checks. They are not proof of predictive accuracy, calibrated probabilities, future results or suitability for financial decisions. No performance improvement is claimed here.
+
+The original V1 focus is the Drop Deadline Command Center: each roster's league-rank top-five release pressure, keeper/drop decisions, pick values, trade leverage and league pressure.
 
 ## Setup
 
@@ -80,7 +99,7 @@ Use the app in this order.
 7. Review Import Review readiness:
    - `data_ready`: rosters, picks, and league ranks can be inspected.
    - `model_ready`: keeper/drop/trade outputs are real, not placeholders.
-   - `decision_ready`: the selected pack can drive money decisions.
+   - `decision_ready`: the selected pack passes the configured readiness checks; review the evidence and limitations before acting.
 8. Use War Board as the main decision surface.
 9. Use Team for the Niners-specific Roster's League-Rank Top Five explanation.
 10. Use League Intel for opponent pressure.
